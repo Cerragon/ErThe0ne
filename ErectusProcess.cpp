@@ -1,76 +1,60 @@
 #include "ErectusInclude.h"
 
-int ProcessErrorId = 0;
-char *ProcessError = nullptr;
-bool ProcessSelected = false;
-int ProcessListSize = 0;
-int ProcessIndex = 0;
-char **ProcessList = nullptr;
-DWORD *ProcessIdList = nullptr;
-bool ProcessListUpdated = false;
-int ProcessValidCounter = 0;
-bool ProcessMenuActive = false;
-
-DWORD Pid = 0;
-HWND Hwnd = NULL;
-DWORD64 Exe = 0;
-HANDLE Handle = NULL;
-
-void SetProcessMenu()
+void ErectusProcess::SetProcessMenu()
 {
-	if (WindowSize[0] != 384 || WindowSize[1] != 224)
+	if (ErectusMain::WindowSize[0] != 384 || ErectusMain::WindowSize[1] != 224)
 	{
-		WindowSize[0] = 384;
-		WindowSize[1] = 224;
+		ErectusMain::WindowSize[0] = 384;
+		ErectusMain::WindowSize[1] = 224;
 
-		if (WindowHwnd != NULL)
+		if (ErectusMain::WindowHwnd != NULL)
 		{
-			DeviceResetQueued = true;
-			SetWindowPos(WindowHwnd, HWND_NOTOPMOST, WindowPosition[0], WindowPosition[1], WindowSize[0], WindowSize[1], 0);
+			ErectusD3D9::DeviceResetQueued = true;
+			SetWindowPos(ErectusMain::WindowHwnd, HWND_NOTOPMOST, ErectusMain::WindowPosition[0], ErectusMain::WindowPosition[1], ErectusMain::WindowSize[0], ErectusMain::WindowSize[1], 0);
 		}
 	}
 
 	int BufferPosition[2];
-	BufferPosition[0] = (GetSystemMetrics(SM_CXSCREEN) / 2) - (WindowSize[0] / 2);
-	BufferPosition[1] = (GetSystemMetrics(SM_CYSCREEN) / 2) - (WindowSize[1] / 2);
+	BufferPosition[0] = (GetSystemMetrics(SM_CXSCREEN) / 2) - (ErectusMain::WindowSize[0] / 2);
+	BufferPosition[1] = (GetSystemMetrics(SM_CYSCREEN) / 2) - (ErectusMain::WindowSize[1] / 2);
 
-	if (WindowPosition[0] != BufferPosition[0] || WindowPosition[1] != BufferPosition[1])
+	if (ErectusMain::WindowPosition[0] != BufferPosition[0] || ErectusMain::WindowPosition[1] != BufferPosition[1])
 	{
-		WindowPosition[0] = BufferPosition[0];
-		WindowPosition[1] = BufferPosition[1];
+		ErectusMain::WindowPosition[0] = BufferPosition[0];
+		ErectusMain::WindowPosition[1] = BufferPosition[1];
 
-		if (WindowHwnd != NULL)
+		if (ErectusMain::WindowHwnd != NULL)
 		{
-			MoveWindow(WindowHwnd, WindowPosition[0], WindowPosition[1], WindowSize[0], WindowSize[1], FALSE);
-			if (!DeviceResetQueued)
+			MoveWindow(ErectusMain::WindowHwnd, ErectusMain::WindowPosition[0], ErectusMain::WindowPosition[1], ErectusMain::WindowSize[0], ErectusMain::WindowSize[1], FALSE);
+			if (!ErectusD3D9::DeviceResetQueued)
 			{
-				SetWindowPos(WindowHwnd, HWND_NOTOPMOST, WindowPosition[0], WindowPosition[1], WindowSize[0], WindowSize[1], 0);
+				SetWindowPos(ErectusMain::WindowHwnd, HWND_NOTOPMOST, ErectusMain::WindowPosition[0], ErectusMain::WindowPosition[1], ErectusMain::WindowSize[0], ErectusMain::WindowSize[1], 0);
 			}
 		}
 	}
 
-	if (WindowHwnd != NULL)
+	if (ErectusMain::WindowHwnd != NULL)
 	{
-		LONG_PTR Style = GetWindowLongPtr(WindowHwnd, GWL_EXSTYLE);
+		LONG_PTR Style = GetWindowLongPtr(ErectusMain::WindowHwnd, GWL_EXSTYLE);
 
 		if (Style & WS_EX_LAYERED)
 		{
 			Style &= ~WS_EX_LAYERED;
-			SetWindowLongPtr(WindowHwnd, GWL_EXSTYLE, Style);
+			SetWindowLongPtr(ErectusMain::WindowHwnd, GWL_EXSTYLE, Style);
 		}
 
 		if (Style & WS_EX_TOPMOST)
 		{
-			SetWindowPos(WindowHwnd, HWND_NOTOPMOST, WindowPosition[0], WindowPosition[1], WindowSize[0], WindowSize[1], 0);
+			SetWindowPos(ErectusMain::WindowHwnd, HWND_NOTOPMOST, ErectusMain::WindowPosition[0], ErectusMain::WindowPosition[1], ErectusMain::WindowSize[0], ErectusMain::WindowSize[1], 0);
 		}
 	}
 
 	ProcessMenuActive = true;
-	OverlayMenuActive = false;
-	OverlayActive = false;
+	ErectusMain::OverlayMenuActive = false;
+	ErectusMain::OverlayActive = false;
 }
 
-void SetProcessError(int ErrorId, const char *Error, size_t Length)
+void ErectusProcess::SetProcessError(int ErrorId, const char *Error, size_t Length)
 {
 	if (ProcessError != nullptr)
 	{
@@ -86,7 +70,7 @@ void SetProcessError(int ErrorId, const char *Error, size_t Length)
 	}
 }
 
-void ResetProcessData(bool ClearProcessError, int NewProcessListSize)
+void ErectusProcess::ResetProcessData(bool ClearProcessError, int NewProcessListSize)
 {
 	if (ProcessList != nullptr)
 	{
@@ -140,20 +124,20 @@ void ResetProcessData(bool ClearProcessError, int NewProcessListSize)
 		SetProcessError(-1, "", sizeof(""));
 	}
 
-	if (ThreadCreationState)
+	if (ErectusThread::ThreadCreationState)
 	{
 		bool AreThreadsActive = false;
 
-		while (!ThreadDestruction())
+		while (!ErectusThread::ThreadDestruction())
 		{
-			ThreadDestructionCounter++;
-			if (ThreadDestructionCounter > 14400)
+			ErectusThread::ThreadDestructionCounter++;
+			if (ErectusThread::ThreadDestructionCounter > 14400)
 			{
 				AreThreadsActive = true;
 
 				if (NewProcessListSize)
 				{
-					Close();
+					ErectusMain::Close();
 				}
 
 				break;
@@ -164,23 +148,23 @@ void ResetProcessData(bool ClearProcessError, int NewProcessListSize)
 
 		if (!AreThreadsActive)
 		{
-			MessagePatcher(false);
+			ErectusMemory::MessagePatcher(false);
 		}
 	}
 
-	if (CustomEntityListUpdated)
+	if (ErectusMemory::CustomEntityListUpdated)
 	{
-		DeleteCustomEntityList();
+		ErectusMemory::DeleteCustomEntityList();
 	}
 
-	if (CustomNPCListUpdated)
+	if (ErectusMemory::CustomNPCListUpdated)
 	{
-		DeleteCustomNPCList();
+		ErectusMemory::DeleteCustomNPCList();
 	}
 
-	if (CustomPlayerListUpdated)
+	if (ErectusMemory::CustomPlayerListUpdated)
 	{
-		DeleteCustomPlayerList();
+		ErectusMemory::DeleteCustomPlayerList();
 	}
 
 	Pid = 0;
@@ -194,7 +178,7 @@ void ResetProcessData(bool ClearProcessError, int NewProcessListSize)
 	}
 }
 
-int GetProcessCount()
+int ErectusProcess::GetProcessCount()
 {
 	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 	if (hSnapshot == INVALID_HANDLE_VALUE) return 1;
@@ -215,7 +199,7 @@ int GetProcessCount()
 	return ProcessCount;
 }
 
-bool UpdateProcessList()
+bool ErectusProcess::UpdateProcessList()
 {
 	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 	if (hSnapshot == INVALID_HANDLE_VALUE) return false;
@@ -250,7 +234,7 @@ bool UpdateProcessList()
 	return true;
 }
 
-BOOL HwndEnumFunc(HWND hwnd, LPARAM lParam)
+BOOL ErectusProcess::HwndEnumFunc(HWND hwnd, LPARAM lParam)
 {
 	DWORD lpdwProcessId;
 	GetWindowThreadProcessId(hwnd, &lpdwProcessId);
@@ -272,7 +256,7 @@ BOOL HwndEnumFunc(HWND hwnd, LPARAM lParam)
 	return TRUE;
 }
 
-bool HwndValid(DWORD ProcessId)
+bool ErectusProcess::HwndValid(DWORD ProcessId)
 {
 	Pid = ProcessId;
 	if (!Pid)
@@ -306,7 +290,7 @@ bool HwndValid(DWORD ProcessId)
 	return true;
 }
 
-DWORD64 GetModuleBaseAddress(DWORD ProcessId, const char *Module)
+DWORD64 ErectusProcess::GetModuleBaseAddress(DWORD ProcessId, const char *Module)
 {
 	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, ProcessId);
 	if (hSnapshot == INVALID_HANDLE_VALUE) return 0;
@@ -327,7 +311,7 @@ DWORD64 GetModuleBaseAddress(DWORD ProcessId, const char *Module)
 	return 0;
 }
 
-bool ProcessValid(DWORD ProcessId)
+bool ErectusProcess::ProcessValid(DWORD ProcessId)
 {
 	Pid = ProcessId;
 	if (!Pid)

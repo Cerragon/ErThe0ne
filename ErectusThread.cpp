@@ -1,184 +1,167 @@
 #include "ErectusInclude.h"
 
-bool ThreadCreationState = false;
-bool ThreadDestructionQueued = false;
-bool ThreadDestructionState = false;
-int ThreadDestructionCounter = 0;
-
-bool BufferEntityListThreadActive = false;
-bool BufferNPCListThreadActive = false;
-bool BufferPlayerListThreadActive = false;
-bool WeaponEditorThreadActive = false;
-bool LockingThreadActive = false;
-bool MultihackThreadActive = false;
-bool HarvesterThreadActive = false;
-bool KnownRecipeThreadActive = false;
-
-bool PositionSpoofingToggle = false;
-bool NoclipToggle = false;
-
-DWORD WINAPI BufferEntityListThread(LPVOID lpParameter)
+DWORD WINAPI ErectusThread::BufferEntityListThread(LPVOID lpParameter)
 {
 	UNREFERENCED_PARAMETER(lpParameter);
 
 	while (!ThreadDestructionState)
 	{
-		BufferEntityListCounter++;
-		if (BufferEntityListCounter > 60)
+		ErectusMemory::BufferEntityListCounter++;
+		if (ErectusMemory::BufferEntityListCounter > 60)
 		{
-			BufferEntityListCounter = 0;
-			if (!BufferEntityListUpdated)
+			ErectusMemory::BufferEntityListCounter = 0;
+			if (!ErectusMemory::BufferEntityListUpdated)
 			{
-				BufferEntityListUpdated = UpdateBufferEntityList();
-				if (!BufferEntityListUpdated)
+				ErectusMemory::BufferEntityListUpdated = ErectusMemory::UpdateBufferEntityList();
+				if (!ErectusMemory::BufferEntityListUpdated)
 				{
-					CustomEntityListDestructionQueued = true;
+					ErectusMemory::CustomEntityListDestructionQueued = true;
 				}
 			}
 		}
 
-		if (BufferEntityListDestructionQueued)
+		if (ErectusMemory::BufferEntityListDestructionQueued)
 		{
-			BufferEntityListDestructionQueued = false;
-			DeleteBufferEntityList();
+			ErectusMemory::BufferEntityListDestructionQueued = false;
+			ErectusMemory::DeleteBufferEntityList();
 		}
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(16));
 	}
 
-	DeleteBufferEntityList();
+	ErectusMemory::DeleteBufferEntityList();
 
 	BufferEntityListThreadActive = false;
 
 	return 0xBEEF;
 }
 
-DWORD WINAPI BufferNPCListThread(LPVOID lpParameter)
+DWORD WINAPI ErectusThread::BufferNPCListThread(LPVOID lpParameter)
 {
 	UNREFERENCED_PARAMETER(lpParameter);
 
 	while (!ThreadDestructionState)
 	{
-		BufferNPCListCounter++;
-		if (BufferNPCListCounter > 60)
+		ErectusMemory::BufferNPCListCounter++;
+		if (ErectusMemory::BufferNPCListCounter > 60)
 		{
-			BufferNPCListCounter = 0;
-			if (!BufferNPCListUpdated)
+			ErectusMemory::BufferNPCListCounter = 0;
+			if (!ErectusMemory::BufferNPCListUpdated)
 			{
-				BufferNPCListUpdated = UpdateBufferNPCList();
-				if (!BufferNPCListUpdated)
+				ErectusMemory::BufferNPCListUpdated = ErectusMemory::UpdateBufferNPCList();
+				if (!ErectusMemory::BufferNPCListUpdated)
 				{
-					CustomNPCListDestructionQueued = true;
+					ErectusMemory::CustomNPCListDestructionQueued = true;
 				}
 			}
 		}
 
-		if (BufferNPCListDestructionQueued)
+		if (ErectusMemory::BufferNPCListDestructionQueued)
 		{
-			BufferNPCListDestructionQueued = false;
-			DeleteBufferNPCList();
+			ErectusMemory::BufferNPCListDestructionQueued = false;
+			ErectusMemory::DeleteBufferNPCList();
 		}
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(16));
 	}
 
-	DeleteBufferNPCList();
+	ErectusMemory::DeleteBufferNPCList();
 
 	BufferNPCListThreadActive = false;
 
 	return 0xFADE;
 }
 
-DWORD WINAPI BufferPlayerListThread(LPVOID lpParameter)
+DWORD WINAPI ErectusThread::BufferPlayerListThread(LPVOID lpParameter)
 {
 	UNREFERENCED_PARAMETER(lpParameter);
 
-	while (!ThreadDestructionState)
+	while (!ErectusThread::ThreadDestructionState)
 	{
-		BufferPlayerListCounter++;
-		if (BufferPlayerListCounter > 60)
+		ErectusMemory::BufferPlayerListCounter++;
+		if (ErectusMemory::BufferPlayerListCounter > 60)
 		{
-			BufferPlayerListCounter = 0;
-			if (!BufferPlayerListUpdated)
+			ErectusMemory::BufferPlayerListCounter = 0;
+			if (!ErectusMemory::BufferPlayerListUpdated)
 			{
-				BufferPlayerListUpdated = UpdateBufferPlayerList();
-				if (!BufferPlayerListUpdated)
+				ErectusMemory::BufferPlayerListUpdated = ErectusMemory::UpdateBufferPlayerList();
+				if (!ErectusMemory::BufferPlayerListUpdated)
 				{
-					CustomPlayerListDestructionQueued = true;
+					ErectusMemory::CustomPlayerListDestructionQueued = true;
 				}
 			}
 		}
 
-		if (BufferPlayerListDestructionQueued)
+		if (ErectusMemory::BufferPlayerListDestructionQueued)
 		{
-			BufferPlayerListDestructionQueued = false;
-			DeleteBufferPlayerList();
+			ErectusMemory::BufferPlayerListDestructionQueued = false;
+			ErectusMemory::DeleteBufferPlayerList();
 		}
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(16));
 	}
 
-	DeleteBufferPlayerList();
+	ErectusMemory::DeleteBufferPlayerList();
 
 	BufferPlayerListThreadActive = false;
 
 	return 0xFEED;
 }
 
-DWORD WINAPI WeaponEditorThread(LPVOID lpParameter)
+DWORD WINAPI ErectusThread::WeaponEditorThread(LPVOID lpParameter)
 {
 	UNREFERENCED_PARAMETER(lpParameter);
 
-	while (!ThreadDestructionState)
+	while (!ErectusThread::ThreadDestructionState)
 	{
-		OldWeaponListCounter++;
-		if (OldWeaponListCounter > 60)
+		ErectusMemory::OldWeaponListCounter++;
+		if (ErectusMemory::OldWeaponListCounter > 60)
 		{
-			OldWeaponListCounter = 0;
-			if (!OldWeaponListUpdated)
+			ErectusMemory::OldWeaponListCounter = 0;
+			if (!ErectusMemory::OldWeaponListUpdated)
 			{
-				OldWeaponListUpdated = UpdateOldWeaponData();
+				ErectusMemory::OldWeaponListUpdated = ErectusMemory::UpdateOldWeaponData();
 			}
 
-			if (OldWeaponListUpdated)
+			if (ErectusMemory::OldWeaponListUpdated)
 			{
 				bool RevertWeapons = true;
-				if (WeaponEditingEnabled())
+				if (ErectusMemory::WeaponEditingEnabled())
 				{
 					RevertWeapons = false;
 				}
 
-				for (int i = 0; i < OldWeaponListSize; i++)
+				for (int i = 0; i < ErectusMemory::OldWeaponListSize; i++)
 				{
-					if (ThreadDestructionState) break;
-					else EditWeapon(i, RevertWeapons);
+					if (ErectusThread::ThreadDestructionState) break;
+					else ErectusMemory::EditWeapon(i, RevertWeapons);
 				}
 			}
 
-			InfiniteAmmo(CustomWeaponSettings.InfiniteAmmo);
+			ErectusMemory::InfiniteAmmo(ErectusIni::CustomWeaponSettings.InfiniteAmmo);
 		}
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(16));
 	}
 
-	if (OldWeaponListUpdated)
+	if (ErectusMemory::OldWeaponListUpdated)
 	{
-		for (int i = 0; i < OldWeaponListSize; i++)
+		for (int i = 0; i < ErectusMemory::OldWeaponListSize; i++)
 		{
-			EditWeapon(i, true);
+			ErectusMemory::EditWeapon(i, true);
 		}
 	}
 
-	InfiniteAmmo(false);
+	ErectusMemory::InfiniteAmmo(false);
 
-	DeleteOldWeaponList();
+	ErectusMemory::DeleteOldWeaponList();
 
 	WeaponEditorThreadActive = false;
 
 	return 0xDEAD;
 }
 
-DWORD WINAPI LockingThread(LPVOID lpParameter)
+DWORD WINAPI ErectusThread::LockingThread(LPVOID lpParameter)
 {
 	UNREFERENCED_PARAMETER(lpParameter);
 
@@ -199,15 +182,15 @@ DWORD WINAPI LockingThread(LPVOID lpParameter)
 	int MeleeCounter = 0;
 	int MeleeThreshold = 0;
 
-	while (!ThreadDestructionState)
+	while (!ErectusThread::ThreadDestructionState)
 	{
 		FavoritedWeaponCounter++;
 		if (FavoritedWeaponCounter > 60)
 		{
 			FavoritedWeaponCounter = 0;
-			if (CustomTargetSettings.FavoriteIndex < 12)
+			if (ErectusIni::CustomTargetSettings.FavoriteIndex < 12)
 			{
-				WeaponId = GetFavoritedWeaponId(BYTE(CustomTargetSettings.FavoriteIndex));
+				WeaponId = ErectusMemory::GetFavoritedWeaponId(BYTE(ErectusIni::CustomTargetSettings.FavoriteIndex));
 			}
 			else
 			{
@@ -215,64 +198,64 @@ DWORD WINAPI LockingThread(LPVOID lpParameter)
 			}
 		}
 
-		if (OverlayForeground && GetAsyncKeyState('T'))
+		if (ErectusMain::OverlayForeground && GetAsyncKeyState('T'))
 		{
-			if (!TargetLockingKeyPressed)
+			if (!ErectusMemory::TargetLockingKeyPressed)
 			{
-				TargetLockingKeyPressed = true;
+				ErectusMemory::TargetLockingKeyPressed = true;
 			}
 
-			if (TargetLockingCooldown > 0)
+			if (ErectusMemory::TargetLockingCooldown > 0)
 			{
-				TargetLockingCooldown--;
+				ErectusMemory::TargetLockingCooldown--;
 			}
 		}
 		else
 		{
-			if (TargetLockingKeyPressed)
+			if (ErectusMemory::TargetLockingKeyPressed)
 			{
-				TargetLockingKeyPressed = false;
+				ErectusMemory::TargetLockingKeyPressed = false;
 			}
 
-			if (TargetLockingCooldown)
+			if (ErectusMemory::TargetLockingCooldown)
 			{
-				TargetLockingCooldown = 0;
+				ErectusMemory::TargetLockingCooldown = 0;
 			}
 
-			if (TargetLockingPtr)
+			if (ErectusMemory::TargetLockingPtr)
 			{
-				TargetLockingPtr = 0;
+				ErectusMemory::TargetLockingPtr = 0;
 			}
 		}
 
-		if (TargetLockingPtr)
+		if (ErectusMemory::TargetLockingPtr)
 		{
-			DamageRedirection(&TargetingPage, &TargetingPageValid, false, true);
+			ErectusMemory::DamageRedirection(&TargetingPage, &TargetingPageValid, false, true);
 
 			SendDamageCounter++;
 			if (SendDamageCounter > SendDamageThreshold)
 			{
 				SendDamageCounter = 0;
-				SendDamageThreshold = GetRangedInt(CustomTargetSettings.SendDamageMin, CustomTargetSettings.SendDamageMax);
-				SendDamage(WeaponId, &ShotsHit, &ShotsFired, 1);
+				SendDamageThreshold = Erectus::GetRangedInt(ErectusIni::CustomTargetSettings.SendDamageMin, ErectusIni::CustomTargetSettings.SendDamageMax);
+				ErectusMemory::SendDamage(WeaponId, &ShotsHit, &ShotsFired, 1);
 			}
 		}
 		else
 		{
-			DamageRedirection(&TargetingPage, &TargetingPageValid, false, false);
+			ErectusMemory::DamageRedirection(&TargetingPage, &TargetingPageValid, false, false);
 			SendDamageThreshold = 0;
 		}
 
-		if (CustomMeleeSettings.MeleeEnabled)
+		if (ErectusIni::CustomMeleeSettings.MeleeEnabled)
 		{
-			if (OverlayForeground && GetAsyncKeyState('U'))
+			if (ErectusMain::OverlayForeground && GetAsyncKeyState('U'))
 			{
 				MeleeCounter++;
 				if (MeleeCounter > MeleeThreshold)
 				{
 					MeleeCounter = 0;
-					MeleeThreshold = GetRangedInt(CustomMeleeSettings.MeleeSpeedMin, CustomMeleeSettings.MeleeSpeedMax);
-					MeleeAttack();
+					MeleeThreshold = Erectus::GetRangedInt(ErectusIni::CustomMeleeSettings.MeleeSpeedMin, ErectusIni::CustomMeleeSettings.MeleeSpeedMax);
+					ErectusMemory::MeleeAttack();
 				}
 			}
 			else
@@ -284,11 +267,11 @@ DWORD WINAPI LockingThread(LPVOID lpParameter)
 		std::this_thread::sleep_for(std::chrono::milliseconds(16));
 	}
 
-	DamageRedirection(&TargetingPage, &TargetingPageValid, true, false);
+	ErectusMemory::DamageRedirection(&TargetingPage, &TargetingPageValid, true, false);
 
 	if (TargetingPage)
 	{
-		FreeEx(TargetingPage);
+		Erectus::FreeEx(TargetingPage);
 	}
 
 	LockingThreadActive = false;
@@ -296,7 +279,7 @@ DWORD WINAPI LockingThread(LPVOID lpParameter)
 	return 0xCAFE;
 }
 
-DWORD WINAPI MultihackThread(LPVOID lpParameter)
+DWORD WINAPI ErectusThread::MultihackThread(LPVOID lpParameter)
 {
 	UNREFERENCED_PARAMETER(lpParameter);
 
@@ -335,57 +318,57 @@ DWORD WINAPI MultihackThread(LPVOID lpParameter)
 	
 	int ChargenCounter = 0;
 
-	while (!ThreadDestructionState)
+	while (!ErectusThread::ThreadDestructionState)
 	{
-		if (DoubleKeyPress(VK_CONTROL, 'L', &PositionSpoofingPress))
+		if (Erectus::DoubleKeyPress(VK_CONTROL, 'L', &PositionSpoofingPress))
 		{
-			if (PositionSpoofingToggle)
+			if (ErectusThread::PositionSpoofingToggle)
 			{
-				PositionSpoofingToggle = false;
+				ErectusThread::PositionSpoofingToggle = false;
 			}
 			else
 			{
-				PositionSpoofingToggle = true;
-				if (CustomLocalPlayerSettings.PositionSpoofingEnabled)
+				ErectusThread::PositionSpoofingToggle = true;
+				if (ErectusIni::CustomLocalPlayerSettings.PositionSpoofingEnabled)
 				{
-					if (CustomLocalPlayerSettings.ClientState)
+					if (ErectusIni::CustomLocalPlayerSettings.ClientState)
 					{
-						SetClientState(2);
+						ErectusMemory::SetClientState(2);
 					}
 				}
 			}
 		}
 
-		if (!CustomLocalPlayerSettings.PositionSpoofingEnabled)
+		if (!ErectusIni::CustomLocalPlayerSettings.PositionSpoofingEnabled)
 		{
-			PositionSpoofingToggle = false;
+			ErectusThread::PositionSpoofingToggle = false;
 		}
 
-		if (DoubleKeyPress(VK_CONTROL, 'Y', &NoclipPress))
+		if (Erectus::DoubleKeyPress(VK_CONTROL, 'Y', &NoclipPress))
 		{
-			if (NoclipToggle)
+			if (ErectusThread::NoclipToggle)
 			{
-				NoclipToggle = false;
+				ErectusThread::NoclipToggle = false;
 			}
 			else
 			{
-				NoclipToggle = true;
-				if (CustomLocalPlayerSettings.NoclipEnabled)
+				ErectusThread::NoclipToggle = true;
+				if (ErectusIni::CustomLocalPlayerSettings.NoclipEnabled)
 				{
-					if (CustomLocalPlayerSettings.ClientState)
+					if (ErectusIni::CustomLocalPlayerSettings.ClientState)
 					{
-						SetClientState(2);
+						ErectusMemory::SetClientState(2);
 					}
 				}
 			}
 		}
 
-		if (!CustomLocalPlayerSettings.NoclipEnabled)
+		if (!ErectusIni::CustomLocalPlayerSettings.NoclipEnabled)
 		{
-			NoclipToggle = false;
+			ErectusThread::NoclipToggle = false;
 		}
 
-		if (DoubleKeyPress(VK_CONTROL, 'B', &OpkPlayersPress))
+		if (Erectus::DoubleKeyPress(VK_CONTROL, 'B', &OpkPlayersPress))
 		{
 			if (OpkPlayersToggle)
 			{
@@ -397,7 +380,7 @@ DWORD WINAPI MultihackThread(LPVOID lpParameter)
 			}
 		}
 
-		if (DoubleKeyPress(VK_CONTROL, 'N', &OpkNpcsPress))
+		if (Erectus::DoubleKeyPress(VK_CONTROL, 'N', &OpkNpcsPress))
 		{
 			if (OpkNpcsToggle)
 			{
@@ -409,121 +392,121 @@ DWORD WINAPI MultihackThread(LPVOID lpParameter)
 			}
 		}
 
-		if (DoubleKeyPress(VK_CONTROL, 'E', &LootScrapKeyPress))
+		if (Erectus::DoubleKeyPress(VK_CONTROL, 'E', &LootScrapKeyPress))
 		{
-			if (CustomScrapLooterSettings.ScrapKeybindEnabled)
+			if (ErectusIni::CustomScrapLooterSettings.ScrapKeybindEnabled)
 			{
-				if (CheckScrapList())
+				if (ErectusMemory::CheckScrapList())
 				{
-					LootScrap();
+					ErectusMemory::LootScrap();
 				}
 			}
 		}
 
-		if (DoubleKeyPress(VK_CONTROL, 'R', &LootItemsKeyPress))
+		if (Erectus::DoubleKeyPress(VK_CONTROL, 'R', &LootItemsKeyPress))
 		{
-			if (CustomItemLooterSettings.ItemKeybindEnabled)
+			if (ErectusIni::CustomItemLooterSettings.ItemKeybindEnabled)
 			{
-				if (CheckItemLooterSettings())
+				if (ErectusMemory::CheckItemLooterSettings())
 				{
-					LootItems();
+					ErectusMemory::LootItems();
 				}
 			}
 		}
 
-		if (PositionSpoofingToggle || NoclipToggle)
+		if (ErectusThread::PositionSpoofingToggle || ErectusThread::NoclipToggle)
 		{
-			if (CustomLocalPlayerSettings.AutomaticClientState)
+			if (ErectusIni::CustomLocalPlayerSettings.AutomaticClientState)
 			{
 				ClientStateCounter++;
 				if (ClientStateCounter > 60)
 				{
 					ClientStateCounter = 0;
-					SetClientState(2);
+					ErectusMemory::SetClientState(2);
 				}
 			}
 		}
 
-		PositionSpoofing(PositionSpoofingToggle);
+		ErectusMemory::PositionSpoofing(ErectusThread::PositionSpoofingToggle);
 
-		Noclip(NoclipToggle);
+		ErectusMemory::Noclip(ErectusThread::NoclipToggle);
 
-		ActorValue(&ActorValuePage, &ActorValuePageValid, true);
+		ErectusMemory::ActorValue(&ActorValuePage, &ActorValuePageValid, true);
 
 		ActorValueDefaultCounter++;
 		if (ActorValueDefaultCounter > 60)
 		{
 			ActorValueDefaultCounter = 0;
-			SetActorValueMaximum(0x000002C2, 100.0f, float(CustomLocalPlayerSettings.Strength), CustomLocalPlayerSettings.StrengthEnabled);
-			SetActorValueMaximum(0x000002C3, 100.0f, float(CustomLocalPlayerSettings.Perception), CustomLocalPlayerSettings.PerceptionEnabled);
-			SetActorValueMaximum(0x000002C4, 100.0f, float(CustomLocalPlayerSettings.Endurance), CustomLocalPlayerSettings.EnduranceEnabled);
-			SetActorValueMaximum(0x000002C5, 100.0f, float(CustomLocalPlayerSettings.Charisma), CustomLocalPlayerSettings.CharismaEnabled);
-			SetActorValueMaximum(0x000002C6, 100.0f, float(CustomLocalPlayerSettings.Agility), CustomLocalPlayerSettings.AgilityEnabled);
-			SetActorValueMaximum(0x000002C7, 100.0f, float(CustomLocalPlayerSettings.Intelligence), CustomLocalPlayerSettings.IntelligenceEnabled);
-			SetActorValueMaximum(0x000002C8, 100.0f, float(CustomLocalPlayerSettings.Luck), CustomLocalPlayerSettings.LuckEnabled);
+			ErectusMemory::SetActorValueMaximum(0x000002C2, 100.0f, float(ErectusIni::CustomLocalPlayerSettings.Strength), ErectusIni::CustomLocalPlayerSettings.StrengthEnabled);
+			ErectusMemory::SetActorValueMaximum(0x000002C3, 100.0f, float(ErectusIni::CustomLocalPlayerSettings.Perception), ErectusIni::CustomLocalPlayerSettings.PerceptionEnabled);
+			ErectusMemory::SetActorValueMaximum(0x000002C4, 100.0f, float(ErectusIni::CustomLocalPlayerSettings.Endurance), ErectusIni::CustomLocalPlayerSettings.EnduranceEnabled);
+			ErectusMemory::SetActorValueMaximum(0x000002C5, 100.0f, float(ErectusIni::CustomLocalPlayerSettings.Charisma), ErectusIni::CustomLocalPlayerSettings.CharismaEnabled);
+			ErectusMemory::SetActorValueMaximum(0x000002C6, 100.0f, float(ErectusIni::CustomLocalPlayerSettings.Agility), ErectusIni::CustomLocalPlayerSettings.AgilityEnabled);
+			ErectusMemory::SetActorValueMaximum(0x000002C7, 100.0f, float(ErectusIni::CustomLocalPlayerSettings.Intelligence), ErectusIni::CustomLocalPlayerSettings.IntelligenceEnabled);
+			ErectusMemory::SetActorValueMaximum(0x000002C8, 100.0f, float(ErectusIni::CustomLocalPlayerSettings.Luck), ErectusIni::CustomLocalPlayerSettings.LuckEnabled);
 		}
 		
-		FreezeActionPoints(&FreezeApPage, &FreezeApPageValid, true);
+		ErectusMemory::FreezeActionPoints(&FreezeApPage, &FreezeApPageValid, true);
 		
-		OnePositionKill(&OpkPage, &OpkPageValid, true);
+		ErectusMemory::OnePositionKill(&OpkPage, &OpkPageValid, true);
 
 		if (OpkPageValid)
 		{
 			if (OpkPlayersToggle)
 			{
-				if (!CustomOpkSettings.PlayersEnabled)
+				if (!ErectusIni::CustomOpkSettings.PlayersEnabled)
 				{
 					OpkPlayersToggle = false;
 				}
 				else
 				{
-					SetOpkData(OpkPage, true, true);
+					ErectusMemory::SetOpkData(OpkPage, true, true);
 				}
 			}
 			else
 			{
-				SetOpkData(OpkPage, true, false);
+				ErectusMemory::SetOpkData(OpkPage, true, false);
 			}
 
 			if (OpkNpcsToggle)
 			{
-				if (!CustomOpkSettings.NpcsEnabled)
+				if (!ErectusIni::CustomOpkSettings.NpcsEnabled)
 				{
 					OpkNpcsToggle = false;
 				}
 				else
 				{
-					SetOpkData(OpkPage, false, true);
+					ErectusMemory::SetOpkData(OpkPage, false, true);
 				}
 			}
 			else
 			{
-				SetOpkData(OpkPage, false, false);
+				ErectusMemory::SetOpkData(OpkPage, false, false);
 			}
 		}
 
-		if (CustomNukeCodeSettings.AutomaticNukeCodes)
+		if (ErectusIni::CustomNukeCodeSettings.AutomaticNukeCodes)
 		{
 			NukeCodeCounter++;
 			if (NukeCodeCounter > 300)
 			{
 				NukeCodeCounter = 0;
-				GetNukeCode(0x000921AE, AlphaCode);
-				GetNukeCode(0x00092213, BravoCode);
-				GetNukeCode(0x00092214, CharlieCode);
+				ErectusMemory::GetNukeCode(0x000921AE, ErectusImGui::AlphaCode);
+				ErectusMemory::GetNukeCode(0x00092213, ErectusImGui::BravoCode);
+				ErectusMemory::GetNukeCode(0x00092214, ErectusImGui::CharlieCode);
 			}
 		}
 
-		if (CustomScrapLooterSettings.ScrapAutomaticLootingEnabled)
+		if (ErectusIni::CustomScrapLooterSettings.ScrapAutomaticLootingEnabled)
 		{
 			LootScrapCounter++;
 			if (LootScrapCounter > LootScrapThreshold)
 			{
 				LootScrapCounter = 0;
-				LootScrapThreshold = GetRangedInt(CustomScrapLooterSettings.ScrapAutomaticSpeedMin, CustomScrapLooterSettings.ScrapAutomaticSpeedMax);
-				if (CheckScrapList())
+				LootScrapThreshold = Erectus::GetRangedInt(ErectusIni::CustomScrapLooterSettings.ScrapAutomaticSpeedMin, ErectusIni::CustomScrapLooterSettings.ScrapAutomaticSpeedMax);
+				if (ErectusMemory::CheckScrapList())
 				{
-					LootScrap();
+					ErectusMemory::LootScrap();
 				}
 			}
 		}
@@ -532,16 +515,16 @@ DWORD WINAPI MultihackThread(LPVOID lpParameter)
 			LootScrapThreshold = 0;
 		}
 
-		if (CustomItemLooterSettings.ItemAutomaticLootingEnabled)
+		if (ErectusIni::CustomItemLooterSettings.ItemAutomaticLootingEnabled)
 		{
 			LootItemsCounter++;
 			if (LootItemsCounter > LootItemsThreshold)
 			{
 				LootItemsCounter = 0;
-				LootItemsThreshold = GetRangedInt(CustomItemLooterSettings.ItemAutomaticSpeedMin, CustomItemLooterSettings.ItemAutomaticSpeedMax);
-				if (CheckItemLooterSettings())
+				LootItemsThreshold = Erectus::GetRangedInt(ErectusIni::CustomItemLooterSettings.ItemAutomaticSpeedMin, ErectusIni::CustomItemLooterSettings.ItemAutomaticSpeedMax);
+				if (ErectusMemory::CheckItemLooterSettings())
 				{
-					LootItems();
+					ErectusMemory::LootItems();
 				}
 			}
 		}
@@ -550,50 +533,50 @@ DWORD WINAPI MultihackThread(LPVOID lpParameter)
 			LootItemsThreshold = 0;
 		}
 		
-		if (CustomChargenSettings.ChargenEditingEnabled)
+		if (ErectusIni::CustomChargenSettings.ChargenEditingEnabled)
 		{
 			ChargenCounter++;
 			if (ChargenCounter > 10)
 			{
 				ChargenCounter = 0;
-				ChargenEditing();
+				ErectusMemory::ChargenEditing();
 			}
 		}
 		
 		std::this_thread::sleep_for(std::chrono::milliseconds(16));
 	}
 
-	PositionSpoofing(false);
+	ErectusMemory::PositionSpoofing(false);
 
-	Noclip(false);
+	ErectusMemory::Noclip(false);
 
-	ActorValue(&ActorValuePage, &ActorValuePageValid, false);
+	ErectusMemory::ActorValue(&ActorValuePage, &ActorValuePageValid, false);
 
 	if (ActorValuePage)
 	{
-		FreeEx(ActorValuePage);
+		Erectus::FreeEx(ActorValuePage);
 	}
 
-	SetActorValueMaximum(0x000002C2, 100.0f, float(CustomLocalPlayerSettings.Strength), false);
-	SetActorValueMaximum(0x000002C3, 100.0f, float(CustomLocalPlayerSettings.Perception), false);
-	SetActorValueMaximum(0x000002C4, 100.0f, float(CustomLocalPlayerSettings.Endurance), false);
-	SetActorValueMaximum(0x000002C5, 100.0f, float(CustomLocalPlayerSettings.Charisma), false);
-	SetActorValueMaximum(0x000002C6, 100.0f, float(CustomLocalPlayerSettings.Agility), false);
-	SetActorValueMaximum(0x000002C7, 100.0f, float(CustomLocalPlayerSettings.Intelligence), false);
-	SetActorValueMaximum(0x000002C8, 100.0f, float(CustomLocalPlayerSettings.Luck), false);
+	ErectusMemory::SetActorValueMaximum(0x000002C2, 100.0f, float(ErectusIni::CustomLocalPlayerSettings.Strength), false);
+	ErectusMemory::SetActorValueMaximum(0x000002C3, 100.0f, float(ErectusIni::CustomLocalPlayerSettings.Perception), false);
+	ErectusMemory::SetActorValueMaximum(0x000002C4, 100.0f, float(ErectusIni::CustomLocalPlayerSettings.Endurance), false);
+	ErectusMemory::SetActorValueMaximum(0x000002C5, 100.0f, float(ErectusIni::CustomLocalPlayerSettings.Charisma), false);
+	ErectusMemory::SetActorValueMaximum(0x000002C6, 100.0f, float(ErectusIni::CustomLocalPlayerSettings.Agility), false);
+	ErectusMemory::SetActorValueMaximum(0x000002C7, 100.0f, float(ErectusIni::CustomLocalPlayerSettings.Intelligence), false);
+	ErectusMemory::SetActorValueMaximum(0x000002C8, 100.0f, float(ErectusIni::CustomLocalPlayerSettings.Luck), false);
 
-	OnePositionKill(&OpkPage, &OpkPageValid, false);
+	ErectusMemory::OnePositionKill(&OpkPage, &OpkPageValid, false);
 
 	if (OpkPage)
 	{
-		FreeEx(OpkPage);
+		Erectus::FreeEx(OpkPage);
 	}
 
-	FreezeActionPoints(&FreezeApPage, &FreezeApPageValid, false);
+	ErectusMemory::FreezeActionPoints(&FreezeApPage, &FreezeApPageValid, false);
 
 	if (FreezeApPage)
 	{
-		FreeEx(FreezeApPage);
+		Erectus::FreeEx(FreezeApPage);
 	}
 
 	MultihackThreadActive = false;
@@ -601,7 +584,7 @@ DWORD WINAPI MultihackThread(LPVOID lpParameter)
 	return 0xBEAD;
 }
 
-DWORD WINAPI HarvesterThread(LPVOID lpParameter)
+DWORD WINAPI ErectusThread::HarvesterThread(LPVOID lpParameter)
 {
 	UNREFERENCED_PARAMETER(lpParameter);
 
@@ -612,41 +595,41 @@ DWORD WINAPI HarvesterThread(LPVOID lpParameter)
 	int HarvesterCounter = 0;
 	int HarvesterThreshold = 0;
 
-	while (!ThreadDestructionState)
+	while (!ErectusThread::ThreadDestructionState)
 	{
-		if (DoubleKeyPress(VK_CONTROL, VK_OEM_COMMA, &NPCKeyPress))
+		if (Erectus::DoubleKeyPress(VK_CONTROL, VK_OEM_COMMA, &NPCKeyPress))
 		{
-			if (NPCLooterSettings.EntityLooterEnabled)
+			if (ErectusIni::NPCLooterSettings.EntityLooterEnabled)
 			{
-				NPCLooterSettings.EntityLooterEnabled = false;
+				ErectusIni::NPCLooterSettings.EntityLooterEnabled = false;
 			}
 			else
 			{
-				NPCLooterSettings.EntityLooterEnabled = true;
+				ErectusIni::NPCLooterSettings.EntityLooterEnabled = true;
 			}
 		}
 
-		if (DoubleKeyPress(VK_CONTROL, VK_OEM_PERIOD, &ContainerKeyPress))
+		if (Erectus::DoubleKeyPress(VK_CONTROL, VK_OEM_PERIOD, &ContainerKeyPress))
 		{
-			if (ContainerLooterSettings.EntityLooterEnabled)
+			if (ErectusIni::ContainerLooterSettings.EntityLooterEnabled)
 			{
-				ContainerLooterSettings.EntityLooterEnabled = false;
+				ErectusIni::ContainerLooterSettings.EntityLooterEnabled = false;
 			}
 			else
 			{
-				ContainerLooterSettings.EntityLooterEnabled = true;
+				ErectusIni::ContainerLooterSettings.EntityLooterEnabled = true;
 			}
 		}
 
-		if (DoubleKeyPress(VK_CONTROL, 'P', &FloraKeyPress))
+		if (Erectus::DoubleKeyPress(VK_CONTROL, 'P', &FloraKeyPress))
 		{
-			if (CustomHarvesterSettings.HarvesterEnabled)
+			if (ErectusIni::CustomHarvesterSettings.HarvesterEnabled)
 			{
-				CustomHarvesterSettings.HarvesterEnabled = false;
+				ErectusIni::CustomHarvesterSettings.HarvesterEnabled = false;
 			}
 			else
 			{
-				CustomHarvesterSettings.HarvesterEnabled = true;
+				ErectusIni::CustomHarvesterSettings.HarvesterEnabled = true;
 			}
 		}
 
@@ -654,8 +637,8 @@ DWORD WINAPI HarvesterThread(LPVOID lpParameter)
 		if (HarvesterCounter > HarvesterThreshold)
 		{
 			HarvesterCounter = 0;
-			HarvesterThreshold = GetRangedInt(12, 36);
-			Harvester();
+			HarvesterThreshold = Erectus::GetRangedInt(12, 36);
+			ErectusMemory::Harvester();
 		}
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(16));
@@ -666,14 +649,14 @@ DWORD WINAPI HarvesterThread(LPVOID lpParameter)
 	return 0xDEAF;
 }
 
-DWORD WINAPI KnownRecipeThread(LPVOID lpParameter)
+DWORD WINAPI ErectusThread::KnownRecipeThread(LPVOID lpParameter)
 {
 	UNREFERENCED_PARAMETER(lpParameter);
 
 	int KnownRecipeCounter = 0;
 	bool KnownRecipeListUpdated = false;
 
-	while (!ThreadDestructionState)
+	while (!ErectusThread::ThreadDestructionState)
 	{
 		if (KnownRecipeListUpdated)
 		{
@@ -681,7 +664,7 @@ DWORD WINAPI KnownRecipeThread(LPVOID lpParameter)
 			if (KnownRecipeCounter > 300)
 			{
 				KnownRecipeCounter = 0;
-				KnownRecipeListUpdated = UpdateKnownRecipes();
+				KnownRecipeListUpdated = ErectusMemory::UpdateKnownRecipes();
 			}
 		}
 		else
@@ -690,7 +673,7 @@ DWORD WINAPI KnownRecipeThread(LPVOID lpParameter)
 			if (KnownRecipeCounter > 60)
 			{
 				KnownRecipeCounter = 0;
-				KnownRecipeListUpdated = UpdateKnownRecipes();
+				KnownRecipeListUpdated = ErectusMemory::UpdateKnownRecipes();
 			}
 		}
 
@@ -702,7 +685,7 @@ DWORD WINAPI KnownRecipeThread(LPVOID lpParameter)
 	return 0xCADE;
 }
 
-bool CreateProcessThreads()
+bool ErectusThread::CreateProcessThreads()
 {
 	if (ThreadDestructionQueued)
 	{
@@ -721,7 +704,7 @@ bool CreateProcessThreads()
 
 	if (!BufferEntityListThreadActive)
 	{
-		BufferEntityListThreadActive = CloseHandle(CreateThread(NULL, 0, BufferEntityListThread, NULL, 0, NULL));
+		BufferEntityListThreadActive = CloseHandle(CreateThread(NULL, 0, &BufferEntityListThread, NULL, 0, NULL));
 		if (!BufferEntityListThreadActive)
 		{
 			ThreadDestructionQueued = true;
@@ -731,7 +714,7 @@ bool CreateProcessThreads()
 
 	if (!BufferNPCListThreadActive)
 	{
-		BufferNPCListThreadActive = CloseHandle(CreateThread(NULL, 0, BufferNPCListThread, NULL, 0, NULL));
+		BufferNPCListThreadActive = CloseHandle(CreateThread(NULL, 0, &BufferNPCListThread, NULL, 0, NULL));
 		if (!BufferNPCListThreadActive)
 		{
 			ThreadDestructionQueued = true;
@@ -741,7 +724,7 @@ bool CreateProcessThreads()
 
 	if (!BufferPlayerListThreadActive)
 	{
-		BufferPlayerListThreadActive = CloseHandle(CreateThread(NULL, 0, BufferPlayerListThread, NULL, 0, NULL));
+		BufferPlayerListThreadActive = CloseHandle(CreateThread(NULL, 0, &BufferPlayerListThread, NULL, 0, NULL));
 		if (!BufferPlayerListThreadActive)
 		{
 			ThreadDestructionQueued = true;
@@ -751,7 +734,7 @@ bool CreateProcessThreads()
 
 	if (!WeaponEditorThreadActive)
 	{
-		WeaponEditorThreadActive = CloseHandle(CreateThread(NULL, 0, WeaponEditorThread, NULL, 0, NULL));
+		WeaponEditorThreadActive = CloseHandle(CreateThread(NULL, 0, &WeaponEditorThread, NULL, 0, NULL));
 		if (!WeaponEditorThreadActive)
 		{
 			ThreadDestructionQueued = true;
@@ -761,7 +744,7 @@ bool CreateProcessThreads()
 
 	if (!LockingThreadActive)
 	{
-		LockingThreadActive = CloseHandle(CreateThread(NULL, 0, LockingThread, NULL, 0, NULL));
+		LockingThreadActive = CloseHandle(CreateThread(NULL, 0, &LockingThread, NULL, 0, NULL));
 		if (!LockingThreadActive)
 		{
 			ThreadDestructionQueued = true;
@@ -771,7 +754,7 @@ bool CreateProcessThreads()
 
 	if (!MultihackThreadActive)
 	{
-		MultihackThreadActive = CloseHandle(CreateThread(NULL, 0, MultihackThread, NULL, 0, NULL));
+		MultihackThreadActive = CloseHandle(CreateThread(NULL, 0, &MultihackThread, NULL, 0, NULL));
 		if (!MultihackThreadActive)
 		{
 			ThreadDestructionQueued = true;
@@ -781,7 +764,7 @@ bool CreateProcessThreads()
 
 	if (!HarvesterThreadActive)
 	{
-		HarvesterThreadActive = CloseHandle(CreateThread(NULL, 0, HarvesterThread, NULL, 0, NULL));
+		HarvesterThreadActive = CloseHandle(CreateThread(NULL, 0, &HarvesterThread, NULL, 0, NULL));
 		if (!HarvesterThreadActive)
 		{
 			ThreadDestructionQueued = true;
@@ -791,7 +774,7 @@ bool CreateProcessThreads()
 
 	if (!KnownRecipeThreadActive)
 	{
-		KnownRecipeThreadActive = CloseHandle(CreateThread(NULL, 0, KnownRecipeThread, NULL, 0, NULL));
+		KnownRecipeThreadActive = CloseHandle(CreateThread(NULL, 0, &KnownRecipeThread, NULL, 0, NULL));
 		if (!KnownRecipeThreadActive)
 		{
 			ThreadDestructionQueued = true;
@@ -802,7 +785,7 @@ bool CreateProcessThreads()
 	return true;
 }
 
-bool ThreadDestruction()
+bool ErectusThread::ThreadDestruction()
 {
 	ThreadDestructionState = true;
 

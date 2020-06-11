@@ -1,70 +1,46 @@
 #include "ErectusInclude.h"
 
-bool ImGuiContextCreated = false;
-bool ImGuiD3D9Initialized = false;
-bool ImGuiWin32Initialized = false;
-bool ImGuiInitialized = false;
-
-POINT PointerPosition = { 0, 0 };
-ImVec2 PointerOrigin = { 0.0f, 0.0f };
-bool PointerDrag = false;
-
-DWORD64 GetPtrResult = 0;
-DWORD64 GetAddressResult = 0;
-
-bool SwapperSourceToggle = false;
-bool SwapperDestinationToggle = false;
-
-bool TransferSourceToggle = false;
-bool TransferDestinationToggle = false;
-
-int AlphaCode[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-int BravoCode[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-int CharlieCode[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-
-char **FavoritedWeaponsArray = nullptr;
-
-bool DragMenu()
+bool ErectusImGui::DragMenu()
 {
 	if (!GetCursorPos(&PointerPosition)) return false;
 
-	WindowPosition[0] = PointerPosition.x - int(PointerOrigin.x);
-	WindowPosition[1] = PointerPosition.y - int(PointerOrigin.y);
+	ErectusMain::WindowPosition[0] = PointerPosition.x - int(PointerOrigin.x);
+	ErectusMain::WindowPosition[1] = PointerPosition.y - int(PointerOrigin.y);
 
 	int ScreenX = GetSystemMetrics(SM_CXSCREEN);
 	int ScreenY = GetSystemMetrics(SM_CYSCREEN);
 
-	if (WindowPosition[0] < 0)
+	if (ErectusMain::WindowPosition[0] < 0)
 	{
-		WindowPosition[0] = 0;
+		ErectusMain::WindowPosition[0] = 0;
 	}
 
-	if (WindowPosition[1] < 0)
+	if (ErectusMain::WindowPosition[1] < 0)
 	{
-		WindowPosition[1] = 0;
+		ErectusMain::WindowPosition[1] = 0;
 	}
 
-	if (WindowPosition[0] > (ScreenX - WindowSize[0]))
+	if (ErectusMain::WindowPosition[0] > (ScreenX - ErectusMain::WindowSize[0]))
 	{
-		WindowPosition[0] = (ScreenX - WindowSize[0]);
+		ErectusMain::WindowPosition[0] = (ScreenX - ErectusMain::WindowSize[0]);
 	}
 
-	if (WindowPosition[1] > (ScreenY - WindowSize[1]))
+	if (ErectusMain::WindowPosition[1] > (ScreenY - ErectusMain::WindowSize[1]))
 	{
-		WindowPosition[1] = (ScreenY - WindowSize[1]);
+		ErectusMain::WindowPosition[1] = (ScreenY - ErectusMain::WindowSize[1]);
 	}
 
-	return MoveWindow(WindowHwnd, WindowPosition[0], WindowPosition[1], WindowSize[0], WindowSize[1], FALSE);
+	return MoveWindow(ErectusMain::WindowHwnd, ErectusMain::WindowPosition[0], ErectusMain::WindowPosition[1], ErectusMain::WindowSize[0], ErectusMain::WindowSize[1], FALSE);
 }
 
-void ProcessMenu()
+void ErectusImGui::ProcessMenu()
 {
 	ImGui_ImplDX9_NewFrame();
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
 
 	ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
-	ImGui::SetNextWindowSize(ImVec2(float(WindowSize[0]), float(WindowSize[1])));
+	ImGui::SetNextWindowSize(ImVec2(float(ErectusMain::WindowSize[0]), float(ErectusMain::WindowSize[1])));
 	ImGui::SetNextWindowCollapsed(false);
 
 	bool AllowDrag = true;
@@ -74,19 +50,19 @@ void ProcessMenu()
 		{
 			if (ImGui::MenuItem("Exit"))
 			{
-				Close();
+				ErectusMain::Close();
 			}
 
-			if (ProcessSelected)
+			if (ErectusProcess::ProcessSelected)
 			{
 				if (ImGui::MenuItem("Overlay Menu"))
 				{
-					SetOverlayMenu();
+					ErectusMain::SetOverlayMenu();
 				}
 
 				if (ImGui::MenuItem("Overlay"))
 				{
-					SetOverlayPosition(false, true);
+					ErectusMain::SetOverlayPosition(false, true);
 				}
 			}
 			else
@@ -102,29 +78,29 @@ void ProcessMenu()
 			ImGui::EndMenuBar();
 		}
 
-		ImGui::SetNextItemWidth(float(WindowSize[0]) - 16.0f);
-		if (ImGui::BeginCombo("###ProcessList", ProcessList[ProcessIndex]))
+		ImGui::SetNextItemWidth(float(ErectusMain::WindowSize[0]) - 16.0f);
+		if (ImGui::BeginCombo("###ProcessList", ErectusProcess::ProcessList[ErectusProcess::ProcessIndex]))
 		{
-			if (!ProcessListUpdated)
+			if (!ErectusProcess::ProcessListUpdated)
 			{
-				ProcessListUpdated = true;
-				if (!UpdateProcessList())
+				ErectusProcess::ProcessListUpdated = true;
+				if (!ErectusProcess::UpdateProcessList())
 				{
-					ResetProcessData(true, 1);
+					ErectusProcess::ResetProcessData(true, 1);
 				}
 			}
 
-			for (int i = 0; i < ProcessListSize; i++)
+			for (int i = 0; i < ErectusProcess::ProcessListSize; i++)
 			{
-				if (ImGui::Selectable(ProcessList[i]))
+				if (ImGui::Selectable(ErectusProcess::ProcessList[i]))
 				{
-					ProcessIndex = i;
-					if (ProcessIndex)
+					ErectusProcess::ProcessIndex = i;
+					if (ErectusProcess::ProcessIndex)
 					{
-						ProcessSelected = ProcessValid(ProcessIdList[ProcessIndex]);
-						if (!ProcessSelected)
+						ErectusProcess::ProcessSelected = ErectusProcess::ProcessValid(ErectusProcess::ProcessIdList[ErectusProcess::ProcessIndex]);
+						if (!ErectusProcess::ProcessSelected)
 						{
-							ResetProcessData(false, 1);
+							ErectusProcess::ResetProcessData(false, 1);
 						}
 					}
 				}
@@ -135,26 +111,26 @@ void ProcessMenu()
 		}
 		else
 		{
-			if (ProcessListUpdated)
+			if (ErectusProcess::ProcessListUpdated)
 			{
-				ProcessListUpdated = false;
+				ErectusProcess::ProcessListUpdated = false;
 			}
 		}
 
 		ImGui::Separator();
-		switch (ProcessErrorId)
+		switch (ErectusProcess::ProcessErrorId)
 		{
 		case 0:
-			ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), ProcessError);
+			ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), ErectusProcess::ProcessError);
 			break;
 		case 1:
-			ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), ProcessError);
+			ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), ErectusProcess::ProcessError);
 			break;
 		case 2:
-			ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), ProcessError);
+			ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), ErectusProcess::ProcessError);
 			break;
 		default:
-			ImGui::Text(ProcessError);
+			ImGui::Text(ErectusProcess::ProcessError);
 			break;
 		}
 
@@ -173,22 +149,22 @@ void ProcessMenu()
 		ImGui::Separator();
 		ImGui::Text("PID (Process Id)");
 		ImGui::NextColumn();
-		ImGui::Text("%lu", Pid);
+		ImGui::Text("%lu", ErectusProcess::Pid);
 		ImGui::NextColumn();
 		ImGui::Separator();
 		ImGui::Text("HWND (Window)");
 		ImGui::NextColumn();
-		ImGui::Text("%p", Hwnd);
+		ImGui::Text("%p", ErectusProcess::Hwnd);
 		ImGui::NextColumn();
 		ImGui::Separator();
 		ImGui::Text("Base Address");
 		ImGui::NextColumn();
-		ImGui::Text("%016llX", Exe);
+		ImGui::Text("%016llX", ErectusProcess::Exe);
 		ImGui::NextColumn();
 		ImGui::Separator();
 		ImGui::Text("HANDLE");
 		ImGui::NextColumn();
-		ImGui::Text("%p", Handle);
+		ImGui::Text("%p", ErectusProcess::Handle);
 		ImGui::Columns(1);
 		ImGui::Separator();
 		ImGui::PopItemFlag();
@@ -283,14 +259,14 @@ void SmallButtonToggle(const char *Label, bool *State)
 	}
 }
 
-void OverlayMenu()
+void ErectusImGui::OverlayMenu()
 {
 	ImGui_ImplDX9_NewFrame();
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
 
 	ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
-	ImGui::SetNextWindowSize(ImVec2(float(WindowSize[0]), float(WindowSize[1])));
+	ImGui::SetNextWindowSize(ImVec2(float(ErectusMain::WindowSize[0]), float(ErectusMain::WindowSize[1])));
 	ImGui::SetNextWindowCollapsed(false);
 
 	bool AllowDrag = true;
@@ -300,19 +276,19 @@ void OverlayMenu()
 		{
 			if (ImGui::MenuItem("Exit"))
 			{
-				Close();
+				ErectusMain::Close();
 			}
 
 			if (ImGui::MenuItem("Process Menu"))
 			{
-				SetProcessMenu();
+				ErectusProcess::SetProcessMenu();
 			}
 
 			if (ImGui::MenuItem("Overlay"))
 			{
-				if (!SetOverlayPosition(false, true))
+				if (!ErectusMain::SetOverlayPosition(false, true))
 				{
-					SetProcessMenu();
+					ErectusProcess::SetProcessMenu();
 				}
 			}
 
@@ -325,187 +301,187 @@ void OverlayMenu()
 			{
 				if (ImGui::CollapsingHeader("Player ESP Settings"))
 				{
-					ButtonToggle("Player ESP Enabled", &PlayerSettings.Enabled);
+					ButtonToggle("Player ESP Enabled", &ErectusIni::PlayerSettings.Enabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderInt("###PlayerSettingsEnabledDistance", &PlayerSettings.EnabledDistance, 0, 3000, "Distance: %d");
+					ImGui::SliderInt("###PlayerSettingsEnabledDistance", &ErectusIni::PlayerSettings.EnabledDistance, 0, 3000, "Distance: %d");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateInt(&PlayerSettings.EnabledDistance, 0, 3000);
+					Erectus::Erectus::ValidateInt(&ErectusIni::PlayerSettings.EnabledDistance, 0, 3000);
 
-					ButtonToggle("Draw Living Players", &PlayerSettings.DrawAlive);
+					ButtonToggle("Draw Living Players", &ErectusIni::PlayerSettings.DrawAlive);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::ColorEdit3("###PlayerSettingsAliveColor", PlayerSettings.AliveColor);
+					ImGui::ColorEdit3("###PlayerSettingsAliveColor", ErectusIni::PlayerSettings.AliveColor);
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateRGB(PlayerSettings.AliveColor);
+					Erectus::Erectus::ValidateRGB(ErectusIni::PlayerSettings.AliveColor);
 
-					ButtonToggle("Draw Downed Players", &PlayerSettings.DrawDowned);
+					ButtonToggle("Draw Downed Players", &ErectusIni::PlayerSettings.DrawDowned);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::ColorEdit3("###PlayerSettingsDownedColor", PlayerSettings.DownedColor);
+					ImGui::ColorEdit3("###PlayerSettingsDownedColor", ErectusIni::PlayerSettings.DownedColor);
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateRGB(PlayerSettings.DownedColor);
+					Erectus::Erectus::ValidateRGB(ErectusIni::PlayerSettings.DownedColor);
 
-					ButtonToggle("Draw Dead Players", &PlayerSettings.DrawDead);
+					ButtonToggle("Draw Dead Players", &ErectusIni::PlayerSettings.DrawDead);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::ColorEdit3("###PlayerSettingsDeadColor", PlayerSettings.DeadColor);
+					ImGui::ColorEdit3("###PlayerSettingsDeadColor", ErectusIni::PlayerSettings.DeadColor);
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateRGB(PlayerSettings.DeadColor);
+					Erectus::Erectus::ValidateRGB(ErectusIni::PlayerSettings.DeadColor);
 
-					ButtonToggle("Draw Unknown Players", &PlayerSettings.DrawUnknown);
+					ButtonToggle("Draw Unknown Players", &ErectusIni::PlayerSettings.DrawUnknown);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::ColorEdit3("###PlayerSettingsUnknownColor", PlayerSettings.UnknownColor);
+					ImGui::ColorEdit3("###PlayerSettingsUnknownColor", ErectusIni::PlayerSettings.UnknownColor);
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateRGB(PlayerSettings.UnknownColor);
+					Erectus::Erectus::ValidateRGB(ErectusIni::PlayerSettings.UnknownColor);
 
-					ButtonToggle("Draw Enabled Players", &PlayerSettings.DrawEnabled);
+					ButtonToggle("Draw Enabled Players", &ErectusIni::PlayerSettings.DrawEnabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderFloat("###PlayerSettingsEnabledAlpha", &PlayerSettings.EnabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
+					ImGui::SliderFloat("###PlayerSettingsEnabledAlpha", &ErectusIni::PlayerSettings.EnabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateFloat(&PlayerSettings.EnabledAlpha, 0.0f, 1.0f);
+					Erectus::Erectus::ValidateFloat(&ErectusIni::PlayerSettings.EnabledAlpha, 0.0f, 1.0f);
 
-					ButtonToggle("Draw Disabled Players", &PlayerSettings.DrawDisabled);
+					ButtonToggle("Draw Disabled Players", &ErectusIni::PlayerSettings.DrawDisabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderFloat("###PlayerSettingsDisabledAlpha", &PlayerSettings.DisabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
+					ImGui::SliderFloat("###PlayerSettingsDisabledAlpha", &ErectusIni::PlayerSettings.DisabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateFloat(&PlayerSettings.DisabledAlpha, 0.0f, 1.0f);
+					Erectus::Erectus::ValidateFloat(&ErectusIni::PlayerSettings.DisabledAlpha, 0.0f, 1.0f);
 
-					ButtonToggle("Draw Named Players", &PlayerSettings.DrawNamed);
+					ButtonToggle("Draw Named Players", &ErectusIni::PlayerSettings.DrawNamed);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Draw Unnamed Players", &PlayerSettings.DrawUnnamed);
+					ButtonToggle("Draw Unnamed Players", &ErectusIni::PlayerSettings.DrawUnnamed);
 
-					ButtonToggle("Show Player Name", &PlayerSettings.ShowName);
+					ButtonToggle("Show Player Name", &ErectusIni::PlayerSettings.ShowName);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Show Player Distance", &PlayerSettings.ShowDistance);
+					ButtonToggle("Show Player Distance", &ErectusIni::PlayerSettings.ShowDistance);
 
-					ButtonToggle("Show Player Health", &PlayerSettings.ShowHealth);
+					ButtonToggle("Show Player Health", &ErectusIni::PlayerSettings.ShowHealth);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Show Dead Player Health", &PlayerSettings.ShowDeadHealth);
+					ButtonToggle("Show Dead Player Health", &ErectusIni::PlayerSettings.ShowDeadHealth);
 
-					ButtonToggle("Player Text Shadowed", &PlayerSettings.TextShadowed);
+					ButtonToggle("Player Text Shadowed", &ErectusIni::PlayerSettings.TextShadowed);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Player Text Centered", &PlayerSettings.TextCentered);
+					ButtonToggle("Player Text Centered", &ErectusIni::PlayerSettings.TextCentered);
 				}
 
 				if (ImGui::CollapsingHeader("NPC ESP Settings"))
 				{
-					ButtonToggle("NPC ESP Enabled", &NpcSettings.Enabled);
+					ButtonToggle("NPC ESP Enabled", &ErectusIni::NpcSettings.Enabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderInt("###NpcSettingsEnabledDistance", &NpcSettings.EnabledDistance, 0, 3000, "Distance: %d");
+					ImGui::SliderInt("###NpcSettingsEnabledDistance", &ErectusIni::NpcSettings.EnabledDistance, 0, 3000, "Distance: %d");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateInt(&NpcSettings.EnabledDistance, 0, 3000);
+					Erectus::ValidateInt(&ErectusIni::NpcSettings.EnabledDistance, 0, 3000);
 
-					ButtonToggle("Draw Living NPCs", &NpcSettings.DrawAlive);
+					ButtonToggle("Draw Living NPCs", &ErectusIni::NpcSettings.DrawAlive);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::ColorEdit3("###NpcSettingsAliveColor", NpcSettings.AliveColor);
+					ImGui::ColorEdit3("###NpcSettingsAliveColor", ErectusIni::NpcSettings.AliveColor);
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateRGB(NpcSettings.AliveColor);
+					Erectus::ValidateRGB(ErectusIni::NpcSettings.AliveColor);
 
-					ButtonToggle("Draw Downed NPCs", &NpcSettings.DrawDowned);
+					ButtonToggle("Draw Downed NPCs", &ErectusIni::NpcSettings.DrawDowned);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::ColorEdit3("###NpcSettingsDownedColor", NpcSettings.DownedColor);
+					ImGui::ColorEdit3("###NpcSettingsDownedColor", ErectusIni::NpcSettings.DownedColor);
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateRGB(NpcSettings.DownedColor);
+					Erectus::ValidateRGB(ErectusIni::NpcSettings.DownedColor);
 
-					ButtonToggle("Draw Dead NPCs", &NpcSettings.DrawDead);
+					ButtonToggle("Draw Dead NPCs", &ErectusIni::NpcSettings.DrawDead);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::ColorEdit3("###NpcSettingsDeadColor", NpcSettings.DeadColor);
+					ImGui::ColorEdit3("###NpcSettingsDeadColor", ErectusIni::NpcSettings.DeadColor);
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateRGB(NpcSettings.DeadColor);
+					Erectus::ValidateRGB(ErectusIni::NpcSettings.DeadColor);
 
-					ButtonToggle("Draw Unknown NPCs", &NpcSettings.DrawUnknown);
+					ButtonToggle("Draw Unknown NPCs", &ErectusIni::NpcSettings.DrawUnknown);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::ColorEdit3("###NpcSettingsUnknownColor", NpcSettings.UnknownColor);
+					ImGui::ColorEdit3("###NpcSettingsUnknownColor", ErectusIni::NpcSettings.UnknownColor);
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateRGB(NpcSettings.UnknownColor);
+					Erectus::ValidateRGB(ErectusIni::NpcSettings.UnknownColor);
 
-					ButtonToggle("Draw Enabled NPCs", &NpcSettings.DrawEnabled);
+					ButtonToggle("Draw Enabled NPCs", &ErectusIni::NpcSettings.DrawEnabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderFloat("###NpcSettingsEnabledAlpha", &NpcSettings.EnabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
+					ImGui::SliderFloat("###NpcSettingsEnabledAlpha", &ErectusIni::NpcSettings.EnabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateFloat(&NpcSettings.EnabledAlpha, 0.0f, 1.0f);
+					Erectus::ValidateFloat(&ErectusIni::NpcSettings.EnabledAlpha, 0.0f, 1.0f);
 
-					ButtonToggle("Draw Disabled NPCs", &NpcSettings.DrawDisabled);
+					ButtonToggle("Draw Disabled NPCs", &ErectusIni::NpcSettings.DrawDisabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderFloat("###NpcSettingsDisabledAlpha", &NpcSettings.DisabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
+					ImGui::SliderFloat("###NpcSettingsDisabledAlpha", &ErectusIni::NpcSettings.DisabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateFloat(&NpcSettings.DisabledAlpha, 0.0f, 1.0f);
+					Erectus::ValidateFloat(&ErectusIni::NpcSettings.DisabledAlpha, 0.0f, 1.0f);
 
-					ButtonToggle("Draw Named NPCs", &NpcSettings.DrawNamed);
+					ButtonToggle("Draw Named NPCs", &ErectusIni::NpcSettings.DrawNamed);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Draw Unnamed NPCs", &NpcSettings.DrawUnnamed);
+					ButtonToggle("Draw Unnamed NPCs", &ErectusIni::NpcSettings.DrawUnnamed);
 
-					ButtonToggle("Show NPC Name", &NpcSettings.ShowName);
+					ButtonToggle("Show NPC Name", &ErectusIni::NpcSettings.ShowName);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Show NPC Distance", &NpcSettings.ShowDistance);
+					ButtonToggle("Show NPC Distance", &ErectusIni::NpcSettings.ShowDistance);
 
-					ButtonToggle("Show NPC Health", &NpcSettings.ShowHealth);
+					ButtonToggle("Show NPC Health", &ErectusIni::NpcSettings.ShowHealth);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Show Dead NPC Health", &NpcSettings.ShowDeadHealth);
+					ButtonToggle("Show Dead NPC Health", &ErectusIni::NpcSettings.ShowDeadHealth);
 
-					ButtonToggle("NPC Text Shadowed", &NpcSettings.TextShadowed);
+					ButtonToggle("NPC Text Shadowed", &ErectusIni::NpcSettings.TextShadowed);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("NPC Text Centered", &NpcSettings.TextCentered);
+					ButtonToggle("NPC Text Centered", &ErectusIni::NpcSettings.TextCentered);
 
-					ButtonToggle("Always Draw Living 1* NPCs", &CustomLegendarySettings.OverrideLivingOneStar);
+					ButtonToggle("Always Draw Living 1* NPCs", &ErectusIni::CustomLegendarySettings.OverrideLivingOneStar);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::ColorEdit3("###LivingOneStarColor", CustomLegendarySettings.LivingOneStarColor);
+					ImGui::ColorEdit3("###LivingOneStarColor", ErectusIni::CustomLegendarySettings.LivingOneStarColor);
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateRGB(CustomLegendarySettings.LivingOneStarColor);
+					Erectus::ValidateRGB(ErectusIni::CustomLegendarySettings.LivingOneStarColor);
 
-					ButtonToggle("Always Draw Dead 1* NPCs", &CustomLegendarySettings.OverrideDeadOneStar);
+					ButtonToggle("Always Draw Dead 1* NPCs", &ErectusIni::CustomLegendarySettings.OverrideDeadOneStar);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::ColorEdit3("###DeadOneStarColor", CustomLegendarySettings.DeadOneStarColor);
+					ImGui::ColorEdit3("###DeadOneStarColor", ErectusIni::CustomLegendarySettings.DeadOneStarColor);
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateRGB(CustomLegendarySettings.DeadOneStarColor);
+					Erectus::ValidateRGB(ErectusIni::CustomLegendarySettings.DeadOneStarColor);
 
-					ButtonToggle("Always Draw Living 2* NPCs", &CustomLegendarySettings.OverrideLivingTwoStar);
+					ButtonToggle("Always Draw Living 2* NPCs", &ErectusIni::CustomLegendarySettings.OverrideLivingTwoStar);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::ColorEdit3("###LivingTwoStarColor", CustomLegendarySettings.LivingTwoStarColor);
+					ImGui::ColorEdit3("###LivingTwoStarColor", ErectusIni::CustomLegendarySettings.LivingTwoStarColor);
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateRGB(CustomLegendarySettings.LivingTwoStarColor);
+					Erectus::ValidateRGB(ErectusIni::CustomLegendarySettings.LivingTwoStarColor);
 
-					ButtonToggle("Always Draw Dead 2* NPCs", &CustomLegendarySettings.OverrideDeadTwoStar);
+					ButtonToggle("Always Draw Dead 2* NPCs", &ErectusIni::CustomLegendarySettings.OverrideDeadTwoStar);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::ColorEdit3("###DeadTwoStarColor", CustomLegendarySettings.DeadTwoStarColor);
+					ImGui::ColorEdit3("###DeadTwoStarColor", ErectusIni::CustomLegendarySettings.DeadTwoStarColor);
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateRGB(CustomLegendarySettings.DeadTwoStarColor);
+					Erectus::ValidateRGB(ErectusIni::CustomLegendarySettings.DeadTwoStarColor);
 
-					ButtonToggle("Always Draw Living 3* NPCs", &CustomLegendarySettings.OverrideLivingThreeStar);
+					ButtonToggle("Always Draw Living 3* NPCs", &ErectusIni::CustomLegendarySettings.OverrideLivingThreeStar);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::ColorEdit3("###LivingThreeStarColor", CustomLegendarySettings.LivingThreeStarColor);
+					ImGui::ColorEdit3("###LivingThreeStarColor", ErectusIni::CustomLegendarySettings.LivingThreeStarColor);
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateRGB(CustomLegendarySettings.LivingThreeStarColor);
+					Erectus::ValidateRGB(ErectusIni::CustomLegendarySettings.LivingThreeStarColor);
 
-					ButtonToggle("Always Draw Dead 3* NPCs", &CustomLegendarySettings.OverrideDeadThreeStar);
+					ButtonToggle("Always Draw Dead 3* NPCs", &ErectusIni::CustomLegendarySettings.OverrideDeadThreeStar);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::ColorEdit3("###DeadThreeStarColor", CustomLegendarySettings.DeadThreeStarColor);
+					ImGui::ColorEdit3("###DeadThreeStarColor", ErectusIni::CustomLegendarySettings.DeadThreeStarColor);
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateRGB(CustomLegendarySettings.DeadThreeStarColor);
+					Erectus::ValidateRGB(ErectusIni::CustomLegendarySettings.DeadThreeStarColor);
 					
-					LargeButtonToggle("Hide NPCs in the Settler Faction", &CustomExtraNPCSettings.HideSettlerFaction);
-					LargeButtonToggle("Hide NPCs in the Crater Raider Faction", &CustomExtraNPCSettings.HideCraterRaiderFaction);
-					LargeButtonToggle("Hide NPCs in the Diehards Faction", &CustomExtraNPCSettings.HideDieHardFaction);
-					LargeButtonToggle("Hide NPCs in the Secret Service Faction", &CustomExtraNPCSettings.HideSecretServiceFaction);
+					LargeButtonToggle("Hide NPCs in the Settler Faction", &ErectusIni::CustomExtraNPCSettings.HideSettlerFaction);
+					LargeButtonToggle("Hide NPCs in the Crater Raider Faction", &ErectusIni::CustomExtraNPCSettings.HideCraterRaiderFaction);
+					LargeButtonToggle("Hide NPCs in the Diehards Faction", &ErectusIni::CustomExtraNPCSettings.HideDieHardFaction);
+					LargeButtonToggle("Hide NPCs in the Secret Service Faction", &ErectusIni::CustomExtraNPCSettings.HideSecretServiceFaction);
 
-					LargeButtonToggle("NPC Blacklist Enabled", &CustomExtraNPCSettings.UseNPCBlacklist);
+					LargeButtonToggle("NPC Blacklist Enabled", &ErectusIni::CustomExtraNPCSettings.UseNPCBlacklist);
 					if (ImGui::CollapsingHeader("NPC Blacklist"))
 					{
 						for (int i = 0; i < 64; i++)
@@ -514,57 +490,57 @@ void OverlayMenu()
 							char NPCBlacklistLabelText[sizeof("###NPCBlacklist63")];
 							sprintf_s(NPCBlacklistEnabledText, "NPC Blacklist: %d", i);
 							sprintf_s(NPCBlacklistLabelText, "###NPCBlacklist%d", i);
-							ButtonToggle(NPCBlacklistEnabledText, &CustomExtraNPCSettings.NPCBlacklistEnabled[i]);
+							ButtonToggle(NPCBlacklistEnabledText, &ErectusIni::CustomExtraNPCSettings.NPCBlacklistEnabled[i]);
 							ImGui::SameLine(235.0f);
 							char FormidText[sizeof("00000000")];
-							sprintf_s(FormidText, "%08lX", CustomExtraNPCSettings.NPCBlacklist[i]);
+							sprintf_s(FormidText, "%08lX", ErectusIni::CustomExtraNPCSettings.NPCBlacklist[i]);
 							ImGui::SetNextItemWidth(224.0f);
 							ImGui::InputText(NPCBlacklistLabelText, FormidText, sizeof(FormidText), ImGuiInputTextFlags_CharsHexadecimal);
 							if (ImGui::IsItemActive()) AllowDrag = false;
-							sscanf_s(FormidText, "%08lX", &CustomExtraNPCSettings.NPCBlacklist[i]);
+							sscanf_s(FormidText, "%08lX", &ErectusIni::CustomExtraNPCSettings.NPCBlacklist[i]);
 						}
 					}
 				}
 
 				if (ImGui::CollapsingHeader("Container ESP Settings"))
 				{
-					ButtonToggle("Container ESP Enabled", &ContainerSettings.Enabled);
+					ButtonToggle("Container ESP Enabled", &ErectusIni::ContainerSettings.Enabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderInt("###ContainerSettingsEnabledDistance", &ContainerSettings.EnabledDistance, 0, 3000, "Distance: %d");
+					ImGui::SliderInt("###ContainerSettingsEnabledDistance", &ErectusIni::ContainerSettings.EnabledDistance, 0, 3000, "Distance: %d");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateInt(&ContainerSettings.EnabledDistance, 0, 3000);
+					Erectus::ValidateInt(&ErectusIni::ContainerSettings.EnabledDistance, 0, 3000);
 
 					ImGui::SetNextItemWidth(451.0f);
-					ImGui::ColorEdit3("###ContainerSettingsColor", ContainerSettings.Color);
+					ImGui::ColorEdit3("###ContainerSettingsColor", ErectusIni::ContainerSettings.Color);
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateRGB(ContainerSettings.Color);
+					Erectus::ValidateRGB(ErectusIni::ContainerSettings.Color);
 
-					ButtonToggle("Draw Enabled Containers", &ContainerSettings.DrawEnabled);
+					ButtonToggle("Draw Enabled Containers", &ErectusIni::ContainerSettings.DrawEnabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderFloat("###ContainerSettingsEnabledAlpha", &ContainerSettings.EnabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
+					ImGui::SliderFloat("###ContainerSettingsEnabledAlpha", &ErectusIni::ContainerSettings.EnabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateFloat(&ContainerSettings.EnabledAlpha, 0.0f, 1.0f);
+					Erectus::ValidateFloat(&ErectusIni::ContainerSettings.EnabledAlpha, 0.0f, 1.0f);
 
-					ButtonToggle("Draw Disabled Containers", &ContainerSettings.DrawDisabled);
+					ButtonToggle("Draw Disabled Containers", &ErectusIni::ContainerSettings.DrawDisabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderFloat("###ContainerSettingsDisabledAlpha", &ContainerSettings.DisabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
+					ImGui::SliderFloat("###ContainerSettingsDisabledAlpha", &ErectusIni::ContainerSettings.DisabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateFloat(&ContainerSettings.DisabledAlpha, 0.0f, 1.0f);
+					Erectus::ValidateFloat(&ErectusIni::ContainerSettings.DisabledAlpha, 0.0f, 1.0f);
 
-					ButtonToggle("Draw Named Containers", &ContainerSettings.DrawNamed);
+					ButtonToggle("Draw Named Containers", &ErectusIni::ContainerSettings.DrawNamed);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Draw Unnamed Containers", &ContainerSettings.DrawUnnamed);
+					ButtonToggle("Draw Unnamed Containers", &ErectusIni::ContainerSettings.DrawUnnamed);
 
-					ButtonToggle("Show Container Name", &ContainerSettings.ShowName);
+					ButtonToggle("Show Container Name", &ErectusIni::ContainerSettings.ShowName);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Show Container Distance", &ContainerSettings.ShowDistance);
+					ButtonToggle("Show Container Distance", &ErectusIni::ContainerSettings.ShowDistance);
 
-					ButtonToggle("Container Text Shadowed", &ContainerSettings.TextShadowed);
+					ButtonToggle("Container Text Shadowed", &ErectusIni::ContainerSettings.TextShadowed);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Container Text Centered", &ContainerSettings.TextCentered);
+					ButtonToggle("Container Text Centered", &ErectusIni::ContainerSettings.TextCentered);
 
 					if (ImGui::CollapsingHeader("Container Whitelist Settings"))
 					{
@@ -574,57 +550,57 @@ void OverlayMenu()
 							char WhitelistText[sizeof("###ContainerWhitelist31")];
 							sprintf_s(WhitelistedText, "Container Whitelist Slot: %d", i);
 							sprintf_s(WhitelistText, "###ContainerWhitelist%d", i);
-							ButtonToggle(WhitelistedText, &ContainerSettings.Whitelisted[i]);
+							ButtonToggle(WhitelistedText, &ErectusIni::ContainerSettings.Whitelisted[i]);
 							ImGui::SameLine(235.0f);
 							char FormidText[sizeof("00000000")];
-							sprintf_s(FormidText, "%08lX", ContainerSettings.Whitelist[i]);
+							sprintf_s(FormidText, "%08lX", ErectusIni::ContainerSettings.Whitelist[i]);
 							ImGui::SetNextItemWidth(224.0f);
 							ImGui::InputText(WhitelistText, FormidText, sizeof(FormidText), ImGuiInputTextFlags_CharsHexadecimal);
 							if (ImGui::IsItemActive()) AllowDrag = false;
-							sscanf_s(FormidText, "%08lX", &ContainerSettings.Whitelist[i]);
+							sscanf_s(FormidText, "%08lX", &ErectusIni::ContainerSettings.Whitelist[i]);
 						}
 					}
 				}
 
 				if (ImGui::CollapsingHeader("Junk ESP Settings"))
 				{
-					ButtonToggle("Junk ESP Enabled", &JunkSettings.Enabled);
+					ButtonToggle("Junk ESP Enabled", &ErectusIni::JunkSettings.Enabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderInt("###JunkSettingsEnabledDistance", &JunkSettings.EnabledDistance, 0, 3000, "Distance: %d");
+					ImGui::SliderInt("###JunkSettingsEnabledDistance", &ErectusIni::JunkSettings.EnabledDistance, 0, 3000, "Distance: %d");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateInt(&JunkSettings.EnabledDistance, 0, 3000);
+					Erectus::ValidateInt(&ErectusIni::JunkSettings.EnabledDistance, 0, 3000);
 
 					ImGui::SetNextItemWidth(451.0f);
-					ImGui::ColorEdit3("###JunkSettingsColor", JunkSettings.Color);
+					ImGui::ColorEdit3("###JunkSettingsColor", ErectusIni::JunkSettings.Color);
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateRGB(JunkSettings.Color);
+					Erectus::ValidateRGB(ErectusIni::JunkSettings.Color);
 
-					ButtonToggle("Draw Enabled Junk", &JunkSettings.DrawEnabled);
+					ButtonToggle("Draw Enabled Junk", &ErectusIni::JunkSettings.DrawEnabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderFloat("###JunkSettingsEnabledAlpha", &JunkSettings.EnabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
+					ImGui::SliderFloat("###JunkSettingsEnabledAlpha", &ErectusIni::JunkSettings.EnabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateFloat(&JunkSettings.EnabledAlpha, 0.0f, 1.0f);
+					Erectus::ValidateFloat(&ErectusIni::JunkSettings.EnabledAlpha, 0.0f, 1.0f);
 
-					ButtonToggle("Draw Disabled Junk", &JunkSettings.DrawDisabled);
+					ButtonToggle("Draw Disabled Junk", &ErectusIni::JunkSettings.DrawDisabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderFloat("###JunkSettingsDisabledAlpha", &JunkSettings.DisabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
+					ImGui::SliderFloat("###JunkSettingsDisabledAlpha", &ErectusIni::JunkSettings.DisabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateFloat(&JunkSettings.DisabledAlpha, 0.0f, 1.0f);
+					Erectus::ValidateFloat(&ErectusIni::JunkSettings.DisabledAlpha, 0.0f, 1.0f);
 
-					ButtonToggle("Draw Named Junk", &JunkSettings.DrawNamed);
+					ButtonToggle("Draw Named Junk", &ErectusIni::JunkSettings.DrawNamed);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Draw Unnamed Junk", &JunkSettings.DrawUnnamed);
+					ButtonToggle("Draw Unnamed Junk", &ErectusIni::JunkSettings.DrawUnnamed);
 
-					ButtonToggle("Show Junk Name", &JunkSettings.ShowName);
+					ButtonToggle("Show Junk Name", &ErectusIni::JunkSettings.ShowName);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Show Junk Distance", &JunkSettings.ShowDistance);
+					ButtonToggle("Show Junk Distance", &ErectusIni::JunkSettings.ShowDistance);
 
-					ButtonToggle("Junk Text Shadowed", &JunkSettings.TextShadowed);
+					ButtonToggle("Junk Text Shadowed", &ErectusIni::JunkSettings.TextShadowed);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Junk Text Centered", &JunkSettings.TextCentered);
+					ButtonToggle("Junk Text Centered", &ErectusIni::JunkSettings.TextCentered);
 
 					if (ImGui::CollapsingHeader("Junk Whitelist Settings"))
 					{
@@ -634,61 +610,61 @@ void OverlayMenu()
 							char WhitelistText[sizeof("###JunkWhitelist31")];
 							sprintf_s(WhitelistedText, "Junk Whitelist Slot: %d", i);
 							sprintf_s(WhitelistText, "###JunkWhitelist%d", i);
-							ButtonToggle(WhitelistedText, &JunkSettings.Whitelisted[i]);
+							ButtonToggle(WhitelistedText, &ErectusIni::JunkSettings.Whitelisted[i]);
 							ImGui::SameLine(235.0f);
 							char FormidText[sizeof("00000000")];
-							sprintf_s(FormidText, "%08lX", JunkSettings.Whitelist[i]);
+							sprintf_s(FormidText, "%08lX", ErectusIni::JunkSettings.Whitelist[i]);
 							ImGui::SetNextItemWidth(224.0f);
 							ImGui::InputText(WhitelistText, FormidText, sizeof(FormidText), ImGuiInputTextFlags_CharsHexadecimal);
 							if (ImGui::IsItemActive()) AllowDrag = false;
-							sscanf_s(FormidText, "%08lX", &JunkSettings.Whitelist[i]);
+							sscanf_s(FormidText, "%08lX", &ErectusIni::JunkSettings.Whitelist[i]);
 						}
 					}
 				}
 
 				if (ImGui::CollapsingHeader("Plan ESP Settings"))
 				{
-					ButtonToggle("Plan ESP Enabled", &PlanSettings.Enabled);
+					ButtonToggle("Plan ESP Enabled", &ErectusIni::PlanSettings.Enabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderInt("###PlanSettingsEnabledDistance", &PlanSettings.EnabledDistance, 0, 3000, "Distance: %d");
+					ImGui::SliderInt("###PlanSettingsEnabledDistance", &ErectusIni::PlanSettings.EnabledDistance, 0, 3000, "Distance: %d");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateInt(&PlanSettings.EnabledDistance, 0, 3000);
+					Erectus::ValidateInt(&ErectusIni::PlanSettings.EnabledDistance, 0, 3000);
 
 					ImGui::SetNextItemWidth(451.0f);
-					ImGui::ColorEdit3("###PlanSettingsColor", PlanSettings.Color);
+					ImGui::ColorEdit3("###PlanSettingsColor", ErectusIni::PlanSettings.Color);
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateRGB(PlanSettings.Color);
+					Erectus::ValidateRGB(ErectusIni::PlanSettings.Color);
 
-					ButtonToggle("Draw Enabled Plans", &PlanSettings.DrawEnabled);
+					ButtonToggle("Draw Enabled Plans", &ErectusIni::PlanSettings.DrawEnabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderFloat("###PlanSettingsEnabledAlpha", &PlanSettings.EnabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
+					ImGui::SliderFloat("###PlanSettingsEnabledAlpha", &ErectusIni::PlanSettings.EnabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateFloat(&PlanSettings.EnabledAlpha, 0.0f, 1.0f);
+					Erectus::ValidateFloat(&ErectusIni::PlanSettings.EnabledAlpha, 0.0f, 1.0f);
 
-					ButtonToggle("Draw Disabled Plans", &PlanSettings.DrawDisabled);
+					ButtonToggle("Draw Disabled Plans", &ErectusIni::PlanSettings.DrawDisabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderFloat("###PlanSettingsDisabledAlpha", &PlanSettings.DisabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
+					ImGui::SliderFloat("###PlanSettingsDisabledAlpha", &ErectusIni::PlanSettings.DisabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateFloat(&PlanSettings.DisabledAlpha, 0.0f, 1.0f);
+					Erectus::ValidateFloat(&ErectusIni::PlanSettings.DisabledAlpha, 0.0f, 1.0f);
 
-					ButtonToggle("Draw Known Plans", &CustomKnownRecipeSettings.KnownRecipesEnabled);
+					ButtonToggle("Draw Known Plans", &ErectusIni::CustomKnownRecipeSettings.KnownRecipesEnabled);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Draw Unknown Plans", &CustomKnownRecipeSettings.UnknownRecipesEnabled);
+					ButtonToggle("Draw Unknown Plans", &ErectusIni::CustomKnownRecipeSettings.UnknownRecipesEnabled);
 
-					ButtonToggle("Draw Named Plans", &PlanSettings.DrawNamed);
+					ButtonToggle("Draw Named Plans", &ErectusIni::PlanSettings.DrawNamed);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Draw Unnamed Plans", &PlanSettings.DrawUnnamed);
+					ButtonToggle("Draw Unnamed Plans", &ErectusIni::PlanSettings.DrawUnnamed);
 
-					ButtonToggle("Show Plan Name", &PlanSettings.ShowName);
+					ButtonToggle("Show Plan Name", &ErectusIni::PlanSettings.ShowName);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Show Plan Distance", &PlanSettings.ShowDistance);
+					ButtonToggle("Show Plan Distance", &ErectusIni::PlanSettings.ShowDistance);
 
-					ButtonToggle("Plan Text Shadowed", &PlanSettings.TextShadowed);
+					ButtonToggle("Plan Text Shadowed", &ErectusIni::PlanSettings.TextShadowed);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Plan Text Centered", &PlanSettings.TextCentered);
+					ButtonToggle("Plan Text Centered", &ErectusIni::PlanSettings.TextCentered);
 
 					if (ImGui::CollapsingHeader("Plan Whitelist Settings"))
 					{
@@ -698,57 +674,57 @@ void OverlayMenu()
 							char WhitelistText[sizeof("###PlanWhitelist31")];
 							sprintf_s(WhitelistedText, "Plan Whitelist Slot: %d", i);
 							sprintf_s(WhitelistText, "###PlanWhitelist%d", i);
-							ButtonToggle(WhitelistedText, &PlanSettings.Whitelisted[i]);
+							ButtonToggle(WhitelistedText, &ErectusIni::PlanSettings.Whitelisted[i]);
 							ImGui::SameLine(235.0f);
 							char FormidText[sizeof("00000000")];
-							sprintf_s(FormidText, "%08lX", PlanSettings.Whitelist[i]);
+							sprintf_s(FormidText, "%08lX", ErectusIni::PlanSettings.Whitelist[i]);
 							ImGui::SetNextItemWidth(224.0f);
 							ImGui::InputText(WhitelistText, FormidText, sizeof(FormidText), ImGuiInputTextFlags_CharsHexadecimal);
 							if (ImGui::IsItemActive()) AllowDrag = false;
-							sscanf_s(FormidText, "%08lX", &PlanSettings.Whitelist[i]);
+							sscanf_s(FormidText, "%08lX", &ErectusIni::PlanSettings.Whitelist[i]);
 						}
 					}
 				}
 
 				if (ImGui::CollapsingHeader("Magazine ESP Settings"))
 				{
-					ButtonToggle("Magazine ESP Enabled", &MagazineSettings.Enabled);
+					ButtonToggle("Magazine ESP Enabled", &ErectusIni::MagazineSettings.Enabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderInt("###MagazineSettingsEnabledDistance", &MagazineSettings.EnabledDistance, 0, 3000, "Distance: %d");
+					ImGui::SliderInt("###MagazineSettingsEnabledDistance", &ErectusIni::MagazineSettings.EnabledDistance, 0, 3000, "Distance: %d");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateInt(&MagazineSettings.EnabledDistance, 0, 3000);
+					Erectus::ValidateInt(&ErectusIni::MagazineSettings.EnabledDistance, 0, 3000);
 
 					ImGui::SetNextItemWidth(451.0f);
-					ImGui::ColorEdit3("###MagazineSettingsColor", MagazineSettings.Color);
+					ImGui::ColorEdit3("###MagazineSettingsColor", ErectusIni::MagazineSettings.Color);
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateRGB(MagazineSettings.Color);
+					Erectus::ValidateRGB(ErectusIni::MagazineSettings.Color);
 
-					ButtonToggle("Draw Enabled Magazines", &MagazineSettings.DrawEnabled);
+					ButtonToggle("Draw Enabled Magazines", &ErectusIni::MagazineSettings.DrawEnabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderFloat("###MagazineSettingsEnabledAlpha", &MagazineSettings.EnabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
+					ImGui::SliderFloat("###MagazineSettingsEnabledAlpha", &ErectusIni::MagazineSettings.EnabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateFloat(&MagazineSettings.EnabledAlpha, 0.0f, 1.0f);
+					Erectus::ValidateFloat(&ErectusIni::MagazineSettings.EnabledAlpha, 0.0f, 1.0f);
 
-					ButtonToggle("Draw Disabled Magazines", &MagazineSettings.DrawDisabled);
+					ButtonToggle("Draw Disabled Magazines", &ErectusIni::MagazineSettings.DrawDisabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderFloat("###MagazineSettingsDisabledAlpha", &MagazineSettings.DisabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
+					ImGui::SliderFloat("###MagazineSettingsDisabledAlpha", &ErectusIni::MagazineSettings.DisabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateFloat(&MagazineSettings.DisabledAlpha, 0.0f, 1.0f);
+					Erectus::ValidateFloat(&ErectusIni::MagazineSettings.DisabledAlpha, 0.0f, 1.0f);
 
-					ButtonToggle("Draw Named Magazines", &MagazineSettings.DrawNamed);
+					ButtonToggle("Draw Named Magazines", &ErectusIni::MagazineSettings.DrawNamed);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Draw Unnamed Magazines", &MagazineSettings.DrawUnnamed);
+					ButtonToggle("Draw Unnamed Magazines", &ErectusIni::MagazineSettings.DrawUnnamed);
 
-					ButtonToggle("Show Magazine Name", &MagazineSettings.ShowName);
+					ButtonToggle("Show Magazine Name", &ErectusIni::MagazineSettings.ShowName);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Show Magazine Distance", &MagazineSettings.ShowDistance);
+					ButtonToggle("Show Magazine Distance", &ErectusIni::MagazineSettings.ShowDistance);
 
-					ButtonToggle("Magazine Text Shadowed", &MagazineSettings.TextShadowed);
+					ButtonToggle("Magazine Text Shadowed", &ErectusIni::MagazineSettings.TextShadowed);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Magazine Text Centered", &MagazineSettings.TextCentered);
+					ButtonToggle("Magazine Text Centered", &ErectusIni::MagazineSettings.TextCentered);
 
 					if (ImGui::CollapsingHeader("Magazine Whitelist Settings"))
 					{
@@ -758,57 +734,57 @@ void OverlayMenu()
 							char WhitelistText[sizeof("###MagazineWhitelist31")];
 							sprintf_s(WhitelistedText, "Magazine Whitelist Slot: %d", i);
 							sprintf_s(WhitelistText, "###MagazineWhitelist%d", i);
-							ButtonToggle(WhitelistedText, &MagazineSettings.Whitelisted[i]);
+							ButtonToggle(WhitelistedText, &ErectusIni::MagazineSettings.Whitelisted[i]);
 							ImGui::SameLine(235.0f);
 							char FormidText[sizeof("00000000")];
-							sprintf_s(FormidText, "%08lX", MagazineSettings.Whitelist[i]);
+							sprintf_s(FormidText, "%08lX", ErectusIni::MagazineSettings.Whitelist[i]);
 							ImGui::SetNextItemWidth(224.0f);
 							ImGui::InputText(WhitelistText, FormidText, sizeof(FormidText), ImGuiInputTextFlags_CharsHexadecimal);
 							if (ImGui::IsItemActive()) AllowDrag = false;
-							sscanf_s(FormidText, "%08lX", &MagazineSettings.Whitelist[i]);
+							sscanf_s(FormidText, "%08lX", &ErectusIni::MagazineSettings.Whitelist[i]);
 						}
 					}
 				}
 
 				if (ImGui::CollapsingHeader("Bobblehead ESP Settings"))
 				{
-					ButtonToggle("Bobblehead ESP Enabled", &BobbleheadSettings.Enabled);
+					ButtonToggle("Bobblehead ESP Enabled", &ErectusIni::BobbleheadSettings.Enabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderInt("###BobbleheadSettingsEnabledDistance", &BobbleheadSettings.EnabledDistance, 0, 3000, "Distance: %d");
+					ImGui::SliderInt("###BobbleheadSettingsEnabledDistance", &ErectusIni::BobbleheadSettings.EnabledDistance, 0, 3000, "Distance: %d");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateInt(&BobbleheadSettings.EnabledDistance, 0, 3000);
+					Erectus::ValidateInt(&ErectusIni::BobbleheadSettings.EnabledDistance, 0, 3000);
 
 					ImGui::SetNextItemWidth(451.0f);
-					ImGui::ColorEdit3("###BobbleheadSettingsColor", BobbleheadSettings.Color);
+					ImGui::ColorEdit3("###BobbleheadSettingsColor", ErectusIni::BobbleheadSettings.Color);
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateRGB(BobbleheadSettings.Color);
+					Erectus::ValidateRGB(ErectusIni::BobbleheadSettings.Color);
 
-					ButtonToggle("Draw Enabled Bobbleheads", &BobbleheadSettings.DrawEnabled);
+					ButtonToggle("Draw Enabled Bobbleheads", &ErectusIni::BobbleheadSettings.DrawEnabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderFloat("###BobbleheadSettingsEnabledAlpha", &BobbleheadSettings.EnabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
+					ImGui::SliderFloat("###BobbleheadSettingsEnabledAlpha", &ErectusIni::BobbleheadSettings.EnabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateFloat(&BobbleheadSettings.EnabledAlpha, 0.0f, 1.0f);
+					Erectus::ValidateFloat(&ErectusIni::BobbleheadSettings.EnabledAlpha, 0.0f, 1.0f);
 
-					ButtonToggle("Draw Disabled Bobbleheads", &BobbleheadSettings.DrawDisabled);
+					ButtonToggle("Draw Disabled Bobbleheads", &ErectusIni::BobbleheadSettings.DrawDisabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderFloat("###BobbleheadSettingsDisabledAlpha", &BobbleheadSettings.DisabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
+					ImGui::SliderFloat("###BobbleheadSettingsDisabledAlpha", &ErectusIni::BobbleheadSettings.DisabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateFloat(&BobbleheadSettings.DisabledAlpha, 0.0f, 1.0f);
+					Erectus::ValidateFloat(&ErectusIni::BobbleheadSettings.DisabledAlpha, 0.0f, 1.0f);
 
-					ButtonToggle("Draw Named Bobbleheads", &BobbleheadSettings.DrawNamed);
+					ButtonToggle("Draw Named Bobbleheads", &ErectusIni::BobbleheadSettings.DrawNamed);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Draw Unnamed Bobbleheads", &BobbleheadSettings.DrawUnnamed);
+					ButtonToggle("Draw Unnamed Bobbleheads", &ErectusIni::BobbleheadSettings.DrawUnnamed);
 
-					ButtonToggle("Show Bobblehead Name", &BobbleheadSettings.ShowName);
+					ButtonToggle("Show Bobblehead Name", &ErectusIni::BobbleheadSettings.ShowName);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Show Bobblehead Distance", &BobbleheadSettings.ShowDistance);
+					ButtonToggle("Show Bobblehead Distance", &ErectusIni::BobbleheadSettings.ShowDistance);
 
-					ButtonToggle("Bobblehead Text Shadowed", &BobbleheadSettings.TextShadowed);
+					ButtonToggle("Bobblehead Text Shadowed", &ErectusIni::BobbleheadSettings.TextShadowed);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Bobblehead Text Centered", &BobbleheadSettings.TextCentered);
+					ButtonToggle("Bobblehead Text Centered", &ErectusIni::BobbleheadSettings.TextCentered);
 
 					if (ImGui::CollapsingHeader("Bobblehead Whitelist Settings"))
 					{
@@ -818,57 +794,57 @@ void OverlayMenu()
 							char WhitelistText[sizeof("###BobbleheadWhitelist31")];
 							sprintf_s(WhitelistedText, "Bobblehead Whitelist Slot: %d", i);
 							sprintf_s(WhitelistText, "###BobbleheadWhitelist%d", i);
-							ButtonToggle(WhitelistedText, &BobbleheadSettings.Whitelisted[i]);
+							ButtonToggle(WhitelistedText, &ErectusIni::BobbleheadSettings.Whitelisted[i]);
 							ImGui::SameLine(235.0f);
 							char FormidText[sizeof("00000000")];
-							sprintf_s(FormidText, "%08lX", BobbleheadSettings.Whitelist[i]);
+							sprintf_s(FormidText, "%08lX", ErectusIni::BobbleheadSettings.Whitelist[i]);
 							ImGui::SetNextItemWidth(224.0f);
 							ImGui::InputText(WhitelistText, FormidText, sizeof(FormidText), ImGuiInputTextFlags_CharsHexadecimal);
 							if (ImGui::IsItemActive()) AllowDrag = false;
-							sscanf_s(FormidText, "%08lX", &BobbleheadSettings.Whitelist[i]);
+							sscanf_s(FormidText, "%08lX", &ErectusIni::BobbleheadSettings.Whitelist[i]);
 						}
 					}
 				}
 
 				if (ImGui::CollapsingHeader("Item ESP Settings"))
 				{
-					ButtonToggle("Item ESP Enabled", &ItemSettings.Enabled);
+					ButtonToggle("Item ESP Enabled", &ErectusIni::ItemSettings.Enabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderInt("###ItemSettingsEnabledDistance", &ItemSettings.EnabledDistance, 0, 3000, "Distance: %d");
+					ImGui::SliderInt("###ItemSettingsEnabledDistance", &ErectusIni::ItemSettings.EnabledDistance, 0, 3000, "Distance: %d");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateInt(&ItemSettings.EnabledDistance, 0, 3000);
+					Erectus::ValidateInt(&ErectusIni::ItemSettings.EnabledDistance, 0, 3000);
 
 					ImGui::SetNextItemWidth(451.0f);
-					ImGui::ColorEdit3("###ItemSettingsColor", ItemSettings.Color);
+					ImGui::ColorEdit3("###ItemSettingsColor", ErectusIni::ItemSettings.Color);
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateRGB(ItemSettings.Color);
+					Erectus::ValidateRGB(ErectusIni::ItemSettings.Color);
 
-					ButtonToggle("Draw Enabled Items", &ItemSettings.DrawEnabled);
+					ButtonToggle("Draw Enabled Items", &ErectusIni::ItemSettings.DrawEnabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderFloat("###ItemSettingsEnabledAlpha", &ItemSettings.EnabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
+					ImGui::SliderFloat("###ItemSettingsEnabledAlpha", &ErectusIni::ItemSettings.EnabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateFloat(&ItemSettings.EnabledAlpha, 0.0f, 1.0f);
+					Erectus::ValidateFloat(&ErectusIni::ItemSettings.EnabledAlpha, 0.0f, 1.0f);
 
-					ButtonToggle("Draw Disabled Items", &ItemSettings.DrawDisabled);
+					ButtonToggle("Draw Disabled Items", &ErectusIni::ItemSettings.DrawDisabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderFloat("###ItemSettingsDisabledAlpha", &ItemSettings.DisabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
+					ImGui::SliderFloat("###ItemSettingsDisabledAlpha", &ErectusIni::ItemSettings.DisabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateFloat(&ItemSettings.DisabledAlpha, 0.0f, 1.0f);
+					Erectus::ValidateFloat(&ErectusIni::ItemSettings.DisabledAlpha, 0.0f, 1.0f);
 
-					ButtonToggle("Draw Named Items", &ItemSettings.DrawNamed);
+					ButtonToggle("Draw Named Items", &ErectusIni::ItemSettings.DrawNamed);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Draw Unnamed Items", &ItemSettings.DrawUnnamed);
+					ButtonToggle("Draw Unnamed Items", &ErectusIni::ItemSettings.DrawUnnamed);
 
-					ButtonToggle("Show Item Name", &ItemSettings.ShowName);
+					ButtonToggle("Show Item Name", &ErectusIni::ItemSettings.ShowName);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Show Item Distance", &ItemSettings.ShowDistance);
+					ButtonToggle("Show Item Distance", &ErectusIni::ItemSettings.ShowDistance);
 
-					ButtonToggle("Item Text Shadowed", &ItemSettings.TextShadowed);
+					ButtonToggle("Item Text Shadowed", &ErectusIni::ItemSettings.TextShadowed);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Item Text Centered", &ItemSettings.TextCentered);
+					ButtonToggle("Item Text Centered", &ErectusIni::ItemSettings.TextCentered);
 
 					if (ImGui::CollapsingHeader("Item Whitelist Settings"))
 					{
@@ -878,63 +854,63 @@ void OverlayMenu()
 							char WhitelistText[sizeof("###ItemWhitelist31")];
 							sprintf_s(WhitelistedText, "Item Whitelist Slot: %d", i);
 							sprintf_s(WhitelistText, "###ItemWhitelist%d", i);
-							ButtonToggle(WhitelistedText, &ItemSettings.Whitelisted[i]);
+							ButtonToggle(WhitelistedText, &ErectusIni::ItemSettings.Whitelisted[i]);
 							ImGui::SameLine(235.0f);
 							char FormidText[sizeof("00000000")];
-							sprintf_s(FormidText, "%08lX", ItemSettings.Whitelist[i]);
+							sprintf_s(FormidText, "%08lX", ErectusIni::ItemSettings.Whitelist[i]);
 							ImGui::SetNextItemWidth(224.0f);
 							ImGui::InputText(WhitelistText, FormidText, sizeof(FormidText), ImGuiInputTextFlags_CharsHexadecimal);
 							if (ImGui::IsItemActive()) AllowDrag = false;
-							sscanf_s(FormidText, "%08lX", &ItemSettings.Whitelist[i]);
+							sscanf_s(FormidText, "%08lX", &ErectusIni::ItemSettings.Whitelist[i]);
 						}
 					}
 				}
 
 				if (ImGui::CollapsingHeader("Flora ESP Settings"))
 				{
-					ButtonToggle("Flora ESP Enabled", &FloraSettings.Enabled);
+					ButtonToggle("Flora ESP Enabled", &ErectusIni::FloraSettings.Enabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderInt("###FloraSettingsEnabledDistance", &FloraSettings.EnabledDistance, 0, 3000, "Distance: %d");
+					ImGui::SliderInt("###FloraSettingsEnabledDistance", &ErectusIni::FloraSettings.EnabledDistance, 0, 3000, "Distance: %d");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateInt(&FloraSettings.EnabledDistance, 0, 3000);
+					Erectus::ValidateInt(&ErectusIni::FloraSettings.EnabledDistance, 0, 3000);
 
 					ImGui::SetNextItemWidth(451.0f);
-					ImGui::ColorEdit3("###FloraSettingsColor", FloraSettings.Color);
+					ImGui::ColorEdit3("###FloraSettingsColor", ErectusIni::FloraSettings.Color);
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateRGB(FloraSettings.Color);
+					Erectus::ValidateRGB(ErectusIni::FloraSettings.Color);
 
-					ButtonToggle("Draw Enabled Flora", &FloraSettings.DrawEnabled);
+					ButtonToggle("Draw Enabled Flora", &ErectusIni::FloraSettings.DrawEnabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderFloat("###FloraSettingsEnabledAlpha", &FloraSettings.EnabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
+					ImGui::SliderFloat("###FloraSettingsEnabledAlpha", &ErectusIni::FloraSettings.EnabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateFloat(&FloraSettings.EnabledAlpha, 0.0f, 1.0f);
+					Erectus::ValidateFloat(&ErectusIni::FloraSettings.EnabledAlpha, 0.0f, 1.0f);
 
-					ButtonToggle("Draw Disabled Flora", &FloraSettings.DrawDisabled);
+					ButtonToggle("Draw Disabled Flora", &ErectusIni::FloraSettings.DrawDisabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderFloat("###FloraSettingsDisabledAlpha", &FloraSettings.DisabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
+					ImGui::SliderFloat("###FloraSettingsDisabledAlpha", &ErectusIni::FloraSettings.DisabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateFloat(&FloraSettings.DisabledAlpha, 0.0f, 1.0f);
+					Erectus::ValidateFloat(&ErectusIni::FloraSettings.DisabledAlpha, 0.0f, 1.0f);
 
-					ButtonToggle("Draw Named Flora", &FloraSettings.DrawNamed);
+					ButtonToggle("Draw Named Flora", &ErectusIni::FloraSettings.DrawNamed);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Draw Unnamed Flora", &FloraSettings.DrawUnnamed);
+					ButtonToggle("Draw Unnamed Flora", &ErectusIni::FloraSettings.DrawUnnamed);
 
-					LargeButtonToggle("Draw Raw Crimson Flux Yielding Flora", &CustomFluxSettings.CrimsonFluxEnabled);
-					LargeButtonToggle("Draw Raw Cobalt Flux Yielding Flora", &CustomFluxSettings.CobaltFluxEnabled);
-					LargeButtonToggle("Draw Raw Yellowcake Flux Yielding Flora", &CustomFluxSettings.YellowcakeFluxEnabled);
-					LargeButtonToggle("Draw Raw Fluorescent Flux Yielding Flora", &CustomFluxSettings.FluorescentFluxEnabled);
-					LargeButtonToggle("Draw Raw Violet Flux Yielding Flora", &CustomFluxSettings.VioletFluxEnabled);
+					LargeButtonToggle("Draw Raw Crimson Flux Yielding Flora", &ErectusIni::CustomFluxSettings.CrimsonFluxEnabled);
+					LargeButtonToggle("Draw Raw Cobalt Flux Yielding Flora", &ErectusIni::CustomFluxSettings.CobaltFluxEnabled);
+					LargeButtonToggle("Draw Raw Yellowcake Flux Yielding Flora", &ErectusIni::CustomFluxSettings.YellowcakeFluxEnabled);
+					LargeButtonToggle("Draw Raw Fluorescent Flux Yielding Flora", &ErectusIni::CustomFluxSettings.FluorescentFluxEnabled);
+					LargeButtonToggle("Draw Raw Violet Flux Yielding Flora", &ErectusIni::CustomFluxSettings.VioletFluxEnabled);
 
-					ButtonToggle("Show Flora Name", &FloraSettings.ShowName);
+					ButtonToggle("Show Flora Name", &ErectusIni::FloraSettings.ShowName);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Show Flora Distance", &FloraSettings.ShowDistance);
+					ButtonToggle("Show Flora Distance", &ErectusIni::FloraSettings.ShowDistance);
 
-					ButtonToggle("Flora Text Shadowed", &FloraSettings.TextShadowed);
+					ButtonToggle("Flora Text Shadowed", &ErectusIni::FloraSettings.TextShadowed);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Flora Text Centered", &FloraSettings.TextCentered);
+					ButtonToggle("Flora Text Centered", &ErectusIni::FloraSettings.TextCentered);
 
 					if (ImGui::CollapsingHeader("Flora Whitelist Settings"))
 					{
@@ -944,57 +920,57 @@ void OverlayMenu()
 							char WhitelistText[sizeof("###FloraWhitelist31")];
 							sprintf_s(WhitelistedText, "Flora Whitelist Slot: %d", i);
 							sprintf_s(WhitelistText, "###FloraWhitelist%d", i);
-							ButtonToggle(WhitelistedText, &FloraSettings.Whitelisted[i]);
+							ButtonToggle(WhitelistedText, &ErectusIni::FloraSettings.Whitelisted[i]);
 							ImGui::SameLine(235.0f);
 							char FormidText[sizeof("00000000")];
-							sprintf_s(FormidText, "%08lX", FloraSettings.Whitelist[i]);
+							sprintf_s(FormidText, "%08lX", ErectusIni::FloraSettings.Whitelist[i]);
 							ImGui::SetNextItemWidth(224.0f);
 							ImGui::InputText(WhitelistText, FormidText, sizeof(FormidText), ImGuiInputTextFlags_CharsHexadecimal);
 							if (ImGui::IsItemActive()) AllowDrag = false;
-							sscanf_s(FormidText, "%08lX", &FloraSettings.Whitelist[i]);
+							sscanf_s(FormidText, "%08lX", &ErectusIni::FloraSettings.Whitelist[i]);
 						}
 					}
 				}
 
 				if (ImGui::CollapsingHeader("Entity ESP Settings"))
 				{
-					ButtonToggle("Entity ESP Enabled", &EntitySettings.Enabled);
+					ButtonToggle("Entity ESP Enabled", &ErectusIni::EntitySettings.Enabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderInt("###EntitySettingsEnabledDistance", &EntitySettings.EnabledDistance, 0, 3000, "Distance: %d");
+					ImGui::SliderInt("###EntitySettingsEnabledDistance", &ErectusIni::EntitySettings.EnabledDistance, 0, 3000, "Distance: %d");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateInt(&EntitySettings.EnabledDistance, 0, 3000);
+					Erectus::ValidateInt(&ErectusIni::EntitySettings.EnabledDistance, 0, 3000);
 
 					ImGui::SetNextItemWidth(451.0f);
-					ImGui::ColorEdit3("###EntitySettingsColor", EntitySettings.Color);
+					ImGui::ColorEdit3("###EntitySettingsColor", ErectusIni::EntitySettings.Color);
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateRGB(EntitySettings.Color);
+					Erectus::ValidateRGB(ErectusIni::EntitySettings.Color);
 
-					ButtonToggle("Draw Enabled Entities", &EntitySettings.DrawEnabled);
+					ButtonToggle("Draw Enabled Entities", &ErectusIni::EntitySettings.DrawEnabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderFloat("###EntitySettingsEnabledAlpha", &EntitySettings.EnabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
+					ImGui::SliderFloat("###EntitySettingsEnabledAlpha", &ErectusIni::EntitySettings.EnabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateFloat(&EntitySettings.EnabledAlpha, 0.0f, 1.0f);
+					Erectus::ValidateFloat(&ErectusIni::EntitySettings.EnabledAlpha, 0.0f, 1.0f);
 
-					ButtonToggle("Draw Disabled Entities", &EntitySettings.DrawDisabled);
+					ButtonToggle("Draw Disabled Entities", &ErectusIni::EntitySettings.DrawDisabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderFloat("###EntitySettingsDisabledAlpha", &EntitySettings.DisabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
+					ImGui::SliderFloat("###EntitySettingsDisabledAlpha", &ErectusIni::EntitySettings.DisabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateFloat(&EntitySettings.DisabledAlpha, 0.0f, 1.0f);
+					Erectus::ValidateFloat(&ErectusIni::EntitySettings.DisabledAlpha, 0.0f, 1.0f);
 
-					ButtonToggle("Draw Named Entities", &EntitySettings.DrawNamed);
+					ButtonToggle("Draw Named Entities", &ErectusIni::EntitySettings.DrawNamed);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Draw Unnamed Entities", &EntitySettings.DrawUnnamed);
+					ButtonToggle("Draw Unnamed Entities", &ErectusIni::EntitySettings.DrawUnnamed);
 
-					ButtonToggle("Show Entity Name", &EntitySettings.ShowName);
+					ButtonToggle("Show Entity Name", &ErectusIni::EntitySettings.ShowName);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Show Entity Distance", &EntitySettings.ShowDistance);
+					ButtonToggle("Show Entity Distance", &ErectusIni::EntitySettings.ShowDistance);
 
-					ButtonToggle("Entity Text Shadowed", &EntitySettings.TextShadowed);
+					ButtonToggle("Entity Text Shadowed", &ErectusIni::EntitySettings.TextShadowed);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Entity Text Centered", &EntitySettings.TextCentered);
+					ButtonToggle("Entity Text Centered", &ErectusIni::EntitySettings.TextCentered);
 
 					if (ImGui::CollapsingHeader("Entity Whitelist Settings"))
 					{
@@ -1004,14 +980,14 @@ void OverlayMenu()
 							char WhitelistText[sizeof("###EntityWhitelist31")];
 							sprintf_s(WhitelistedText, "Entity Whitelist Slot: %d", i);
 							sprintf_s(WhitelistText, "###EntityWhitelist%d", i);
-							ButtonToggle(WhitelistedText, &EntitySettings.Whitelisted[i]);
+							ButtonToggle(WhitelistedText, &ErectusIni::EntitySettings.Whitelisted[i]);
 							ImGui::SameLine(235.0f);
 							char FormidText[sizeof("00000000")];
-							sprintf_s(FormidText, "%08lX", EntitySettings.Whitelist[i]);
+							sprintf_s(FormidText, "%08lX", ErectusIni::EntitySettings.Whitelist[i]);
 							ImGui::SetNextItemWidth(224.0f);
 							ImGui::InputText(WhitelistText, FormidText, sizeof(FormidText), ImGuiInputTextFlags_CharsHexadecimal);
 							if (ImGui::IsItemActive()) AllowDrag = false;
-							sscanf_s(FormidText, "%08lX", &EntitySettings.Whitelist[i]);
+							sscanf_s(FormidText, "%08lX", &ErectusIni::EntitySettings.Whitelist[i]);
 						}
 					}
 				}
@@ -1023,14 +999,14 @@ void OverlayMenu()
 			{
 				if (ImGui::CollapsingHeader("Scrap Looter"))
 				{
-					if (CheckScrapList())
+					if (ErectusMemory::CheckScrapList())
 					{
 						ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 1.0f, 0.0f, 0.3f));
 						ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 1.0f, 0.0f, 0.4f));
 						ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 1.0f, 0.0f, 0.5f));
 						if (ImGui::Button("Loot Scrap (Keybind: CTRL+E)###LootSelectedScrapEnabled", ImVec2(224.0f, 0.0f)))
 						{
-							LootScrap();
+							ErectusMemory::LootScrap();
 						}
 						ImGui::PopStyleColor(3);
 					}
@@ -1046,61 +1022,61 @@ void OverlayMenu()
 					}
 
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Scrap Looter Keybind Enabled", &CustomScrapLooterSettings.ScrapKeybindEnabled);
+					ButtonToggle("Scrap Looter Keybind Enabled", &ErectusIni::CustomScrapLooterSettings.ScrapKeybindEnabled);
 
-					LargeButtonToggle("Scrap Looter ESP Override (Uses Junk ESP Settings)", &CustomScrapLooterSettings.ScrapOverrideEnabled);
+					LargeButtonToggle("Scrap Looter ESP Override (Uses Junk ESP Settings)", &ErectusIni::CustomScrapLooterSettings.ScrapOverrideEnabled);
 
-					ButtonToggle("Automatic Looting Enabled###ScrapAutomaticLootingEnabled", &CustomScrapLooterSettings.ScrapAutomaticLootingEnabled);
+					ButtonToggle("Automatic Looting Enabled###ScrapAutomaticLootingEnabled", &ErectusIni::CustomScrapLooterSettings.ScrapAutomaticLootingEnabled);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Draw Automatic Looting Status###ScrapAutomaticStatus", &CustomScrapLooterSettings.ScrapAutomaticStatus);
+					ButtonToggle("Draw Automatic Looting Status###ScrapAutomaticStatus", &ErectusIni::CustomScrapLooterSettings.ScrapAutomaticStatus);
 
 					ImGui::SetNextItemWidth(224.0f);
 					char ScrapAutomaticSpeedMinText[sizeof("Speed (Min): 60 (960 ms)")];
-					sprintf_s(ScrapAutomaticSpeedMinText, "Speed (Min): %d (%d ms)", CustomScrapLooterSettings.ScrapAutomaticSpeedMin, CustomScrapLooterSettings.ScrapAutomaticSpeedMin * 16);
-					ImGui::SliderInt("###ScrapAutomaticSpeedMin", &CustomScrapLooterSettings.ScrapAutomaticSpeedMin, 10, 60, ScrapAutomaticSpeedMinText);
+					sprintf_s(ScrapAutomaticSpeedMinText, "Speed (Min): %d (%d ms)", ErectusIni::CustomScrapLooterSettings.ScrapAutomaticSpeedMin, ErectusIni::CustomScrapLooterSettings.ScrapAutomaticSpeedMin * 16);
+					ImGui::SliderInt("###ScrapAutomaticSpeedMin", &ErectusIni::CustomScrapLooterSettings.ScrapAutomaticSpeedMin, 10, 60, ScrapAutomaticSpeedMinText);
 					if (ImGui::IsItemActive())
 					{
 						AllowDrag = false;
-						if (CustomScrapLooterSettings.ScrapAutomaticSpeedMax < CustomScrapLooterSettings.ScrapAutomaticSpeedMin)
+						if (ErectusIni::CustomScrapLooterSettings.ScrapAutomaticSpeedMax < ErectusIni::CustomScrapLooterSettings.ScrapAutomaticSpeedMin)
 						{
-							CustomScrapLooterSettings.ScrapAutomaticSpeedMax = CustomScrapLooterSettings.ScrapAutomaticSpeedMin;
+							ErectusIni::CustomScrapLooterSettings.ScrapAutomaticSpeedMax = ErectusIni::CustomScrapLooterSettings.ScrapAutomaticSpeedMin;
 						}
 					}
-					ValidateInt(&CustomScrapLooterSettings.ScrapAutomaticSpeedMin, 10, 60);
-					ValidateInt(&CustomScrapLooterSettings.ScrapAutomaticSpeedMax, 10, 60);
+					Erectus::ValidateInt(&ErectusIni::CustomScrapLooterSettings.ScrapAutomaticSpeedMin, 10, 60);
+					Erectus::ValidateInt(&ErectusIni::CustomScrapLooterSettings.ScrapAutomaticSpeedMax, 10, 60);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
 					char ScrapAutomaticSpeedMaxText[sizeof("Speed (Max): 60 (960 ms)")];
-					sprintf_s(ScrapAutomaticSpeedMaxText, "Speed (Max): %d (%d ms)", CustomScrapLooterSettings.ScrapAutomaticSpeedMax, CustomScrapLooterSettings.ScrapAutomaticSpeedMax * 16);
-					ImGui::SliderInt("###ScrapAutomaticSpeedMax", &CustomScrapLooterSettings.ScrapAutomaticSpeedMax, 10, 60, ScrapAutomaticSpeedMaxText);
+					sprintf_s(ScrapAutomaticSpeedMaxText, "Speed (Max): %d (%d ms)", ErectusIni::CustomScrapLooterSettings.ScrapAutomaticSpeedMax, ErectusIni::CustomScrapLooterSettings.ScrapAutomaticSpeedMax * 16);
+					ImGui::SliderInt("###ScrapAutomaticSpeedMax", &ErectusIni::CustomScrapLooterSettings.ScrapAutomaticSpeedMax, 10, 60, ScrapAutomaticSpeedMaxText);
 					if (ImGui::IsItemActive())
 					{
 						AllowDrag = false;
-						if (CustomScrapLooterSettings.ScrapAutomaticSpeedMax < CustomScrapLooterSettings.ScrapAutomaticSpeedMin)
+						if (ErectusIni::CustomScrapLooterSettings.ScrapAutomaticSpeedMax < ErectusIni::CustomScrapLooterSettings.ScrapAutomaticSpeedMin)
 						{
-							CustomScrapLooterSettings.ScrapAutomaticSpeedMin = CustomScrapLooterSettings.ScrapAutomaticSpeedMax;
+							ErectusIni::CustomScrapLooterSettings.ScrapAutomaticSpeedMin = ErectusIni::CustomScrapLooterSettings.ScrapAutomaticSpeedMax;
 						}
 					}
-					ValidateInt(&CustomScrapLooterSettings.ScrapAutomaticSpeedMin, 10, 60);
-					ValidateInt(&CustomScrapLooterSettings.ScrapAutomaticSpeedMax, 10, 60);
-					if (CustomScrapLooterSettings.ScrapAutomaticSpeedMax < CustomScrapLooterSettings.ScrapAutomaticSpeedMin)
+					Erectus::ValidateInt(&ErectusIni::CustomScrapLooterSettings.ScrapAutomaticSpeedMin, 10, 60);
+					Erectus::ValidateInt(&ErectusIni::CustomScrapLooterSettings.ScrapAutomaticSpeedMax, 10, 60);
+					if (ErectusIni::CustomScrapLooterSettings.ScrapAutomaticSpeedMax < ErectusIni::CustomScrapLooterSettings.ScrapAutomaticSpeedMin)
 					{
-						CustomScrapLooterSettings.ScrapAutomaticSpeedMax = CustomScrapLooterSettings.ScrapAutomaticSpeedMin;
+						ErectusIni::CustomScrapLooterSettings.ScrapAutomaticSpeedMax = ErectusIni::CustomScrapLooterSettings.ScrapAutomaticSpeedMin;
 					}
 
 					ImGui::SetNextItemWidth(451.0f);
-					ImGui::SliderInt("###ScrapLooterDistance", &CustomScrapLooterSettings.ScrapLooterDistance, 0, 3000, "Scrap Looter Distance: %d");
+					ImGui::SliderInt("###ScrapLooterDistance", &ErectusIni::CustomScrapLooterSettings.ScrapLooterDistance, 0, 3000, "Scrap Looter Distance: %d");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateInt(&CustomScrapLooterSettings.ScrapLooterDistance, 0, 3000);
+					Erectus::ValidateInt(&ErectusIni::CustomScrapLooterSettings.ScrapLooterDistance, 0, 3000);
 
 					for (int i = 0; i < 40; i++)
 					{
-						ButtonToggle(CustomScrapLooterSettings.ScrapNameList[i], &CustomScrapLooterSettings.ScrapEnabledList[i]);
+						ButtonToggle(ErectusIni::CustomScrapLooterSettings.ScrapNameList[i], &ErectusIni::CustomScrapLooterSettings.ScrapEnabledList[i]);
 						ImGui::SameLine(235.0f);
 						char LabelText[sizeof("###ScrapReadOnly39")];
 						sprintf_s(LabelText, "###ScrapReadOnly%d", i);
 						char FormidText[sizeof("00000000")];
-						sprintf_s(FormidText, "%08lX", CustomScrapLooterSettings.ScrapFormidList[i]);
+						sprintf_s(FormidText, "%08lX", ErectusIni::CustomScrapLooterSettings.ScrapFormidList[i]);
 						ImGui::SetNextItemWidth(224.0f);
 						ImGui::InputText(LabelText, FormidText, sizeof(FormidText), ImGuiInputTextFlags_ReadOnly);
 						if (ImGui::IsItemActive()) AllowDrag = false;
@@ -1109,14 +1085,14 @@ void OverlayMenu()
 
 				if (ImGui::CollapsingHeader("Item Looter"))
 				{
-					if (CheckItemLooterSettings())
+					if (ErectusMemory::CheckItemLooterSettings())
 					{
 						ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 1.0f, 0.0f, 0.3f));
 						ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 1.0f, 0.0f, 0.4f));
 						ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 1.0f, 0.0f, 0.5f));
 						if (ImGui::Button("Loot Items (Keybind: CTRL+R)###LootSelectedItemsEnabled", ImVec2(224.0f, 0.0f)))
 						{
-							LootItems();
+							ErectusMemory::LootItems();
 						}
 						ImGui::PopStyleColor(3);
 					}
@@ -1132,131 +1108,131 @@ void OverlayMenu()
 					}
 
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Item Looter Keybind Enabled", &CustomItemLooterSettings.ItemKeybindEnabled);
+					ButtonToggle("Item Looter Keybind Enabled", &ErectusIni::CustomItemLooterSettings.ItemKeybindEnabled);
 
-					ButtonToggle("Automatic Looting Enabled###ItemAutomaticLootingEnabled", &CustomItemLooterSettings.ItemAutomaticLootingEnabled);
+					ButtonToggle("Automatic Looting Enabled###ItemAutomaticLootingEnabled", &ErectusIni::CustomItemLooterSettings.ItemAutomaticLootingEnabled);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Draw Automatic Looting Status###ItemAutomaticStatus", &CustomItemLooterSettings.ItemAutomaticStatus);
+					ButtonToggle("Draw Automatic Looting Status###ItemAutomaticStatus", &ErectusIni::CustomItemLooterSettings.ItemAutomaticStatus);
 
 					ImGui::SetNextItemWidth(224.0f);
 					char ItemAutomaticSpeedMinText[sizeof("Speed (Min): 60 (960 ms)")];
-					sprintf_s(ItemAutomaticSpeedMinText, "Speed (Min): %d (%d ms)", CustomItemLooterSettings.ItemAutomaticSpeedMin, CustomItemLooterSettings.ItemAutomaticSpeedMin * 16);
-					ImGui::SliderInt("###ItemAutomaticSpeedMin", &CustomItemLooterSettings.ItemAutomaticSpeedMin, 10, 60, ItemAutomaticSpeedMinText);
+					sprintf_s(ItemAutomaticSpeedMinText, "Speed (Min): %d (%d ms)", ErectusIni::CustomItemLooterSettings.ItemAutomaticSpeedMin, ErectusIni::CustomItemLooterSettings.ItemAutomaticSpeedMin * 16);
+					ImGui::SliderInt("###ItemAutomaticSpeedMin", &ErectusIni::CustomItemLooterSettings.ItemAutomaticSpeedMin, 10, 60, ItemAutomaticSpeedMinText);
 					if (ImGui::IsItemActive())
 					{
 						AllowDrag = false;
-						if (CustomItemLooterSettings.ItemAutomaticSpeedMax < CustomItemLooterSettings.ItemAutomaticSpeedMin)
+						if (ErectusIni::CustomItemLooterSettings.ItemAutomaticSpeedMax < ErectusIni::CustomItemLooterSettings.ItemAutomaticSpeedMin)
 						{
-							CustomItemLooterSettings.ItemAutomaticSpeedMax = CustomItemLooterSettings.ItemAutomaticSpeedMin;
+							ErectusIni::CustomItemLooterSettings.ItemAutomaticSpeedMax = ErectusIni::CustomItemLooterSettings.ItemAutomaticSpeedMin;
 						}
 					}
-					ValidateInt(&CustomItemLooterSettings.ItemAutomaticSpeedMin, 10, 60);
-					ValidateInt(&CustomItemLooterSettings.ItemAutomaticSpeedMax, 10, 60);
+					Erectus::ValidateInt(&ErectusIni::CustomItemLooterSettings.ItemAutomaticSpeedMin, 10, 60);
+					Erectus::ValidateInt(&ErectusIni::CustomItemLooterSettings.ItemAutomaticSpeedMax, 10, 60);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
 					char ItemAutomaticSpeedMaxText[sizeof("Speed (Max): 60 (960 ms)")];
-					sprintf_s(ItemAutomaticSpeedMaxText, "Speed (Max): %d (%d ms)", CustomItemLooterSettings.ItemAutomaticSpeedMax, CustomItemLooterSettings.ItemAutomaticSpeedMax * 16);
-					ImGui::SliderInt("###ItemAutomaticSpeedMax", &CustomItemLooterSettings.ItemAutomaticSpeedMax, 10, 60, ItemAutomaticSpeedMaxText);
+					sprintf_s(ItemAutomaticSpeedMaxText, "Speed (Max): %d (%d ms)", ErectusIni::CustomItemLooterSettings.ItemAutomaticSpeedMax, ErectusIni::CustomItemLooterSettings.ItemAutomaticSpeedMax * 16);
+					ImGui::SliderInt("###ItemAutomaticSpeedMax", &ErectusIni::CustomItemLooterSettings.ItemAutomaticSpeedMax, 10, 60, ItemAutomaticSpeedMaxText);
 					if (ImGui::IsItemActive())
 					{
 						AllowDrag = false;
-						if (CustomItemLooterSettings.ItemAutomaticSpeedMax < CustomItemLooterSettings.ItemAutomaticSpeedMin)
+						if (ErectusIni::CustomItemLooterSettings.ItemAutomaticSpeedMax < ErectusIni::CustomItemLooterSettings.ItemAutomaticSpeedMin)
 						{
-							CustomItemLooterSettings.ItemAutomaticSpeedMin = CustomItemLooterSettings.ItemAutomaticSpeedMax;
+							ErectusIni::CustomItemLooterSettings.ItemAutomaticSpeedMin = ErectusIni::CustomItemLooterSettings.ItemAutomaticSpeedMax;
 						}
 					}
-					ValidateInt(&CustomItemLooterSettings.ItemAutomaticSpeedMin, 10, 60);
-					ValidateInt(&CustomItemLooterSettings.ItemAutomaticSpeedMax, 10, 60);
-					if (CustomItemLooterSettings.ItemAutomaticSpeedMax < CustomItemLooterSettings.ItemAutomaticSpeedMin)
+					Erectus::ValidateInt(&ErectusIni::CustomItemLooterSettings.ItemAutomaticSpeedMin, 10, 60);
+					Erectus::ValidateInt(&ErectusIni::CustomItemLooterSettings.ItemAutomaticSpeedMax, 10, 60);
+					if (ErectusIni::CustomItemLooterSettings.ItemAutomaticSpeedMax < ErectusIni::CustomItemLooterSettings.ItemAutomaticSpeedMin)
 					{
-						CustomItemLooterSettings.ItemAutomaticSpeedMax = CustomItemLooterSettings.ItemAutomaticSpeedMin;
+						ErectusIni::CustomItemLooterSettings.ItemAutomaticSpeedMax = ErectusIni::CustomItemLooterSettings.ItemAutomaticSpeedMin;
 					}
 
-					ButtonToggle("Weapons Enabled###ItemLooterWeaponsEnabled", &CustomItemLooterSettings.ItemLooterWeaponsEnabled);
+					ButtonToggle("Weapons Enabled###ItemLooterWeaponsEnabled", &ErectusIni::CustomItemLooterSettings.ItemLooterWeaponsEnabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderInt("###ItemLooterWeaponsDistance", &CustomItemLooterSettings.ItemLooterWeaponsDistance, 0, 3000, "Distance: %d");
+					ImGui::SliderInt("###ItemLooterWeaponsDistance", &ErectusIni::CustomItemLooterSettings.ItemLooterWeaponsDistance, 0, 3000, "Distance: %d");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateInt(&CustomItemLooterSettings.ItemLooterWeaponsDistance, 0, 3000);
+					Erectus::ValidateInt(&ErectusIni::CustomItemLooterSettings.ItemLooterWeaponsDistance, 0, 3000);
 
-					ButtonToggle("Armor Enabled###ItemLooterArmorEnabled", &CustomItemLooterSettings.ItemLooterArmorEnabled);
+					ButtonToggle("Armor Enabled###ItemLooterArmorEnabled", &ErectusIni::CustomItemLooterSettings.ItemLooterArmorEnabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderInt("###ItemLooterArmorDistance", &CustomItemLooterSettings.ItemLooterArmorDistance, 0, 3000, "Distance: %d");
+					ImGui::SliderInt("###ItemLooterArmorDistance", &ErectusIni::CustomItemLooterSettings.ItemLooterArmorDistance, 0, 3000, "Distance: %d");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateInt(&CustomItemLooterSettings.ItemLooterArmorDistance, 0, 3000);
+					Erectus::ValidateInt(&ErectusIni::CustomItemLooterSettings.ItemLooterArmorDistance, 0, 3000);
 
-					ButtonToggle("Ammo Enabled###ItemLooterAmmoEnabled", &CustomItemLooterSettings.ItemLooterAmmoEnabled);
+					ButtonToggle("Ammo Enabled###ItemLooterAmmoEnabled", &ErectusIni::CustomItemLooterSettings.ItemLooterAmmoEnabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderInt("###ItemLooterAmmoDistance", &CustomItemLooterSettings.ItemLooterAmmoDistance, 0, 3000, "Distance: %d");
+					ImGui::SliderInt("###ItemLooterAmmoDistance", &ErectusIni::CustomItemLooterSettings.ItemLooterAmmoDistance, 0, 3000, "Distance: %d");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateInt(&CustomItemLooterSettings.ItemLooterAmmoDistance, 0, 3000);
+					Erectus::ValidateInt(&ErectusIni::CustomItemLooterSettings.ItemLooterAmmoDistance, 0, 3000);
 
-					ButtonToggle("Mods Enabled###ItemLooterModsEnabled", &CustomItemLooterSettings.ItemLooterModsEnabled);
+					ButtonToggle("Mods Enabled###ItemLooterModsEnabled", &ErectusIni::CustomItemLooterSettings.ItemLooterModsEnabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderInt("###ItemLooterModsDistance", &CustomItemLooterSettings.ItemLooterModsDistance, 0, 3000, "Distance: %d");
+					ImGui::SliderInt("###ItemLooterModsDistance", &ErectusIni::CustomItemLooterSettings.ItemLooterModsDistance, 0, 3000, "Distance: %d");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateInt(&CustomItemLooterSettings.ItemLooterModsDistance, 0, 3000);
+					Erectus::ValidateInt(&ErectusIni::CustomItemLooterSettings.ItemLooterModsDistance, 0, 3000);
 
-					ButtonToggle("Magazines Enabled###ItemLooterMagazinesEnabled", &CustomItemLooterSettings.ItemLooterMagazinesEnabled);
+					ButtonToggle("Magazines Enabled###ItemLooterMagazinesEnabled", &ErectusIni::CustomItemLooterSettings.ItemLooterMagazinesEnabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderInt("###ItemLooterMagazinesDistance", &CustomItemLooterSettings.ItemLooterMagazinesDistance, 0, 3000, "Distance: %d");
+					ImGui::SliderInt("###ItemLooterMagazinesDistance", &ErectusIni::CustomItemLooterSettings.ItemLooterMagazinesDistance, 0, 3000, "Distance: %d");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateInt(&CustomItemLooterSettings.ItemLooterMagazinesDistance, 0, 3000);
+					Erectus::ValidateInt(&ErectusIni::CustomItemLooterSettings.ItemLooterMagazinesDistance, 0, 3000);
 
-					ButtonToggle("Bobbleheads Enabled###ItemLooterBobbleheadsEnabled", &CustomItemLooterSettings.ItemLooterBobbleheadsEnabled);
+					ButtonToggle("Bobbleheads Enabled###ItemLooterBobbleheadsEnabled", &ErectusIni::CustomItemLooterSettings.ItemLooterBobbleheadsEnabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderInt("###ItemLooterBobbleheadsDistance", &CustomItemLooterSettings.ItemLooterBobbleheadsDistance, 0, 3000, "Distance: %d");
+					ImGui::SliderInt("###ItemLooterBobbleheadsDistance", &ErectusIni::CustomItemLooterSettings.ItemLooterBobbleheadsDistance, 0, 3000, "Distance: %d");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateInt(&CustomItemLooterSettings.ItemLooterBobbleheadsDistance, 0, 3000);
+					Erectus::ValidateInt(&ErectusIni::CustomItemLooterSettings.ItemLooterBobbleheadsDistance, 0, 3000);
 
-					ButtonToggle("Aid Enabled###ItemLooterAidEnabled", &CustomItemLooterSettings.ItemLooterAidEnabled);
+					ButtonToggle("Aid Enabled###ItemLooterAidEnabled", &ErectusIni::CustomItemLooterSettings.ItemLooterAidEnabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderInt("###ItemLooterAidDistance", &CustomItemLooterSettings.ItemLooterAidDistance, 0, 3000, "Distance: %d");
+					ImGui::SliderInt("###ItemLooterAidDistance", &ErectusIni::CustomItemLooterSettings.ItemLooterAidDistance, 0, 3000, "Distance: %d");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateInt(&CustomItemLooterSettings.ItemLooterAidDistance, 0, 3000);
+					Erectus::ValidateInt(&ErectusIni::CustomItemLooterSettings.ItemLooterAidDistance, 0, 3000);
 
-					ButtonToggle("Known Plans Enabled###ItemLooterKnownPlansEnabled", &CustomItemLooterSettings.ItemLooterKnownPlansEnabled);
+					ButtonToggle("Known Plans Enabled###ItemLooterKnownPlansEnabled", &ErectusIni::CustomItemLooterSettings.ItemLooterKnownPlansEnabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderInt("###ItemLooterKnownPlansDistance", &CustomItemLooterSettings.ItemLooterKnownPlansDistance, 0, 3000, "Distance: %d");
+					ImGui::SliderInt("###ItemLooterKnownPlansDistance", &ErectusIni::CustomItemLooterSettings.ItemLooterKnownPlansDistance, 0, 3000, "Distance: %d");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateInt(&CustomItemLooterSettings.ItemLooterKnownPlansDistance, 0, 3000);
+					Erectus::ValidateInt(&ErectusIni::CustomItemLooterSettings.ItemLooterKnownPlansDistance, 0, 3000);
 
-					ButtonToggle("Unknown Plans Enabled###ItemLooterUnknownPlansEnabled", &CustomItemLooterSettings.ItemLooterUnknownPlansEnabled);
+					ButtonToggle("Unknown Plans Enabled###ItemLooterUnknownPlansEnabled", &ErectusIni::CustomItemLooterSettings.ItemLooterUnknownPlansEnabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderInt("###ItemLooterUnknownPlansDistance", &CustomItemLooterSettings.ItemLooterUnknownPlansDistance, 0, 3000, "Distance: %d");
+					ImGui::SliderInt("###ItemLooterUnknownPlansDistance", &ErectusIni::CustomItemLooterSettings.ItemLooterUnknownPlansDistance, 0, 3000, "Distance: %d");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateInt(&CustomItemLooterSettings.ItemLooterUnknownPlansDistance, 0, 3000);
+					Erectus::ValidateInt(&ErectusIni::CustomItemLooterSettings.ItemLooterUnknownPlansDistance, 0, 3000);
 
-					ButtonToggle("Misc Enabled###ItemLooterMiscEnabled", &CustomItemLooterSettings.ItemLooterMiscEnabled);
+					ButtonToggle("Misc Enabled###ItemLooterMiscEnabled", &ErectusIni::CustomItemLooterSettings.ItemLooterMiscEnabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderInt("###ItemLooterMiscDistance", &CustomItemLooterSettings.ItemLooterMiscDistance, 0, 3000, "Distance: %d");
+					ImGui::SliderInt("###ItemLooterMiscDistance", &ErectusIni::CustomItemLooterSettings.ItemLooterMiscDistance, 0, 3000, "Distance: %d");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateInt(&CustomItemLooterSettings.ItemLooterMiscDistance, 0, 3000);
+					Erectus::ValidateInt(&ErectusIni::CustomItemLooterSettings.ItemLooterMiscDistance, 0, 3000);
 
-					ButtonToggle("Other Enabled###ItemLooterUnlistedEnabled", &CustomItemLooterSettings.ItemLooterUnlistedEnabled);
+					ButtonToggle("Other Enabled###ItemLooterUnlistedEnabled", &ErectusIni::CustomItemLooterSettings.ItemLooterUnlistedEnabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderInt("###ItemLooterUnlistedDistance", &CustomItemLooterSettings.ItemLooterUnlistedDistance, 0, 3000, "Distance: %d");
+					ImGui::SliderInt("###ItemLooterUnlistedDistance", &ErectusIni::CustomItemLooterSettings.ItemLooterUnlistedDistance, 0, 3000, "Distance: %d");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateInt(&CustomItemLooterSettings.ItemLooterUnlistedDistance, 0, 3000);
+					Erectus::ValidateInt(&ErectusIni::CustomItemLooterSettings.ItemLooterUnlistedDistance, 0, 3000);
 
-					ButtonToggle("Item Formid List Enabled###ItemLooterListEnabled", &CustomItemLooterSettings.ItemLooterListEnabled);
+					ButtonToggle("Item Formid List Enabled###ItemLooterListEnabled", &ErectusIni::CustomItemLooterSettings.ItemLooterListEnabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderInt("###ItemLooterListDistance", &CustomItemLooterSettings.ItemLooterListDistance, 0, 3000, "Distance: %d");
+					ImGui::SliderInt("###ItemLooterListDistance", &ErectusIni::CustomItemLooterSettings.ItemLooterListDistance, 0, 3000, "Distance: %d");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateInt(&CustomItemLooterSettings.ItemLooterListDistance, 0, 3000);
+					Erectus::ValidateInt(&ErectusIni::CustomItemLooterSettings.ItemLooterListDistance, 0, 3000);
 
-					LargeButtonToggle("Item Looter Blacklist Enabled###ItemLooterBlacklistToggle", &CustomItemLooterSettings.ItemLooterBlacklistToggle);
+					LargeButtonToggle("Item Looter Blacklist Enabled###ItemLooterBlacklistToggle", &ErectusIni::CustomItemLooterSettings.ItemLooterBlacklistToggle);
 
 					if (ImGui::CollapsingHeader("Item Looter Formid List"))
 					{
@@ -1266,14 +1242,14 @@ void OverlayMenu()
 							char ItemLooterLabelText[sizeof("###ItemLooterList99")];
 							sprintf_s(ItemLooterEnabledText, "Item Looter Slot: %d", i);
 							sprintf_s(ItemLooterLabelText, "###ItemLooterList%d", i);
-							ButtonToggle(ItemLooterEnabledText, &CustomItemLooterSettings.ItemLooterEnabledList[i]);
+							ButtonToggle(ItemLooterEnabledText, &ErectusIni::CustomItemLooterSettings.ItemLooterEnabledList[i]);
 							ImGui::SameLine(235.0f);
 							char FormidText[sizeof("00000000")];
-							sprintf_s(FormidText, "%08lX", CustomItemLooterSettings.ItemLooterFormidList[i]);
+							sprintf_s(FormidText, "%08lX", ErectusIni::CustomItemLooterSettings.ItemLooterFormidList[i]);
 							ImGui::SetNextItemWidth(224.0f);
 							ImGui::InputText(ItemLooterLabelText, FormidText, sizeof(FormidText), ImGuiInputTextFlags_CharsHexadecimal);
 							if (ImGui::IsItemActive()) AllowDrag = false;
-							sscanf_s(FormidText, "%08lX", &CustomItemLooterSettings.ItemLooterFormidList[i]);
+							sscanf_s(FormidText, "%08lX", &ErectusIni::CustomItemLooterSettings.ItemLooterFormidList[i]);
 						}
 					}
 
@@ -1285,63 +1261,63 @@ void OverlayMenu()
 							char ItemLooterBlacklistLabelText[sizeof("###ItemLooterBlacklist63")];
 							sprintf_s(ItemLooterBlacklistEnabledText, "Item Looter Blacklist: %d", i);
 							sprintf_s(ItemLooterBlacklistLabelText, "###ItemLooterBlacklist%d", i);
-							ButtonToggle(ItemLooterBlacklistEnabledText, &CustomItemLooterSettings.ItemLooterBlacklistEnabled[i]);
+							ButtonToggle(ItemLooterBlacklistEnabledText, &ErectusIni::CustomItemLooterSettings.ItemLooterBlacklistEnabled[i]);
 							ImGui::SameLine(235.0f);
 							char FormidText[sizeof("00000000")];
-							sprintf_s(FormidText, "%08lX", CustomItemLooterSettings.ItemLooterBlacklist[i]);
+							sprintf_s(FormidText, "%08lX", ErectusIni::CustomItemLooterSettings.ItemLooterBlacklist[i]);
 							ImGui::SetNextItemWidth(224.0f);
 							ImGui::InputText(ItemLooterBlacklistLabelText, FormidText, sizeof(FormidText), ImGuiInputTextFlags_CharsHexadecimal);
 							if (ImGui::IsItemActive()) AllowDrag = false;
-							sscanf_s(FormidText, "%08lX", &CustomItemLooterSettings.ItemLooterBlacklist[i]);
+							sscanf_s(FormidText, "%08lX", &ErectusIni::CustomItemLooterSettings.ItemLooterBlacklist[i]);
 						}
 					}
 				}
 
 				if (ImGui::CollapsingHeader("NPC Looter (76m Distance Limit)"))
 				{
-					LargeButtonToggle("Automatic NPC Looting Enabled (Keybind: CTRL+COMMA)###NPCLooterEnabled", &NPCLooterSettings.EntityLooterEnabled);
+					LargeButtonToggle("Automatic NPC Looting Enabled (Keybind: CTRL+COMMA)###NPCLooterEnabled", &ErectusIni::NPCLooterSettings.EntityLooterEnabled);
 
-					LargeButtonToggle("Draw NPC Looter Status###NPCLooterStatusEnabled", &NPCLooterSettings.EntityLooterStatusEnabled);
+					LargeButtonToggle("Draw NPC Looter Status###NPCLooterStatusEnabled", &ErectusIni::NPCLooterSettings.EntityLooterStatusEnabled);
 
-					ButtonToggle("All Weapons Enabled###NPCLooterAllWeaponsEnabled", &NPCLooterSettings.EntityLooterAllWeaponsEnabled);
+					ButtonToggle("All Weapons Enabled###NPCLooterAllWeaponsEnabled", &ErectusIni::NPCLooterSettings.EntityLooterAllWeaponsEnabled);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("All Armor Enabled###NPCLooterAllArmorEnabled", &NPCLooterSettings.EntityLooterAllArmorEnabled);
+					ButtonToggle("All Armor Enabled###NPCLooterAllArmorEnabled", &ErectusIni::NPCLooterSettings.EntityLooterAllArmorEnabled);
 
-					ButtonToggle("1* Weapons Enabled###NPCLooterOneStarWeaponsEnabled", &NPCLooterSettings.EntityLooterOneStarWeaponsEnabled);
+					ButtonToggle("1* Weapons Enabled###NPCLooterOneStarWeaponsEnabled", &ErectusIni::NPCLooterSettings.EntityLooterOneStarWeaponsEnabled);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("1* Armor Enabled###NPCLooterOneStarArmorEnabled", &NPCLooterSettings.EntityLooterOneStarArmorEnabled);
+					ButtonToggle("1* Armor Enabled###NPCLooterOneStarArmorEnabled", &ErectusIni::NPCLooterSettings.EntityLooterOneStarArmorEnabled);
 
-					ButtonToggle("2* Weapons Enabled###NPCLooterTwoStarWeaponsEnabled", &NPCLooterSettings.EntityLooterTwoStarWeaponsEnabled);
+					ButtonToggle("2* Weapons Enabled###NPCLooterTwoStarWeaponsEnabled", &ErectusIni::NPCLooterSettings.EntityLooterTwoStarWeaponsEnabled);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("2* Armor Enabled###NPCLooterTwoStarArmorEnabled", &NPCLooterSettings.EntityLooterTwoStarArmorEnabled);
+					ButtonToggle("2* Armor Enabled###NPCLooterTwoStarArmorEnabled", &ErectusIni::NPCLooterSettings.EntityLooterTwoStarArmorEnabled);
 
-					ButtonToggle("3* Weapons Enabled###NPCLooterThreeStarWeaponsEnabled", &NPCLooterSettings.EntityLooterThreeStarWeaponsEnabled);
+					ButtonToggle("3* Weapons Enabled###NPCLooterThreeStarWeaponsEnabled", &ErectusIni::NPCLooterSettings.EntityLooterThreeStarWeaponsEnabled);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("3* Armor Enabled###NPCLooterThreeStarArmorEnabled", &NPCLooterSettings.EntityLooterThreeStarArmorEnabled);
+					ButtonToggle("3* Armor Enabled###NPCLooterThreeStarArmorEnabled", &ErectusIni::NPCLooterSettings.EntityLooterThreeStarArmorEnabled);
 
-					ButtonToggle("Ammo Enabled###NPCLooterAmmoEnabled", &NPCLooterSettings.EntityLooterAmmoEnabled);
+					ButtonToggle("Ammo Enabled###NPCLooterAmmoEnabled", &ErectusIni::NPCLooterSettings.EntityLooterAmmoEnabled);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Mods Enabled###NPCLooterModsEnabled", &NPCLooterSettings.EntityLooterModsEnabled);
+					ButtonToggle("Mods Enabled###NPCLooterModsEnabled", &ErectusIni::NPCLooterSettings.EntityLooterModsEnabled);
 
-					ButtonToggle("Caps Enabled###NPCLooterCapsEnabled", &NPCLooterSettings.EntityLooterCapsEnabled);
+					ButtonToggle("Caps Enabled###NPCLooterCapsEnabled", &ErectusIni::NPCLooterSettings.EntityLooterCapsEnabled);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Junk Enabled###NPCLooterJunkEnabled", &NPCLooterSettings.EntityLooterJunkEnabled);
+					ButtonToggle("Junk Enabled###NPCLooterJunkEnabled", &ErectusIni::NPCLooterSettings.EntityLooterJunkEnabled);
 
-					ButtonToggle("Aid Enabled###NPCLooterAidEnabled", &NPCLooterSettings.EntityLooterAidEnabled);
+					ButtonToggle("Aid Enabled###NPCLooterAidEnabled", &ErectusIni::NPCLooterSettings.EntityLooterAidEnabled);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Treasure Maps Enabled###NPCLooterTreasureMapsEnabled", &NPCLooterSettings.EntityLooterTreasureMapsEnabled);
+					ButtonToggle("Treasure Maps Enabled###NPCLooterTreasureMapsEnabled", &ErectusIni::NPCLooterSettings.EntityLooterTreasureMapsEnabled);
 
-					ButtonToggle("Known Plans Enabled###NPCLooterKnownPlansEnabled", &NPCLooterSettings.EntityLooterKnownPlansEnabled);
+					ButtonToggle("Known Plans Enabled###NPCLooterKnownPlansEnabled", &ErectusIni::NPCLooterSettings.EntityLooterKnownPlansEnabled);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Unknown Plans Enabled###NPCLooterUnknownPlansEnabled", &NPCLooterSettings.EntityLooterUnknownPlansEnabled);
+					ButtonToggle("Unknown Plans Enabled###NPCLooterUnknownPlansEnabled", &ErectusIni::NPCLooterSettings.EntityLooterUnknownPlansEnabled);
 
-					ButtonToggle("Misc Enabled###NPCLooterMiscEnabled", &NPCLooterSettings.EntityLooterMiscEnabled);
+					ButtonToggle("Misc Enabled###NPCLooterMiscEnabled", &ErectusIni::NPCLooterSettings.EntityLooterMiscEnabled);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Other Enabled###NPCLooterUnlistedEnabled", &NPCLooterSettings.EntityLooterUnlistedEnabled);
+					ButtonToggle("Other Enabled###NPCLooterUnlistedEnabled", &ErectusIni::NPCLooterSettings.EntityLooterUnlistedEnabled);
 
-					LargeButtonToggle("NPC Looter Formid List Enabled###NPCLooterListEnabled", &NPCLooterSettings.EntityLooterListEnabled);
+					LargeButtonToggle("NPC Looter Formid List Enabled###NPCLooterListEnabled", &ErectusIni::NPCLooterSettings.EntityLooterListEnabled);
 
-					LargeButtonToggle("NPC Looter Blacklist Enabled###NPCLooterBlacklistToggle", &NPCLooterSettings.EntityLooterBlacklistToggle);
+					LargeButtonToggle("NPC Looter Blacklist Enabled###NPCLooterBlacklistToggle", &ErectusIni::NPCLooterSettings.EntityLooterBlacklistToggle);
 
 					if (ImGui::CollapsingHeader("NPC Looter Formid List"))
 					{
@@ -1351,14 +1327,14 @@ void OverlayMenu()
 							char NPCLooterLabelText[sizeof("###NPCLooterList99")];
 							sprintf_s(NPCLooterEnabledText, "NPC Looter Slot: %d", i);
 							sprintf_s(NPCLooterLabelText, "###NPCLooterList%d", i);
-							ButtonToggle(NPCLooterEnabledText, &NPCLooterSettings.EntityLooterEnabledList[i]);
+							ButtonToggle(NPCLooterEnabledText, &ErectusIni::NPCLooterSettings.EntityLooterEnabledList[i]);
 							ImGui::SameLine(235.0f);
 							char FormidText[sizeof("00000000")];
-							sprintf_s(FormidText, "%08lX", NPCLooterSettings.EntityLooterFormidList[i]);
+							sprintf_s(FormidText, "%08lX", ErectusIni::NPCLooterSettings.EntityLooterFormidList[i]);
 							ImGui::SetNextItemWidth(224.0f);
 							ImGui::InputText(NPCLooterLabelText, FormidText, sizeof(FormidText), ImGuiInputTextFlags_CharsHexadecimal);
 							if (ImGui::IsItemActive()) AllowDrag = false;
-							sscanf_s(FormidText, "%08lX", &NPCLooterSettings.EntityLooterFormidList[i]);
+							sscanf_s(FormidText, "%08lX", &ErectusIni::NPCLooterSettings.EntityLooterFormidList[i]);
 						}
 					}
 
@@ -1370,63 +1346,63 @@ void OverlayMenu()
 							char NPCLooterBlacklistLabelText[sizeof("###NPCLooterBlacklist63")];
 							sprintf_s(NPCLooterBlacklistEnabledText, "NPC Looter Blacklist: %d", i);
 							sprintf_s(NPCLooterBlacklistLabelText, "###NPCLooterBlacklist%d", i);
-							ButtonToggle(NPCLooterBlacklistEnabledText, &NPCLooterSettings.EntityLooterBlacklistEnabled[i]);
+							ButtonToggle(NPCLooterBlacklistEnabledText, &ErectusIni::NPCLooterSettings.EntityLooterBlacklistEnabled[i]);
 							ImGui::SameLine(235.0f);
 							char FormidText[sizeof("00000000")];
-							sprintf_s(FormidText, "%08lX", NPCLooterSettings.EntityLooterBlacklist[i]);
+							sprintf_s(FormidText, "%08lX", ErectusIni::NPCLooterSettings.EntityLooterBlacklist[i]);
 							ImGui::SetNextItemWidth(224.0f);
 							ImGui::InputText(NPCLooterBlacklistLabelText, FormidText, sizeof(FormidText), ImGuiInputTextFlags_CharsHexadecimal);
 							if (ImGui::IsItemActive()) AllowDrag = false;
-							sscanf_s(FormidText, "%08lX", &NPCLooterSettings.EntityLooterBlacklist[i]);
+							sscanf_s(FormidText, "%08lX", &ErectusIni::NPCLooterSettings.EntityLooterBlacklist[i]);
 						}
 					}
 				}
 
 				if (ImGui::CollapsingHeader("Container Looter (6m Distance Limit)"))
 				{
-					LargeButtonToggle("Automatic Container Looting Enabled (Keybind: CTRL+PERIOD)###ContainerLooterEnabled", &ContainerLooterSettings.EntityLooterEnabled);
+					LargeButtonToggle("Automatic Container Looting Enabled (Keybind: CTRL+PERIOD)###ContainerLooterEnabled", &ErectusIni::ContainerLooterSettings.EntityLooterEnabled);
 
-					LargeButtonToggle("Draw Container Looter Status###ContainerLooterStatusEnabled", &ContainerLooterSettings.EntityLooterStatusEnabled);
+					LargeButtonToggle("Draw Container Looter Status###ContainerLooterStatusEnabled", &ErectusIni::ContainerLooterSettings.EntityLooterStatusEnabled);
 
-					ButtonToggle("All Weapons Enabled###ContainerLooterAllWeaponsEnabled", &ContainerLooterSettings.EntityLooterAllWeaponsEnabled);
+					ButtonToggle("All Weapons Enabled###ContainerLooterAllWeaponsEnabled", &ErectusIni::ContainerLooterSettings.EntityLooterAllWeaponsEnabled);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("All Armor Enabled###ContainerLooterAllArmorEnabled", &ContainerLooterSettings.EntityLooterAllArmorEnabled);
+					ButtonToggle("All Armor Enabled###ContainerLooterAllArmorEnabled", &ErectusIni::ContainerLooterSettings.EntityLooterAllArmorEnabled);
 
-					ButtonToggle("1* Weapons Enabled###ContainerLooterOneStarWeaponsEnabled", &ContainerLooterSettings.EntityLooterOneStarWeaponsEnabled);
+					ButtonToggle("1* Weapons Enabled###ContainerLooterOneStarWeaponsEnabled", &ErectusIni::ContainerLooterSettings.EntityLooterOneStarWeaponsEnabled);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("1* Armor Enabled###ContainerLooterOneStarArmorEnabled", &ContainerLooterSettings.EntityLooterOneStarArmorEnabled);
+					ButtonToggle("1* Armor Enabled###ContainerLooterOneStarArmorEnabled", &ErectusIni::ContainerLooterSettings.EntityLooterOneStarArmorEnabled);
 
-					ButtonToggle("2* Weapons Enabled###ContainerLooterTwoStarWeaponsEnabled", &ContainerLooterSettings.EntityLooterTwoStarWeaponsEnabled);
+					ButtonToggle("2* Weapons Enabled###ContainerLooterTwoStarWeaponsEnabled", &ErectusIni::ContainerLooterSettings.EntityLooterTwoStarWeaponsEnabled);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("2* Armor Enabled###ContainerLooterTwoStarArmorEnabled", &ContainerLooterSettings.EntityLooterTwoStarArmorEnabled);
+					ButtonToggle("2* Armor Enabled###ContainerLooterTwoStarArmorEnabled", &ErectusIni::ContainerLooterSettings.EntityLooterTwoStarArmorEnabled);
 
-					ButtonToggle("3* Weapons Enabled###ContainerLooterThreeStarWeaponsEnabled", &ContainerLooterSettings.EntityLooterThreeStarWeaponsEnabled);
+					ButtonToggle("3* Weapons Enabled###ContainerLooterThreeStarWeaponsEnabled", &ErectusIni::ContainerLooterSettings.EntityLooterThreeStarWeaponsEnabled);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("3* Armor Enabled###ContainerLooterThreeStarArmorEnabled", &ContainerLooterSettings.EntityLooterThreeStarArmorEnabled);
+					ButtonToggle("3* Armor Enabled###ContainerLooterThreeStarArmorEnabled", &ErectusIni::ContainerLooterSettings.EntityLooterThreeStarArmorEnabled);
 
-					ButtonToggle("Ammo Enabled###ContainerLooterAmmoEnabled", &ContainerLooterSettings.EntityLooterAmmoEnabled);
+					ButtonToggle("Ammo Enabled###ContainerLooterAmmoEnabled", &ErectusIni::ContainerLooterSettings.EntityLooterAmmoEnabled);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Mods Enabled###ContainerLooterModsEnabled", &ContainerLooterSettings.EntityLooterModsEnabled);
+					ButtonToggle("Mods Enabled###ContainerLooterModsEnabled", &ErectusIni::ContainerLooterSettings.EntityLooterModsEnabled);
 
-					ButtonToggle("Caps Enabled###ContainerLooterCapsEnabled", &ContainerLooterSettings.EntityLooterCapsEnabled);
+					ButtonToggle("Caps Enabled###ContainerLooterCapsEnabled", &ErectusIni::ContainerLooterSettings.EntityLooterCapsEnabled);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Junk Enabled###ContainerLooterJunkEnabled", &ContainerLooterSettings.EntityLooterJunkEnabled);
+					ButtonToggle("Junk Enabled###ContainerLooterJunkEnabled", &ErectusIni::ContainerLooterSettings.EntityLooterJunkEnabled);
 
-					ButtonToggle("Aid Enabled###ContainerLooterAidEnabled", &ContainerLooterSettings.EntityLooterAidEnabled);
+					ButtonToggle("Aid Enabled###ContainerLooterAidEnabled", &ErectusIni::ContainerLooterSettings.EntityLooterAidEnabled);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Treasure Maps Enabled###ContainerLooterTreasureMapsEnabled", &ContainerLooterSettings.EntityLooterTreasureMapsEnabled);
+					ButtonToggle("Treasure Maps Enabled###ContainerLooterTreasureMapsEnabled", &ErectusIni::ContainerLooterSettings.EntityLooterTreasureMapsEnabled);
 
-					ButtonToggle("Known Plans Enabled###ContainerLooterKnownPlansEnabled", &ContainerLooterSettings.EntityLooterKnownPlansEnabled);
+					ButtonToggle("Known Plans Enabled###ContainerLooterKnownPlansEnabled", &ErectusIni::ContainerLooterSettings.EntityLooterKnownPlansEnabled);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Unknown Plans Enabled###ContainerLooterUnknownPlansEnabled", &ContainerLooterSettings.EntityLooterUnknownPlansEnabled);
+					ButtonToggle("Unknown Plans Enabled###ContainerLooterUnknownPlansEnabled", &ErectusIni::ContainerLooterSettings.EntityLooterUnknownPlansEnabled);
 
-					ButtonToggle("Misc Enabled###ContainerLooterMiscEnabled", &ContainerLooterSettings.EntityLooterMiscEnabled);
+					ButtonToggle("Misc Enabled###ContainerLooterMiscEnabled", &ErectusIni::ContainerLooterSettings.EntityLooterMiscEnabled);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Other Enabled###ContainerLooterUnlistedEnabled", &ContainerLooterSettings.EntityLooterUnlistedEnabled);
+					ButtonToggle("Other Enabled###ContainerLooterUnlistedEnabled", &ErectusIni::ContainerLooterSettings.EntityLooterUnlistedEnabled);
 
-					LargeButtonToggle("Container Looter Formid List Enabled###ContainerLooterListEnabled", &ContainerLooterSettings.EntityLooterListEnabled);
+					LargeButtonToggle("Container Looter Formid List Enabled###ContainerLooterListEnabled", &ErectusIni::ContainerLooterSettings.EntityLooterListEnabled);
 
-					LargeButtonToggle("Container Looter Blacklist Enabled###ContainerLooterBlacklistToggle", &ContainerLooterSettings.EntityLooterBlacklistToggle);
+					LargeButtonToggle("Container Looter Blacklist Enabled###ContainerLooterBlacklistToggle", &ErectusIni::ContainerLooterSettings.EntityLooterBlacklistToggle);
 
 					if (ImGui::CollapsingHeader("Container Looter Formid List"))
 					{
@@ -1436,14 +1412,14 @@ void OverlayMenu()
 							char ContainerLooterLabelText[sizeof("###ContainerLooterList99")];
 							sprintf_s(ContainerLooterEnabledText, "Container Looter Slot: %d", i);
 							sprintf_s(ContainerLooterLabelText, "###ContainerLooterList%d", i);
-							ButtonToggle(ContainerLooterEnabledText, &ContainerLooterSettings.EntityLooterEnabledList[i]);
+							ButtonToggle(ContainerLooterEnabledText, &ErectusIni::ContainerLooterSettings.EntityLooterEnabledList[i]);
 							ImGui::SameLine(235.0f);
 							char FormidText[sizeof("00000000")];
-							sprintf_s(FormidText, "%08lX", ContainerLooterSettings.EntityLooterFormidList[i]);
+							sprintf_s(FormidText, "%08lX", ErectusIni::ContainerLooterSettings.EntityLooterFormidList[i]);
 							ImGui::SetNextItemWidth(224.0f);
 							ImGui::InputText(ContainerLooterLabelText, FormidText, sizeof(FormidText), ImGuiInputTextFlags_CharsHexadecimal);
 							if (ImGui::IsItemActive()) AllowDrag = false;
-							sscanf_s(FormidText, "%08lX", &ContainerLooterSettings.EntityLooterFormidList[i]);
+							sscanf_s(FormidText, "%08lX", &ErectusIni::ContainerLooterSettings.EntityLooterFormidList[i]);
 						}
 					}
 
@@ -1455,34 +1431,34 @@ void OverlayMenu()
 							char ContainerLooterBlacklistLabelText[sizeof("###ContainerLooterBlacklist63")];
 							sprintf_s(ContainerLooterBlacklistEnabledText, "Container Looter Blacklist: %d", i);
 							sprintf_s(ContainerLooterBlacklistLabelText, "###ContainerLooterBlacklist%d", i);
-							ButtonToggle(ContainerLooterBlacklistEnabledText, &ContainerLooterSettings.EntityLooterBlacklistEnabled[i]);
+							ButtonToggle(ContainerLooterBlacklistEnabledText, &ErectusIni::ContainerLooterSettings.EntityLooterBlacklistEnabled[i]);
 							ImGui::SameLine(235.0f);
 							char FormidText[sizeof("00000000")];
-							sprintf_s(FormidText, "%08lX", ContainerLooterSettings.EntityLooterBlacklist[i]);
+							sprintf_s(FormidText, "%08lX", ErectusIni::ContainerLooterSettings.EntityLooterBlacklist[i]);
 							ImGui::SetNextItemWidth(224.0f);
 							ImGui::InputText(ContainerLooterBlacklistLabelText, FormidText, sizeof(FormidText), ImGuiInputTextFlags_CharsHexadecimal);
 							if (ImGui::IsItemActive()) AllowDrag = false;
-							sscanf_s(FormidText, "%08lX", &ContainerLooterSettings.EntityLooterBlacklist[i]);
+							sscanf_s(FormidText, "%08lX", &ErectusIni::ContainerLooterSettings.EntityLooterBlacklist[i]);
 						}
 					}
 				}
 
 				if (ImGui::CollapsingHeader("Flora Harvester (6m Distance Limit)"))
 				{
-					LargeButtonToggle("Automatic Flora Harvesting Enabled (Keybind: CTRL+P])###HarvesterEnabled", &CustomHarvesterSettings.HarvesterEnabled);
+					LargeButtonToggle("Automatic Flora Harvesting Enabled (Keybind: CTRL+P])###HarvesterEnabled", &ErectusIni::CustomHarvesterSettings.HarvesterEnabled);
 
-					LargeButtonToggle("Draw Flora Harvester Status###HarvesterStatusEnabled", &CustomHarvesterSettings.HarvesterStatusEnabled);
+					LargeButtonToggle("Draw Flora Harvester Status###HarvesterStatusEnabled", &ErectusIni::CustomHarvesterSettings.HarvesterStatusEnabled);
 
-					LargeButtonToggle("Flora Harvester ESP Override (Uses Flora ESP Settings)", &CustomHarvesterSettings.HarvesterOverrideEnabled);
+					LargeButtonToggle("Flora Harvester ESP Override (Uses Flora ESP Settings)", &ErectusIni::CustomHarvesterSettings.HarvesterOverrideEnabled);
 
 					for (int i = 0; i < 69; i++)
 					{
-						ButtonToggle(CustomHarvesterSettings.HarvesterNameList[i], &CustomHarvesterSettings.HarvesterEnabledList[i]);
+						ButtonToggle(ErectusIni::CustomHarvesterSettings.HarvesterNameList[i], &ErectusIni::CustomHarvesterSettings.HarvesterEnabledList[i]);
 						ImGui::SameLine(235.0f);
 						char LabelText[sizeof("###HarvesterReadOnly68")];
 						sprintf_s(LabelText, "###HarvesterReadOnly%d", i);
 						char FormidText[sizeof("00000000")];
-						sprintf_s(FormidText, "%08lX", CustomHarvesterSettings.HarvesterFormidList[i]);
+						sprintf_s(FormidText, "%08lX", ErectusIni::CustomHarvesterSettings.HarvesterFormidList[i]);
 						ImGui::SetNextItemWidth(224.0f);
 						ImGui::InputText(LabelText, FormidText, sizeof(FormidText), ImGuiInputTextFlags_ReadOnly);
 						if (ImGui::IsItemActive()) AllowDrag = false;
@@ -1496,127 +1472,127 @@ void OverlayMenu()
 			{
 				if (ImGui::CollapsingHeader("Weapon Editor"))
 				{
-					ButtonToggle("No Recoil", &CustomWeaponSettings.NoRecoil);
+					ButtonToggle("No Recoil", &ErectusIni::CustomWeaponSettings.NoRecoil);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Infinite Ammo", &CustomWeaponSettings.InfiniteAmmo);
+					ButtonToggle("Infinite Ammo", &ErectusIni::CustomWeaponSettings.InfiniteAmmo);
 
-					ButtonToggle("No Spread", &CustomWeaponSettings.NoSpread);
+					ButtonToggle("No Spread", &ErectusIni::CustomWeaponSettings.NoSpread);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Instant Reload", &CustomWeaponSettings.InstantReload);
+					ButtonToggle("Instant Reload", &ErectusIni::CustomWeaponSettings.InstantReload);
 
-					ButtonToggle("No Sway", &CustomWeaponSettings.NoSway);
+					ButtonToggle("No Sway", &ErectusIni::CustomWeaponSettings.NoSway);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Automatic Flag###WeaponAutomatic", &CustomWeaponSettings.Automaticflag);
+					ButtonToggle("Automatic Flag###WeaponAutomatic", &ErectusIni::CustomWeaponSettings.Automaticflag);
 
-					ButtonToggle("Capacity###WeaponCapacityEnabled", &CustomWeaponSettings.CapacityEnabled);
+					ButtonToggle("Capacity###WeaponCapacityEnabled", &ErectusIni::CustomWeaponSettings.CapacityEnabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderInt("###WeaponCapacity", &CustomWeaponSettings.Capacity, 0, 999, "Capacity: %d");
+					ImGui::SliderInt("###WeaponCapacity", &ErectusIni::CustomWeaponSettings.Capacity, 0, 999, "Capacity: %d");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateInt(&CustomWeaponSettings.Capacity, 0, 999);
+					Erectus::ValidateInt(&ErectusIni::CustomWeaponSettings.Capacity, 0, 999);
 
-					ButtonToggle("Speed###WeaponSpeedEnabled", &CustomWeaponSettings.SpeedEnabled);
+					ButtonToggle("Speed###WeaponSpeedEnabled", &ErectusIni::CustomWeaponSettings.SpeedEnabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderFloat("###WeaponSpeed", &CustomWeaponSettings.Speed, 0.0f, 100.0f, "Speed: %.2f");
+					ImGui::SliderFloat("###WeaponSpeed", &ErectusIni::CustomWeaponSettings.Speed, 0.0f, 100.0f, "Speed: %.2f");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateFloat(&CustomWeaponSettings.Speed, 0.0f, 100.0f);
+					Erectus::ValidateFloat(&ErectusIni::CustomWeaponSettings.Speed, 0.0f, 100.0f);
 
-					ButtonToggle("Reach###WeaponReachEnabled", &CustomWeaponSettings.ReachEnabled);
+					ButtonToggle("Reach###WeaponReachEnabled", &ErectusIni::CustomWeaponSettings.ReachEnabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderFloat("###WeaponReach", &CustomWeaponSettings.Reach, 0.0f, 999.0f, "Reach: %.2f");
+					ImGui::SliderFloat("###WeaponReach", &ErectusIni::CustomWeaponSettings.Reach, 0.0f, 999.0f, "Reach: %.2f");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateFloat(&CustomWeaponSettings.Reach, 0.0f, 999.0f);
+					Erectus::ValidateFloat(&ErectusIni::CustomWeaponSettings.Reach, 0.0f, 999.0f);
 				}
 
 				if (ImGui::CollapsingHeader("Targeting Settings"))
 				{
-					ButtonToggle("Player Targeting (Keybind: T)", &CustomTargetSettings.LockPlayers);
+					ButtonToggle("Player Targeting (Keybind: T)", &ErectusIni::CustomTargetSettings.LockPlayers);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("NPC Targeting (Keybind: T)", &CustomTargetSettings.LockNPCs);
+					ButtonToggle("NPC Targeting (Keybind: T)", &ErectusIni::CustomTargetSettings.LockNPCs);
 
-					ButtonToggle("Damage Redirection (Players)", &CustomTargetSettings.IndirectPlayers);
+					ButtonToggle("Damage Redirection (Players)", &ErectusIni::CustomTargetSettings.IndirectPlayers);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Damage Redirection (NPCs)", &CustomTargetSettings.IndirectNPCs);
+					ButtonToggle("Damage Redirection (NPCs)", &ErectusIni::CustomTargetSettings.IndirectNPCs);
 
-					ButtonToggle("Send Damage (Players)", &CustomTargetSettings.DirectPlayers);
+					ButtonToggle("Send Damage (Players)", &ErectusIni::CustomTargetSettings.DirectPlayers);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Send Damage (NPCs)", &CustomTargetSettings.DirectNPCs);
+					ButtonToggle("Send Damage (NPCs)", &ErectusIni::CustomTargetSettings.DirectNPCs);
 
-					SmallButtonToggle("Living###TargetLiving", &CustomTargetSettings.TargetLiving);
+					SmallButtonToggle("Living###TargetLiving", &ErectusIni::CustomTargetSettings.TargetLiving);
 					ImGui::SameLine(122.0f);
-					SmallButtonToggle("Downed###TargetDowned", &CustomTargetSettings.TargetDowned);
+					SmallButtonToggle("Downed###TargetDowned", &ErectusIni::CustomTargetSettings.TargetDowned);
 					ImGui::SameLine(235.0f);
-					SmallButtonToggle("Dead###TargetDead", &CustomTargetSettings.TargetDead);
+					SmallButtonToggle("Dead###TargetDead", &ErectusIni::CustomTargetSettings.TargetDead);
 					ImGui::SameLine(349.0f);
-					SmallButtonToggle("Unknown###TargetUnknown", &CustomTargetSettings.TargetUnknown);
+					SmallButtonToggle("Unknown###TargetUnknown", &ErectusIni::CustomTargetSettings.TargetUnknown);
 
-					ButtonToggle("Ignore Render Distance###IgnoreRenderDistance", &CustomTargetSettings.IgnoreRenderDistance);
+					ButtonToggle("Ignore Render Distance###IgnoreRenderDistance", &ErectusIni::CustomTargetSettings.IgnoreRenderDistance);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderFloat("###TargetLockingFOV", &CustomTargetSettings.LockingFOV, 5.0f, 40.0f, "Targeting FOV: %.2f");
+					ImGui::SliderFloat("###TargetLockingFOV", &ErectusIni::CustomTargetSettings.LockingFOV, 5.0f, 40.0f, "Targeting FOV: %.2f");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateFloat(&CustomTargetSettings.LockingFOV, 5.0f, 40.0f);
+					Erectus::ValidateFloat(&ErectusIni::CustomTargetSettings.LockingFOV, 5.0f, 40.0f);
 
-					ButtonToggle("Ignore Essential NPCs###IgnoreEssentialNPCs", &CustomTargetSettings.IgnoreEssentialNPCs);
+					ButtonToggle("Ignore Essential NPCs###IgnoreEssentialNPCs", &ErectusIni::CustomTargetSettings.IgnoreEssentialNPCs);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::ColorEdit3("###TargetLockingColor", CustomTargetSettings.LockingColor);
+					ImGui::ColorEdit3("###TargetLockingColor", ErectusIni::CustomTargetSettings.LockingColor);
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateRGB(PlayerSettings.UnknownColor);
+					Erectus::ValidateRGB(ErectusIni::PlayerSettings.UnknownColor);
 
-					ButtonToggle("Automatic Retargeting###TargetLockingRetargeting", &CustomTargetSettings.Retargeting);
+					ButtonToggle("Automatic Retargeting###TargetLockingRetargeting", &ErectusIni::CustomTargetSettings.Retargeting);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
 					char TargetLockingCooldownText[sizeof("Cooldown: 120 (1920 ms)")];
-					sprintf_s(TargetLockingCooldownText, "Cooldown: %d (%d ms)", CustomTargetSettings.Cooldown, CustomTargetSettings.Cooldown * 16);
-					ImGui::SliderInt("###TargetLockingCooldown", &CustomTargetSettings.Cooldown, 0, 120, TargetLockingCooldownText);
+					sprintf_s(TargetLockingCooldownText, "Cooldown: %d (%d ms)", ErectusIni::CustomTargetSettings.Cooldown, ErectusIni::CustomTargetSettings.Cooldown * 16);
+					ImGui::SliderInt("###TargetLockingCooldown", &ErectusIni::CustomTargetSettings.Cooldown, 0, 120, TargetLockingCooldownText);
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateInt(&CustomTargetSettings.Cooldown, 0, 120);
+					Erectus::ValidateInt(&ErectusIni::CustomTargetSettings.Cooldown, 0, 120);
 
 					ImGui::SetNextItemWidth(224.0f);
 					char SendDamageMinText[sizeof("Send Damage (Min): 60 (960 ms)")];
-					sprintf_s(SendDamageMinText, "Send Damage (Min): %d (%d ms)", CustomTargetSettings.SendDamageMin, CustomTargetSettings.SendDamageMin * 16);
-					ImGui::SliderInt("###SendDamageMin", &CustomTargetSettings.SendDamageMin, 1, 60, SendDamageMinText);
+					sprintf_s(SendDamageMinText, "Send Damage (Min): %d (%d ms)", ErectusIni::CustomTargetSettings.SendDamageMin, ErectusIni::CustomTargetSettings.SendDamageMin * 16);
+					ImGui::SliderInt("###SendDamageMin", &ErectusIni::CustomTargetSettings.SendDamageMin, 1, 60, SendDamageMinText);
 					if (ImGui::IsItemActive())
 					{
 						AllowDrag = false;
-						if (CustomTargetSettings.SendDamageMax < CustomTargetSettings.SendDamageMin)
+						if (ErectusIni::CustomTargetSettings.SendDamageMax < ErectusIni::CustomTargetSettings.SendDamageMin)
 						{
-							CustomTargetSettings.SendDamageMax = CustomTargetSettings.SendDamageMin;
+							ErectusIni::CustomTargetSettings.SendDamageMax = ErectusIni::CustomTargetSettings.SendDamageMin;
 						}
 					}
-					ValidateInt(&CustomTargetSettings.SendDamageMin, 1, 60);
-					ValidateInt(&CustomTargetSettings.SendDamageMax, 1, 60);
+					Erectus::ValidateInt(&ErectusIni::CustomTargetSettings.SendDamageMin, 1, 60);
+					Erectus::ValidateInt(&ErectusIni::CustomTargetSettings.SendDamageMax, 1, 60);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
 					char SendDamageMaxText[sizeof("Send Damage (Max): 60 (960 ms)")];
-					sprintf_s(SendDamageMaxText, "Send Damage (Max): %d (%d ms)", CustomTargetSettings.SendDamageMax, CustomTargetSettings.SendDamageMax * 16);
-					ImGui::SliderInt("###SendDamageMax", &CustomTargetSettings.SendDamageMax, 1, 60, SendDamageMaxText);
+					sprintf_s(SendDamageMaxText, "Send Damage (Max): %d (%d ms)", ErectusIni::CustomTargetSettings.SendDamageMax, ErectusIni::CustomTargetSettings.SendDamageMax * 16);
+					ImGui::SliderInt("###SendDamageMax", &ErectusIni::CustomTargetSettings.SendDamageMax, 1, 60, SendDamageMaxText);
 					if (ImGui::IsItemActive())
 					{
 						AllowDrag = false;
-						if (CustomTargetSettings.SendDamageMax < CustomTargetSettings.SendDamageMin)
+						if (ErectusIni::CustomTargetSettings.SendDamageMax < ErectusIni::CustomTargetSettings.SendDamageMin)
 						{
-							CustomTargetSettings.SendDamageMin = CustomTargetSettings.SendDamageMax;
+							ErectusIni::CustomTargetSettings.SendDamageMin = ErectusIni::CustomTargetSettings.SendDamageMax;
 						}
 					}
-					ValidateInt(&CustomTargetSettings.SendDamageMin, 1, 60);
-					ValidateInt(&CustomTargetSettings.SendDamageMax, 1, 60);
-					if (CustomTargetSettings.SendDamageMax < CustomTargetSettings.SendDamageMin)
+					Erectus::ValidateInt(&ErectusIni::CustomTargetSettings.SendDamageMin, 1, 60);
+					Erectus::ValidateInt(&ErectusIni::CustomTargetSettings.SendDamageMax, 1, 60);
+					if (ErectusIni::CustomTargetSettings.SendDamageMax < ErectusIni::CustomTargetSettings.SendDamageMin)
 					{
-						CustomTargetSettings.SendDamageMax = CustomTargetSettings.SendDamageMin;
+						ErectusIni::CustomTargetSettings.SendDamageMax = ErectusIni::CustomTargetSettings.SendDamageMin;
 					}
 
 					char *FavoritedWeaponsPreview = nullptr;
-					if (CustomTargetSettings.FavoriteIndex < 12)
+					if (ErectusIni::CustomTargetSettings.FavoriteIndex < 12)
 					{
-						FavoritedWeaponsPreview = GetFavoritedWeaponText(BYTE(CustomTargetSettings.FavoriteIndex));
+						FavoritedWeaponsPreview = ErectusMemory::GetFavoritedWeaponText(BYTE(ErectusIni::CustomTargetSettings.FavoriteIndex));
 						if (FavoritedWeaponsPreview == nullptr)
 						{
-							FavoritedWeaponsPreview = new char[sizeof("[?] Favorited Item Invalid")];
-							sprintf_s(FavoritedWeaponsPreview, sizeof("[?] Favorited Item Invalid"), "[%c] Favorited Item Invalid", GetFavoriteSlot(BYTE(CustomTargetSettings.FavoriteIndex)));
+							FavoritedWeaponsPreview = new char[sizeof("[?] Favorited Item InErectus::Valid")];
+							sprintf_s(FavoritedWeaponsPreview, sizeof("[?] Favorited Item InErectus::Valid"), "[%c] Favorited Item InErectus::Valid", ErectusMemory::GetFavoriteSlot(BYTE(ErectusIni::CustomTargetSettings.FavoriteIndex)));
 						}
 					}
 					else
@@ -1628,7 +1604,7 @@ void OverlayMenu()
 					ImGui::SetNextItemWidth(451.0f);
 					if (ImGui::BeginCombo("###BeginTempCombo", FavoritedWeaponsPreview))
 					{
-						FavoritedWeaponsArray = GetFavoritedWeapons();
+						FavoritedWeaponsArray = ErectusMemory::GetFavoritedWeapons();
 						if (FavoritedWeaponsArray == nullptr)
 						{
 							FavoritedWeaponsArray = new char*[13];
@@ -1636,8 +1612,8 @@ void OverlayMenu()
 							sprintf_s(FavoritedWeaponsArray[0], sizeof("[?] No Weapon Selected"), "[?] No Weapon Selected");
 							for (int i = 1; i < 13; i++)
 							{
-								FavoritedWeaponsArray[i] = new char[sizeof("[?] Favorited Item Invalid")];
-								sprintf_s(FavoritedWeaponsArray[i], sizeof("[?] Favorited Item Invalid"), "[%c] Favorited Item Invalid", GetFavoriteSlot(BYTE(i - 1)));
+								FavoritedWeaponsArray[i] = new char[sizeof("[?] Favorited Item InErectus::Valid")];
+								sprintf_s(FavoritedWeaponsArray[i], sizeof("[?] Favorited Item InErectus::Valid"), "[%c] Favorited Item InErectus::Valid", ErectusMemory::GetFavoriteSlot(BYTE(i - 1)));
 							}
 						}
 
@@ -1647,11 +1623,11 @@ void OverlayMenu()
 							{
 								if (i)
 								{
-									CustomTargetSettings.FavoriteIndex = i - 1;
+									ErectusIni::CustomTargetSettings.FavoriteIndex = i - 1;
 								}
 								else
 								{
-									CustomTargetSettings.FavoriteIndex = 12;
+									ErectusIni::CustomTargetSettings.FavoriteIndex = 12;
 								}
 							}
 						}
@@ -1681,52 +1657,52 @@ void OverlayMenu()
 						FavoritedWeaponsArray = nullptr;
 					}
 
-					ValidateInt(&CustomTargetSettings.FavoriteIndex, 0, 12);
+					Erectus::ValidateInt(&ErectusIni::CustomTargetSettings.FavoriteIndex, 0, 12);
 				}
 
 				if (ImGui::CollapsingHeader("Melee Settings"))
 				{
-					LargeButtonToggle("Melee Enabled (Keybind: U)", &CustomMeleeSettings.MeleeEnabled);
+					LargeButtonToggle("Melee Enabled (Keybind: U)", &ErectusIni::CustomMeleeSettings.MeleeEnabled);
 
 					ImGui::SetNextItemWidth(224.0f);
 					char MeleeSpeedMinText[sizeof("Melee Speed (Min): 60 (960 ms)")];
-					sprintf_s(MeleeSpeedMinText, "Melee Speed (Min): %d (%d ms)", CustomMeleeSettings.MeleeSpeedMin, CustomMeleeSettings.MeleeSpeedMin * 16);
-					ImGui::SliderInt("###MeleeSpeedMin", &CustomMeleeSettings.MeleeSpeedMin, 1, 60, MeleeSpeedMinText);
+					sprintf_s(MeleeSpeedMinText, "Melee Speed (Min): %d (%d ms)", ErectusIni::CustomMeleeSettings.MeleeSpeedMin, ErectusIni::CustomMeleeSettings.MeleeSpeedMin * 16);
+					ImGui::SliderInt("###MeleeSpeedMin", &ErectusIni::CustomMeleeSettings.MeleeSpeedMin, 1, 60, MeleeSpeedMinText);
 					if (ImGui::IsItemActive())
 					{
 						AllowDrag = false;
-						if (CustomMeleeSettings.MeleeSpeedMax < CustomMeleeSettings.MeleeSpeedMin)
+						if (ErectusIni::CustomMeleeSettings.MeleeSpeedMax < ErectusIni::CustomMeleeSettings.MeleeSpeedMin)
 						{
-							CustomMeleeSettings.MeleeSpeedMax = CustomMeleeSettings.MeleeSpeedMin;
+							ErectusIni::CustomMeleeSettings.MeleeSpeedMax = ErectusIni::CustomMeleeSettings.MeleeSpeedMin;
 						}
 					}
-					ValidateInt(&CustomMeleeSettings.MeleeSpeedMin, 1, 60);
-					ValidateInt(&CustomMeleeSettings.MeleeSpeedMax, 1, 60);
+					Erectus::ValidateInt(&ErectusIni::CustomMeleeSettings.MeleeSpeedMin, 1, 60);
+					Erectus::ValidateInt(&ErectusIni::CustomMeleeSettings.MeleeSpeedMax, 1, 60);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
 					char MeleeSpeedMaxText[sizeof("Melee Speed (Max): 60 (960 ms)")];
-					sprintf_s(MeleeSpeedMaxText, "Melee Speed (Max): %d (%d ms)", CustomMeleeSettings.MeleeSpeedMax, CustomMeleeSettings.MeleeSpeedMax * 16);
-					ImGui::SliderInt("###MeleeSpeedMax", &CustomMeleeSettings.MeleeSpeedMax, 1, 60, MeleeSpeedMaxText);
+					sprintf_s(MeleeSpeedMaxText, "Melee Speed (Max): %d (%d ms)", ErectusIni::CustomMeleeSettings.MeleeSpeedMax, ErectusIni::CustomMeleeSettings.MeleeSpeedMax * 16);
+					ImGui::SliderInt("###MeleeSpeedMax", &ErectusIni::CustomMeleeSettings.MeleeSpeedMax, 1, 60, MeleeSpeedMaxText);
 					if (ImGui::IsItemActive())
 					{
 						AllowDrag = false;
-						if (CustomMeleeSettings.MeleeSpeedMax < CustomMeleeSettings.MeleeSpeedMin)
+						if (ErectusIni::CustomMeleeSettings.MeleeSpeedMax < ErectusIni::CustomMeleeSettings.MeleeSpeedMin)
 						{
-							CustomMeleeSettings.MeleeSpeedMin = CustomMeleeSettings.MeleeSpeedMax;
+							ErectusIni::CustomMeleeSettings.MeleeSpeedMin = ErectusIni::CustomMeleeSettings.MeleeSpeedMax;
 						}
 					}
-					ValidateInt(&CustomMeleeSettings.MeleeSpeedMin, 1, 60);
-					ValidateInt(&CustomMeleeSettings.MeleeSpeedMax, 1, 60);
-					if (CustomMeleeSettings.MeleeSpeedMax < CustomMeleeSettings.MeleeSpeedMin)
+					Erectus::ValidateInt(&ErectusIni::CustomMeleeSettings.MeleeSpeedMin, 1, 60);
+					Erectus::ValidateInt(&ErectusIni::CustomMeleeSettings.MeleeSpeedMax, 1, 60);
+					if (ErectusIni::CustomMeleeSettings.MeleeSpeedMax < ErectusIni::CustomMeleeSettings.MeleeSpeedMin)
 					{
-						CustomMeleeSettings.MeleeSpeedMax = CustomMeleeSettings.MeleeSpeedMin;
+						ErectusIni::CustomMeleeSettings.MeleeSpeedMax = ErectusIni::CustomMeleeSettings.MeleeSpeedMin;
 					}
 				}
 
 				if (ImGui::CollapsingHeader("One Position Kill"))
 				{
-					LargeButtonToggle("OPK Players (Keybind: CTRL+B)", &CustomOpkSettings.PlayersEnabled);
-					LargeButtonToggle("OPK NPCs (Keybind: CTRL+N)", &CustomOpkSettings.NpcsEnabled);
+					LargeButtonToggle("OPK Players (Keybind: CTRL+B)", &ErectusIni::CustomOpkSettings.PlayersEnabled);
+					LargeButtonToggle("OPK NPCs (Keybind: CTRL+N)", &ErectusIni::CustomOpkSettings.NpcsEnabled);
 				}
 
 				ImGui::EndTabItem();
@@ -1736,102 +1712,102 @@ void OverlayMenu()
 			{
 				if (ImGui::CollapsingHeader("Local Player Settings"))
 				{
-					LargeButtonToggle("Position Spoofing (Keybind CTRL+L)##LocalPlayerPositionSpoofingEnabled", &CustomLocalPlayerSettings.PositionSpoofingEnabled);
-					ButtonToggle("Draw Position Status###LocalPlayerDrawPositionSpoofingEnabled", &CustomLocalPlayerSettings.DrawPositionSpoofingEnabled);
+					LargeButtonToggle("Position Spoofing (Keybind CTRL+L)##LocalPlayerPositionSpoofingEnabled", &ErectusIni::CustomLocalPlayerSettings.PositionSpoofingEnabled);
+					ButtonToggle("Draw Position Status###LocalPlayerDrawPositionSpoofingEnabled", &ErectusIni::CustomLocalPlayerSettings.DrawPositionSpoofingEnabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderInt("###LocalPlayerPositionSpoofingHeight", &CustomLocalPlayerSettings.PositionSpoofingHeight, -524287, 524287, "Spoofed Height: %d");
+					ImGui::SliderInt("###LocalPlayerPositionSpoofingHeight", &ErectusIni::CustomLocalPlayerSettings.PositionSpoofingHeight, -524287, 524287, "Spoofed Height: %d");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateInt(&CustomLocalPlayerSettings.PositionSpoofingHeight, -524287, 524287);
+					Erectus::ValidateInt(&ErectusIni::CustomLocalPlayerSettings.PositionSpoofingHeight, -524287, 524287);
 
-					ButtonToggle("Noclip (Keybind CTRL+Y)###NoclipEnabled", &CustomLocalPlayerSettings.NoclipEnabled);
+					ButtonToggle("Noclip (Keybind CTRL+Y)###NoclipEnabled", &ErectusIni::CustomLocalPlayerSettings.NoclipEnabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderFloat("###NoclipSpeed", &CustomLocalPlayerSettings.NoclipSpeed, 0.0f, 2.0f, "Speed: %.5f");
+					ImGui::SliderFloat("###NoclipSpeed", &ErectusIni::CustomLocalPlayerSettings.NoclipSpeed, 0.0f, 2.0f, "Speed: %.5f");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateFloat(&CustomLocalPlayerSettings.NoclipSpeed, 0.0f, 2.0f);
+					Erectus::ValidateFloat(&ErectusIni::CustomLocalPlayerSettings.NoclipSpeed, 0.0f, 2.0f);
 
-					ButtonToggle("Client State", &CustomLocalPlayerSettings.ClientState);
+					ButtonToggle("Client State", &ErectusIni::CustomLocalPlayerSettings.ClientState);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("Automatic Client State", &CustomLocalPlayerSettings.AutomaticClientState);
+					ButtonToggle("Automatic Client State", &ErectusIni::CustomLocalPlayerSettings.AutomaticClientState);
 
-					LargeButtonToggle("Freeze Action Points###LocalPlayerFreezeApEnabled", &CustomLocalPlayerSettings.FreezeApEnabled);
+					LargeButtonToggle("Freeze Action Points###LocalPlayerFreezeApEnabled", &ErectusIni::CustomLocalPlayerSettings.FreezeApEnabled);
 
-					ButtonToggle("Action Points###LocalPlayerAPEnabled", &CustomLocalPlayerSettings.ActionPointsEnabled);
-					ImGui::SameLine(235.0f);
-					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderInt("###LocalPlayerAP", &CustomLocalPlayerSettings.ActionPoints, 0, 99999, "Action Points: %d");
-					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateInt(&CustomLocalPlayerSettings.ActionPoints, 0, 99999);
-
-					ButtonToggle("Strength###LocalPlayerStrengthEnabled", &CustomLocalPlayerSettings.StrengthEnabled);
+					ButtonToggle("Action Points###LocalPlayerAPEnabled", &ErectusIni::CustomLocalPlayerSettings.ActionPointsEnabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderInt("###LocalPlayerStrength", &CustomLocalPlayerSettings.Strength, 0, 99999, "Strength: %d");
+					ImGui::SliderInt("###LocalPlayerAP", &ErectusIni::CustomLocalPlayerSettings.ActionPoints, 0, 99999, "Action Points: %d");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateInt(&CustomLocalPlayerSettings.Strength, 0, 99999);
+					Erectus::ValidateInt(&ErectusIni::CustomLocalPlayerSettings.ActionPoints, 0, 99999);
 
-					ButtonToggle("Perception###LocalPlayerPerceptionEnabled", &CustomLocalPlayerSettings.PerceptionEnabled);
+					ButtonToggle("Strength###LocalPlayerStrengthEnabled", &ErectusIni::CustomLocalPlayerSettings.StrengthEnabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderInt("###LocalPlayerPerception", &CustomLocalPlayerSettings.Perception, 0, 99999, "Perception: %d");
+					ImGui::SliderInt("###LocalPlayerStrength", &ErectusIni::CustomLocalPlayerSettings.Strength, 0, 99999, "Strength: %d");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateInt(&CustomLocalPlayerSettings.Perception, 0, 99999);
+					Erectus::ValidateInt(&ErectusIni::CustomLocalPlayerSettings.Strength, 0, 99999);
 
-					ButtonToggle("Endurance###LocalPlayerEnduranceEnabled", &CustomLocalPlayerSettings.EnduranceEnabled);
+					ButtonToggle("Perception###LocalPlayerPerceptionEnabled", &ErectusIni::CustomLocalPlayerSettings.PerceptionEnabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderInt("###LocalPlayerEndurance", &CustomLocalPlayerSettings.Endurance, 0, 99999, "Endurance: %d");
+					ImGui::SliderInt("###LocalPlayerPerception", &ErectusIni::CustomLocalPlayerSettings.Perception, 0, 99999, "Perception: %d");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateInt(&CustomLocalPlayerSettings.Endurance, 0, 99999);
+					Erectus::ValidateInt(&ErectusIni::CustomLocalPlayerSettings.Perception, 0, 99999);
 
-					ButtonToggle("Charisma###LocalPlayerCharismaEnabled", &CustomLocalPlayerSettings.CharismaEnabled);
+					ButtonToggle("Endurance###LocalPlayerEnduranceEnabled", &ErectusIni::CustomLocalPlayerSettings.EnduranceEnabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderInt("###LocalPlayerCharisma", &CustomLocalPlayerSettings.Charisma, 0, 99999, "Charisma: %d");
+					ImGui::SliderInt("###LocalPlayerEndurance", &ErectusIni::CustomLocalPlayerSettings.Endurance, 0, 99999, "Endurance: %d");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateInt(&CustomLocalPlayerSettings.Charisma, 0, 99999);
+					Erectus::ValidateInt(&ErectusIni::CustomLocalPlayerSettings.Endurance, 0, 99999);
 
-					ButtonToggle("Intelligence###LocalPlayerIntelligenceEnabled", &CustomLocalPlayerSettings.IntelligenceEnabled);
+					ButtonToggle("Charisma###LocalPlayerCharismaEnabled", &ErectusIni::CustomLocalPlayerSettings.CharismaEnabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderInt("###LocalPlayerIntelligence", &CustomLocalPlayerSettings.Intelligence, 0, 99999, "Intelligence: %d");
+					ImGui::SliderInt("###LocalPlayerCharisma", &ErectusIni::CustomLocalPlayerSettings.Charisma, 0, 99999, "Charisma: %d");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateInt(&CustomLocalPlayerSettings.Intelligence, 0, 99999);
+					Erectus::ValidateInt(&ErectusIni::CustomLocalPlayerSettings.Charisma, 0, 99999);
 
-					ButtonToggle("Agility###LocalPlayerAgilityEnabled", &CustomLocalPlayerSettings.AgilityEnabled);
+					ButtonToggle("Intelligence###LocalPlayerIntelligenceEnabled", &ErectusIni::CustomLocalPlayerSettings.IntelligenceEnabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderInt("###LocalPlayerAgility", &CustomLocalPlayerSettings.Agility, 0, 99999, "Agility: %d");
+					ImGui::SliderInt("###LocalPlayerIntelligence", &ErectusIni::CustomLocalPlayerSettings.Intelligence, 0, 99999, "Intelligence: %d");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateInt(&CustomLocalPlayerSettings.Agility, 0, 99999);
+					Erectus::ValidateInt(&ErectusIni::CustomLocalPlayerSettings.Intelligence, 0, 99999);
 
-					ButtonToggle("Luck###LocalPlayerLuckEnabled", &CustomLocalPlayerSettings.LuckEnabled);
+					ButtonToggle("Agility###LocalPlayerAgilityEnabled", &ErectusIni::CustomLocalPlayerSettings.AgilityEnabled);
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
-					ImGui::SliderInt("###LocalPlayerLuck", &CustomLocalPlayerSettings.Luck, 0, 99999, "Luck: %d");
+					ImGui::SliderInt("###LocalPlayerAgility", &ErectusIni::CustomLocalPlayerSettings.Agility, 0, 99999, "Agility: %d");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateInt(&CustomLocalPlayerSettings.Luck, 0, 99999);
+					Erectus::ValidateInt(&ErectusIni::CustomLocalPlayerSettings.Agility, 0, 99999);
+
+					ButtonToggle("Luck###LocalPlayerLuckEnabled", &ErectusIni::CustomLocalPlayerSettings.LuckEnabled);
+					ImGui::SameLine(235.0f);
+					ImGui::SetNextItemWidth(224.0f);
+					ImGui::SliderInt("###LocalPlayerLuck", &ErectusIni::CustomLocalPlayerSettings.Luck, 0, 99999, "Luck: %d");
+					if (ImGui::IsItemActive()) AllowDrag = false;
+					Erectus::ValidateInt(&ErectusIni::CustomLocalPlayerSettings.Luck, 0, 99999);
 				}
 
 				if (ImGui::CollapsingHeader("Character Settings"))
 				{
-					LargeButtonToggle("Character Appearance Editing Enabled###ChargenEditingEnabled", &CustomChargenSettings.ChargenEditingEnabled);
+					LargeButtonToggle("Character Appearance Editing Enabled###ChargenEditingEnabled", &ErectusIni::CustomChargenSettings.ChargenEditingEnabled);
 
 					ImGui::SetNextItemWidth(451.0f);
-					ImGui::SliderFloat("###ChargenThin", &CustomChargenSettings.Thin, 0.0f, 1.0f, "Character Appearance (Thin): %f");
+					ImGui::SliderFloat("###ChargenThin", &ErectusIni::CustomChargenSettings.Thin, 0.0f, 1.0f, "Character Appearance (Thin): %f");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateFloat(&CustomChargenSettings.Thin, 0.0f, 1.0f);
+					Erectus::ValidateFloat(&ErectusIni::CustomChargenSettings.Thin, 0.0f, 1.0f);
 
 					ImGui::SetNextItemWidth(451.0f);
-					ImGui::SliderFloat("###ChargenMuscular", &CustomChargenSettings.Muscular, 0.0f, 1.0f, "Character Appearance (Muscular): %f");
+					ImGui::SliderFloat("###ChargenMuscular", &ErectusIni::CustomChargenSettings.Muscular, 0.0f, 1.0f, "Character Appearance (Muscular): %f");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateFloat(&CustomChargenSettings.Muscular, 0.0f, 1.0f);
+					Erectus::ValidateFloat(&ErectusIni::CustomChargenSettings.Muscular, 0.0f, 1.0f);
 
 					ImGui::SetNextItemWidth(451.0f);
-					ImGui::SliderFloat("###ChargenLarge", &CustomChargenSettings.Large, 0.0f, 1.0f, "Character Appearance (Large): %f");
+					ImGui::SliderFloat("###ChargenLarge", &ErectusIni::CustomChargenSettings.Large, 0.0f, 1.0f, "Character Appearance (Large): %f");
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					ValidateFloat(&CustomChargenSettings.Large, 0.0f, 1.0f);
+					Erectus::ValidateFloat(&ErectusIni::CustomChargenSettings.Large, 0.0f, 1.0f);
 				}
 
 				ImGui::EndTabItem();
@@ -1841,18 +1817,18 @@ void OverlayMenu()
 			{
 				if (ImGui::CollapsingHeader("Utility"))
 				{
-					ButtonToggle("Draw Local Player Data", &CustomUtilitySettings.DebugPlayer);
+					ButtonToggle("Draw Local Player Data", &ErectusIni::CustomUtilitySettings.DebugPlayer);
 					ImGui::SameLine(235.0f);
-					ButtonToggle("ESP Debug Mode", &CustomUtilitySettings.DebugEsp);
+					ButtonToggle("ESP Debug Mode", &ErectusIni::CustomUtilitySettings.DebugEsp);
 
-					if (CustomUtilitySettings.PtrFormid)
+					if (ErectusIni::CustomUtilitySettings.PtrFormid)
 					{
 						ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 1.0f, 0.0f, 0.3f));
 						ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 1.0f, 0.0f, 0.4f));
 						ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 1.0f, 0.0f, 0.5f));
 						if (ImGui::Button("Get Pointer###GetPointerEnabled", ImVec2(224.0f, 0.0f)))
 						{
-							GetPtrResult = GetPtr(CustomUtilitySettings.PtrFormid);
+							GetPtrResult = ErectusMemory::GetPtr(ErectusIni::CustomUtilitySettings.PtrFormid);
 						}
 						ImGui::PopStyleColor(3);
 					}
@@ -1869,14 +1845,14 @@ void OverlayMenu()
 
 					ImGui::SameLine(235.0f);
 					char PtrFormidText[sizeof("00000000")];
-					sprintf_s(PtrFormidText, "%08lX", CustomUtilitySettings.PtrFormid);
+					sprintf_s(PtrFormidText, "%08lX", ErectusIni::CustomUtilitySettings.PtrFormid);
 					ImGui::SetNextItemWidth(80.0f);
 					if (ImGui::InputText("###PtrFormidText", PtrFormidText, sizeof(PtrFormidText), ImGuiInputTextFlags_CharsHexadecimal))
 					{
 						GetPtrResult = 0;
 					}
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					sscanf_s(PtrFormidText, "%08lX", &CustomUtilitySettings.PtrFormid);
+					sscanf_s(PtrFormidText, "%08lX", &ErectusIni::CustomUtilitySettings.PtrFormid);
 
 					ImGui::SameLine(318.0f);
 					char PtrPointerText[sizeof("0000000000000000")];
@@ -1885,14 +1861,14 @@ void OverlayMenu()
 					ImGui::InputText("###PtrPointerText", PtrPointerText, sizeof(PtrPointerText), ImGuiInputTextFlags_ReadOnly);
 					if (ImGui::IsItemActive()) AllowDrag = false;
 
-					if (CustomUtilitySettings.AddressFormid)
+					if (ErectusIni::CustomUtilitySettings.AddressFormid)
 					{
 						ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 1.0f, 0.0f, 0.3f));
 						ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 1.0f, 0.0f, 0.4f));
 						ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 1.0f, 0.0f, 0.5f));
 						if (ImGui::Button("Get Address###GetAddressEnabled", ImVec2(224.0f, 0.0f)))
 						{
-							GetAddressResult = GetAddress(CustomUtilitySettings.AddressFormid);
+							GetAddressResult = ErectusMemory::GetAddress(ErectusIni::CustomUtilitySettings.AddressFormid);
 						}
 						ImGui::PopStyleColor(3);
 					}
@@ -1909,14 +1885,14 @@ void OverlayMenu()
 
 					ImGui::SameLine(235.0f);
 					char AddressFormidText[sizeof("00000000")];
-					sprintf_s(AddressFormidText, "%08lX", CustomUtilitySettings.AddressFormid);
+					sprintf_s(AddressFormidText, "%08lX", ErectusIni::CustomUtilitySettings.AddressFormid);
 					ImGui::SetNextItemWidth(80.0f);
 					if (ImGui::InputText("###AddressFormidText", AddressFormidText, sizeof(AddressFormidText), ImGuiInputTextFlags_CharsHexadecimal))
 					{
 						GetAddressResult = 0;
 					}
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					sscanf_s(AddressFormidText, "%08lX", &CustomUtilitySettings.AddressFormid);
+					sscanf_s(AddressFormidText, "%08lX", &ErectusIni::CustomUtilitySettings.AddressFormid);
 
 					ImGui::SameLine(318.0f);
 					char AddressPointerText[sizeof("0000000000000000")];
@@ -1931,31 +1907,31 @@ void OverlayMenu()
 					ButtonToggle("Source Formid###SwapperSourceFormidToggle", &SwapperSourceToggle);
 					ImGui::SameLine(235.0f);
 					char SourceFormidText[sizeof("00000000")];
-					sprintf_s(SourceFormidText, "%08lX", CustomSwapperSettings.SourceFormid);
+					sprintf_s(SourceFormidText, "%08lX", ErectusIni::CustomSwapperSettings.SourceFormid);
 					ImGui::SetNextItemWidth(224.0f);
 					ImGui::InputText("###SwapperSourceFormidText", SourceFormidText, sizeof(SourceFormidText), ImGuiInputTextFlags_CharsHexadecimal);
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					sscanf_s(SourceFormidText, "%08lX", &CustomSwapperSettings.SourceFormid);
+					sscanf_s(SourceFormidText, "%08lX", &ErectusIni::CustomSwapperSettings.SourceFormid);
 
 					ButtonToggle("Destination Formid###SwapperDestinationFormidToggle", &SwapperDestinationToggle);
 					ImGui::SameLine(235.0f);
 					char DestinationFormidText[sizeof("00000000")];
-					sprintf_s(DestinationFormidText, "%08lX", CustomSwapperSettings.DestinationFormid);
+					sprintf_s(DestinationFormidText, "%08lX", ErectusIni::CustomSwapperSettings.DestinationFormid);
 					ImGui::SetNextItemWidth(224.0f);
 					ImGui::InputText("###SwapperDestinationFormidText", DestinationFormidText, sizeof(DestinationFormidText), ImGuiInputTextFlags_CharsHexadecimal);
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					sscanf_s(DestinationFormidText, "%08lX", &CustomSwapperSettings.DestinationFormid);
+					sscanf_s(DestinationFormidText, "%08lX", &ErectusIni::CustomSwapperSettings.DestinationFormid);
 
-					if (SwapperSourceToggle && CustomSwapperSettings.SourceFormid && SwapperDestinationToggle && CustomSwapperSettings.DestinationFormid)
+					if (SwapperSourceToggle && ErectusIni::CustomSwapperSettings.SourceFormid && SwapperDestinationToggle && ErectusIni::CustomSwapperSettings.DestinationFormid)
 					{
 						ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 1.0f, 0.0f, 0.3f));
 						ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 1.0f, 0.0f, 0.4f));
 						ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 1.0f, 0.0f, 0.5f));
 						if (ImGui::Button("Edit Reference (Overwrite Destination)###EditReferenceEnabled", ImVec2(451.0f, 0.0f)))
 						{
-							if (ReferenceSwap(&CustomSwapperSettings.SourceFormid, &CustomSwapperSettings.DestinationFormid))
+							if (ErectusMemory::ReferenceSwap(&ErectusIni::CustomSwapperSettings.SourceFormid, &ErectusIni::CustomSwapperSettings.DestinationFormid))
 							{
-								CustomSwapperSettings.DestinationFormid = CustomSwapperSettings.SourceFormid;
+								ErectusIni::CustomSwapperSettings.DestinationFormid = ErectusIni::CustomSwapperSettings.SourceFormid;
 								SwapperSourceToggle = false;
 								SwapperDestinationToggle = false;
 							}
@@ -1980,56 +1956,56 @@ void OverlayMenu()
 
 					ImGui::SameLine(122.0f);
 					char SourceFormidText[sizeof("00000000")];
-					sprintf_s(SourceFormidText, "%08lX", CustomTransferSettings.SourceFormid);
+					sprintf_s(SourceFormidText, "%08lX", ErectusIni::CustomTransferSettings.SourceFormid);
 					ImGui::SetNextItemWidth(110.0f);
 					ImGui::InputText("###TransferSourceFormidText", SourceFormidText, sizeof(SourceFormidText), ImGuiInputTextFlags_CharsHexadecimal);
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					sscanf_s(SourceFormidText, "%08lX", &CustomTransferSettings.SourceFormid);
+					sscanf_s(SourceFormidText, "%08lX", &ErectusIni::CustomTransferSettings.SourceFormid);
 					ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 1.0f, 0.0f, 0.3f));
 					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 1.0f, 0.0f, 0.4f));
 					ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 1.0f, 0.0f, 0.5f));
 					ImGui::SameLine(235.0f);
 					if (ImGui::Button("Get Player###TransferSourceLocalPlayer", ImVec2(110.0f, 0.0f)))
 					{
-						CustomTransferSettings.SourceFormid = GetLocalPlayerFormid();
+						ErectusIni::CustomTransferSettings.SourceFormid = ErectusMemory::GetLocalPlayerFormid();
 					}
 					ImGui::SameLine(349.0f);
 					if (ImGui::Button("Get STASH###TransferSourceSTASH", ImVec2(110.0f, 0.0f)))
 					{
-						CustomTransferSettings.SourceFormid = GetStashFormid();
+						ErectusIni::CustomTransferSettings.SourceFormid = ErectusMemory::GetStashFormid();
 					}
 					ImGui::PopStyleColor(3);
 
 					SmallButtonToggle("Destination###TransferDestinationFormidToggle", &TransferDestinationToggle);
 					ImGui::SameLine(122.0f);
 					char DestinationFormidText[sizeof("00000000")];
-					sprintf_s(DestinationFormidText, "%08lX", CustomTransferSettings.DestinationFormid);
+					sprintf_s(DestinationFormidText, "%08lX", ErectusIni::CustomTransferSettings.DestinationFormid);
 					ImGui::SetNextItemWidth(110.0f);
 					ImGui::InputText("###TransferDestinationFormidText", DestinationFormidText, sizeof(DestinationFormidText), ImGuiInputTextFlags_CharsHexadecimal);
 					if (ImGui::IsItemActive()) AllowDrag = false;
-					sscanf_s(DestinationFormidText, "%08lX", &CustomTransferSettings.DestinationFormid);
+					sscanf_s(DestinationFormidText, "%08lX", &ErectusIni::CustomTransferSettings.DestinationFormid);
 					ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 1.0f, 0.0f, 0.3f));
 					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 1.0f, 0.0f, 0.4f));
 					ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 1.0f, 0.0f, 0.5f));
 					ImGui::SameLine(235.0f);
 					if (ImGui::Button("Get Player###TransferDestinationLocalPlayer", ImVec2(110.0f, 0.0f)))
 					{
-						CustomTransferSettings.DestinationFormid = GetLocalPlayerFormid();
+						ErectusIni::CustomTransferSettings.DestinationFormid = ErectusMemory::GetLocalPlayerFormid();
 					}
 					ImGui::SameLine(349.0f);
 					if (ImGui::Button("Get STASH###TransferDestinationSTASH", ImVec2(110.0f, 0.0f)))
 					{
-						CustomTransferSettings.DestinationFormid = GetStashFormid();
+						ErectusIni::CustomTransferSettings.DestinationFormid = ErectusMemory::GetStashFormid();
 					}
 					ImGui::PopStyleColor(3);
 
 					bool AllowTransfer = false;
 
-					if (TransferSourceToggle && CustomTransferSettings.SourceFormid && TransferDestinationToggle && CustomTransferSettings.DestinationFormid)
+					if (TransferSourceToggle && ErectusIni::CustomTransferSettings.SourceFormid && TransferDestinationToggle && ErectusIni::CustomTransferSettings.DestinationFormid)
 					{
-						if (CustomTransferSettings.UseWhitelist)
+						if (ErectusIni::CustomTransferSettings.UseWhitelist)
 						{
-							AllowTransfer = CheckItemTransferList();
+							AllowTransfer = ErectusMemory::CheckItemTransferList();
 						}
 						else
 						{
@@ -2044,7 +2020,7 @@ void OverlayMenu()
 						ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 1.0f, 0.0f, 0.5f));
 						if (ImGui::Button("Transfer Items###TransferItemsEnabled", ImVec2(451.0f, 0.0f)))
 						{
-							TransferItems(CustomTransferSettings.SourceFormid, CustomTransferSettings.DestinationFormid);
+							ErectusMemory::TransferItems(ErectusIni::CustomTransferSettings.SourceFormid, ErectusIni::CustomTransferSettings.DestinationFormid);
 						}
 						ImGui::PopStyleColor(3);
 					}
@@ -2059,8 +2035,8 @@ void OverlayMenu()
 						ImGui::PopItemFlag();
 					}
 
-					LargeButtonToggle("Use Item Transfer Whitelist", &CustomTransferSettings.UseWhitelist);
-					LargeButtonToggle("Use Item Transfer Blacklist", &CustomTransferSettings.UseBlacklist);
+					LargeButtonToggle("Use Item Transfer Whitelist", &ErectusIni::CustomTransferSettings.UseWhitelist);
+					LargeButtonToggle("Use Item Transfer Blacklist", &ErectusIni::CustomTransferSettings.UseBlacklist);
 
 					if (ImGui::CollapsingHeader("Item Transfer Whitelist Settings"))
 					{
@@ -2070,14 +2046,14 @@ void OverlayMenu()
 							char WhitelistText[sizeof("###ItemTransferWhitelist31")];
 							sprintf_s(WhitelistedText, "Transfer Whitelist Slot: %d", i);
 							sprintf_s(WhitelistText, "###ItemTransferWhitelist%d", i);
-							ButtonToggle(WhitelistedText, &CustomTransferSettings.Whitelisted[i]);
+							ButtonToggle(WhitelistedText, &ErectusIni::CustomTransferSettings.Whitelisted[i]);
 							ImGui::SameLine(235.0f);
 							char FormidText[sizeof("00000000")];
-							sprintf_s(FormidText, "%08lX", CustomTransferSettings.Whitelist[i]);
+							sprintf_s(FormidText, "%08lX", ErectusIni::CustomTransferSettings.Whitelist[i]);
 							ImGui::SetNextItemWidth(224.0f);
 							ImGui::InputText(WhitelistText, FormidText, sizeof(FormidText), ImGuiInputTextFlags_CharsHexadecimal);
 							if (ImGui::IsItemActive()) AllowDrag = false;
-							sscanf_s(FormidText, "%08lX", &CustomTransferSettings.Whitelist[i]);
+							sscanf_s(FormidText, "%08lX", &ErectusIni::CustomTransferSettings.Whitelist[i]);
 						}
 					}
 
@@ -2089,42 +2065,42 @@ void OverlayMenu()
 							char BlacklistText[sizeof("###ItemTransferBlacklist31")];
 							sprintf_s(BlacklistedText, "Transfer Blacklist Slot: %d", i);
 							sprintf_s(BlacklistText, "###ItemTransferBlacklist%d", i);
-							ButtonToggle(BlacklistedText, &CustomTransferSettings.Blacklisted[i]);
+							ButtonToggle(BlacklistedText, &ErectusIni::CustomTransferSettings.Blacklisted[i]);
 							ImGui::SameLine(235.0f);
 							char FormidText[sizeof("00000000")];
-							sprintf_s(FormidText, "%08lX", CustomTransferSettings.Blacklist[i]);
+							sprintf_s(FormidText, "%08lX", ErectusIni::CustomTransferSettings.Blacklist[i]);
 							ImGui::SetNextItemWidth(224.0f);
 							ImGui::InputText(BlacklistText, FormidText, sizeof(FormidText), ImGuiInputTextFlags_CharsHexadecimal);
 							if (ImGui::IsItemActive()) AllowDrag = false;
-							sscanf_s(FormidText, "%08lX", &CustomTransferSettings.Blacklist[i]);
+							sscanf_s(FormidText, "%08lX", &ErectusIni::CustomTransferSettings.Blacklist[i]);
 						}
 					}
 				}
 
 				if (ImGui::CollapsingHeader("Nuke Codes"))
 				{
-					ButtonToggle("Automatic Nuke Codes", &CustomNukeCodeSettings.AutomaticNukeCodes);
+					ButtonToggle("Automatic Nuke Codes", &ErectusIni::CustomNukeCodeSettings.AutomaticNukeCodes);
 					ImGui::SameLine(235.0f);
 					ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 1.0f, 0.0f, 0.3f));
 					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 1.0f, 0.0f, 0.4f));
 					ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 1.0f, 0.0f, 0.5f));
 					if (ImGui::Button("Get Nuke Codes", ImVec2(224.0f, 0.0f)))
 					{
-						GetNukeCode(0x000921AE, AlphaCode);
-						GetNukeCode(0x00092213, BravoCode);
-						GetNukeCode(0x00092214, CharlieCode);
+						ErectusMemory::GetNukeCode(0x000921AE, AlphaCode);
+						ErectusMemory::GetNukeCode(0x00092213, BravoCode);
+						ErectusMemory::GetNukeCode(0x00092214, CharlieCode);
 					}
 					ImGui::PopStyleColor(3);
 
-					ButtonToggle("Draw Nuke Code Alpha", &CustomNukeCodeSettings.DrawCodeAlpha);
+					ButtonToggle("Draw Nuke Code Alpha", &ErectusIni::CustomNukeCodeSettings.DrawCodeAlpha);
 					ImGui::SameLine(255.0f);
 					ImGui::Text("%d %d %d %d %d %d %d %d - Alpha", AlphaCode[0], AlphaCode[1], AlphaCode[2], AlphaCode[3], AlphaCode[4], AlphaCode[5], AlphaCode[6], AlphaCode[7]);
 
-					ButtonToggle("Draw Nuke Code Bravo", &CustomNukeCodeSettings.DrawCodeBravo);
+					ButtonToggle("Draw Nuke Code Bravo", &ErectusIni::CustomNukeCodeSettings.DrawCodeBravo);
 					ImGui::SameLine(255.0f);
 					ImGui::Text("%d %d %d %d %d %d %d %d - Bravo", BravoCode[0], BravoCode[1], BravoCode[2], BravoCode[3], BravoCode[4], BravoCode[5], BravoCode[6], BravoCode[7]);
 
-					ButtonToggle("Draw Nuke Code Charlie", &CustomNukeCodeSettings.DrawCodeCharlie);
+					ButtonToggle("Draw Nuke Code Charlie", &ErectusIni::CustomNukeCodeSettings.DrawCodeCharlie);
 					ImGui::SameLine(255.0f);
 					ImGui::Text("%d %d %d %d %d %d %d %d - Charlie", CharlieCode[0], CharlieCode[1], CharlieCode[2], CharlieCode[3], CharlieCode[4], CharlieCode[5], CharlieCode[6], CharlieCode[7]);
 				}
@@ -2143,46 +2119,46 @@ void OverlayMenu()
 						ImGui::SetNextItemWidth(110.0f);
 						char TeleportDestinationTextX[sizeof("###TeleportDestinationX15")];
 						sprintf_s(TeleportDestinationTextX, "###TeleportDestinationX%d", i);
-						ImGui::InputFloat(TeleportDestinationTextX, &CustomTeleportSettings.TeleportEntryData[i].Destination[0]);
+						ImGui::InputFloat(TeleportDestinationTextX, &ErectusIni::CustomTeleportSettings.TeleportEntryData[i].Destination[0]);
 						if (ImGui::IsItemActive()) AllowDrag = false;
 						ImGui::SameLine(122.0f);
 						ImGui::SetNextItemWidth(110.0f);
 						char TeleportDestinationTextY[sizeof("###TeleportDestinationY15")];
 						sprintf_s(TeleportDestinationTextY, "###TeleportDestinationY%d", i);
-						ImGui::InputFloat(TeleportDestinationTextY, &CustomTeleportSettings.TeleportEntryData[i].Destination[1]);
+						ImGui::InputFloat(TeleportDestinationTextY, &ErectusIni::CustomTeleportSettings.TeleportEntryData[i].Destination[1]);
 						if (ImGui::IsItemActive()) AllowDrag = false;
 						ImGui::SameLine(235.0f);
 						ImGui::SetNextItemWidth(110.0f);
 						char TeleportDestinationTextZ[sizeof("###TeleportDestinationZ15")];
 						sprintf_s(TeleportDestinationTextZ, "###TeleportDestinationZ%d", i);
-						ImGui::InputFloat(TeleportDestinationTextZ, &CustomTeleportSettings.TeleportEntryData[i].Destination[2]);
+						ImGui::InputFloat(TeleportDestinationTextZ, &ErectusIni::CustomTeleportSettings.TeleportEntryData[i].Destination[2]);
 						if (ImGui::IsItemActive()) AllowDrag = false;
 						ImGui::SameLine(349.0f);
 						ImGui::SetNextItemWidth(110.0f);
 						char TeleportDestinationTextW[sizeof("###TeleportDestinationW15")];
 						sprintf_s(TeleportDestinationTextW, "###TeleportDestinationW%d", i);
-						ImGui::InputFloat(TeleportDestinationTextW, &CustomTeleportSettings.TeleportEntryData[i].Destination[3]);
+						ImGui::InputFloat(TeleportDestinationTextW, &ErectusIni::CustomTeleportSettings.TeleportEntryData[i].Destination[3]);
 						if (ImGui::IsItemActive()) AllowDrag = false;
 
 						char FormidLabelText[sizeof("###TeleportCellFormid15")];
 						sprintf_s(FormidLabelText, "###TeleportCellFormid%d", i);
 						char FormidText[sizeof("00000000")];
-						sprintf_s(FormidText, "%08lX", CustomTeleportSettings.TeleportEntryData[i].CellFormid);
+						sprintf_s(FormidText, "%08lX", ErectusIni::CustomTeleportSettings.TeleportEntryData[i].CellFormid);
 						ImGui::SetNextItemWidth(110.0f);
 						ImGui::InputText(FormidLabelText, FormidText, sizeof(FormidText), ImGuiInputTextFlags_CharsHexadecimal);
 						if (ImGui::IsItemActive()) AllowDrag = false;
-						sscanf_s(FormidText, "%08lX", &CustomTeleportSettings.TeleportEntryData[i].CellFormid);
+						sscanf_s(FormidText, "%08lX", &ErectusIni::CustomTeleportSettings.TeleportEntryData[i].CellFormid);
 						ImGui::SameLine(122.0f);
 						char TeleportDestinationEnabledText[sizeof("Set Position###TeleportDestinationEnabled15")];
 						sprintf_s(TeleportDestinationEnabledText, "Set Position###TeleportDestinationEnabled%d", i);
 						char TeleportDestinationDisabledText[sizeof("Set Position###TeleportDestinationDisabled15")];
 						sprintf_s(TeleportDestinationDisabledText, "Set Position###TeleportDestinationDisabled%d", i);
-						if (!CustomTeleportSettings.TeleportEntryData[i].DisableSaving)
+						if (!ErectusIni::CustomTeleportSettings.TeleportEntryData[i].DisableSaving)
 						{
 							ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 1.0f, 0.0f, 0.3f));
 							ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 1.0f, 0.0f, 0.4f));
 							ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 1.0f, 0.0f, 0.5f));
-							if (ImGui::Button(TeleportDestinationEnabledText, ImVec2(110.0f, 0.0f))) GetTeleportPosition(i);
+							if (ImGui::Button(TeleportDestinationEnabledText, ImVec2(110.0f, 0.0f))) ErectusMemory::GetTeleportPosition(i);
 							ImGui::PopStyleColor(3);
 						}
 						else
@@ -2198,18 +2174,18 @@ void OverlayMenu()
 						ImGui::SameLine(235.0f);
 						char DisableSavingText[sizeof("Lock###DisableSaving15")];
 						sprintf_s(DisableSavingText, "Lock###DisableSaving%d", i);
-						SmallButtonToggle(DisableSavingText, &CustomTeleportSettings.TeleportEntryData[i].DisableSaving);
+						SmallButtonToggle(DisableSavingText, &ErectusIni::CustomTeleportSettings.TeleportEntryData[i].DisableSaving);
 						ImGui::SameLine(349.0f);
 						char TeleportRequestEnabledText[sizeof("Teleport###TeleportRequestEnabled15")];
 						sprintf_s(TeleportRequestEnabledText, "Teleport###TeleportRequestEnabled%d", i);
 						char TeleportRequestDisabledText[sizeof("Teleport###TeleportRequestDisabled15")];
 						sprintf_s(TeleportRequestDisabledText, "Teleport###TeleportRequestDisabled%d", i);
-						if (CustomTeleportSettings.TeleportEntryData[i].CellFormid)
+						if (ErectusIni::CustomTeleportSettings.TeleportEntryData[i].CellFormid)
 						{
 							ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 1.0f, 0.0f, 0.3f));
 							ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 1.0f, 0.0f, 0.4f));
 							ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 1.0f, 0.0f, 0.5f));
-							if (ImGui::Button(TeleportRequestEnabledText, ImVec2(110.0f, 0.0f))) RequestTeleport(i);
+							if (ImGui::Button(TeleportRequestEnabledText, ImVec2(110.0f, 0.0f))) ErectusMemory::RequestTeleport(i);
 							ImGui::PopStyleColor(3);
 						}
 						else
@@ -2230,7 +2206,7 @@ void OverlayMenu()
 
 			if (ImGui::BeginTabItem("BitMsgWriter###BitMsgWriterTab"))
 			{
-				LargeButtonToggle("Message Sender Enabled", &AllowMessages);
+				LargeButtonToggle("Message Sender Enabled", &ErectusMemory::AllowMessages);
 				ImGui::EndTabItem();
 			}
 			
@@ -2272,21 +2248,21 @@ void OverlayMenu()
 	ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
 }
 
-bool ImGuiInitialize()
+bool ErectusImGui::ImGuiInitialize()
 {
 	ImGui::CreateContext();
 	ImGuiContextCreated = true;
 
-	if (!ImGui_ImplWin32_Init(WindowHwnd)) return false;
+	if (!ImGui_ImplWin32_Init(ErectusMain::WindowHwnd)) return false;
 	else ImGuiWin32Initialized = true;
 
-	if (!ImGui_ImplDX9_Init(D3D9Device)) return false;
+	if (!ImGui_ImplDX9_Init(ErectusD3D9::D3D9Device)) return false;
 	else ImGuiD3D9Initialized = true;
 
 	return true;
 }
 
-void ImGuiCleanup()
+void ErectusImGui::ImGuiCleanup()
 {
 	if (ImGuiD3D9Initialized)
 	{

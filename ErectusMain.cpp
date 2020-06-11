@@ -1,32 +1,15 @@
 #include "ErectusInclude.h"
+extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
-int WindowSize[2] = { 0, 0 };
-int WindowPosition[2] = { 0, 0 };
-HWND WindowHwnd = NULL;
-
-bool OverlayMenuActive = false;
-bool OverlayActive = false;
-bool OverlayForeground = false;
-bool OverlayMenuPress = false;
-
-int WindowTopmostCounter = 0;
-
-bool ExperimentalOverlayFix = false;
-
-DWORD *KeybindHandlerKey = nullptr;
-DWORD *KeybindHandlerBit = nullptr;
-DWORD OldKeybindHandlerKey = 0;
-DWORD OldKeybindHandlerBit = 0;
-
-void Close()
+void ErectusMain::Close()
 {
-	if (WindowHwnd != NULL)
+	if (ErectusMain::WindowHwnd != NULL)
 	{
 		SendMessage(WindowHwnd, WM_CLOSE, NULL, NULL);
 	}
 }
 
-void SetOverlayMenu()
+void ErectusMain::SetOverlayMenu()
 {
 	if (WindowSize[0] != 480 || WindowSize[1] != 480)
 	{
@@ -35,7 +18,7 @@ void SetOverlayMenu()
 
 		if (WindowHwnd != NULL)
 		{
-			DeviceResetQueued = true;
+			ErectusD3D9::DeviceResetQueued = true;
 			SetWindowPos(WindowHwnd, HWND_NOTOPMOST, WindowPosition[0], WindowPosition[1], WindowSize[0], WindowSize[1], 0);
 		}
 	}
@@ -52,7 +35,7 @@ void SetOverlayMenu()
 		if (WindowHwnd != NULL)
 		{
 			MoveWindow(WindowHwnd, WindowPosition[0], WindowPosition[1], WindowSize[0], WindowSize[1], FALSE);
-			if (!DeviceResetQueued)
+			if (!ErectusD3D9::DeviceResetQueued)
 			{
 				SetWindowPos(WindowHwnd, HWND_NOTOPMOST, WindowPosition[0], WindowPosition[1], WindowSize[0], WindowSize[1], 0);
 			}
@@ -75,28 +58,28 @@ void SetOverlayMenu()
 		}
 	}
 
-	ProcessMenuActive = false;
+	ErectusProcess::ProcessMenuActive = false;
 	OverlayMenuActive = true;
 	OverlayActive = false;
 }
 
-bool SetOverlayPosition(bool Topmost, bool Layered)
+bool ErectusMain::SetOverlayPosition(bool Topmost, bool Layered)
 {
-	if (!HwndValid(Pid))
+	if (!ErectusProcess::HwndValid(ErectusProcess::Pid))
 	{
 		OverlayActive = false;
 		return false;
 	}
 
 	RECT WindowRect;
-	if (!GetWindowRect(Hwnd, &WindowRect))
+	if (!GetWindowRect(ErectusProcess::Hwnd, &WindowRect))
 	{
 		OverlayActive = false;
 		return false;
 	}
 
 	RECT ClientRect;
-	if (!GetClientRect(Hwnd, &ClientRect))
+	if (!GetClientRect(ErectusProcess::Hwnd, &ClientRect))
 	{
 		OverlayActive = false;
 		return false;
@@ -110,14 +93,14 @@ bool SetOverlayPosition(bool Topmost, bool Layered)
 	Position[0] = WindowRect.left - (((ClientRect.right + WindowRect.left) - WindowRect.right) / 2);
 	Position[1] = WindowRect.top - (((ClientRect.bottom + WindowRect.top) - WindowRect.bottom) / 2);
 
-	if (GetWindowLongPtr(Hwnd, GWL_STYLE) & WS_BORDER)
+	if (GetWindowLongPtr(ErectusProcess::Hwnd, GWL_STYLE) & WS_BORDER)
 	{
 		int Buffer = GetSystemMetrics(SM_CYCAPTION) / 2;
 		Buffer += (Buffer & 1);
 		Position[1] += Buffer;
 	}
 
-	if (GetMenu(Hwnd) != NULL)
+	if (GetMenu(ErectusProcess::Hwnd) != NULL)
 	{
 		int Buffer = GetSystemMetrics(SM_CYMENU) / 2;
 		Buffer += (Buffer & 1);
@@ -135,7 +118,7 @@ bool SetOverlayPosition(bool Topmost, bool Layered)
 	{
 		WindowSize[0] = Size[0];
 		WindowSize[1] = Size[1];
-		DeviceResetQueued = true;
+		ErectusD3D9::DeviceResetQueued = true;
 	}
 
 	if (Topmost || Layered)
@@ -149,7 +132,7 @@ bool SetOverlayPosition(bool Topmost, bool Layered)
 			if (WindowTopmostCounter > 3)
 			{
 				WindowTopmostCounter = 0;
-				SetProcessError(0, "Process State: Overlay not topmost", sizeof("Process State: Overlay not topmost"));
+				ErectusProcess::SetProcessError(0, "Process State: Overlay not topmost", sizeof("Process State: Overlay not topmost"));
 				OverlayActive = false;
 				return false;
 			}
@@ -183,13 +166,13 @@ bool SetOverlayPosition(bool Topmost, bool Layered)
 		}
 	}
 
-	ProcessMenuActive = false;
+	ErectusProcess::ProcessMenuActive = false;
 	OverlayMenuActive = false;
 	OverlayActive = true;
 	return true;
 }
 
-void KeybindInput(DWORD *KeybindKey, DWORD *KeybindBit)
+void ErectusMain::KeybindInput(DWORD *KeybindKey, DWORD *KeybindBit)
 {
 	if (KeybindHandlerKey != nullptr && KeybindHandlerBit != nullptr)
 	{
@@ -204,7 +187,7 @@ void KeybindInput(DWORD *KeybindKey, DWORD *KeybindBit)
 	*KeybindHandlerBit = 0;
 }
 
-void CancelKeybindInput()
+void ErectusMain::CancelKeybindInput()
 {
 	if (KeybindHandlerKey != nullptr && KeybindHandlerBit != nullptr)
 	{
@@ -217,7 +200,7 @@ void CancelKeybindInput()
 	}
 }
 
-void ClearKeybind(DWORD *KeybindKey, DWORD *KeybindBit)
+void ErectusMain::ClearKeybind(DWORD *KeybindKey, DWORD *KeybindBit)
 {
 	if (KeybindHandlerKey == KeybindKey && KeybindHandlerBit == KeybindBit)
 	{
@@ -230,7 +213,7 @@ void ClearKeybind(DWORD *KeybindKey, DWORD *KeybindBit)
 	*KeybindBit = 0;
 }
 
-bool KeybindHandler(WPARAM wParam, LPARAM lParam)
+bool ErectusMain::KeybindHandler(WPARAM wParam, LPARAM lParam)
 {
 	if (KeybindHandlerKey == nullptr)
 	{
@@ -252,7 +235,6 @@ bool KeybindHandler(WPARAM wParam, LPARAM lParam)
 	return true;
 }
 
-extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	if (ImGui_ImplWin32_WndProcHandler(hwnd, uMsg, wParam, lParam))
@@ -263,10 +245,10 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	switch (uMsg)
 	{
 	case WM_KEYDOWN:
-		KeybindHandler(wParam, lParam);
+		ErectusMain::KeybindHandler(wParam, lParam);
 		return 0;
 	case WM_PAINT:
-		D3D9Render();
+		ErectusD3D9::D3D9Render();
 		return 0;
 	case WM_CLOSE:
 		DestroyWindow(hwnd);
@@ -296,7 +278,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 	WindowClassEx.hCursor = NULL;
 	WindowClassEx.hbrBackground = CreateSolidBrush(RGB(0x00, 0x00, 0x00));
 	WindowClassEx.lpszMenuName = NULL;
-	WindowClassEx.lpszClassName = "ErectusCLS";
+	WindowClassEx.lpszClassName = "ErCLS";
 	WindowClassEx.hIconSm = NULL;
 
 	if (!RegisterClassEx(&WindowClassEx))
@@ -304,45 +286,45 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 		return 1;
 	}
 
-	WindowSize[0] = 384;
-	WindowSize[1] = 224;
-	WindowPosition[0] = (GetSystemMetrics(SM_CXSCREEN) / 2) - (WindowSize[0] / 2);
-	WindowPosition[1] = (GetSystemMetrics(SM_CYSCREEN) / 2) - (WindowSize[1] / 2);
-	WindowHwnd = CreateWindowEx(WS_EX_TRANSPARENT | WS_EX_LAYERED, WindowClassEx.lpszClassName, "Erectus", WS_POPUP, WindowPosition[0], WindowPosition[1], WindowSize[0], WindowSize[1], NULL, NULL, WindowClassEx.hInstance, NULL);
+	ErectusMain::WindowSize[0] = 384;
+	ErectusMain::WindowSize[1] = 224;
+	ErectusMain::WindowPosition[0] = (GetSystemMetrics(SM_CXSCREEN) / 2) - (ErectusMain::WindowSize[0] / 2);
+	ErectusMain::WindowPosition[1] = (GetSystemMetrics(SM_CYSCREEN) / 2) - (ErectusMain::WindowSize[1] / 2);
+	ErectusMain::WindowHwnd = CreateWindowEx(WS_EX_TRANSPARENT | WS_EX_LAYERED, WindowClassEx.lpszClassName, "Er", WS_POPUP, ErectusMain::WindowPosition[0], ErectusMain::WindowPosition[1], ErectusMain::WindowSize[0], ErectusMain::WindowSize[1], NULL, NULL, WindowClassEx.hInstance, NULL);
 	
-	if (WindowHwnd == NULL)
+	if (ErectusMain::WindowHwnd == NULL)
 	{
 		UnregisterClass(WindowClassEx.lpszClassName, WindowClassEx.hInstance);
 		return 2;
 	}
 
 	MARGINS OverlayMargins = { -1, -1, -1, -1 };
-	DwmExtendFrameIntoClientArea(WindowHwnd, &OverlayMargins);
-	SetLayeredWindowAttributes(WindowHwnd, RGB(0x00, 0x00, 0x00), 0xFF, LWA_ALPHA);
-	SetWindowLongPtr(WindowHwnd, GWL_EXSTYLE, WS_EX_TRANSPARENT);
-	ShowWindow(WindowHwnd, SW_SHOW);
+	DwmExtendFrameIntoClientArea(ErectusMain::WindowHwnd, &OverlayMargins);
+	SetLayeredWindowAttributes(ErectusMain::WindowHwnd, RGB(0x00, 0x00, 0x00), 0xFF, LWA_ALPHA);
+	SetWindowLongPtr(ErectusMain::WindowHwnd, GWL_EXSTYLE, WS_EX_TRANSPARENT);
+	ShowWindow(ErectusMain::WindowHwnd, SW_SHOW);
 
-	D3D9Initialized = D3D9Initialize();
-	if (!D3D9Initialized)
+	ErectusD3D9::D3D9Initialized = ErectusD3D9::D3D9Initialize();
+	if (!ErectusD3D9::D3D9Initialized)
 	{
-		Close();
-		D3D9Cleanup();
+		ErectusMain::Close();
+		ErectusD3D9::D3D9Cleanup();
 		UnregisterClass(WindowClassEx.lpszClassName, WindowClassEx.hInstance);
 		return 3;
 	}
 
-	ImGuiInitialized = ImGuiInitialize();
-	if (!ImGuiInitialized)
+	ErectusImGui::ImGuiInitialized = ErectusImGui::ImGuiInitialize();
+	if (!ErectusImGui::ImGuiInitialized)
 	{
-		Close();
-		D3D9Cleanup();
-		ImGuiCleanup();
+		ErectusMain::Close();
+		ErectusD3D9::D3D9Cleanup();
+		ErectusImGui::ImGuiCleanup();
 		UnregisterClass(WindowClassEx.lpszClassName, WindowClassEx.hInstance);
 		return 4;
 	}
 
-	ResetProcessData(true, 1);
-	ReadIniSettings();
+	ErectusProcess::ResetProcessData(true, 1);
+	ErectusIni::ReadIniSettings();
 
 	MSG OverlayMsg;
 	while (GetMessage(&OverlayMsg, NULL, 0, 0))
@@ -351,12 +333,12 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 		DispatchMessage(&OverlayMsg);
 	}
 
-	ResetProcessData(true, 0);
-	CancelKeybindInput();
-	WriteIniSettings();
+	ErectusProcess::ResetProcessData(true, 0);
+	ErectusMain::CancelKeybindInput();
+	ErectusIni::WriteIniSettings();
 
-	D3D9Cleanup();
-	ImGuiCleanup();
+	ErectusD3D9::D3D9Cleanup();
+	ErectusImGui::ImGuiCleanup();
 	UnregisterClass(WindowClassEx.lpszClassName, WindowClassEx.hInstance);
 	return 0;
 }

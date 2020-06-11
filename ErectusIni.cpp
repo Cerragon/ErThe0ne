@@ -1,7 +1,9 @@
 #include "ErectusInclude.h"
+using namespace settingsClasses;
 
 mINI::INIFile file("Erectus.ini");
 mINI::INIStructure ini;
+
 
 OverlaySettingsA DefaultPlayerSettings
 {
@@ -297,22 +299,6 @@ ItemLooterSettings DefaultItemLooterSettings
 		0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
 		0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
 	},
-};
-
-WeaponSettings DefaultWeaponSettings
-{
-	false,
-	false,
-	false,
-	false,
-	false,
-	false,
-	false,
-	250,
-	false,
-	2.0f,
-	false,
-	500.0f,
 };
 
 TargetSettings DefaultTargetSettings
@@ -811,36 +797,36 @@ ExtraNPCSettings DefaultExtraNPCSettings
 	},
 };
 
-OverlaySettingsA PlayerSettings = DefaultPlayerSettings;
-OverlaySettingsA NpcSettings = DefaultNpcSettings;
-OverlaySettingsB ContainerSettings = DefaultOverlaySettingsB;
-OverlaySettingsB JunkSettings = DefaultOverlaySettingsB;
-OverlaySettingsB PlanSettings = DefaultOverlaySettingsB;
-OverlaySettingsB MagazineSettings = DefaultOverlaySettingsB;
-OverlaySettingsB BobbleheadSettings = DefaultOverlaySettingsB;
-OverlaySettingsB ItemSettings = DefaultOverlaySettingsB;
-OverlaySettingsB FloraSettings = DefaultOverlaySettingsB;
-OverlaySettingsB EntitySettings = DefaultOverlaySettingsB;
-ScrapLooterSettings CustomScrapLooterSettings = DefaultScrapLooterSettings;
-ItemLooterSettings CustomItemLooterSettings = DefaultItemLooterSettings;
-WeaponSettings CustomWeaponSettings = DefaultWeaponSettings;
-TargetSettings CustomTargetSettings = DefaultTargetSettings;
-LocalPlayerSettings CustomLocalPlayerSettings = DefaultLocalPlayerSettings;
-OpkSettings CustomOpkSettings = DefaultOpkSettings;
-UtilitySettings CustomUtilitySettings = DefaultUtilitySettings;
-SwapperSettings CustomSwapperSettings = DefaultSwapperSettings;
-TransferSettings CustomTransferSettings = DefaultTransferSettings;
-TeleportSettings CustomTeleportSettings = DefaultTeleportSettings;
-NukeCodeSettings CustomNukeCodeSettings = DefaultNukeCodeSettings;
-LegendarySettings CustomLegendarySettings = DefaultLegendarySettings;
-FluxSettings CustomFluxSettings = DefaultFluxSettings;
-EntityLooterSettings NPCLooterSettings = DefaultEntityLooterSettings;
-EntityLooterSettings ContainerLooterSettings = DefaultEntityLooterSettings;
-HarvesterSettings CustomHarvesterSettings = DefaultHarvesterSettings;
-KnownRecipeSettings CustomKnownRecipeSettings = DefaultKnownRecipeSettings;
-MeleeSettings CustomMeleeSettings = DefaultMeleeSettings;
-ChargenSettings CustomChargenSettings = DefaultChargenSettings;
-ExtraNPCSettings CustomExtraNPCSettings = DefaultExtraNPCSettings;
+OverlaySettingsA ErectusIni::PlayerSettings = DefaultPlayerSettings;
+OverlaySettingsA ErectusIni::NpcSettings = DefaultNpcSettings;
+OverlaySettingsB ErectusIni::ContainerSettings = DefaultOverlaySettingsB;
+OverlaySettingsB ErectusIni::JunkSettings = DefaultOverlaySettingsB;
+OverlaySettingsB ErectusIni::PlanSettings = DefaultOverlaySettingsB;
+OverlaySettingsB ErectusIni::MagazineSettings = DefaultOverlaySettingsB;
+OverlaySettingsB ErectusIni::BobbleheadSettings = DefaultOverlaySettingsB;
+OverlaySettingsB ErectusIni::ItemSettings = DefaultOverlaySettingsB;
+OverlaySettingsB ErectusIni::FloraSettings = DefaultOverlaySettingsB;
+OverlaySettingsB ErectusIni::EntitySettings = DefaultOverlaySettingsB;
+ScrapLooterSettings ErectusIni::CustomScrapLooterSettings = DefaultScrapLooterSettings;
+ItemLooterSettings ErectusIni::CustomItemLooterSettings = DefaultItemLooterSettings;
+WeaponSettings ErectusIni::CustomWeaponSettings = DefaultWeaponSettings;
+TargetSettings ErectusIni::CustomTargetSettings = DefaultTargetSettings;
+LocalPlayerSettings ErectusIni::CustomLocalPlayerSettings = DefaultLocalPlayerSettings;
+OpkSettings ErectusIni::CustomOpkSettings = DefaultOpkSettings;
+UtilitySettings ErectusIni::CustomUtilitySettings = DefaultUtilitySettings;
+SwapperSettings ErectusIni::CustomSwapperSettings = DefaultSwapperSettings;
+TransferSettings ErectusIni::CustomTransferSettings = DefaultTransferSettings;
+TeleportSettings ErectusIni::CustomTeleportSettings = DefaultTeleportSettings;
+NukeCodeSettings ErectusIni::CustomNukeCodeSettings = DefaultNukeCodeSettings;
+LegendarySettings ErectusIni::CustomLegendarySettings = DefaultLegendarySettings;
+FluxSettings ErectusIni::CustomFluxSettings = DefaultFluxSettings;
+EntityLooterSettings ErectusIni::NPCLooterSettings = DefaultEntityLooterSettings;
+EntityLooterSettings ErectusIni::ContainerLooterSettings = DefaultEntityLooterSettings;
+HarvesterSettings ErectusIni::CustomHarvesterSettings = DefaultHarvesterSettings;
+KnownRecipeSettings ErectusIni::CustomKnownRecipeSettings = DefaultKnownRecipeSettings;
+MeleeSettings ErectusIni::CustomMeleeSettings = DefaultMeleeSettings;
+ChargenSettings ErectusIni::CustomChargenSettings = DefaultChargenSettings;
+ExtraNPCSettings ErectusIni::CustomExtraNPCSettings = DefaultExtraNPCSettings;
 
 void GetDWORD(const char *Section, const char *Key, DWORD *Value, DWORD *Default)
 {
@@ -924,16 +910,16 @@ void SetInt(const char *Section, const char *Key, int *Value, int *Default)
 
 void GetSliderInt(const char *Section, const char *Key, int *Value, int *Default, int Min, int Max)
 {
-	ValidateInt(Default, Min, Max);
+	Erectus::Erectus::ValidateInt(Default, Min, Max);
 	GetInt(Section, Key, Value, Default);
-	ValidateInt(Value, Min, Max);
+	Erectus::ValidateInt(Value, Min, Max);
 	SetInt(Section, Key, Value, Default);
 }
 
 void SetSliderInt(const char *Section, const char *Key, int *Value, int *Default, int Min, int Max)
 {
-	ValidateInt(Value, Min, Max);
-	ValidateInt(Default, Min, Max);
+	Erectus::ValidateInt(Value, Min, Max);
+	Erectus::ValidateInt(Default, Min, Max);
 	SetInt(Section, Key, Value, Default);
 }
 
@@ -976,22 +962,22 @@ void SetFloat(const char *Section, const char *Key, float *Value, float *Default
 
 void GetSliderFloat(const char *Section, const char *Key, float *Value, float *Default, float Min, float Max)
 {
-	ValidateFloat(Default, Min, Max);
+	Erectus::ValidateFloat(Default, Min, Max);
 	GetFloat(Section, Key, Value, Default);
-	ValidateFloat(Value, Min, Max);
+	Erectus::ValidateFloat(Value, Min, Max);
 	SetFloat(Section, Key, Value, Default);
 }
 
 void SetSliderFloat(const char *Section, const char *Key, float *Value, float *Default, float Min, float Max)
 {
-	ValidateFloat(Value, Min, Max);
-	ValidateFloat(Default, Min, Max);
+	Erectus::ValidateFloat(Value, Min, Max);
+	Erectus::ValidateFloat(Default, Min, Max);
 	SetFloat(Section, Key, Value, Default);
 }
 
 void GetRGB(const char *Section, const char *Key, float *Value, float *Default)
 {
-	int KeyLength = GetTextLength(Key);
+	int KeyLength = Erectus::GetTextLength(Key);
 	int KeySize = KeyLength + sizeof("x");
 
 	char *KeyR = new char[KeySize];
@@ -1003,11 +989,11 @@ void GetRGB(const char *Section, const char *Key, float *Value, float *Default)
 	char *KeyB = new char[KeySize];
 	sprintf_s(KeyB, KeySize, "%sB", Key);
 
-	ValidateRGB(Default);
+	Erectus::ValidateRGB(Default);
 	GetFloat(Section, KeyR, &Value[0], &Default[0]);
 	GetFloat(Section, KeyG, &Value[1], &Default[1]);
 	GetFloat(Section, KeyB, &Value[2], &Default[2]);
-	ValidateRGB(Value);
+	Erectus::ValidateRGB(Value);
 
 	delete[]KeyR;
 	KeyR = nullptr;
@@ -1021,7 +1007,7 @@ void GetRGB(const char *Section, const char *Key, float *Value, float *Default)
 
 void SetRGB(const char *Section, const char *Key, float *Value, float *Default)
 {
-	int KeyLength = GetTextLength(Key);
+	int KeyLength = Erectus::GetTextLength(Key);
 	int KeySize = KeyLength + sizeof("x");
 
 	char *KeyR = new char[KeySize];
@@ -1033,8 +1019,8 @@ void SetRGB(const char *Section, const char *Key, float *Value, float *Default)
 	char *KeyB = new char[KeySize];
 	sprintf_s(KeyB, KeySize, "%sB", Key);
 
-	ValidateRGB(Value);
-	ValidateRGB(Default);
+	Erectus::ValidateRGB(Value);
+	Erectus::ValidateRGB(Default);
 	SetFloat(Section, KeyR, &Value[0], &Default[0]);
 	SetFloat(Section, KeyG, &Value[1], &Default[1]);
 	SetFloat(Section, KeyB, &Value[2], &Default[2]);
@@ -1051,7 +1037,7 @@ void SetRGB(const char *Section, const char *Key, float *Value, float *Default)
 
 void GetQuadFloat(const char *Section, const char *Key, float *Value, float *Default)
 {
-	int KeyLength = GetTextLength(Key);
+	int KeyLength = Erectus::GetTextLength(Key);
 	int KeySize = KeyLength + sizeof("x");
 
 	char *KeyX = new char[KeySize];
@@ -1086,7 +1072,7 @@ void GetQuadFloat(const char *Section, const char *Key, float *Value, float *Def
 
 void SetQuadFloat(const char *Section, const char *Key, float *Value, float *Default)
 {
-	int KeyLength = GetTextLength(Key);
+	int KeyLength = Erectus::GetTextLength(Key);
 	int KeySize = KeyLength + sizeof("x");
 
 	char *KeyX = new char[KeySize];
@@ -1238,7 +1224,7 @@ void SetOverlaySettingsB(const char *Section, OverlaySettingsB* Value, OverlaySe
 	}
 }
 
-void GetScrapSettings()
+void ErectusIni::GetScrapSettings()
 {
 	GetBool("ScrapSettings", "ScrapKeybindEnabled", &CustomScrapLooterSettings.ScrapKeybindEnabled, &DefaultScrapLooterSettings.ScrapKeybindEnabled);
 	GetBool("ScrapSettings", "ScrapOverrideEnabled", &CustomScrapLooterSettings.ScrapOverrideEnabled, &DefaultScrapLooterSettings.ScrapOverrideEnabled);
@@ -1259,7 +1245,7 @@ void GetScrapSettings()
 	}
 }
 
-void SetScrapSettings()
+void ErectusIni::SetScrapSettings()
 {
 	if (CustomScrapLooterSettings.ScrapAutomaticSpeedMax < CustomScrapLooterSettings.ScrapAutomaticSpeedMin)
 	{
@@ -1280,7 +1266,7 @@ void SetScrapSettings()
 	}
 }
 
-void GetItemLooterSettings()
+void ErectusIni::GetItemLooterSettings()
 {
 	GetBool("ItemLooterSettings", "ItemKeybindEnabled", &CustomItemLooterSettings.ItemKeybindEnabled, &DefaultItemLooterSettings.ItemKeybindEnabled);
 	GetBool("ItemLooterSettings", "ItemAutomaticLootingEnabled", &CustomItemLooterSettings.ItemAutomaticLootingEnabled, &DefaultItemLooterSettings.ItemAutomaticLootingEnabled);
@@ -1336,7 +1322,7 @@ void GetItemLooterSettings()
 	}
 }
 
-void SetItemLooterSettings()
+void ErectusIni::SetItemLooterSettings()
 {
 	if (CustomItemLooterSettings.ItemAutomaticSpeedMax < CustomItemLooterSettings.ItemAutomaticSpeedMin)
 	{
@@ -1392,7 +1378,7 @@ void SetItemLooterSettings()
 	}
 }
 
-void GetWeaponSettings()
+void ErectusIni::GetWeaponSettings()
 {
 	GetBool("WeaponSettings", "WeaponNoRecoil", &CustomWeaponSettings.NoRecoil, &DefaultWeaponSettings.NoRecoil);
 	GetBool("WeaponSettings", "WeaponNoSpread", &CustomWeaponSettings.NoSpread, &DefaultWeaponSettings.NoSpread);
@@ -1408,7 +1394,7 @@ void GetWeaponSettings()
 	GetSliderFloat("WeaponSettings", "WeaponReach", &CustomWeaponSettings.Reach, &DefaultWeaponSettings.Reach, 0.0f, 999.0f);
 }
 
-void SetWeaponSettings()
+void ErectusIni::SetWeaponSettings()
 {
 	SetBool("WeaponSettings", "WeaponNoRecoil", &CustomWeaponSettings.NoRecoil, &DefaultWeaponSettings.NoRecoil);
 	SetBool("WeaponSettings", "WeaponNoSpread", &CustomWeaponSettings.NoSpread, &DefaultWeaponSettings.NoSpread);
@@ -1424,7 +1410,7 @@ void SetWeaponSettings()
 	SetSliderFloat("WeaponSettings", "WeaponReach", &CustomWeaponSettings.Reach, &DefaultWeaponSettings.Reach, 0.0f, 999.0f);
 }
 
-void GetTargetSettings()
+void ErectusIni::GetTargetSettings()
 {
 	GetBool("TargetSettings", "LockPlayers", &CustomTargetSettings.LockPlayers, &DefaultTargetSettings.LockPlayers);
 	GetBool("TargetSettings", "LockNPCs", &CustomTargetSettings.LockNPCs, &DefaultTargetSettings.LockNPCs);
@@ -1451,7 +1437,7 @@ void GetTargetSettings()
 	}
 }
 
-void SetTargetSettings()
+void ErectusIni::SetTargetSettings()
 {
 	if (CustomTargetSettings.SendDamageMax < CustomTargetSettings.SendDamageMin)
 	{
@@ -1478,7 +1464,7 @@ void SetTargetSettings()
 	SetSliderInt("TargetSettings", "FavoriteIndex", &CustomTargetSettings.FavoriteIndex, &DefaultTargetSettings.FavoriteIndex, 0, 12);
 }
 
-void GetLocalPlayerSettings()
+void ErectusIni::GetLocalPlayerSettings()
 {
 	GetBool("LocalPlayerSettings", "PositionSpoofingEnabled", &CustomLocalPlayerSettings.PositionSpoofingEnabled, &DefaultLocalPlayerSettings.PositionSpoofingEnabled);
 	GetBool("LocalPlayerSettings", "DrawPositionSpoofingEnabled", &CustomLocalPlayerSettings.DrawPositionSpoofingEnabled, &DefaultLocalPlayerSettings.DrawPositionSpoofingEnabled);
@@ -1506,7 +1492,7 @@ void GetLocalPlayerSettings()
 	GetSliderInt("LocalPlayerSettings", "Luck", &CustomLocalPlayerSettings.Luck, &DefaultLocalPlayerSettings.Luck, 0, 99999);
 }
 
-void SetLocalPlayerSettings()
+void ErectusIni::SetLocalPlayerSettings()
 {
 	SetBool("LocalPlayerSettings", "PositionSpoofingEnabled", &CustomLocalPlayerSettings.PositionSpoofingEnabled, &DefaultLocalPlayerSettings.PositionSpoofingEnabled);
 	SetBool("LocalPlayerSettings", "DrawPositionSpoofingEnabled", &CustomLocalPlayerSettings.DrawPositionSpoofingEnabled, &DefaultLocalPlayerSettings.DrawPositionSpoofingEnabled);
@@ -1534,19 +1520,19 @@ void SetLocalPlayerSettings()
 	SetSliderInt("LocalPlayerSettings", "Luck", &CustomLocalPlayerSettings.Luck, &DefaultLocalPlayerSettings.Luck, 0, 99999);
 }
 
-void GetOpkSettings()
+void ErectusIni::GetOpkSettings()
 {
 	GetBool("OpkSettings", "OpkPlayersEnabled", &CustomOpkSettings.PlayersEnabled, &DefaultOpkSettings.PlayersEnabled);
 	GetBool("OpkSettings", "OpkNpcsEnabled", &CustomOpkSettings.NpcsEnabled, &DefaultOpkSettings.NpcsEnabled);
 }
 
-void SetOpkSettings()
+void ErectusIni::SetOpkSettings()
 {
 	SetBool("OpkSettings", "OpkPlayersEnabled", &CustomOpkSettings.PlayersEnabled, &DefaultOpkSettings.PlayersEnabled);
 	SetBool("OpkSettings", "OpkNpcsEnabled", &CustomOpkSettings.NpcsEnabled, &DefaultOpkSettings.NpcsEnabled);
 }
 
-void GetUtilitySettings()
+void ErectusIni::GetUtilitySettings()
 {
 	GetBool("UtilitySettings", "DebugPlayer", &CustomUtilitySettings.DebugPlayer, &DefaultUtilitySettings.DebugPlayer);
 	GetBool("UtilitySettings", "DebugEsp", &CustomUtilitySettings.DebugEsp, &DefaultUtilitySettings.DebugEsp);
@@ -1554,7 +1540,7 @@ void GetUtilitySettings()
 	GetDWORD("UtilitySettings", "AddressFormid", &CustomUtilitySettings.AddressFormid, &DefaultUtilitySettings.AddressFormid);
 }
 
-void SetUtilitySettings()
+void ErectusIni::SetUtilitySettings()
 {
 	SetBool("UtilitySettings", "DebugPlayer", &CustomUtilitySettings.DebugPlayer, &DefaultUtilitySettings.DebugPlayer);
 	SetBool("UtilitySettings", "DebugEsp", &CustomUtilitySettings.DebugEsp, &DefaultUtilitySettings.DebugEsp);
@@ -1562,19 +1548,19 @@ void SetUtilitySettings()
 	SetDWORD("UtilitySettings", "AddressFormid", &CustomUtilitySettings.AddressFormid, &DefaultUtilitySettings.AddressFormid);
 }
 
-void GetSwapperSettings()
+void ErectusIni::GetSwapperSettings()
 {
 	GetDWORD("SwapperSettings", "SourceFormid", &CustomSwapperSettings.SourceFormid, &DefaultSwapperSettings.SourceFormid);
 	GetDWORD("SwapperSettings", "DestinationFormid", &CustomSwapperSettings.DestinationFormid, &DefaultSwapperSettings.DestinationFormid);
 }
 
-void SetSwapperSettings()
+void ErectusIni::SetSwapperSettings()
 {
 	SetDWORD("SwapperSettings", "SourceFormid", &CustomSwapperSettings.SourceFormid, &DefaultSwapperSettings.SourceFormid);
 	SetDWORD("SwapperSettings", "DestinationFormid", &CustomSwapperSettings.DestinationFormid, &DefaultSwapperSettings.DestinationFormid);
 }
 
-void GetTransferSettings()
+void ErectusIni::GetTransferSettings()
 {
 	GetDWORD("TransferSettings", "SourceFormid", &CustomTransferSettings.SourceFormid, &DefaultTransferSettings.SourceFormid);
 	GetDWORD("TransferSettings", "DestinationFormid", &CustomTransferSettings.DestinationFormid, &DefaultTransferSettings.DestinationFormid);
@@ -1600,7 +1586,7 @@ void GetTransferSettings()
 	}
 }
 
-void SetTransferSettings()
+void ErectusIni::SetTransferSettings()
 {
 	SetDWORD("TransferSettings", "SourceFormid", &CustomTransferSettings.SourceFormid, &DefaultTransferSettings.SourceFormid);
 	SetDWORD("TransferSettings", "DestinationFormid", &CustomTransferSettings.DestinationFormid, &DefaultTransferSettings.DestinationFormid);
@@ -1626,7 +1612,7 @@ void SetTransferSettings()
 	}
 }
 
-void GetTeleportSettings()
+void ErectusIni::GetTeleportSettings()
 {
 	for (int i = 0; i < 16; i++)
 	{
@@ -1642,7 +1628,7 @@ void GetTeleportSettings()
 	}
 }
 
-void SetTeleportSettings()
+void ErectusIni::SetTeleportSettings()
 {
 	for (int i = 0; i < 16; i++)
 	{
@@ -1658,7 +1644,7 @@ void SetTeleportSettings()
 	}
 }
 
-void GetNukeCodeSettings()
+void ErectusIni::GetNukeCodeSettings()
 {
 	GetBool("NukeCodeSettings", "AutomaticNukeCodes", &CustomNukeCodeSettings.AutomaticNukeCodes, &DefaultNukeCodeSettings.AutomaticNukeCodes);
 	GetBool("NukeCodeSettings", "DrawCodeAlpha", &CustomNukeCodeSettings.DrawCodeAlpha, &DefaultNukeCodeSettings.DrawCodeAlpha);
@@ -1666,7 +1652,7 @@ void GetNukeCodeSettings()
 	GetBool("NukeCodeSettings", "DrawCodeCharlie", &CustomNukeCodeSettings.DrawCodeCharlie, &DefaultNukeCodeSettings.DrawCodeCharlie);
 }
 
-void SetNukeCodeSettings()
+void ErectusIni::SetNukeCodeSettings()
 {
 	SetBool("NukeCodeSettings", "AutomaticNukeCodes", &CustomNukeCodeSettings.AutomaticNukeCodes, &DefaultNukeCodeSettings.AutomaticNukeCodes);
 	SetBool("NukeCodeSettings", "DrawCodeAlpha", &CustomNukeCodeSettings.DrawCodeAlpha, &DefaultNukeCodeSettings.DrawCodeAlpha);
@@ -1674,7 +1660,7 @@ void SetNukeCodeSettings()
 	SetBool("NukeCodeSettings", "DrawCodeCharlie", &CustomNukeCodeSettings.DrawCodeCharlie, &DefaultNukeCodeSettings.DrawCodeCharlie);
 }
 
-void GetLegendarySettings()
+void ErectusIni::GetLegendarySettings()
 {
 	GetBool("LegendarySettings", "OverrideLivingOneStar", &CustomLegendarySettings.OverrideLivingOneStar, &DefaultLegendarySettings.OverrideLivingOneStar);
 	GetRGB("LegendarySettings", "LivingOneStarColor", CustomLegendarySettings.LivingOneStarColor, DefaultLegendarySettings.LivingOneStarColor);
@@ -1690,7 +1676,7 @@ void GetLegendarySettings()
 	GetRGB("LegendarySettings", "DeadThreeStarColor", CustomLegendarySettings.DeadThreeStarColor, DefaultLegendarySettings.DeadThreeStarColor);
 }
 
-void SetLegendarySettings()
+void ErectusIni::SetLegendarySettings()
 {
 	SetBool("LegendarySettings", "OverrideLivingOneStar", &CustomLegendarySettings.OverrideLivingOneStar, &DefaultLegendarySettings.OverrideLivingOneStar);
 	SetRGB("LegendarySettings", "LivingOneStarColor", CustomLegendarySettings.LivingOneStarColor, DefaultLegendarySettings.LivingOneStarColor);
@@ -1706,7 +1692,7 @@ void SetLegendarySettings()
 	SetRGB("LegendarySettings", "DeadThreeStarColor", CustomLegendarySettings.DeadThreeStarColor, DefaultLegendarySettings.DeadThreeStarColor);
 }
 
-void GetFluxSettings()
+void ErectusIni::GetFluxSettings()
 {
 	GetBool("FluxSettings", "CrimsonFluxEnabled", &CustomFluxSettings.CrimsonFluxEnabled, &DefaultFluxSettings.CrimsonFluxEnabled);
 	GetBool("FluxSettings", "CobaltFluxEnabled", &CustomFluxSettings.CobaltFluxEnabled, &DefaultFluxSettings.CobaltFluxEnabled);
@@ -1715,7 +1701,7 @@ void GetFluxSettings()
 	GetBool("FluxSettings", "VioletFluxEnabled", &CustomFluxSettings.VioletFluxEnabled, &DefaultFluxSettings.VioletFluxEnabled);
 }
 
-void SetFluxSettings()
+void ErectusIni::SetFluxSettings()
 {
 	SetBool("FluxSettings", "CrimsonFluxEnabled", &CustomFluxSettings.CrimsonFluxEnabled, &DefaultFluxSettings.CrimsonFluxEnabled);
 	SetBool("FluxSettings", "CobaltFluxEnabled", &CustomFluxSettings.CobaltFluxEnabled, &DefaultFluxSettings.CobaltFluxEnabled);
@@ -1724,7 +1710,7 @@ void SetFluxSettings()
 	SetBool("FluxSettings", "VioletFluxEnabled", &CustomFluxSettings.VioletFluxEnabled, &DefaultFluxSettings.VioletFluxEnabled);
 }
 
-void GetEntityLooterSettings(const char *Section, EntityLooterSettings* Value, EntityLooterSettings* Default)
+void ErectusIni::GetEntityLooterSettings(const char *Section, EntityLooterSettings* Value, EntityLooterSettings* Default)
 {
 	GetBool(Section, "EntityLooterEnabled", &Value->EntityLooterEnabled, &Default->EntityLooterEnabled);
 	GetBool(Section, "EntityLooterStatusEnabled", &Value->EntityLooterStatusEnabled, &Default->EntityLooterStatusEnabled);
@@ -1768,7 +1754,7 @@ void GetEntityLooterSettings(const char *Section, EntityLooterSettings* Value, E
 	}
 }
 
-void SetEntityLooterSettings(const char *Section, EntityLooterSettings* Value, EntityLooterSettings* Default)
+void ErectusIni::SetEntityLooterSettings(const char *Section, EntityLooterSettings* Value, EntityLooterSettings* Default)
 {
 	SetBool(Section, "EntityLooterEnabled", &Value->EntityLooterEnabled, &Default->EntityLooterEnabled);
 	SetBool(Section, "EntityLooterStatusEnabled", &Value->EntityLooterStatusEnabled, &Default->EntityLooterStatusEnabled);
@@ -1812,7 +1798,7 @@ void SetEntityLooterSettings(const char *Section, EntityLooterSettings* Value, E
 	}
 }
 
-void GetHarvesterSettings()
+void ErectusIni::GetHarvesterSettings()
 {
 	GetBool("HarvesterSettings", "HarvesterEnabled", &CustomHarvesterSettings.HarvesterEnabled, &DefaultHarvesterSettings.HarvesterEnabled);
 	GetBool("HarvesterSettings", "HarvesterStatusEnabled", &CustomHarvesterSettings.HarvesterStatusEnabled, &DefaultHarvesterSettings.HarvesterStatusEnabled);
@@ -1825,7 +1811,7 @@ void GetHarvesterSettings()
 	}
 }
 
-void SetHarvesterSettings()
+void ErectusIni::SetHarvesterSettings()
 {
 	SetBool("HarvesterSettings", "HarvesterEnabled", &CustomHarvesterSettings.HarvesterEnabled, &DefaultHarvesterSettings.HarvesterEnabled);
 	SetBool("HarvesterSettings", "HarvesterStatusEnabled", &CustomHarvesterSettings.HarvesterStatusEnabled, &DefaultHarvesterSettings.HarvesterStatusEnabled);
@@ -1838,19 +1824,19 @@ void SetHarvesterSettings()
 	}
 }
 
-void GetKnownRecipeSettings()
+void ErectusIni::GetKnownRecipeSettings()
 {
 	GetBool("KnownRecipeSettings", "KnownRecipesEnabled", &CustomKnownRecipeSettings.KnownRecipesEnabled, &DefaultKnownRecipeSettings.KnownRecipesEnabled);
 	GetBool("KnownRecipeSettings", "UnknownRecipesEnabled", &CustomKnownRecipeSettings.UnknownRecipesEnabled, &DefaultKnownRecipeSettings.UnknownRecipesEnabled);
 }
 
-void SetKnownRecipeSettings()
+void ErectusIni::SetKnownRecipeSettings()
 {
 	SetBool("KnownRecipeSettings", "KnownRecipesEnabled", &CustomKnownRecipeSettings.KnownRecipesEnabled, &DefaultKnownRecipeSettings.KnownRecipesEnabled);
 	SetBool("KnownRecipeSettings", "UnknownRecipesEnabled", &CustomKnownRecipeSettings.UnknownRecipesEnabled, &DefaultKnownRecipeSettings.UnknownRecipesEnabled);
 }
 
-void GetMeleeSettings()
+void ErectusIni::GetMeleeSettings()
 {
 	GetBool("MeleeSettings", "MeleeEnabled", &CustomMeleeSettings.MeleeEnabled, &DefaultMeleeSettings.MeleeEnabled);
 	GetSliderInt("MeleeSettings", "MeleeSpeedMin", &CustomMeleeSettings.MeleeSpeedMin, &DefaultMeleeSettings.MeleeSpeedMin, 1, 60);
@@ -1862,7 +1848,7 @@ void GetMeleeSettings()
 	}
 }
 
-void SetMeleeSettings()
+void ErectusIni::SetMeleeSettings()
 {
 	if (CustomMeleeSettings.MeleeSpeedMax < CustomMeleeSettings.MeleeSpeedMin)
 	{
@@ -1874,7 +1860,7 @@ void SetMeleeSettings()
 	SetSliderInt("MeleeSettings", "MeleeSpeedMax", &CustomMeleeSettings.MeleeSpeedMax, &DefaultMeleeSettings.MeleeSpeedMax, 1, 60);
 }
 
-void GetChargenSettings()
+void ErectusIni::GetChargenSettings()
 {
 	GetBool("ChargenSettings", "ChargenEditingEnabled", &CustomChargenSettings.ChargenEditingEnabled, &DefaultChargenSettings.ChargenEditingEnabled);
 	GetSliderFloat("ChargenSettings", "Thin", &CustomChargenSettings.Thin, &DefaultChargenSettings.Thin, 0.0f, 1.0f);
@@ -1882,7 +1868,7 @@ void GetChargenSettings()
 	GetSliderFloat("ChargenSettings", "Large", &CustomChargenSettings.Large, &DefaultChargenSettings.Large, 0.0f, 1.0f);
 }
 
-void SetChargenSettings()
+void ErectusIni::SetChargenSettings()
 {
 	SetBool("ChargenSettings", "ChargenEditingEnabled", &CustomChargenSettings.ChargenEditingEnabled, &DefaultChargenSettings.ChargenEditingEnabled);
 	SetSliderFloat("ChargenSettings", "Thin", &CustomChargenSettings.Thin, &DefaultChargenSettings.Thin, 0.0f, 1.0f);
@@ -1890,7 +1876,7 @@ void SetChargenSettings()
 	SetSliderFloat("ChargenSettings", "Large", &CustomChargenSettings.Large, &DefaultChargenSettings.Large, 0.0f, 1.0f);
 }
 
-void GetExtraNPCSettings()
+void ErectusIni::GetExtraNPCSettings()
 {
 	GetBool("ExtraNPCSettings", "HideSettlerFaction", &CustomExtraNPCSettings.HideSettlerFaction, &DefaultExtraNPCSettings.HideSettlerFaction);
 	GetBool("ExtraNPCSettings", "HideCraterRaiderFaction", &CustomExtraNPCSettings.HideCraterRaiderFaction, &DefaultExtraNPCSettings.HideCraterRaiderFaction);
@@ -1908,7 +1894,7 @@ void GetExtraNPCSettings()
 	}
 }
 
-void SetExtraNPCSettings()
+void ErectusIni::SetExtraNPCSettings()
 {
 	SetBool("ExtraNPCSettings", "HideSettlerFaction", &CustomExtraNPCSettings.HideSettlerFaction, &DefaultExtraNPCSettings.HideSettlerFaction);
 	SetBool("ExtraNPCSettings", "HideCraterRaiderFaction", &CustomExtraNPCSettings.HideCraterRaiderFaction, &DefaultExtraNPCSettings.HideCraterRaiderFaction);
@@ -1926,31 +1912,31 @@ void SetExtraNPCSettings()
 	}
 }
 
-void GetBitMsgWriterSettings()
+void ErectusIni::GetBitMsgWriterSettings()
 {
 	bool AllowMessagesDefault = false;
-	GetBool("BitMsgWriter", "AllowMessages", &AllowMessages, &AllowMessagesDefault);
+	GetBool("BitMsgWriter", "AllowMessages", &ErectusMemory::AllowMessages, &AllowMessagesDefault);
 }
 
-void SetBitMsgWriterSettings()
+void ErectusIni::SetBitMsgWriterSettings()
 {
 	bool AllowMessagesDefault = false;
-	SetBool("BitMsgWriter", "AllowMessages", &AllowMessages, &AllowMessagesDefault);
+	SetBool("BitMsgWriter", "AllowMessages", &ErectusMemory::AllowMessages, &AllowMessagesDefault);
 }
 
-void GetExperimentalSettings()
+void ErectusIni::GetExperimentalSettings()
 {
 	bool ExperimentalOverlayFixDefault = false;
-	GetBool("ExperimentalOverlayFix", "ExperimentalOverlayFix", &ExperimentalOverlayFix, &ExperimentalOverlayFixDefault);
+	GetBool("ExperimentalOverlayFix", "ExperimentalOverlayFix", &ErectusMain::ExperimentalOverlayFix, &ExperimentalOverlayFixDefault);
 }
 
-void SetExperimentalSettings()
+void ErectusIni::SetExperimentalSettings()
 {
 	bool ExperimentalOverlayFixDefault = false;
-	SetBool("ExperimentalOverlayFix", "ExperimentalOverlayFix", &ExperimentalOverlayFix, &ExperimentalOverlayFixDefault);
+	SetBool("ExperimentalOverlayFix", "ExperimentalOverlayFix", &ErectusMain::ExperimentalOverlayFix, &ExperimentalOverlayFixDefault);
 }
 
-void ReadIniSettings()
+void ErectusIni::ReadIniSettings()
 {
 	file.read(ini);
 	GetOverlaySettingsA("PlayerSettings", &PlayerSettings, &DefaultPlayerSettings);
@@ -1987,7 +1973,7 @@ void ReadIniSettings()
 	file.write(ini, true);
 }
 
-void WriteIniSettings()
+void ErectusIni::WriteIniSettings()
 {
 	file.read(ini);
 	SetOverlaySettingsA("PlayerSettings", &PlayerSettings, &DefaultPlayerSettings);

@@ -1,23 +1,6 @@
 #include "ErectusInclude.h"
 
-D3DPRESENT_PARAMETERS D3D9Parameters;
-
-LPDIRECT3D9 D3D9Interface = NULL;
-LPDIRECT3DDEVICE9 D3D9Device = NULL;
-LPD3DXSPRITE D3DXSprite = NULL;
-LPD3DXFONT D3DXFont = NULL;
-
-bool D3D9InterfaceCreated = false;
-bool D3D9DeviceCreated = false;
-bool D3DXSpriteCreated = false;
-bool D3DXFontCreated = false;
-bool D3D9Initialized = false;
-
-bool DeviceResetQueued = false;
-bool DeviceResetState = false;
-int DeviceResetCounter = 0;
-
-bool D3D9DrawText(const char *Text, bool Shadowed, bool Centered, float *Position, float *Color, float Alpha)
+bool ErectusD3D9::D3D9DrawText(const char *Text, bool Shadowed, bool Centered, float *Position, float *Color, float Alpha)
 {
 	if (Text == nullptr)
 	{
@@ -46,7 +29,7 @@ bool D3D9DrawText(const char *Text, bool Shadowed, bool Centered, float *Positio
 	return true;
 }
 
-void D3D9Reset(HRESULT DeviceState)
+void ErectusD3D9::D3D9Reset(HRESULT DeviceState)
 {
 	if (DeviceState == D3DERR_DEVICELOST)
 	{
@@ -54,15 +37,15 @@ void D3D9Reset(HRESULT DeviceState)
 		if (DeviceResetCounter > 600)
 		{
 			DeviceResetCounter = 0;
-			Close();
+			ErectusMain::Close();
 		}
 	}
 	else
 	{
-		MoveWindow(WindowHwnd, WindowPosition[0], WindowPosition[1], WindowSize[0], WindowSize[1], FALSE);
+		MoveWindow(ErectusMain::WindowHwnd, ErectusMain::WindowPosition[0], ErectusMain::WindowPosition[1], ErectusMain::WindowSize[0], ErectusMain::WindowSize[1], FALSE);
 
-		D3D9Parameters.BackBufferWidth = WindowSize[0];
-		D3D9Parameters.BackBufferHeight = WindowSize[1];
+		D3D9Parameters.BackBufferWidth = ErectusMain::WindowSize[0];
+		D3D9Parameters.BackBufferHeight = ErectusMain::WindowSize[1];
 
 		if (DeviceResetState == false)
 		{
@@ -70,7 +53,7 @@ void D3D9Reset(HRESULT DeviceState)
 			DeviceResetCounter = 0;
 			D3DXSprite->OnLostDevice();
 			D3DXFont->OnLostDevice();
-			ImGui_ImplDX9_InvalidateDeviceObjects();
+			ImGui_ImplDX9_InValidateDeviceObjects();
 		}
 
 		if (D3D9Device->Reset(&D3D9Parameters) == D3D_OK)
@@ -82,15 +65,15 @@ void D3D9Reset(HRESULT DeviceState)
 			ImGui_ImplDX9_CreateDeviceObjects();
 		}
 
-		MoveWindow(WindowHwnd, WindowPosition[0], WindowPosition[1], WindowSize[0], WindowSize[1], FALSE);
+		MoveWindow(ErectusMain::WindowHwnd, ErectusMain::WindowPosition[0], ErectusMain::WindowPosition[1], ErectusMain::WindowSize[0], ErectusMain::WindowSize[1], FALSE);
 	}
 }
 
-void D3D9Render()
+void ErectusD3D9::D3D9Render()
 {
 	auto Preframe = std::chrono::system_clock::now();
 
-	if (D3D9Initialized && ImGuiInitialized)
+	if (D3D9Initialized && ErectusImGui::ImGuiInitialized)
 	{
 		HRESULT DeviceState = D3D9Device->TestCooperativeLevel();
 		switch (DeviceState)
@@ -98,51 +81,51 @@ void D3D9Render()
 		case D3D_OK:
 			D3D9Device->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_COLORVALUE(0.0f, 0.0f, 0.0f, 0.0f), 1.0f, 0);
 			D3D9Device->BeginScene();
-			if (ProcessMenuActive)
+			if (ErectusProcess::ProcessMenuActive)
 			{
-				ProcessMenu();
+				ErectusImGui::ProcessMenu();
 			}
 			else
 			{
-				if (OverlayMenuActive)
+				if (ErectusMain::OverlayMenuActive)
 				{
-					OverlayMenu();
+					ErectusImGui::OverlayMenu();
 				}
-				else if (OverlayActive && OverlayForeground)
+				else if (ErectusMain::OverlayActive && ErectusMain::OverlayForeground)
 				{
 					D3DXSprite->Begin(D3DXSPRITE_ALPHABLEND);
 
-					TargetLockingValid = false;
-					TargetLockingClosestDegrees = CustomTargetSettings.LockingFOV;
-					TargetLockingClosestPtr = 0;
+					ErectusMemory::TargetLockingValid = false;
+					ErectusMemory::TargetLockingClosestDegrees = ErectusIni::CustomTargetSettings.LockingFOV;
+					ErectusMemory::TargetLockingClosestPtr = 0;
 
-					RenderCustomEntityList();
-					RenderCustomNPCList();
-					RenderCustomPlayerList();
+					ErectusMemory::RenderCustomEntityList();
+					ErectusMemory::RenderCustomNPCList();
+					ErectusMemory::RenderCustomPlayerList();
 
-					if (!TargetLockingValid)
+					if (!ErectusMemory::TargetLockingValid)
 					{
-						if (TargetLockingPtr)
+						if (ErectusMemory::TargetLockingPtr)
 						{
-							if (CustomTargetSettings.Retargeting)
+							if (ErectusIni::CustomTargetSettings.Retargeting)
 							{
-								TargetLockingCooldown = CustomTargetSettings.Cooldown;
+								ErectusMemory::TargetLockingCooldown = ErectusIni::CustomTargetSettings.Cooldown;
 							}
 							else
 							{
-								TargetLockingCooldown = -1;
+								ErectusMemory::TargetLockingCooldown = -1;
 							}
 
-							TargetLockingPtr = 0;
+							ErectusMemory::TargetLockingPtr = 0;
 						}
-						else if (TargetLockingClosestDegrees < CustomTargetSettings.LockingFOV)
+						else if (ErectusMemory::TargetLockingClosestDegrees < ErectusIni::CustomTargetSettings.LockingFOV)
 						{
-							TargetLockingCooldown = 0;
-							TargetLockingPtr = TargetLockingClosestPtr;
+							ErectusMemory::TargetLockingCooldown = 0;
+							ErectusMemory::TargetLockingPtr = ErectusMemory::TargetLockingClosestPtr;
 						}
 					}
 
-					RenderData();
+					ErectusMemory::RenderData();
 
 					D3DXSprite->End();
 				}
@@ -157,56 +140,56 @@ void D3D9Render()
 			DeviceResetQueued = true;
 			break;
 		default:
-			Close();
+			ErectusMain::Close();
 			break;
 		}
 
-		if (ProcessSelected)
+		if (ErectusProcess::ProcessSelected)
 		{
-			ProcessValidCounter++;
-			if (ProcessValidCounter > 20)
+			ErectusProcess::ProcessValidCounter++;
+			if (ErectusProcess::ProcessValidCounter > 20)
 			{
-				ProcessValidCounter = 0;
-				if (WaitForSingleObject(Handle, 0) != WAIT_TIMEOUT)
+				ErectusProcess::ProcessValidCounter = 0;
+				if (WaitForSingleObject(ErectusProcess::Handle, 0) != WAIT_TIMEOUT)
 				{
-					ResetProcessData(true, 1);
+					ErectusProcess::ResetProcessData(true, 1);
 				}
 
-				if (OverlayActive)
+				if (ErectusMain::OverlayActive)
 				{
-					if (Hwnd == GetForegroundWindow())
+					if (ErectusProcess::Hwnd == GetForegroundWindow())
 					{
-						OverlayForeground = true;
-						if (!SetOverlayPosition(true, true))
+						ErectusMain::OverlayForeground = true;
+						if (!ErectusMain::SetOverlayPosition(true, true))
 						{
-							SetProcessMenu();
+							ErectusProcess::SetProcessMenu();
 						}
 					}
 					else
 					{
-						OverlayForeground = false;
-						if (!SetOverlayPosition(false, false))
+						ErectusMain::OverlayForeground = false;
+						if (!ErectusMain::SetOverlayPosition(false, false))
 						{
-							SetProcessMenu();
+							ErectusProcess::SetProcessMenu();
 						}
 					}
 				}
 			}
 
-			if (!ThreadCreationState)
+			if (!ErectusThread::ThreadCreationState)
 			{
-				ThreadCreationState = CreateProcessThreads();
+				ErectusThread::ThreadCreationState = ErectusThread::CreateProcessThreads();
 			}
 
-			if (DoubleKeyPress(VK_CONTROL, VK_RETURN, &OverlayMenuPress))
+			if (Erectus::DoubleKeyPress(VK_CONTROL, VK_RETURN, &ErectusMain::OverlayMenuPress))
 			{
-				if (OverlayMenuActive)
+				if (ErectusMain::OverlayMenuActive)
 				{
-					SetOverlayPosition(false, true);
+					ErectusMain::SetOverlayPosition(false, true);
 				}
 				else
 				{
-					SetOverlayMenu();
+					ErectusMain::SetOverlayMenu();
 				}
 			}
 		}
@@ -216,15 +199,15 @@ void D3D9Render()
 			D3D9Reset(DeviceState);
 		}
 
-		if (ThreadDestructionQueued)
+		if (ErectusThread::ThreadDestructionQueued)
 		{
-			if (!ThreadDestruction())
+			if (!ErectusThread::ThreadDestruction())
 			{
-				ThreadDestructionCounter++;
-				if (ThreadDestructionCounter > 900)
+				ErectusThread::ThreadDestructionCounter++;
+				if (ErectusThread::ThreadDestructionCounter > 900)
 				{
-					ThreadDestructionCounter = 0;
-					Close();
+					ErectusThread::ThreadDestructionCounter = 0;
+					ErectusMain::Close();
 				}
 			}
 		}
@@ -233,17 +216,17 @@ void D3D9Render()
 	std::this_thread::sleep_until(Preframe + std::chrono::milliseconds(16));
 }
 
-bool D3D9Initialize()
+bool ErectusD3D9::D3D9Initialize()
 {
 	ZeroMemory(&D3D9Parameters, sizeof(D3D9Parameters));
-	D3D9Parameters.BackBufferWidth = WindowSize[0];
-	D3D9Parameters.BackBufferHeight = WindowSize[1];
+	D3D9Parameters.BackBufferWidth = ErectusMain::WindowSize[0];
+	D3D9Parameters.BackBufferHeight = ErectusMain::WindowSize[1];
 	D3D9Parameters.BackBufferFormat = D3DFMT_A8R8G8B8;
 	D3D9Parameters.BackBufferCount = 1;
 	D3D9Parameters.MultiSampleType = D3DMULTISAMPLE_NONE;
 	D3D9Parameters.MultiSampleQuality = 0;
 	D3D9Parameters.SwapEffect = D3DSWAPEFFECT_DISCARD;
-	D3D9Parameters.hDeviceWindow = WindowHwnd;
+	D3D9Parameters.hDeviceWindow = ErectusMain::WindowHwnd;
 	D3D9Parameters.Windowed = TRUE;
 	D3D9Parameters.EnableAutoDepthStencil = TRUE;
 	D3D9Parameters.AutoDepthStencilFormat = D3DFMT_D16;
@@ -270,7 +253,7 @@ bool D3D9Initialize()
 	return true;
 }
 
-void D3D9Cleanup()
+void ErectusD3D9::D3D9Cleanup()
 {
 	if (D3D9InterfaceCreated)
 	{
