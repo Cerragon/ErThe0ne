@@ -1,10 +1,10 @@
 #include "ErectusInclude.h"
-using namespace memoryClasses;
-using namespace settingsClasses;
+using namespace MemoryClasses;
+using namespace SettingsClasses;
 
-DWORD KnownRecipeArray[0x1000];
+DWORD knownRecipeArray[0x1000];
 
-DWORD LegendaryFormidArray[]
+DWORD legendaryFormIdArray[]
 {
 	0x00425E28, 0x004392CD, 0x0037F7D9, 0x001A7B80, 0x001A7AF6, 0x001A7BE2, 0x001A7BD3, 0x001A7AB2, 0x001A7B88,
 	0x001A7BDA, 0x001A7C39, 0x0052BDC7, 0x0052BDC5, 0x0052BDC2, 0x0052BDC8, 0x0052BDB4, 0x0052BDB5, 0x0052BDB6,
@@ -28,548 +28,556 @@ DWORD LegendaryFormidArray[]
 	0x001F1E0C, 0x001F1E0B, 0x001E73BD,
 };
 
-DWORD64 ErectusMemory::GetAddress(DWORD Formid)
+DWORD64 ErectusMemory::GetAddress(DWORD formId)
 {
 	DWORD64 v1;
-	if (!Erectus::RPM(ErectusProcess::Exe + OFFSET_GET_PTR_A1, &v1, sizeof(v1))) return 0;
-	if (!Erectus::Valid(v1)) return 0;
+	if (!Utils::Rpm(ErectusProcess::exe + OFFSET_GET_PTR_A1, &v1, sizeof v1)) return 0;
+	if (!Utils::Valid(v1)) return 0;
 
-	DWORD v2;
-	if (!Erectus::RPM(v1 + 0x8 + 0x18, &v2, sizeof(v2))) return 0;
+	DWORD v2; //array size or count
+	if (!Utils::Rpm(v1 + 32, &v2, sizeof v2)) return 0;
 	if (!v2) return 0;
 
-	DWORD v3 = 0;
 
-	for (int i = 0; i < sizeof(Formid); i++)
+	//v3 = cr32(formId)
+	DWORD crc = 0;
+	for (auto i = 0; i < sizeof formId; i++)
 	{
-		DWORD v4 = ((v3 ^ (Formid >> (i * 0x8))) & 0xFF);
+		const auto v4 = (crc ^ formId >> i * 0x8) & 0xFF;
 
 		DWORD v5;
-		if (!Erectus::RPM(ErectusProcess::Exe + OFFSET_GET_PTR_A2 + v4 * 0x4, &v5, sizeof(v5))) return 0;
+		if (!Utils::Rpm(ErectusProcess::exe + OFFSET_GET_PTR_A2 + v4 * 0x4, &v5, sizeof v5)) return 0;
 
-		v3 = ((v3 >> 0x8) ^ v5);
+		crc = crc >> 0x8 ^ v5;
 	}
 
-	DWORD v6 = (v3 & (v2 - 1));
+	auto v6 = crc & (v2 - 1); // our formId's array index;
 
-	DWORD64 v7;
-	if (!Erectus::RPM(v1 + 0x8 + 0x10, &v7, sizeof(v7))) return 0;
-	if (!Erectus::Valid(v7)) return 0;
+	DWORD64 v7; //array of refs to items in the world(?), each item of the array is: { formid (dword64!!!), ptr to object (dword64), item index/key in the array (dword64) }
 
+	//sanity check: array exists
+	if (!Utils::Rpm(v1 + 24, &v7, sizeof v7)) return 0;
+	if (!Utils::Valid(v7)) return 0;
+
+	//sanity check: the item has valid key
 	DWORD v8;
-	if (!Erectus::RPM(v7 + (v6 + v6 * 2) * 0x8 + 0x10, &v8, sizeof(v8))) return 0;
-	if (v8 == 0xFFFFFFFF) return 0;
+	if (!Utils::Rpm(v7 + v6 * 24 + 16, &v8, sizeof v8)) return 0;
+	if (v8 == 0xFFFFFFFF) return 0; //item id in the array == -1
 
-	DWORD v9 = v2;
+	auto v9 = v2;
 
-	for (int i = 0; i < 100; i++)
+	//no clue what this loop is for ...
+	for (auto i = 0; i < 100; i++)
 	{
 		DWORD v10;
-		if (!Erectus::RPM(v7 + (v6 + v6 * 2) * 0x8, &v10, sizeof(v10))) return 0;
-		if (v10 == Formid)
+		if (!Utils::Rpm(v7 + v6 * 24, &v10, sizeof v10)) return 0;
+		if (v10 == formId)
 		{
 			v9 = v6;
 			if (v9 != v2) break;
 		}
 		else
 		{
-			if (!Erectus::RPM(v7 + (v6 + v6 * 2) * 0x8 + 0x10, &v6, sizeof(v6))) return 0;
+			if (!Utils::Rpm(v7 + v6 * 24 + 16, &v6, sizeof v6)) return 0; //  try  next entry in the array
 			if (v6 == v2) break;
 		}
 	}
 
 	if (v9 == v2) return 0;
 
-	return v7 + (v9 + v9 * 2) * 0x8 + 0x8;
+	return v7 + v9 * 24 + 8;
 }
 
-DWORD64 ErectusMemory::GetPtr(DWORD Formid)
+DWORD64 ErectusMemory::GetPtr(const DWORD formId)
 {
-	DWORD64 Address = GetAddress(Formid);
-	if (!Address) return 0;
+	const auto address = GetAddress(formId);
+	if (!address) return 0;
 
-	DWORD64 Ptr;
-	if (!Erectus::RPM(Address, &Ptr, sizeof(Ptr))) return 0;
+	DWORD64 ptr;
+	if (!Utils::Rpm(address, &ptr, sizeof ptr)) return 0;
 
-	return Ptr;
+	return ptr;
 }
 
 DWORD64 ErectusMemory::GetCameraPtr()
 {
-	DWORD64 CameraPtr;
-	if (!Erectus::RPM(ErectusProcess::Exe + OFFSET_CAMERA, &CameraPtr, sizeof(CameraPtr))) return 0;
-	return CameraPtr;
+	DWORD64 cameraPtr;
+	if (!Utils::Rpm(ErectusProcess::exe + OFFSET_CAMERA, &cameraPtr, sizeof cameraPtr)) return 0;
+	return cameraPtr;
 }
 
-BYTE ErectusMemory::CheckHealthFlag(BYTE HealthFlag)
+BYTE ErectusMemory::CheckHealthFlag(const BYTE healthFlag)
 {
-	BYTE Flag = HealthFlag;
-	Flag &= ~(1 << 7);
-	Flag &= ~(1 << 6);
-	Flag &= ~(1 << 5);
-	switch (Flag)
+	auto flag = healthFlag;
+	flag &= ~(1 << 7);
+	flag &= ~(1 << 6);
+	flag &= ~(1 << 5);
+	switch (flag)
 	{
-	case 0x00://Alive
+	case 0x00: //Alive
 		return 0x01;
-	case 0x02://Dead
+	case 0x02: //Dead
+	case 0x04: //Dead
 		return 0x03;
-	case 0x04://Dead
-		return 0x03;
-	case 0x10://Downed
+	case 0x10: //Downed
+	case 0x12: //Downed
 		return 0x02;
-	case 0x12://Downed
-		return 0x02;
-	default://Unknown
+	default: //Unknown
 		return 0x00;
 	}
 }
 
-DWORD64 ErectusMemory::GetLocalPlayerPtr(bool CheckMainMenu)
+DWORD64 ErectusMemory::GetLocalPlayerPtr(const bool checkMainMenu)
 {
-	DWORD64 LocalPlayerPtr;
-	if (!Erectus::RPM(ErectusProcess::Exe + OFFSET_LOCAL_PLAYER, &LocalPlayerPtr, sizeof(LocalPlayerPtr))) return 0;
-	if (!Erectus::Valid(LocalPlayerPtr)) return 0;
+	DWORD64 localPlayerPtr;
+	if (!Utils::Rpm(ErectusProcess::exe + OFFSET_LOCAL_PLAYER, &localPlayerPtr, sizeof localPlayerPtr)) return 0;
+	if (!Utils::Valid(localPlayerPtr)) return 0;
 
-	if (CheckMainMenu)
+	if (checkMainMenu)
 	{
-		Entity LocalPlayerData;
-		if (!Erectus::RPM(LocalPlayerPtr, &LocalPlayerData, sizeof(LocalPlayerData))) return 0;
-		if (LocalPlayerData.Formid == 0x00000014) return 0;
+		Entity localPlayerData{};
+		if (!Utils::Rpm(localPlayerPtr, &localPlayerData, sizeof localPlayerData)) return 0;
+		if (localPlayerData.formId == 0x00000014) return 0;
 	}
 
-	return LocalPlayerPtr;
+	return localPlayerPtr;
 }
 
-DWORD64* ErectusMemory::GetEntityList(int* Size)
+DWORD64* ErectusMemory::GetEntityList(int* size)
 {
-	DWORD64 EntityListTypePtr;
-	if (!Erectus::RPM(ErectusProcess::Exe + OFFSET_ENTITY_LIST, &EntityListTypePtr, sizeof(EntityListTypePtr))) return nullptr;
-	if (!Erectus::Valid(EntityListTypePtr)) return nullptr;
+	DWORD64 entityListTypePtr;
+	if (!Utils::Rpm(ErectusProcess::exe + OFFSET_ENTITY_LIST, &entityListTypePtr, sizeof entityListTypePtr)) return
+		nullptr;
+	if (!Utils::Valid(entityListTypePtr)) return nullptr;
 
-	EntityListType EntityListTypeData;
-	if (!Erectus::RPM(EntityListTypePtr, &EntityListTypeData, sizeof(EntityListTypeData))) return nullptr;
-	if (!Erectus::Valid(EntityListTypeData.InteriorListPtr)) return nullptr;
-	if (!Erectus::Valid(EntityListTypeData.InteriorListCheck)) return nullptr;
-	if (!Erectus::Valid(EntityListTypeData.ExteriorListPtr)) return nullptr;
-	if (!Erectus::Valid(EntityListTypeData.ExteriorListCheck)) return nullptr;
+	EntityListType entityListTypeData{};
+	if (!Utils::Rpm(entityListTypePtr, &entityListTypeData, sizeof entityListTypeData)) return nullptr;
+	if (!Utils::Valid(entityListTypeData.interiorListPtr)) return nullptr;
+	if (!Utils::Valid(entityListTypeData.interiorListCheck)) return nullptr;
+	if (!Utils::Valid(entityListTypeData.exteriorListPtr)) return nullptr;
+	if (!Utils::Valid(entityListTypeData.exteriorListCheck)) return nullptr;
 
-	DWORD64 EntityListArrayPtr = 0;
-	int EntityListArraySize = 0;
+	DWORD64 entityListArrayPtr = 0;
+	auto entityListArraySize = 0;
 
-	bool UseInteriorList = false;
-	if (EntityListTypeData.InteriorListPtr != EntityListTypeData.InteriorListCheck)
+	auto useInteriorList = false;
+	if (entityListTypeData.interiorListPtr != entityListTypeData.interiorListCheck)
 	{
-		UseInteriorList = true;
-		EntityListArrayPtr = EntityListTypeData.InteriorListPtr;
-		EntityListArraySize = 1;
+		useInteriorList = true;
+		entityListArrayPtr = entityListTypeData.interiorListPtr;
+		entityListArraySize = 1;
 	}
 
-	bool UseExteriorList = false;
-	if (EntityListTypeData.ExteriorListPtr != EntityListTypeData.ExteriorListCheck)
+	auto useExteriorList = false;
+	if (entityListTypeData.exteriorListPtr != entityListTypeData.exteriorListCheck)
 	{
-		UseExteriorList = true;
-		EntityListArrayPtr = EntityListTypeData.ExteriorListPtr;
-		EntityListArraySize = 25;
+		useExteriorList = true;
+		entityListArrayPtr = entityListTypeData.exteriorListPtr;
+		entityListArraySize = 25;
 	}
 
-	if (UseInteriorList && UseExteriorList) return nullptr;
-	if (!UseInteriorList && !UseExteriorList) return nullptr;
+	if (useInteriorList && useExteriorList) return nullptr;
+	if (!useInteriorList && !useExteriorList) return nullptr;
 
-	DWORD64* EntityListPtr = new DWORD64[EntityListArraySize * 2];
-	if (!Erectus::RPM(EntityListArrayPtr, &*EntityListPtr, EntityListArraySize * sizeof(DWORD64) * 2))
+	auto* entityListPtr = new DWORD64[entityListArraySize * 2];
+	if (!Utils::Rpm(entityListArrayPtr, &*entityListPtr, entityListArraySize * sizeof(DWORD64) * 2))
 	{
-		delete[]EntityListPtr;
-		EntityListPtr = nullptr;
+		delete[]entityListPtr;
+		entityListPtr = nullptr;
 		return nullptr;
 	}
 
-	DWORD64** EntityPtr = new DWORD64 * [EntityListArraySize];
-	int CombinedListSize = 0;
+	auto** entityPtr = new DWORD64 * [entityListArraySize];
+	auto combinedListSize = 0;
 
-	EntityList* EntityListData = new EntityList[EntityListArraySize];
-	for (int i = 0; i < EntityListArraySize; i++)
+	auto* entityListData = new EntityList[entityListArraySize];
+	for (auto i = 0; i < entityListArraySize; i++)
 	{
-		EntityPtr[i] = nullptr;
-		if (!Erectus::Valid(EntityListPtr[i * 2])) continue;
+		entityPtr[i] = nullptr;
+		if (!Utils::Valid(entityListPtr[i * 2])) continue;
 
-		if (!Erectus::RPM(EntityListPtr[i * 2], &EntityListData[i], sizeof(EntityListData[i]))) continue;
-		if (!Erectus::Valid(EntityListData[i].ListPtr) || !EntityListData[i].ListSize) continue;
+		if (!Utils::Rpm(entityListPtr[i * 2], &entityListData[i], sizeof entityListData[i])) continue;
+		if (!Utils::Valid(entityListData[i].listPtr) || !entityListData[i].listSize) continue;
 
-		EntityPtr[i] = new DWORD64[EntityListData[i].ListSize];
-		if (!Erectus::RPM(EntityListData[i].ListPtr, &*EntityPtr[i], EntityListData[i].ListSize * sizeof(DWORD64)))
+		entityPtr[i] = new DWORD64[entityListData[i].listSize];
+		if (!Utils::Rpm(entityListData[i].listPtr, &*entityPtr[i], entityListData[i].listSize * sizeof(DWORD64)))
 		{
-			delete[]EntityPtr[i];
-			EntityPtr[i] = nullptr;
+			delete[]entityPtr[i];
+			entityPtr[i] = nullptr;
 			continue;
 		}
 
-		CombinedListSize += EntityListData[i].ListSize;
+		combinedListSize += entityListData[i].listSize;
 	}
 
-	DWORD64* List = nullptr;
-	*Size = 0;
+	DWORD64* list = nullptr;
+	*size = 0;
 
-	if (CombinedListSize)
+	if (combinedListSize)
 	{
-		List = new DWORD64[CombinedListSize];
-		*Size = CombinedListSize;
+		list = new DWORD64[combinedListSize];
+		*size = combinedListSize;
 
-		int Offset = 0;
-		for (int i = 0; i < EntityListArraySize; i++)
+		auto offset = 0;
+		for (auto i = 0; i < entityListArraySize; i++)
 		{
-			if (EntityPtr[i] == nullptr) continue;
-			memcpy(&List[Offset], &*EntityPtr[i], EntityListData[i].ListSize * sizeof(DWORD64));
-			Offset += EntityListData[i].ListSize;
+			if (entityPtr[i] == nullptr) continue;
+			memcpy(&list[offset], &*entityPtr[i], entityListData[i].listSize * sizeof(DWORD64));
+			offset += entityListData[i].listSize;
 		}
 	}
 
-	for (int i = 0; i < EntityListArraySize; i++)
+	for (auto i = 0; i < entityListArraySize; i++)
 	{
-		if (EntityPtr[i] != nullptr)
+		if (entityPtr[i] != nullptr)
 		{
-			delete[]EntityPtr[i];
-			EntityPtr[i] = nullptr;
+			delete[]entityPtr[i];
+			entityPtr[i] = nullptr;
 		}
 	}
 
-	delete[]EntityPtr;
-	EntityPtr = nullptr;
+	delete[]entityPtr;
+	entityPtr = nullptr;
 
-	delete[]EntityListData;
-	EntityListData = nullptr;
+	delete[]entityListData;
+	entityListData = nullptr;
 
-	delete[]EntityListPtr;
-	EntityListPtr = nullptr;
+	delete[]entityListPtr;
+	entityListPtr = nullptr;
 
-	return List;
+	return list;
 }
 
-DWORD64* ErectusMemory::GetNPCList(int* Size)
+DWORD64* ErectusMemory::GetNpcList(int* size)
 {
-	DWORD64 ProcessListsPtr;
-	if (!Erectus::RPM(ErectusProcess::Exe + OFFSET_NPC_LIST, &ProcessListsPtr, sizeof(ProcessListsPtr))) return nullptr;
-	if (!Erectus::Valid(ProcessListsPtr)) return nullptr;
+	DWORD64 processListsPtr;
+	if (!Utils::Rpm(ErectusProcess::exe + OFFSET_NPC_LIST, &processListsPtr, sizeof processListsPtr)) return nullptr;
+	if (!Utils::Valid(processListsPtr)) return nullptr;
 
-	ProcessLists ProcessListsData;
-	if (!Erectus::RPM(ProcessListsPtr, &ProcessListsData, sizeof(ProcessListsData))) return nullptr;
+	ProcessLists processListsData{};
+	if (!Utils::Rpm(processListsPtr, &processListsData, sizeof processListsData)) return nullptr;
 
-	int IdArraySize = 0;
+	auto idArraySize = 0;
 
-	bool UseArrayA = false;
-	if (Erectus::Valid(ProcessListsData.NPCIdArrayPtrA) && ProcessListsData.NPCIdArraySizeA)
+	auto useArrayA = false;
+	if (Utils::Valid(processListsData.npcIdArrayPtrA) && processListsData.npcIdArraySizeA)
 	{
-		IdArraySize += ProcessListsData.NPCIdArraySizeA;
-		UseArrayA = true;
+		idArraySize += processListsData.npcIdArraySizeA;
+		useArrayA = true;
 	}
 
-	bool UseArrayB = false;
-	if (Erectus::Valid(ProcessListsData.NPCIdArrayPtrB) && ProcessListsData.NPCIdArraySizeB)
+	auto useArrayB = false;
+	if (Utils::Valid(processListsData.npcIdArrayPtrB) && processListsData.npcIdArraySizeB)
 	{
-		IdArraySize += ProcessListsData.NPCIdArraySizeB;
-		UseArrayB = true;
+		idArraySize += processListsData.npcIdArraySizeB;
+		useArrayB = true;
 	}
 
-	if (!IdArraySize)
+	if (!idArraySize)
 	{
 		return nullptr;
 	}
 
-	size_t AllocSize = sizeof(ExecutionList) + IdArraySize * sizeof(DWORD64) * 2;
-	DWORD64 AllocAddress = Erectus::AllocEx(AllocSize);
-	if (AllocAddress == 0) return nullptr;
+	const auto allocSize = sizeof(ExecutionList) + idArraySize * sizeof(DWORD64) * 2;
+	const auto allocAddress = Utils::AllocEx(allocSize);
+	if (allocAddress == 0) return nullptr;
 
-	ExecutionList ExecutionListData;
-	ExecutionListData.Function = ErectusProcess::Exe + OFFSET_NPC_PTR_FUNCTION;
-	ExecutionListData.IdArraySize = IdArraySize;
-	ExecutionListData.IdArray = AllocAddress + sizeof(ExecutionList);
-	ExecutionListData.PtrArray = AllocAddress + sizeof(ExecutionList) + IdArraySize * sizeof(DWORD64);
+	ExecutionList executionListData;
+	executionListData.function = ErectusProcess::exe + OFFSET_NPC_PTR_FUNCTION;
+	executionListData.idArraySize = idArraySize;
+	executionListData.idArray = allocAddress + sizeof(ExecutionList);
+	executionListData.ptrArray = allocAddress + sizeof(ExecutionList) + idArraySize * sizeof(DWORD64);
 
-	BYTE* PageData = new BYTE[AllocSize];
-	memset(PageData, 0x00, AllocSize);
-	memcpy(PageData, &ExecutionListData, sizeof(ExecutionListData));
+	auto* pageData = new BYTE[allocSize];
+	memset(pageData, 0x00, allocSize);
+	memcpy(pageData, &executionListData, sizeof executionListData);
 
-	int Index = 0;
+	auto index = 0;
 
-	if (UseArrayA)
+	if (useArrayA)
 	{
-		for (int i = 0; i < ProcessListsData.NPCIdArraySizeA; i++)
+		for (auto i = 0; i < processListsData.npcIdArraySizeA; i++)
 		{
-			DWORD64 IdAddress = ProcessListsData.NPCIdArrayPtrA + 0x4 * i;
-			memcpy(&PageData[sizeof(ExecutionList) + Index * sizeof(DWORD64)], &IdAddress, sizeof(IdAddress));
-			Index++;
+			auto idAddress = processListsData.npcIdArrayPtrA + 0x4 * i;
+			memcpy(&pageData[sizeof(ExecutionList) + index * sizeof(DWORD64)], &idAddress, sizeof idAddress);
+			index++;
 		}
 	}
 
-	if (UseArrayB)
+	if (useArrayB)
 	{
-		for (int i = 0; i < ProcessListsData.NPCIdArraySizeB; i++)
+		for (auto i = 0; i < processListsData.npcIdArraySizeB; i++)
 		{
-			DWORD64 IdAddress = ProcessListsData.NPCIdArrayPtrB + 0x4 * i;
-			memcpy(&PageData[sizeof(ExecutionList) + Index * sizeof(DWORD64)], &IdAddress, sizeof(IdAddress));
-			Index++;
+			auto idAddress = processListsData.npcIdArrayPtrB + 0x4 * i;
+			memcpy(&pageData[sizeof(ExecutionList) + index * sizeof(DWORD64)], &idAddress, sizeof idAddress);
+			index++;
 		}
 	}
 
-	bool Written = Erectus::WPM(AllocAddress, &*PageData, AllocSize);
+	const auto written = Utils::Wpm(allocAddress, &*pageData, allocSize);
 
-	delete[]PageData;
-	PageData = nullptr;
+	delete[]pageData;
+	pageData = nullptr;
 
-	if (!Written)
+	if (!written)
 	{
-		Erectus::FreeEx(AllocAddress);
+		Utils::FreeEx(allocAddress);
 		return nullptr;
 	}
 
-	DWORD64 ParamAddress = AllocAddress + sizeof(ExecutionList::ASM);
-	HANDLE Thread = CreateRemoteThread(ErectusProcess::Handle, NULL, 0, LPTHREAD_START_ROUTINE(AllocAddress), LPVOID(ParamAddress), 0, 0);
+	const auto paramAddress = allocAddress + sizeof ExecutionList::ASM;
+	auto* const thread = CreateRemoteThread(ErectusProcess::handle, nullptr, 0, LPTHREAD_START_ROUTINE(allocAddress),
+		LPVOID(paramAddress), 0, nullptr);
 
-	if (Thread == NULL)
+	if (thread == nullptr)
 	{
-		Erectus::FreeEx(AllocAddress);
+		Utils::FreeEx(allocAddress);
 		return nullptr;
 	}
 
-	DWORD ThreadResult = WaitForSingleObject(Thread, 3000);
-	CloseHandle(Thread);
+	const auto threadResult = WaitForSingleObject(thread, 3000);
+	CloseHandle(thread);
 
-	if (ThreadResult == WAIT_TIMEOUT)
+	if (threadResult == WAIT_TIMEOUT)
 	{
 		return nullptr;
 	}
 
-	DWORD64* ExecutedList = new DWORD64[IdArraySize];
-	if (!Erectus::RPM(AllocAddress + sizeof(ExecutionList) + IdArraySize * sizeof(DWORD64), &*ExecutedList, IdArraySize * sizeof(DWORD64)))
+	auto* executedList = new DWORD64[idArraySize];
+	if (!Utils::Rpm(allocAddress + sizeof(ExecutionList) + idArraySize * sizeof(DWORD64), &*executedList,
+		idArraySize * sizeof(DWORD64)))
 	{
-		delete[]ExecutedList;
-		ExecutedList = nullptr;
+		delete[]executedList;
+		executedList = nullptr;
 
-		Erectus::FreeEx(AllocAddress);
+		Utils::FreeEx(allocAddress);
 		return nullptr;
 	}
 
-	Erectus::FreeEx(AllocAddress);
+	Utils::FreeEx(allocAddress);
 
-	*Size = IdArraySize;
-	return ExecutedList;
+	*size = idArraySize;
+	return executedList;
 }
 
-DWORD64* ErectusMemory::GetRecipeArray(int* Size)
+DWORD64* ErectusMemory::GetRecipeArray(int* size)
 {
-	DWORD64 DataHandlerPtr;
-	if (!Erectus::RPM(ErectusProcess::Exe + OFFSET_DATA_HANDLER, &DataHandlerPtr, sizeof(DataHandlerPtr))) return nullptr;
-	if (!Erectus::Valid(DataHandlerPtr)) return nullptr;
+	DWORD64 dataHandlerPtr;
+	if (!Utils::Rpm(ErectusProcess::exe + OFFSET_DATA_HANDLER, &dataHandlerPtr, sizeof dataHandlerPtr)) return nullptr;
+	if (!Utils::Valid(dataHandlerPtr)) return nullptr;
 
-	ReferenceList OMODList;
-	if (!Erectus::RPM(DataHandlerPtr + 0xF70, &OMODList, sizeof(OMODList))) return nullptr;
-	if (!Erectus::Valid(OMODList.ArrayPtr) || !OMODList.ArraySize || OMODList.ArraySize > 0x7FFF) return nullptr;
+	ReferenceList omodList{};
+	if (!Utils::Rpm(dataHandlerPtr + 0xF70, &omodList, sizeof omodList)) return nullptr;
+	if (!Utils::Valid(omodList.arrayPtr) || !omodList.arraySize || omodList.arraySize > 0x7FFF) return nullptr;
 
-	DWORD64* OMODPtrArray = new DWORD64[OMODList.ArraySize];
-	if (!Erectus::RPM(OMODList.ArrayPtr, &*OMODPtrArray, OMODList.ArraySize * sizeof(DWORD64)))
+	auto* omodPtrArray = new DWORD64[omodList.arraySize];
+	if (!Utils::Rpm(omodList.arrayPtr, &*omodPtrArray, omodList.arraySize * sizeof(DWORD64)))
 	{
-		delete[]OMODPtrArray;
-		OMODPtrArray = nullptr;
+		delete[]omodPtrArray;
+		omodPtrArray = nullptr;
 		return nullptr;
 	}
 
-	int BufferIndex = 0;
-	DWORD64* BufferArray = new DWORD64[OMODList.ArraySize];
-	memset(BufferArray, 0x00, OMODList.ArraySize * sizeof(DWORD64));
+	auto bufferIndex = 0;
+	auto* bufferArray = new DWORD64[omodList.arraySize];
+	memset(bufferArray, 0x00, omodList.arraySize * sizeof(DWORD64));
 
-	int UniqueArrayIndex = 0;
-	DWORD64* UniqueArray = new DWORD64[OMODList.ArraySize];
-	memset(UniqueArray, 0x00, OMODList.ArraySize * sizeof(DWORD64));
+	auto uniqueArrayIndex = 0;
+	auto* uniqueArray = new DWORD64[omodList.arraySize];
+	memset(uniqueArray, 0x00, omodList.arraySize * sizeof(DWORD64));
 
-	for (int i = 0; i < OMODList.ArraySize; i++)
+	for (auto i = 0; i < omodList.arraySize; i++)
 	{
-		if (!Erectus::Valid(OMODPtrArray[i]))
+		if (!Utils::Valid(omodPtrArray[i]))
 		{
 			continue;
 		}
 
-		Reference ReferenceData;
-		if (!Erectus::RPM(OMODPtrArray[i], &ReferenceData, sizeof(ReferenceData))) continue;
-		if (ReferenceData.OMODFlag != 0x4) continue;
+		Reference referenceData{};
+		if (!Utils::Rpm(omodPtrArray[i], &referenceData, sizeof referenceData)) continue;
+		if (referenceData.omodFlag != 0x4) continue;
 
-		DWORD64 RecipePtr = ReferenceData.NamePtr00B0;
-		if (!Erectus::Valid(RecipePtr)) continue;
+		const auto recipePtr = referenceData.namePtr00B0;
+		if (!Utils::Valid(recipePtr)) continue;
 
-		bool UniquePtr = true;
-		for (int c = 0; c < UniqueArrayIndex; c++)
+		auto uniquePtr = true;
+		for (auto c = 0; c < uniqueArrayIndex; c++)
 		{
-			if (UniqueArray[c] == RecipePtr)
+			if (uniqueArray[c] == recipePtr)
 			{
-				UniquePtr = false;
+				uniquePtr = false;
 				break;
 			}
 		}
 
-		if (!UniquePtr)
+		if (!uniquePtr)
 		{
 			continue;
 		}
 
-		UniqueArray[UniqueArrayIndex] = RecipePtr;
-		UniqueArrayIndex++;
+		uniqueArray[uniqueArrayIndex] = recipePtr;
+		uniqueArrayIndex++;
 
-		BufferArray[BufferIndex] = OMODPtrArray[i];
-		BufferIndex++;
+		bufferArray[bufferIndex] = omodPtrArray[i];
+		bufferIndex++;
 	}
 
-	delete[]UniqueArray;
-	UniqueArray = nullptr;
+	delete[]uniqueArray;
+	uniqueArray = nullptr;
 
-	delete[]OMODPtrArray;
-	OMODPtrArray = nullptr;
+	delete[]omodPtrArray;
+	omodPtrArray = nullptr;
 
-	int RecipeArraySize = 0;
-	DWORD64* RecipeArray = nullptr;
+	auto recipeArraySize = 0;
+	DWORD64* recipeArray = nullptr;
 
-	if (BufferIndex)
+	if (bufferIndex)
 	{
-		RecipeArraySize = BufferIndex;
-		RecipeArray = new DWORD64[RecipeArraySize];
-		memset(RecipeArray, 0x00, RecipeArraySize * sizeof(DWORD64));
-		for (int i = 0; i < RecipeArraySize; i++)
+		recipeArraySize = bufferIndex;
+		recipeArray = new DWORD64[recipeArraySize];
+		memset(recipeArray, 0x00, recipeArraySize * sizeof(DWORD64));
+		for (auto i = 0; i < recipeArraySize; i++)
 		{
-			RecipeArray[i] = BufferArray[i];
+			recipeArray[i] = bufferArray[i];
 		}
 	}
 
-	delete[]BufferArray;
-	BufferArray = nullptr;
+	delete[]bufferArray;
+	bufferArray = nullptr;
 
-	*Size = RecipeArraySize;
-	return RecipeArray;
+	*size = recipeArraySize;
+	return recipeArray;
 }
 
 bool ErectusMemory::UpdateKnownRecipes()
 {
-	DWORD64 LocalPlayerPtr = GetLocalPlayerPtr(true);
-	if (!Erectus::Valid(LocalPlayerPtr)) return false;
+	const auto localPlayerPtr = GetLocalPlayerPtr(true);
+	if (!Utils::Valid(localPlayerPtr)) return false;
 
-	int RecipeArraySize = 0;
-	DWORD64* RecipeArray = GetRecipeArray(&RecipeArraySize);
-	if (RecipeArray == nullptr) return false;
+	auto recipeArraySize = 0;
+	auto* recipeArray = GetRecipeArray(&recipeArraySize);
+	if (recipeArray == nullptr) return false;
 
-	size_t AllocSize = sizeof(ExecutionPlan) + (RecipeArraySize * sizeof(DWORD64) + (RecipeArraySize * sizeof(bool)));
-	DWORD64 AllocAddress = Erectus::AllocEx(AllocSize);
-	if (AllocAddress == 0)
+	const auto allocSize = sizeof(ExecutionPlan) + (recipeArraySize * sizeof(DWORD64) + recipeArraySize * sizeof(bool));
+	const auto allocAddress = Utils::AllocEx(allocSize);
+	if (allocAddress == 0)
 	{
-		delete[]RecipeArray;
-		RecipeArray = nullptr;
+		delete[]recipeArray;
+		recipeArray = nullptr;
 		return false;
 	}
 
-	ExecutionPlan ExecutionPlanData;
-	ExecutionPlanData.Function = AllocAddress + sizeof(ExecutionPlan::ASM);
-	ExecutionPlanData.LocalPlayerPtr = LocalPlayerPtr;
-	ExecutionPlanData.RecipeArraySize = RecipeArraySize;
-	ExecutionPlanData.RecipeArray = AllocAddress + sizeof(ExecutionPlan);
-	ExecutionPlanData.LearnedRecipeArray = AllocAddress + sizeof(ExecutionPlan) + RecipeArraySize * sizeof(DWORD64);
+	ExecutionPlan executionPlanData;
+	executionPlanData.function = allocAddress + sizeof ExecutionPlan::ASM;
+	executionPlanData.localPlayerPtr = localPlayerPtr;
+	executionPlanData.recipeArraySize = recipeArraySize;
+	executionPlanData.recipeArray = allocAddress + sizeof(ExecutionPlan);
+	executionPlanData.learnedRecipeArray = allocAddress + sizeof(ExecutionPlan) + recipeArraySize * sizeof(DWORD64);
 
-	BYTE* PageData = new BYTE[AllocSize];
-	memset(PageData, 0x00, AllocSize);
-	memcpy(PageData, &ExecutionPlanData, sizeof(ExecutionPlanData));
+	auto* pageData = new BYTE[allocSize];
+	memset(pageData, 0x00, allocSize);
+	memcpy(pageData, &executionPlanData, sizeof executionPlanData);
 
-	for (int i = 0; i < RecipeArraySize; i++)
+	for (auto i = 0; i < recipeArraySize; i++)
 	{
-		memcpy(&PageData[sizeof(ExecutionPlan) + i * sizeof(DWORD64)], &RecipeArray[i], sizeof(DWORD64));
+		memcpy(&pageData[sizeof(ExecutionPlan) + i * sizeof(DWORD64)], &recipeArray[i], sizeof(DWORD64));
 	}
 
-	bool Written = Erectus::WPM(AllocAddress, &*PageData, AllocSize);
+	const auto written = Utils::Wpm(allocAddress, &*pageData, allocSize);
 
-	delete[]PageData;
-	PageData = nullptr;
+	delete[]pageData;
+	pageData = nullptr;
 
-	if (!Written)
+	if (!written)
 	{
-		delete[]RecipeArray;
-		RecipeArray = nullptr;
+		delete[]recipeArray;
+		recipeArray = nullptr;
 
-		Erectus::FreeEx(AllocAddress);
+		Utils::FreeEx(allocAddress);
 		return false;
 	}
 
-	DWORD64 ParamAddress = AllocAddress + sizeof(ExecutionPlan::ASM) + sizeof(ExecutionPlan::RBP);
-	HANDLE Thread = CreateRemoteThread(ErectusProcess::Handle, NULL, 0, LPTHREAD_START_ROUTINE(AllocAddress), LPVOID(ParamAddress), 0, 0);
+	const auto paramAddress = allocAddress + sizeof ExecutionPlan::ASM + sizeof ExecutionPlan::rbp;
+	auto* thread = CreateRemoteThread(ErectusProcess::handle, nullptr, 0, LPTHREAD_START_ROUTINE(allocAddress),
+		LPVOID(paramAddress), 0, nullptr);
 
-	if (Thread == NULL)
+	if (thread == nullptr)
 	{
-		delete[]RecipeArray;
-		RecipeArray = nullptr;
+		delete[]recipeArray;
+		recipeArray = nullptr;
 
-		Erectus::FreeEx(AllocAddress);
+		Utils::FreeEx(allocAddress);
 		return false;
 	}
 
-	DWORD ThreadResult = WaitForSingleObject(Thread, 3000);
-	CloseHandle(Thread);
+	const auto threadResult = WaitForSingleObject(thread, 3000);
+	CloseHandle(thread);
 
-	if (ThreadResult == WAIT_TIMEOUT)
+	if (threadResult == WAIT_TIMEOUT)
 	{
-		delete[]RecipeArray;
-		RecipeArray = nullptr;
+		delete[]recipeArray;
+		recipeArray = nullptr;
 		return false;
 	}
 
-	bool* ExecutedPlan = new bool[RecipeArraySize];
-	if (!Erectus::RPM(AllocAddress + sizeof(ExecutionPlan) + RecipeArraySize * sizeof(DWORD64), &*ExecutedPlan, RecipeArraySize * sizeof(bool)))
+	auto* executedPlan = new bool[recipeArraySize];
+	if (!Utils::Rpm(allocAddress + sizeof(ExecutionPlan) + recipeArraySize * sizeof(DWORD64), &*executedPlan,
+		recipeArraySize * sizeof(bool)))
 	{
-		delete[]RecipeArray;
-		RecipeArray = nullptr;
+		delete[]recipeArray;
+		recipeArray = nullptr;
 
-		delete[]ExecutedPlan;
-		ExecutedPlan = nullptr;
+		delete[]executedPlan;
+		executedPlan = nullptr;
 
-		Erectus::FreeEx(AllocAddress);
+		Utils::FreeEx(allocAddress);
 		return false;
 	}
 
-	int KnownRecipeIndex = 0;
+	auto knownRecipeIndex = 0;
 
-	for (int i = 0; i < RecipeArraySize; i++)
+	for (auto i = 0; i < recipeArraySize; i++)
 	{
-		if (ExecutedPlan[i])
+		if (executedPlan[i])
 		{
-			DWORD64 Buffer;
-			if (Erectus::RPM(RecipeArray[i] + 0xB0, &Buffer, sizeof(Buffer)))
+			DWORD64 buffer;
+			if (Utils::Rpm(recipeArray[i] + 0xB0, &buffer, sizeof buffer))
 			{
-				if (Erectus::Valid(Buffer))
+				if (Utils::Valid(buffer))
 				{
-					DWORD Formid;
-					if (Erectus::RPM(Buffer + 0x20, &Formid, sizeof(Formid)))
+					DWORD formId;
+					if (Utils::Rpm(buffer + 0x20, &formId, sizeof formId))
 					{
-						KnownRecipeArray[KnownRecipeIndex] = Formid;
-						KnownRecipeIndex++;
+						knownRecipeArray[knownRecipeIndex] = formId;
+						knownRecipeIndex++;
 					}
 				}
 			}
 		}
 	}
 
-	KnownRecipeArraySize = KnownRecipeIndex;
+	knownRecipeArraySize = knownRecipeIndex;
 
-	delete[]RecipeArray;
-	RecipeArray = nullptr;
+	delete[]recipeArray;
+	recipeArray = nullptr;
 
-	delete[]ExecutedPlan;
-	ExecutedPlan = nullptr;
+	delete[]executedPlan;
+	executedPlan = nullptr;
 
-	Erectus::FreeEx(AllocAddress);
+	Utils::FreeEx(allocAddress);
 	return true;
 }
 
-BYTE ErectusMemory::IsKnownRecipe(DWORD Formid)
+BYTE ErectusMemory::IsKnownRecipe(const DWORD formId)
 {
-	if (!KnownRecipeArraySize || KnownRecipeArraySize >= 0x1000)
+	if (!knownRecipeArraySize || knownRecipeArraySize >= 0x1000)
 	{
 		return 0x00;
 	}
 
-	for (int i = 0; i < KnownRecipeArraySize; i++)
+	for (auto i = 0; i < knownRecipeArraySize; i++)
 	{
-		if (Formid == KnownRecipeArray[i])
+		if (formId == knownRecipeArray[i])
 		{
 			return 0x01;
 		}
@@ -578,24 +586,24 @@ BYTE ErectusMemory::IsKnownRecipe(DWORD Formid)
 	return 0x02;
 }
 
-bool ErectusMemory::CheckFormidArray(DWORD Formid, bool* EnabledArray, DWORD* FormidArray, int Size)
+bool ErectusMemory::CheckFormIdArray(const DWORD formId, bool* enabledArray, const DWORD* formIdArray, const int size)
 {
-	for (int i = 0; i < Size; i++)
+	for (auto i = 0; i < size; i++)
 	{
-		if (Formid == FormidArray[i])
+		if (formId == formIdArray[i])
 		{
-			return EnabledArray[i];
+			return enabledArray[i];
 		}
 	}
 
 	return false;
 }
 
-bool ErectusMemory::CheckReferenceJunk(Reference ReferenceData)
+bool ErectusMemory::CheckReferenceJunk(const Reference referenceData)
 {
-	if (ReferenceData.ComponentArraySize)
+	if (referenceData.componentArraySize)
 	{
-		if (!((ReferenceData.RecordFlagA >> 7) & 1))
+		if (!(referenceData.recordFlagA >> 7 & 1))
 		{
 			return true;
 		}
@@ -604,9 +612,9 @@ bool ErectusMemory::CheckReferenceJunk(Reference ReferenceData)
 	return false;
 }
 
-bool ErectusMemory::CheckReferenceMod(Reference ReferenceData)
+bool ErectusMemory::CheckReferenceMod(const Reference referenceData)
 {
-	if ((ReferenceData.RecordFlagA >> 7) & 1)
+	if (referenceData.recordFlagA >> 7 & 1)
 	{
 		return true;
 	}
@@ -614,9 +622,9 @@ bool ErectusMemory::CheckReferenceMod(Reference ReferenceData)
 	return false;
 }
 
-bool ErectusMemory::CheckReferencePlan(Reference ReferenceData)
+bool ErectusMemory::CheckReferencePlan(const Reference referenceData)
 {
-	if ((ReferenceData.PlanFlag >> 5) & 1)
+	if (referenceData.planFlag >> 5 & 1)
 	{
 		return true;
 	}
@@ -626,14 +634,12 @@ bool ErectusMemory::CheckReferencePlan(Reference ReferenceData)
 
 bool ErectusMemory::CheckScrapList()
 {
-	if (ErectusIni::CustomScrapLooterSettings.ScrapLooterDistance)
+	if (ErectusIni::customScrapLooterSettings.scrapLooterDistance)
 	{
-		for (int i = 0; i < 40; i++)
+		for (auto i : ErectusIni::customScrapLooterSettings.scrapEnabledList)
 		{
-			if (ErectusIni::CustomScrapLooterSettings.ScrapEnabledList[i])
-			{
+			if (i)
 				return true;
-			}
 		}
 	}
 
@@ -642,11 +648,11 @@ bool ErectusMemory::CheckScrapList()
 
 bool ErectusMemory::CheckItemLooterList()
 {
-	for (int i = 0; i < 100; i++)
+	for (auto i = 0; i < 100; i++)
 	{
-		if (ErectusIni::CustomItemLooterSettings.ItemLooterFormidList[i])
+		if (ErectusIni::customItemLooterSettings.itemLooterFormIdList[i])
 		{
-			if (ErectusIni::CustomItemLooterSettings.ItemLooterEnabledList[i])
+			if (ErectusIni::customItemLooterSettings.itemLooterEnabledList[i])
 			{
 				return true;
 			}
@@ -658,13 +664,13 @@ bool ErectusMemory::CheckItemLooterList()
 
 bool ErectusMemory::CheckItemLooterBlacklist()
 {
-	if (ErectusIni::CustomItemLooterSettings.ItemLooterBlacklistToggle)
+	if (ErectusIni::customItemLooterSettings.itemLooterBlacklistToggle)
 	{
-		for (int i = 0; i < 64; i++)
+		for (auto i = 0; i < 64; i++)
 		{
-			if (ErectusIni::CustomItemLooterSettings.ItemLooterBlacklist[i])
+			if (ErectusIni::customItemLooterSettings.itemLooterBlacklist[i])
 			{
-				if (ErectusIni::CustomItemLooterSettings.ItemLooterBlacklistEnabled[i])
+				if (ErectusIni::customItemLooterSettings.itemLooterBlacklistEnabled[i])
 				{
 					return true;
 				}
@@ -675,13 +681,13 @@ bool ErectusMemory::CheckItemLooterBlacklist()
 	return false;
 }
 
-bool ErectusMemory::CheckEntityLooterList(EntityLooterSettings* CustomEntityLooterSettings)
+bool ErectusMemory::CheckEntityLooterList(EntityLooterSettings* customEntityLooterSettings)
 {
-	for (int i = 0; i < 100; i++)
+	for (auto i = 0; i < 100; i++)
 	{
-		if (CustomEntityLooterSettings->EntityLooterFormidList[i])
+		if (customEntityLooterSettings->entityLooterFormIdList[i])
 		{
-			if (CustomEntityLooterSettings->EntityLooterEnabledList[i])
+			if (customEntityLooterSettings->entityLooterEnabledList[i])
 			{
 				return true;
 			}
@@ -691,19 +697,14 @@ bool ErectusMemory::CheckEntityLooterList(EntityLooterSettings* CustomEntityLoot
 	return false;
 }
 
-bool ErectusMemory::CheckEntityLooterBlacklist(EntityLooterSettings* CustomEntityLooterSettings)
+bool ErectusMemory::CheckEntityLooterBlacklist(EntityLooterSettings* customEntityLooterSettings)
 {
-	if (CustomEntityLooterSettings->EntityLooterBlacklistToggle)
+	if (customEntityLooterSettings->entityLooterBlacklistToggle)
 	{
-		for (int i = 0; i < 64; i++)
+		for (auto i = 0; i < 64; i++)
 		{
-			if (CustomEntityLooterSettings->EntityLooterBlacklist[i])
-			{
-				if (CustomEntityLooterSettings->EntityLooterBlacklistEnabled[i])
-				{
-					return true;
-				}
-			}
+			if (customEntityLooterSettings->entityLooterBlacklist[i] && customEntityLooterSettings->entityLooterBlacklistEnabled[i])
+				return true;
 		}
 	}
 
@@ -712,12 +713,10 @@ bool ErectusMemory::CheckEntityLooterBlacklist(EntityLooterSettings* CustomEntit
 
 bool ErectusMemory::CheckIngredientList()
 {
-	for (int i = 0; i < 69; i++)
+	for (auto i : ErectusIni::customHarvesterSettings.harvesterEnabledList)
 	{
-		if (ErectusIni::CustomHarvesterSettings.HarvesterEnabledList[i])
-		{
+		if (i)
 			return true;
-		}
 	}
 
 	return false;
@@ -725,353 +724,323 @@ bool ErectusMemory::CheckIngredientList()
 
 bool ErectusMemory::CheckJunkPileEnabled()
 {
-	for (int i = 0; i < 69; i++)
+	for (auto i = 0; i < 69; i++)
 	{
-		if (!strcmp(ErectusIni::CustomHarvesterSettings.HarvesterNameList[i], "Junk Pile"))
-		{
-			return ErectusIni::CustomHarvesterSettings.HarvesterEnabledList[i];
-		}
+		if (!strcmp(ErectusIni::customHarvesterSettings.harvesterNameList[i], "Junk Pile"))
+			return ErectusIni::customHarvesterSettings.harvesterEnabledList[i];
 	}
 
 	return false;
 }
 
-bool ErectusMemory::CheckComponentArray(Reference ReferenceData)
+bool ErectusMemory::CheckComponentArray(const Reference referenceData)
 {
-	if (!ReferenceData.ComponentArraySize || ReferenceData.ComponentArraySize > 0x7FFF) return false;
-	if (!Erectus::Valid(ReferenceData.ComponentArrayPtr)) return false;
+	if (!referenceData.componentArraySize || referenceData.componentArraySize > 0x7FFF)
+		return false;
 
-	Component* ComponentArray = new Component[ReferenceData.ComponentArraySize];
-	if (!Erectus::RPM(ReferenceData.ComponentArrayPtr, &*ComponentArray, ReferenceData.ComponentArraySize * sizeof(Component)))
+	if (!Utils::Valid(referenceData.componentArrayPtr))
+		return false;
+
+	auto* componentArray = new Component[referenceData.componentArraySize];
+	if (!Utils::Rpm(referenceData.componentArrayPtr, &*componentArray,
+		referenceData.componentArraySize * sizeof(Component)))
 	{
-		delete[]ComponentArray;
-		ComponentArray = nullptr;
+		delete[]componentArray;
+		componentArray = nullptr;
 		return false;
 	}
 
-	for (int i = 0; i < ReferenceData.ComponentArraySize; i++)
+	for (auto i = 0; i < referenceData.componentArraySize; i++)
 	{
-		if (!Erectus::Valid(ComponentArray[i].ComponentReferencePtr)) continue;
-		if (!Erectus::Valid(ComponentArray[i].ComponentCountReferencePtr)) continue;
+		if (!Utils::Valid(componentArray[i].componentReferencePtr)) continue;
+		if (!Utils::Valid(componentArray[i].componentCountReferencePtr)) continue;
 
-		Reference ComponentData;
-		if (!Erectus::RPM(ComponentArray[i].ComponentReferencePtr, &ComponentData, sizeof(ComponentData))) continue;
-		if (CheckFormidArray(ComponentData.Formid, ErectusIni::CustomScrapLooterSettings.ScrapEnabledList, ErectusIni::CustomScrapLooterSettings.ScrapFormidList, 40))
+		Reference componentData{};
+		if (!Utils::Rpm(componentArray[i].componentReferencePtr, &componentData, sizeof componentData)) continue;
+		if (CheckFormIdArray(componentData.formId, ErectusIni::customScrapLooterSettings.scrapEnabledList,
+			ErectusIni::customScrapLooterSettings.scrapFormIdList, 40))
 		{
-			delete[]ComponentArray;
-			ComponentArray = nullptr;
+			delete[]componentArray;
+			componentArray = nullptr;
 			return true;
 		}
 	}
 
-	delete[]ComponentArray;
-	ComponentArray = nullptr;
+	delete[]componentArray;
+	componentArray = nullptr;
 	return false;
 }
 
-bool ErectusMemory::CheckReferenceKeywordBook(Reference ReferenceData, DWORD Formid)
+bool ErectusMemory::CheckReferenceKeywordBook(const Reference referenceData, const DWORD formId)
 {
-	if (!ReferenceData.KeywordArrayData01C0 || ReferenceData.KeywordArrayData01C0 > 0x7FFF) return false;
-	if (!Erectus::Valid(ReferenceData.KeywordArrayData01B8)) return false;
+	if (!referenceData.keywordArrayData01C0 || referenceData.keywordArrayData01C0 > 0x7FFF) return false;
+	if (!Utils::Valid(referenceData.keywordArrayData01B8)) return false;
 
-	DWORD64* KeywordArray = new DWORD64[ReferenceData.KeywordArrayData01C0];
-	if (!Erectus::RPM(ReferenceData.KeywordArrayData01B8, &*KeywordArray, ReferenceData.KeywordArrayData01C0 * sizeof(DWORD64)))
+	auto* keywordArray = new DWORD64[referenceData.keywordArrayData01C0];
+	if (!Utils::Rpm(referenceData.keywordArrayData01B8, &*keywordArray,
+		referenceData.keywordArrayData01C0 * sizeof(DWORD64)))
 	{
-		delete[]KeywordArray;
-		KeywordArray = nullptr;
+		delete[]keywordArray;
+		keywordArray = nullptr;
 		return false;
 	}
 
-	for (DWORD64 i = 0; i < ReferenceData.KeywordArrayData01C0; i++)
+	for (DWORD64 i = 0; i < referenceData.keywordArrayData01C0; i++)
 	{
-		if (!Erectus::Valid(KeywordArray[i])) continue;
+		if (!Utils::Valid(keywordArray[i])) continue;
 
-		DWORD FormidCheck;
-		if (!Erectus::RPM(KeywordArray[i] + 0x20, &FormidCheck, sizeof(FormidCheck))) continue;
-		if (FormidCheck != Formid) continue;
+		DWORD formIdCheck;
+		if (!Utils::Rpm(keywordArray[i] + 0x20, &formIdCheck, sizeof formIdCheck)) continue;
+		if (formIdCheck != formId) continue;
 
-		delete[]KeywordArray;
-		KeywordArray = nullptr;
+		delete[]keywordArray;
+		keywordArray = nullptr;
 		return true;
 	}
 
-	delete[]KeywordArray;
-	KeywordArray = nullptr;
+	delete[]keywordArray;
+	keywordArray = nullptr;
 	return false;
 }
 
-bool ErectusMemory::CheckReferenceKeywordMisc(Reference ReferenceData, DWORD Formid)
+bool ErectusMemory::CheckReferenceKeywordMisc(const Reference referenceData, const DWORD formId)
 {
-	if (!ReferenceData.KeywordArrayData01B8 || ReferenceData.KeywordArrayData01B8 > 0x7FFF) return false;
-	if (!Erectus::Valid(ReferenceData.KeywordArrayData01B0)) return false;
+	if (!referenceData.keywordArrayData01B8 || referenceData.keywordArrayData01B8 > 0x7FFF) return false;
+	if (!Utils::Valid(referenceData.keywordArrayData01B0)) return false;
 
-	DWORD64* KeywordArray = new DWORD64[ReferenceData.KeywordArrayData01B8];
-	if (!Erectus::RPM(ReferenceData.KeywordArrayData01B0, &*KeywordArray, ReferenceData.KeywordArrayData01B8 * sizeof(DWORD64)))
+	auto* keywordArray = new DWORD64[referenceData.keywordArrayData01B8];
+	if (!Utils::Rpm(referenceData.keywordArrayData01B0, &*keywordArray,
+		referenceData.keywordArrayData01B8 * sizeof(DWORD64)))
 	{
-		delete[]KeywordArray;
-		KeywordArray = nullptr;
+		delete[]keywordArray;
+		keywordArray = nullptr;
 		return false;
 	}
 
-	for (DWORD64 i = 0; i < ReferenceData.KeywordArrayData01B8; i++)
+	for (DWORD64 i = 0; i < referenceData.keywordArrayData01B8; i++)
 	{
-		if (!Erectus::Valid(KeywordArray[i])) continue;
+		if (!Utils::Valid(keywordArray[i])) continue;
 
-		DWORD FormidCheck;
-		if (!Erectus::RPM(KeywordArray[i] + 0x20, &FormidCheck, sizeof(FormidCheck))) continue;
-		if (FormidCheck != Formid) continue;
+		DWORD formIdCheck;
+		if (!Utils::Rpm(keywordArray[i] + 0x20, &formIdCheck, sizeof formIdCheck)) continue;
+		if (formIdCheck != formId) continue;
 
-		delete[]KeywordArray;
-		KeywordArray = nullptr;
+		delete[]keywordArray;
+		keywordArray = nullptr;
 		return true;
 	}
 
-	delete[]KeywordArray;
-	KeywordArray = nullptr;
+	delete[]keywordArray;
+	keywordArray = nullptr;
 	return false;
 }
 
-bool ErectusMemory::CheckWhitelistedFlux(Reference ReferenceData)
+bool ErectusMemory::CheckWhitelistedFlux(const Reference referenceData)
 {
-	if (!Erectus::Valid(ReferenceData.HarvestedPtr)) return false;
+	if (!Utils::Valid(referenceData.harvestedPtr)) return false;
 
-	DWORD FormidCheck;
-	if (!Erectus::RPM(ReferenceData.HarvestedPtr + 0x20, &FormidCheck, sizeof(FormidCheck))) return false;
+	DWORD formIdCheck;
+	if (!Utils::Rpm(referenceData.harvestedPtr + 0x20, &formIdCheck, sizeof formIdCheck)) return false;
 
-	switch (FormidCheck)
+	switch (formIdCheck)
 	{
-	case 0x002DDD45://Raw Crimson Flux
-		return ErectusIni::CustomFluxSettings.CrimsonFluxEnabled;
-	case 0x002DDD46://Raw Cobalt Flux
-		return ErectusIni::CustomFluxSettings.CobaltFluxEnabled;
-	case 0x002DDD49://Raw Yellowcake Flux
-		return ErectusIni::CustomFluxSettings.YellowcakeFluxEnabled;
-	case 0x002DDD4B://Raw Fluorescent Flux
-		return ErectusIni::CustomFluxSettings.FluorescentFluxEnabled;
-	case 0x002DDD4D://Raw Violet Flux
-		return ErectusIni::CustomFluxSettings.VioletFluxEnabled;
+	case 0x002DDD45: //Raw Crimson Flux
+		return ErectusIni::customFluxSettings.crimsonFluxEnabled;
+	case 0x002DDD46: //Raw Cobalt Flux
+		return ErectusIni::customFluxSettings.cobaltFluxEnabled;
+	case 0x002DDD49: //Raw Yellowcake Flux
+		return ErectusIni::customFluxSettings.yellowcakeFluxEnabled;
+	case 0x002DDD4B: //Raw Fluorescent Flux
+		return ErectusIni::customFluxSettings.fluorescentFluxEnabled;
+	case 0x002DDD4D: //Raw Violet Flux
+		return ErectusIni::customFluxSettings.violetFluxEnabled;
 	default:
 		return false;
 	}
 }
 
-bool ErectusMemory::FloraLeveledListValid(LeveledList LeveledListData)
+bool ErectusMemory::FloraLeveledListValid(const LeveledList leveledListData)
 {
-	if (!Erectus::Valid(LeveledListData.ListEntryArrayPtr) || !LeveledListData.ListEntryArraySize)
+	if (!Utils::Valid(leveledListData.listEntryArrayPtr) || !leveledListData.listEntryArraySize)
 	{
 		return false;
 	}
 
-	ListEntry* ListEntryData = new ListEntry[LeveledListData.ListEntryArraySize];
-	if (!Erectus::RPM(LeveledListData.ListEntryArrayPtr, &*ListEntryData, LeveledListData.ListEntryArraySize * sizeof(ListEntry)))
+	auto* listEntryData = new ListEntry[leveledListData.listEntryArraySize];
+	if (!Utils::Rpm(leveledListData.listEntryArrayPtr, &*listEntryData,
+		leveledListData.listEntryArraySize * sizeof(ListEntry)))
 	{
-		delete[]ListEntryData;
-		ListEntryData = nullptr;
+		delete[]listEntryData;
+		listEntryData = nullptr;
 		return false;
 	}
 
-	for (BYTE i = 0; i < LeveledListData.ListEntryArraySize; i++)
+	for (BYTE i = 0; i < leveledListData.listEntryArraySize; i++)
 	{
-		if (!Erectus::Valid(ListEntryData[i].ReferencePtr))
+		if (!Utils::Valid(listEntryData[i].referencePtr))
 		{
 			continue;
 		}
 
-		Reference ReferenceData;
-		if (!Erectus::RPM(ListEntryData[i].ReferencePtr, &ReferenceData, sizeof(ReferenceData))) continue;
-		if (ReferenceData.vtable == ErectusProcess::Exe + VTABLE_TESLEVITEM)
+		Reference referenceData{};
+		if (!Utils::Rpm(listEntryData[i].referencePtr, &referenceData, sizeof referenceData)) continue;
+		if (referenceData.vtable == ErectusProcess::exe + VTABLE_TESLEVITEM)
 		{
-			LeveledList RecursiveLeveledListData;
-			memcpy(&RecursiveLeveledListData, &ReferenceData, sizeof(RecursiveLeveledListData));
-			if (FloraLeveledListValid(RecursiveLeveledListData))
+			LeveledList recursiveLeveledListData{};
+			memcpy(&recursiveLeveledListData, &referenceData, sizeof recursiveLeveledListData);
+			if (FloraLeveledListValid(recursiveLeveledListData))
 			{
-				delete[]ListEntryData;
-				ListEntryData = nullptr;
+				delete[]listEntryData;
+				listEntryData = nullptr;
 				return true;
 			}
 		}
-		else if (CheckFormidArray(ReferenceData.Formid, ErectusIni::CustomHarvesterSettings.HarvesterEnabledList, ErectusIni::CustomHarvesterSettings.HarvesterFormidList, 69))
+		else if (CheckFormIdArray(referenceData.formId, ErectusIni::customHarvesterSettings.harvesterEnabledList,
+			ErectusIni::customHarvesterSettings.harvesterFormIdList, 69))
 		{
-			delete[]ListEntryData;
-			ListEntryData = nullptr;
+			delete[]listEntryData;
+			listEntryData = nullptr;
 			return true;
 		}
 	}
 
-	delete[]ListEntryData;
-	ListEntryData = nullptr;
+	delete[]listEntryData;
+	listEntryData = nullptr;
 	return false;
 }
 
-bool ErectusMemory::FloraValid(Reference ReferenceData)
+bool ErectusMemory::FloraValid(const Reference referenceData)
 {
-	if (ReferenceData.Formid == 0x000183C6)
+	if (referenceData.formId == 0x000183C6)
 	{
 		return CheckJunkPileEnabled();
 	}
 
-	if (!Erectus::Valid(ReferenceData.HarvestedPtr))
+	if (!Utils::Valid(referenceData.harvestedPtr))
 	{
 		return false;
 	}
 
-	Reference HarvestedData;
-	if (!Erectus::RPM(ReferenceData.HarvestedPtr, &HarvestedData, sizeof(HarvestedData))) return false;
-	if (HarvestedData.vtable == ErectusProcess::Exe + VTABLE_TESLEVITEM)
+	Reference harvestedData{};
+	if (!Utils::Rpm(referenceData.harvestedPtr, &harvestedData, sizeof harvestedData)) return false;
+	if (harvestedData.vtable == ErectusProcess::exe + VTABLE_TESLEVITEM)
 	{
-		LeveledList LeveledListData;
-		memcpy(&LeveledListData, &HarvestedData, sizeof(LeveledListData));
-		return FloraLeveledListValid(LeveledListData);
+		LeveledList leveledListData{};
+		memcpy(&leveledListData, &harvestedData, sizeof leveledListData);
+		return FloraLeveledListValid(leveledListData);
 	}
-	else
-	{
-		return CheckFormidArray(HarvestedData.Formid, ErectusIni::CustomHarvesterSettings.HarvesterEnabledList, ErectusIni::CustomHarvesterSettings.HarvesterFormidList, 69);
-	}
+	return CheckFormIdArray(harvestedData.formId, ErectusIni::customHarvesterSettings.harvesterEnabledList,
+		ErectusIni::customHarvesterSettings.harvesterFormIdList, 69);
 }
 
-bool ErectusMemory::IsTreasureMap(DWORD Formid)
+bool ErectusMemory::IsTreasureMap(const DWORD formId)
 {
-	switch (Formid)
+	switch (formId)
 	{
-	case 0x0051B8CD://Cranberry Bog Treasure Map #01
-		return true;
-	case 0x0051B8D6://Cranberry Bog Treasure Map #02
-		return true;
-	case 0x0051B8D9://Cranberry Bog Treasure Map #03
-		return true;
-	case 0x0051B8DE://Cranberry Bog Treasure Map #04
-		return true;
-	case 0x0051B8CE://Mire Treasure Map #01
-		return true;
-	case 0x0051B8D2://Mire Treasure Map #02
-		return true;
-	case 0x0051B8D7://Mire Treasure Map #03
-		return true;
-	case 0x0051B8D8://Mire Treasure Map #04
-		return true;
-	case 0x0051B8DB://Mire Treasure Map #05
-		return true;
-	case 0x0051B8BA://Savage Divide Treasure Map #01
-		return true;
-	case 0x0051B8C0://Savage Divide Treasure Map #02
-		return true;
-	case 0x0051B8C2://Savage Divide Treasure Map #03
-		return true;
-	case 0x0051B8C4://Savage Divide Treasure Map #04
-		return true;
-	case 0x0051B8C6://Savage Divide Treasure Map #05
-		return true;
-	case 0x0051B8C7://Savage Divide Treasure Map #06
-		return true;
-	case 0x0051B8C8://Savage Divide Treasure Map #07
-		return true;
-	case 0x0051B8CA://Savage Divide Treasure Map #08
-		return true;
-	case 0x0051B8CC://Savage Divide Treasure Map #09
-		return true;
-	case 0x0051B8D4://Savage Divide Treasure Map #10
-		return true;
-	case 0x0051B8B1://Toxic Valley Treasure Map #01
-		return true;
-	case 0x0051B8B8://Toxic Valley Treasure Map #02
-		return true;
-	case 0x0051B8BC://Toxic Valley Treasure Map #03
-		return true;
-	case 0x0051B8C1://Toxic Valley Treasure Map #04
-		return true;
-	case 0x0051B7A2://Forest Treasure Map #01
-		return true;
-	case 0x0051B8A6://Forest Treasure Map #02
-		return true;
-	case 0x0051B8A7://Forest Treasure Map #03
-		return true;
-	case 0x0051B8A9://Forest Treasure Map #04
-		return true;
-	case 0x0051B8AA://Forest Treasure Map #05
-		return true;
-	case 0x0051B8AE://Forest Treasure Map #06
-		return true;
-	case 0x0051B8B0://Forest Treasure Map #07
-		return true;
-	case 0x0051B8B2://Forest Treasure Map #08
-		return true;
-	case 0x0051B8B6://Forest Treasure Map #09
-		return true;
-	case 0x0051B8B9://Forest Treasure Map #10
-		return true;
-	case 0x0051B8A8://Ash Heap Treasure Map #01
-		return true;
-	case 0x0051B8AC://Ash Heap Treasure Map #02
+	case 0x0051B8CD: //Cranberry Bog Treasure Map #01
+	case 0x0051B8D6: //Cranberry Bog Treasure Map #02
+	case 0x0051B8D9: //Cranberry Bog Treasure Map #03
+	case 0x0051B8DE: //Cranberry Bog Treasure Map #04
+	case 0x0051B8CE: //Mire Treasure Map #01
+	case 0x0051B8D2: //Mire Treasure Map #02
+	case 0x0051B8D7: //Mire Treasure Map #03
+	case 0x0051B8D8: //Mire Treasure Map #04
+	case 0x0051B8DB: //Mire Treasure Map #05
+	case 0x0051B8BA: //Savage Divide Treasure Map #01
+	case 0x0051B8C0: //Savage Divide Treasure Map #02
+	case 0x0051B8C2: //Savage Divide Treasure Map #03
+	case 0x0051B8C4: //Savage Divide Treasure Map #04
+	case 0x0051B8C6: //Savage Divide Treasure Map #05
+	case 0x0051B8C7: //Savage Divide Treasure Map #06
+	case 0x0051B8C8: //Savage Divide Treasure Map #07
+	case 0x0051B8CA: //Savage Divide Treasure Map #08
+	case 0x0051B8CC: //Savage Divide Treasure Map #09
+	case 0x0051B8D4: //Savage Divide Treasure Map #10
+	case 0x0051B8B1: //Toxic Valley Treasure Map #01
+	case 0x0051B8B8: //Toxic Valley Treasure Map #02
+	case 0x0051B8BC: //Toxic Valley Treasure Map #03
+	case 0x0051B8C1: //Toxic Valley Treasure Map #04
+	case 0x0051B7A2: //Forest Treasure Map #01
+	case 0x0051B8A6: //Forest Treasure Map #02
+	case 0x0051B8A7: //Forest Treasure Map #03
+	case 0x0051B8A9: //Forest Treasure Map #04
+	case 0x0051B8AA: //Forest Treasure Map #05
+	case 0x0051B8AE: //Forest Treasure Map #06
+	case 0x0051B8B0: //Forest Treasure Map #07
+	case 0x0051B8B2: //Forest Treasure Map #08
+	case 0x0051B8B6: //Forest Treasure Map #09
+	case 0x0051B8B9: //Forest Treasure Map #10
+	case 0x0051B8A8: //Ash Heap Treasure Map #01
+	case 0x0051B8AC: //Ash Heap Treasure Map #02
 		return true;
 	default:
 		return false;
 	}
 }
 
-bool ErectusMemory::CheckFactionFormid(DWORD Formid)
+bool ErectusMemory::CheckFactionFormId(const DWORD formId)
 {
-	switch (Formid)
+	switch (formId)
 	{
-	case 0x003FC008://W05_SettlerFaction
-		return ErectusIni::CustomExtraNPCSettings.HideSettlerFaction;
-	case 0x003FE94A://W05_CraterRaiderFaction
-		return ErectusIni::CustomExtraNPCSettings.HideCraterRaiderFaction;
-	case 0x003FBC00://W05_DieHardFaction
-		return ErectusIni::CustomExtraNPCSettings.HideDieHardFaction;
-	case 0x005427B2://W05_SecretServiceFaction
-		return ErectusIni::CustomExtraNPCSettings.HideSecretServiceFaction;
+	case 0x003FC008: //W05_SettlerFaction
+		return ErectusIni::customExtraNpcSettings.hideSettlerFaction;
+	case 0x003FE94A: //W05_CraterRaiderFaction
+		return ErectusIni::customExtraNpcSettings.hideCraterRaiderFaction;
+	case 0x003FBC00: //W05_DieHardFaction
+		return ErectusIni::customExtraNpcSettings.hideDieHardFaction;
+	case 0x005427B2: //W05_SecretServiceFaction
+		return ErectusIni::customExtraNpcSettings.hideSecretServiceFaction;
 	default:
 		return false;
 	}
 }
 
-bool ErectusMemory::BlacklistedNPCFaction(Reference ReferenceData)
+bool ErectusMemory::BlacklistedNpcFaction(const Reference referenceData)
 {
-	if (!Erectus::Valid(ReferenceData.FactionArrayPtr) || !ReferenceData.FactionArraySize || ReferenceData.FactionArraySize > 0x7FFF)
+	if (!Utils::Valid(referenceData.factionArrayPtr) || !referenceData.factionArraySize || referenceData.
+		factionArraySize > 0x7FFF)
 	{
 		return false;
 	}
 
-	DWORD64* FactionArray = new DWORD64[ReferenceData.FactionArraySize * 2];
-	if (!Erectus::RPM(ReferenceData.FactionArrayPtr, &*FactionArray, ReferenceData.FactionArraySize * 2 * sizeof(DWORD64)))
+	auto* factionArray = new DWORD64[referenceData.factionArraySize * 2];
+	if (!Utils::Rpm(referenceData.factionArrayPtr, &*factionArray,
+		referenceData.factionArraySize * 2 * sizeof(DWORD64)))
 	{
-		delete[]FactionArray;
-		FactionArray = nullptr;
+		delete[]factionArray;
+		factionArray = nullptr;
 		return false;
 	}
 
-	bool BlacklistedFactionFound = false;
-	for (int i = 0; i < ReferenceData.FactionArraySize; i++)
+	auto blacklistedFactionFound = false;
+	for (auto i = 0; i < referenceData.factionArraySize; i++)
 	{
-		if (!Erectus::Valid(FactionArray[i * 2]))
+		if (!Utils::Valid(factionArray[i * 2]))
 		{
 			continue;
 		}
 
-		DWORD Formid;
-		if (!Erectus::RPM(FactionArray[i * 2] + 0x20, &Formid, sizeof(Formid))) continue;
-		if (CheckFactionFormid(Formid))
+		DWORD formId;
+		if (!Utils::Rpm(factionArray[i * 2] + 0x20, &formId, sizeof formId)) continue;
+		if (CheckFactionFormId(formId))
 		{
-			BlacklistedFactionFound = true;
+			blacklistedFactionFound = true;
 			break;
 		}
 	}
 
-	delete[]FactionArray;
-	FactionArray = nullptr;
-	return BlacklistedFactionFound;
+	delete[]factionArray;
+	factionArray = nullptr;
+	return blacklistedFactionFound;
 }
 
-bool ErectusMemory::CheckReferenceItem(Reference ReferenceData)
+bool ErectusMemory::CheckReferenceItem(const Reference referenceData)
 {
-	switch (ReferenceData.vtable - ErectusProcess::Exe)
+	switch (referenceData.vtable - ErectusProcess::exe)
 	{
 	case VTABLE_TESUTILITYITEM:
-		return true;
 	case VTABLE_BGSNOTE:
-		return true;
 	case VTABLE_TESKEY:
-		return true;
 	case VTABLE_CURRENCYOBJECT:
 		return true;
 	default:
@@ -1079,909 +1048,875 @@ bool ErectusMemory::CheckReferenceItem(Reference ReferenceData)
 	}
 }
 
-void ErectusMemory::GetCustomEntityData(Reference ReferenceData, DWORD64* EntityFlag, DWORD64* EntityNamePtr, int* EnabledDistance, bool CheckScrap, bool CheckIngredient)
+void ErectusMemory::GetCustomEntityData(const Reference referenceData, DWORD64* entityFlag, DWORD64* entityNamePtr,
+                                        int* enabledDistance, const bool checkScrap, const bool checkIngredient)
 {
-	switch (ReferenceData.vtable - ErectusProcess::Exe)
+	switch (referenceData.vtable - ErectusProcess::exe)
 	{
 	case VTABLE_TESNPC:
-		*EntityFlag |= CUSTOM_ENTRY_NPC;
-		*EntityNamePtr = ReferenceData.NamePtr0160;
-		*EnabledDistance = ErectusIni::NpcSettings.EnabledDistance;
+		*entityFlag |= CUSTOM_ENTRY_NPC;
+		*entityNamePtr = referenceData.namePtr0160;
+		*enabledDistance = ErectusIni::npcSettings.enabledDistance;
 		break;
 	case VTABLE_TESOBJECTCONT:
-		*EntityFlag |= CUSTOM_ENTRY_CONTAINER;
-		*EntityNamePtr = ReferenceData.NamePtr00B0;
-		*EnabledDistance = ErectusIni::ContainerSettings.EnabledDistance;
-		if (CheckFormidArray(ReferenceData.Formid, ErectusIni::ContainerSettings.Whitelisted, ErectusIni::ContainerSettings.Whitelist, 32))
+		*entityFlag |= CUSTOM_ENTRY_CONTAINER;
+		*entityNamePtr = referenceData.namePtr00B0;
+		*enabledDistance = ErectusIni::containerSettings.enabledDistance;
+		if (CheckFormIdArray(referenceData.formId, ErectusIni::containerSettings.whitelisted,
+			ErectusIni::containerSettings.whitelist, 32))
 		{
-			*EntityFlag |= CUSTOM_ENTRY_WHITELISTED;
+			*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
 		}
-		else if (!ErectusIni::ContainerSettings.Enabled)
+		else if (!ErectusIni::containerSettings.enabled)
 		{
-			*EntityFlag |= CUSTOM_ENTRY_INVALID;
+			*entityFlag |= CUSTOM_ENTRY_INVALID;
 		}
 		break;
 	case VTABLE_TESOBJECTMISC:
-		*EntityFlag |= CUSTOM_ENTRY_VALID_ITEM;
-		*EntityNamePtr = ReferenceData.NamePtr0098;
-		if (CheckReferenceJunk(ReferenceData))
+		*entityFlag |= CUSTOM_ENTRY_VALID_ITEM;
+		*entityNamePtr = referenceData.namePtr0098;
+		if (CheckReferenceJunk(referenceData))
 		{
-			*EntityFlag |= CUSTOM_ENTRY_JUNK;
-			*EnabledDistance = ErectusIni::JunkSettings.EnabledDistance;
-			if (CheckScrap)
+			*entityFlag |= CUSTOM_ENTRY_JUNK;
+			*enabledDistance = ErectusIni::junkSettings.enabledDistance;
+			if (checkScrap)
 			{
-				if (CheckComponentArray(ReferenceData))
+				if (CheckComponentArray(referenceData))
 				{
-					*EntityFlag |= CUSTOM_ENTRY_VALID_SCRAP;
+					*entityFlag |= CUSTOM_ENTRY_VALID_SCRAP;
 				}
 				else
 				{
-					*EntityFlag |= CUSTOM_ENTRY_INVALID;
+					*entityFlag |= CUSTOM_ENTRY_INVALID;
 				}
 			}
 			else
 			{
-				if (CheckFormidArray(ReferenceData.Formid, ErectusIni::JunkSettings.Whitelisted, ErectusIni::JunkSettings.Whitelist, 32))
+				if (CheckFormIdArray(referenceData.formId, ErectusIni::junkSettings.whitelisted,
+					ErectusIni::junkSettings.whitelist, 32))
 				{
-					*EntityFlag |= CUSTOM_ENTRY_WHITELISTED;
+					*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
 				}
-				else if (!ErectusIni::JunkSettings.Enabled)
+				else if (!ErectusIni::junkSettings.enabled)
 				{
-					*EntityFlag |= CUSTOM_ENTRY_INVALID;
+					*entityFlag |= CUSTOM_ENTRY_INVALID;
 				}
 			}
 		}
-		else if (CheckReferenceMod(ReferenceData))
+		else if (CheckReferenceMod(referenceData))
 		{
-			*EntityFlag |= CUSTOM_ENTRY_MOD;
-			*EntityFlag |= CUSTOM_ENTRY_ITEM;
-			*EnabledDistance = ErectusIni::ItemSettings.EnabledDistance;
-			if (CheckFormidArray(ReferenceData.Formid, ErectusIni::ItemSettings.Whitelisted, ErectusIni::ItemSettings.Whitelist, 32))
+			*entityFlag |= CUSTOM_ENTRY_MOD;
+			*entityFlag |= CUSTOM_ENTRY_ITEM;
+			*enabledDistance = ErectusIni::itemSettings.enabledDistance;
+			if (CheckFormIdArray(referenceData.formId, ErectusIni::itemSettings.whitelisted,
+				ErectusIni::itemSettings.whitelist, 32))
 			{
-				*EntityFlag |= CUSTOM_ENTRY_WHITELISTED;
+				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
 			}
-			else if (!ErectusIni::ItemSettings.Enabled)
+			else if (!ErectusIni::itemSettings.enabled)
 			{
-				*EntityFlag |= CUSTOM_ENTRY_INVALID;
+				*entityFlag |= CUSTOM_ENTRY_INVALID;
 			}
 		}
-		else if (CheckReferenceKeywordMisc(ReferenceData, 0x00135E6C))
+		else if (CheckReferenceKeywordMisc(referenceData, 0x00135E6C))
 		{
-			*EntityFlag |= CUSTOM_ENTRY_BOBBLEHEAD;
-			*EnabledDistance = ErectusIni::BobbleheadSettings.EnabledDistance;
-			if (CheckFormidArray(ReferenceData.Formid, ErectusIni::BobbleheadSettings.Whitelisted, ErectusIni::BobbleheadSettings.Whitelist, 32))
+			*entityFlag |= CUSTOM_ENTRY_BOBBLEHEAD;
+			*enabledDistance = ErectusIni::bobbleheadSettings.enabledDistance;
+			if (CheckFormIdArray(referenceData.formId, ErectusIni::bobbleheadSettings.whitelisted,
+				ErectusIni::bobbleheadSettings.whitelist, 32))
 			{
-				*EntityFlag |= CUSTOM_ENTRY_WHITELISTED;
+				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
 			}
-			else if (!ErectusIni::BobbleheadSettings.Enabled)
+			else if (!ErectusIni::bobbleheadSettings.enabled)
 			{
-				*EntityFlag |= CUSTOM_ENTRY_INVALID;
+				*entityFlag |= CUSTOM_ENTRY_INVALID;
 			}
 		}
 		else
 		{
-			*EntityFlag |= CUSTOM_ENTRY_MISC;
-			*EntityFlag |= CUSTOM_ENTRY_ITEM;
-			*EnabledDistance = ErectusIni::ItemSettings.EnabledDistance;
-			if (CheckFormidArray(ReferenceData.Formid, ErectusIni::ItemSettings.Whitelisted, ErectusIni::ItemSettings.Whitelist, 32))
+			*entityFlag |= CUSTOM_ENTRY_MISC;
+			*entityFlag |= CUSTOM_ENTRY_ITEM;
+			*enabledDistance = ErectusIni::itemSettings.enabledDistance;
+			if (CheckFormIdArray(referenceData.formId, ErectusIni::itemSettings.whitelisted,
+				ErectusIni::itemSettings.whitelist, 32))
 			{
-				*EntityFlag |= CUSTOM_ENTRY_WHITELISTED;
+				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
 			}
-			else if (!ErectusIni::ItemSettings.Enabled)
+			else if (!ErectusIni::itemSettings.enabled)
 			{
-				*EntityFlag |= CUSTOM_ENTRY_INVALID;
+				*entityFlag |= CUSTOM_ENTRY_INVALID;
 			}
 		}
 		break;
 	case VTABLE_TESOBJECTBOOK:
-		*EntityFlag |= CUSTOM_ENTRY_VALID_ITEM;
-		*EntityNamePtr = ReferenceData.NamePtr0098;
-		if (CheckReferencePlan(ReferenceData))
+		*entityFlag |= CUSTOM_ENTRY_VALID_ITEM;
+		*entityNamePtr = referenceData.namePtr0098;
+		if (CheckReferencePlan(referenceData))
 		{
-			*EntityFlag |= CUSTOM_ENTRY_PLAN;
-			*EnabledDistance = ErectusIni::PlanSettings.EnabledDistance;
-			switch (IsKnownRecipe(ReferenceData.Formid))
+			*entityFlag |= CUSTOM_ENTRY_PLAN;
+			*enabledDistance = ErectusIni::planSettings.enabledDistance;
+			switch (IsKnownRecipe(referenceData.formId))
 			{
 			case 0x01:
-				*EntityFlag |= CUSTOM_ENTRY_KNOWN_RECIPE;
+				*entityFlag |= CUSTOM_ENTRY_KNOWN_RECIPE;
 				break;
 			case 0x02:
-				*EntityFlag |= CUSTOM_ENTRY_UNKNOWN_RECIPE;
+				*entityFlag |= CUSTOM_ENTRY_UNKNOWN_RECIPE;
 				break;
 			default:
-				*EntityFlag |= CUSTOM_ENTRY_FAILED_RECIPE;
+				*entityFlag |= CUSTOM_ENTRY_FAILED_RECIPE;
 				break;
 			}
-			if (CheckFormidArray(ReferenceData.Formid, ErectusIni::PlanSettings.Whitelisted, ErectusIni::PlanSettings.Whitelist, 32))
+			if (CheckFormIdArray(referenceData.formId, ErectusIni::planSettings.whitelisted,
+				ErectusIni::planSettings.whitelist, 32))
 			{
-				*EntityFlag |= CUSTOM_ENTRY_WHITELISTED;
+				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
 			}
-			else if (!ErectusIni::PlanSettings.Enabled)
+			else if (!ErectusIni::planSettings.enabled)
 			{
-				*EntityFlag |= CUSTOM_ENTRY_INVALID;
+				*entityFlag |= CUSTOM_ENTRY_INVALID;
 			}
 		}
-		else if (CheckReferenceKeywordBook(ReferenceData, 0x001D4A70))
+		else if (CheckReferenceKeywordBook(referenceData, 0x001D4A70))
 		{
-			*EntityFlag |= CUSTOM_ENTRY_MAGAZINE;
-			*EnabledDistance = ErectusIni::MagazineSettings.EnabledDistance;
-			if (CheckFormidArray(ReferenceData.Formid, ErectusIni::MagazineSettings.Whitelisted, ErectusIni::MagazineSettings.Whitelist, 32))
+			*entityFlag |= CUSTOM_ENTRY_MAGAZINE;
+			*enabledDistance = ErectusIni::magazineSettings.enabledDistance;
+			if (CheckFormIdArray(referenceData.formId, ErectusIni::magazineSettings.whitelisted,
+				ErectusIni::magazineSettings.whitelist, 32))
 			{
-				*EntityFlag |= CUSTOM_ENTRY_WHITELISTED;
+				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
 			}
-			else if (!ErectusIni::MagazineSettings.Enabled)
+			else if (!ErectusIni::magazineSettings.enabled)
 			{
-				*EntityFlag |= CUSTOM_ENTRY_INVALID;
+				*entityFlag |= CUSTOM_ENTRY_INVALID;
 			}
 		}
 		else
 		{
-			*EntityFlag |= CUSTOM_ENTRY_ITEM;
-			*EnabledDistance = ErectusIni::ItemSettings.EnabledDistance;
-			if (IsTreasureMap(ReferenceData.Formid))
+			*entityFlag |= CUSTOM_ENTRY_ITEM;
+			*enabledDistance = ErectusIni::itemSettings.enabledDistance;
+			if (IsTreasureMap(referenceData.formId))
 			{
-				*EntityFlag |= CUSTOM_ENTRY_TREASURE_MAP;
+				*entityFlag |= CUSTOM_ENTRY_TREASURE_MAP;
 			}
-			if (CheckFormidArray(ReferenceData.Formid, ErectusIni::ItemSettings.Whitelisted, ErectusIni::ItemSettings.Whitelist, 32))
+			if (CheckFormIdArray(referenceData.formId, ErectusIni::itemSettings.whitelisted,
+				ErectusIni::itemSettings.whitelist, 32))
 			{
-				*EntityFlag |= CUSTOM_ENTRY_WHITELISTED;
+				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
 			}
-			else if (!ErectusIni::ItemSettings.Enabled)
+			else if (!ErectusIni::itemSettings.enabled)
 			{
-				*EntityFlag |= CUSTOM_ENTRY_INVALID;
+				*entityFlag |= CUSTOM_ENTRY_INVALID;
 			}
 		}
 		break;
 	case VTABLE_TESFLORA:
-		*EntityFlag |= CUSTOM_ENTRY_FLORA;
-		*EntityNamePtr = ReferenceData.NamePtr0098;
-		*EnabledDistance = ErectusIni::FloraSettings.EnabledDistance;
-		if (CheckIngredient)
+		*entityFlag |= CUSTOM_ENTRY_FLORA;
+		*entityNamePtr = referenceData.namePtr0098;
+		*enabledDistance = ErectusIni::floraSettings.enabledDistance;
+		if (checkIngredient)
 		{
-			if (FloraValid(ReferenceData))
+			if (FloraValid(referenceData))
 			{
-				*EntityFlag |= CUSTOM_ENTRY_VALID_INGREDIENT;
+				*entityFlag |= CUSTOM_ENTRY_VALID_INGREDIENT;
 			}
 			else
 			{
-				*EntityFlag |= CUSTOM_ENTRY_INVALID;
+				*entityFlag |= CUSTOM_ENTRY_INVALID;
 			}
 		}
 		else
 		{
-			if (CheckWhitelistedFlux(ReferenceData))
+			if (CheckWhitelistedFlux(referenceData) || CheckFormIdArray(referenceData.formId, ErectusIni::floraSettings.whitelisted, ErectusIni::floraSettings.whitelist, 32))
 			{
-				*EntityFlag |= CUSTOM_ENTRY_WHITELISTED;
+				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
 			}
-			else if (CheckFormidArray(ReferenceData.Formid, ErectusIni::FloraSettings.Whitelisted, ErectusIni::FloraSettings.Whitelist, 32))
+			else if (!ErectusIni::floraSettings.enabled)
 			{
-				*EntityFlag |= CUSTOM_ENTRY_WHITELISTED;
-			}
-			else if (!ErectusIni::FloraSettings.Enabled)
-			{
-				*EntityFlag |= CUSTOM_ENTRY_INVALID;
+				*entityFlag |= CUSTOM_ENTRY_INVALID;
 			}
 		}
 		break;
 	case VTABLE_TESOBJECTWEAP:
-		*EntityFlag |= CUSTOM_ENTRY_WEAPON;
-		*EntityFlag |= CUSTOM_ENTRY_ITEM;
-		*EntityFlag |= CUSTOM_ENTRY_VALID_ITEM;
-		*EntityNamePtr = ReferenceData.NamePtr0098;
-		*EnabledDistance = ErectusIni::ItemSettings.EnabledDistance;
-		if (CheckFormidArray(ReferenceData.Formid, ErectusIni::ItemSettings.Whitelisted, ErectusIni::ItemSettings.Whitelist, 32))
+		*entityFlag |= CUSTOM_ENTRY_WEAPON;
+		*entityFlag |= CUSTOM_ENTRY_ITEM;
+		*entityFlag |= CUSTOM_ENTRY_VALID_ITEM;
+		*entityNamePtr = referenceData.namePtr0098;
+		*enabledDistance = ErectusIni::itemSettings.enabledDistance;
+		if (CheckFormIdArray(referenceData.formId, ErectusIni::itemSettings.whitelisted,
+			ErectusIni::itemSettings.whitelist, 32))
 		{
-			*EntityFlag |= CUSTOM_ENTRY_WHITELISTED;
+			*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
 		}
-		else if (!ErectusIni::ItemSettings.Enabled)
+		else if (!ErectusIni::itemSettings.enabled)
 		{
-			*EntityFlag |= CUSTOM_ENTRY_INVALID;
+			*entityFlag |= CUSTOM_ENTRY_INVALID;
 		}
 		break;
 	case VTABLE_TESOBJECTARMO:
-		*EntityFlag |= CUSTOM_ENTRY_ARMOR;
-		*EntityFlag |= CUSTOM_ENTRY_ITEM;
-		*EntityFlag |= CUSTOM_ENTRY_VALID_ITEM;
-		*EntityNamePtr = ReferenceData.NamePtr0098;
-		*EnabledDistance = ErectusIni::ItemSettings.EnabledDistance;
-		if (CheckFormidArray(ReferenceData.Formid, ErectusIni::ItemSettings.Whitelisted, ErectusIni::ItemSettings.Whitelist, 32))
+		*entityFlag |= CUSTOM_ENTRY_ARMOR;
+		*entityFlag |= CUSTOM_ENTRY_ITEM;
+		*entityFlag |= CUSTOM_ENTRY_VALID_ITEM;
+		*entityNamePtr = referenceData.namePtr0098;
+		*enabledDistance = ErectusIni::itemSettings.enabledDistance;
+		if (CheckFormIdArray(referenceData.formId, ErectusIni::itemSettings.whitelisted,
+			ErectusIni::itemSettings.whitelist, 32))
 		{
-			*EntityFlag |= CUSTOM_ENTRY_WHITELISTED;
+			*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
 		}
-		else if (!ErectusIni::ItemSettings.Enabled)
+		else if (!ErectusIni::itemSettings.enabled)
 		{
-			*EntityFlag |= CUSTOM_ENTRY_INVALID;
+			*entityFlag |= CUSTOM_ENTRY_INVALID;
 		}
 		break;
 	case VTABLE_TESAMMO:
-		*EntityFlag |= CUSTOM_ENTRY_AMMO;
-		*EntityFlag |= CUSTOM_ENTRY_ITEM;
-		*EntityFlag |= CUSTOM_ENTRY_VALID_ITEM;
-		*EntityNamePtr = ReferenceData.NamePtr0098;
-		*EnabledDistance = ErectusIni::ItemSettings.EnabledDistance;
-		if (CheckFormidArray(ReferenceData.Formid, ErectusIni::ItemSettings.Whitelisted, ErectusIni::ItemSettings.Whitelist, 32))
+		*entityFlag |= CUSTOM_ENTRY_AMMO;
+		*entityFlag |= CUSTOM_ENTRY_ITEM;
+		*entityFlag |= CUSTOM_ENTRY_VALID_ITEM;
+		*entityNamePtr = referenceData.namePtr0098;
+		*enabledDistance = ErectusIni::itemSettings.enabledDistance;
+		if (CheckFormIdArray(referenceData.formId, ErectusIni::itemSettings.whitelisted,
+			ErectusIni::itemSettings.whitelist, 32))
 		{
-			*EntityFlag |= CUSTOM_ENTRY_WHITELISTED;
+			*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
 		}
-		else if (!ErectusIni::ItemSettings.Enabled)
+		else if (!ErectusIni::itemSettings.enabled)
 		{
-			*EntityFlag |= CUSTOM_ENTRY_INVALID;
+			*entityFlag |= CUSTOM_ENTRY_INVALID;
 		}
 		break;
 	case VTABLE_ALCHEMYITEM:
-		*EntityFlag |= CUSTOM_ENTRY_AID;
-		*EntityFlag |= CUSTOM_ENTRY_ITEM;
-		*EntityFlag |= CUSTOM_ENTRY_VALID_ITEM;
-		*EntityNamePtr = ReferenceData.NamePtr0098;
-		*EnabledDistance = ErectusIni::ItemSettings.EnabledDistance;
-		if (CheckFormidArray(ReferenceData.Formid, ErectusIni::ItemSettings.Whitelisted, ErectusIni::ItemSettings.Whitelist, 32))
+		*entityFlag |= CUSTOM_ENTRY_AID;
+		*entityFlag |= CUSTOM_ENTRY_ITEM;
+		*entityFlag |= CUSTOM_ENTRY_VALID_ITEM;
+		*entityNamePtr = referenceData.namePtr0098;
+		*enabledDistance = ErectusIni::itemSettings.enabledDistance;
+		if (CheckFormIdArray(referenceData.formId, ErectusIni::itemSettings.whitelisted,
+			ErectusIni::itemSettings.whitelist, 32))
 		{
-			*EntityFlag |= CUSTOM_ENTRY_WHITELISTED;
+			*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
 		}
-		else if (!ErectusIni::ItemSettings.Enabled)
+		else if (!ErectusIni::itemSettings.enabled)
 		{
-			*EntityFlag |= CUSTOM_ENTRY_INVALID;
+			*entityFlag |= CUSTOM_ENTRY_INVALID;
 		}
 		break;
 	default:
-		if (CheckReferenceItem(ReferenceData))
+		if (CheckReferenceItem(referenceData))
 		{
-			*EntityFlag |= CUSTOM_ENTRY_ITEM;
-			*EntityFlag |= CUSTOM_ENTRY_VALID_ITEM;
-			*EntityNamePtr = ReferenceData.NamePtr0098;
-			*EnabledDistance = ErectusIni::ItemSettings.EnabledDistance;
-			if (CheckFormidArray(ReferenceData.Formid, ErectusIni::ItemSettings.Whitelisted, ErectusIni::ItemSettings.Whitelist, 32))
+			*entityFlag |= CUSTOM_ENTRY_ITEM;
+			*entityFlag |= CUSTOM_ENTRY_VALID_ITEM;
+			*entityNamePtr = referenceData.namePtr0098;
+			*enabledDistance = ErectusIni::itemSettings.enabledDistance;
+			if (CheckFormIdArray(referenceData.formId, ErectusIni::itemSettings.whitelisted,
+				ErectusIni::itemSettings.whitelist, 32))
 			{
-				*EntityFlag |= CUSTOM_ENTRY_WHITELISTED;
+				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
 			}
-			else if (!ErectusIni::ItemSettings.Enabled)
+			else if (!ErectusIni::itemSettings.enabled)
 			{
-				*EntityFlag |= CUSTOM_ENTRY_INVALID;
+				*entityFlag |= CUSTOM_ENTRY_INVALID;
 			}
 		}
 		else
 		{
-			*EntityFlag |= CUSTOM_ENTRY_ENTITY;
-			*EntityNamePtr = 0;
-			*EnabledDistance = ErectusIni::EntitySettings.EnabledDistance;
-			if (CheckFormidArray(ReferenceData.Formid, ErectusIni::EntitySettings.Whitelisted, ErectusIni::EntitySettings.Whitelist, 32))
+			*entityFlag |= CUSTOM_ENTRY_ENTITY;
+			*entityNamePtr = 0;
+			*enabledDistance = ErectusIni::entitySettings.enabledDistance;
+			if (CheckFormIdArray(referenceData.formId, ErectusIni::entitySettings.whitelisted,
+				ErectusIni::entitySettings.whitelist, 32))
 			{
-				*EntityFlag |= CUSTOM_ENTRY_WHITELISTED;
+				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
 			}
-			else if (!ErectusIni::EntitySettings.Enabled)
+			else if (!ErectusIni::entitySettings.enabled || !ErectusIni::entitySettings.drawUnnamed)
 			{
-				*EntityFlag |= CUSTOM_ENTRY_INVALID;
-			}
-			else if (!ErectusIni::EntitySettings.DrawUnnamed)
-			{
-				*EntityFlag |= CUSTOM_ENTRY_INVALID;
+				*entityFlag |= CUSTOM_ENTRY_INVALID;
 			}
 		}
 		break;
 	}
 }
 
-bool ErectusMemory::GetActorSnapshotComponentData(Entity EntityData, ActorSnapshotComponent* ActorSnapshotComponentData)
+bool ErectusMemory::GetActorSnapshotComponentData(const Entity entityData, ActorSnapshotComponent* actorSnapshotComponentData)
 {
-	if (!Erectus::Valid(EntityData.ActorCorePtr)) return false;
+	if (!Utils::Valid(entityData.actorCorePtr)) return false;
 
-	DWORD64 ActorCoreBufferA;
-	if (!Erectus::RPM(EntityData.ActorCorePtr + 0x70, &ActorCoreBufferA, sizeof(ActorCoreBufferA))) return false;
-	if (!Erectus::Valid(ActorCoreBufferA)) return false;
+	DWORD64 actorCoreBufferA;
+	if (!Utils::Rpm(entityData.actorCorePtr + 0x70, &actorCoreBufferA, sizeof actorCoreBufferA)) return false;
+	if (!Utils::Valid(actorCoreBufferA)) return false;
 
-	DWORD64 ActorCoreBufferB;
-	if (!Erectus::RPM(ActorCoreBufferA + 0x8, &ActorCoreBufferB, sizeof(ActorCoreBufferB))) return false;
-	if (!Erectus::Valid(ActorCoreBufferB)) return false;
+	DWORD64 actorCoreBufferB;
+	if (!Utils::Rpm(actorCoreBufferA + 0x8, &actorCoreBufferB, sizeof actorCoreBufferB)) return false;
+	if (!Utils::Valid(actorCoreBufferB)) return false;
 
-	return Erectus::RPM(ActorCoreBufferB, &*ActorSnapshotComponentData, sizeof(ActorSnapshotComponent));
+	return Utils::Rpm(actorCoreBufferB, &*actorSnapshotComponentData, sizeof(ActorSnapshotComponent));
 }
 
-char* ErectusMemory::GetEntityName(DWORD64 Ptr)
+char* ErectusMemory::GetEntityName(const DWORD64 ptr)
 {
-	if (!Erectus::Valid(Ptr))
+	if (!Utils::Valid(ptr))
 	{
 		return nullptr;
 	}
 
-	int NameLength = 0;
-	DWORD64 NamePtr = Ptr;
+	auto nameLength = 0;
+	auto namePtr = ptr;
 
-	if (!Erectus::RPM(NamePtr + 0x10, &NameLength, sizeof(NameLength))) return nullptr;
-	if (NameLength <= 0 || NameLength > 0x7FFF)
+	if (!Utils::Rpm(namePtr + 0x10, &nameLength, sizeof nameLength)) return nullptr;
+	if (nameLength <= 0 || nameLength > 0x7FFF)
 	{
-		DWORD64 Buffer;
-		if (!Erectus::RPM(NamePtr + 0x10, &Buffer, sizeof(Buffer))) return nullptr;
-		if (!Erectus::Valid(Buffer)) return nullptr;
+		DWORD64 buffer;
+		if (!Utils::Rpm(namePtr + 0x10, &buffer, sizeof buffer)) return nullptr;
+		if (!Utils::Valid(buffer)) return nullptr;
 
-		if (!Erectus::RPM(Buffer + 0x10, &NameLength, sizeof(NameLength))) return nullptr;
-		if (NameLength <= 0 || NameLength > 0x7FFF) return nullptr;
-		NamePtr = Buffer;
+		if (!Utils::Rpm(buffer + 0x10, &nameLength, sizeof nameLength)) return nullptr;
+		if (nameLength <= 0 || nameLength > 0x7FFF) return nullptr;
+		namePtr = buffer;
 	}
 
-	int NameSize = NameLength + 1;
-	char* Name = new char[NameSize];
+	const auto nameSize = nameLength + 1;
+	auto* name = new char[nameSize];
 
-	if (!Erectus::RPM(NamePtr + 0x18, &*Name, NameSize))
+	if (!Utils::Rpm(namePtr + 0x18, &*name, nameSize))
 	{
-		delete[]Name;
-		Name = nullptr;
+		delete[]name;
+		name = nullptr;
 		return nullptr;
 	}
 
-	if (Erectus::GetTextLength(Name) != NameLength)
+	if (Utils::GetTextLength(name) != nameLength)
 	{
-		delete[]Name;
-		Name = nullptr;
+		delete[]name;
+		name = nullptr;
 		return nullptr;
 	}
 
-	return Name;
+	return name;
 }
 
 bool ErectusMemory::UpdateBufferEntityList()
 {
-	DWORD64 LocalPlayerPtr = GetLocalPlayerPtr(true);
-	if (!Erectus::Valid(LocalPlayerPtr)) return false;
+	auto localPlayerPtr = GetLocalPlayerPtr(true);
+	if (!Utils::Valid(localPlayerPtr)) return false;
 
-	Entity LocalPlayer;
-	if (!Erectus::RPM(LocalPlayerPtr, &LocalPlayer, sizeof(LocalPlayer))) return false;
+	Entity localPlayer{};
+	if (!Utils::Rpm(localPlayerPtr, &localPlayer, sizeof localPlayer)) return false;
 
-	int BufferSize = 0;
-	DWORD64* BufferList = GetEntityList(&BufferSize);
-	if (BufferList == nullptr) return false;
+	auto bufferSize = 0;
+	auto* bufferList = GetEntityList(&bufferSize);
+	if (bufferList == nullptr) return false;
 
-	int CustomListSize = 0;
-	CustomEntry* CustomList = new CustomEntry[BufferSize];
-	int CustomListIndex = 0;
+	auto customListSize = 0;
+	auto* customList = new CustomEntry[bufferSize];
+	auto customListIndex = 0;
 
-	for (int i = 0; i < BufferSize; i++)
+	for (auto i = 0; i < bufferSize; i++)
 	{
-		if (!Erectus::Valid(BufferList[i])) continue;
-		if (BufferList[i] == LocalPlayerPtr) continue;
+		if (!Utils::Valid(bufferList[i])) continue;
+		if (bufferList[i] == localPlayerPtr) continue;
 
-		Entity EntityData;
-		if (!Erectus::RPM(BufferList[i], &EntityData, sizeof(EntityData))) continue;
-		if (!Erectus::Valid(EntityData.ReferencePtr)) continue;
+		Entity entityData{};
+		if (!Utils::Rpm(bufferList[i], &entityData, sizeof entityData)) continue;
+		if (!Utils::Valid(entityData.referencePtr)) continue;
 
-		Reference ReferenceData;
-		if (!Erectus::RPM(EntityData.ReferencePtr, &ReferenceData, sizeof(ReferenceData))) continue;
-		if (ReferenceData.vtable == ErectusProcess::Exe + VTABLE_TESNPC) continue;
+		Reference referenceData{};
+		if (!Utils::Rpm(entityData.referencePtr, &referenceData, sizeof referenceData)) continue;
+		if (referenceData.vtable == ErectusProcess::exe + VTABLE_TESNPC) continue;
 
-		DWORD64 EntityFlag = CUSTOM_ENTRY_DEFAULT;
-		DWORD64 EntityNamePtr = 0;
-		int EnabledDistance = 0;
+		auto entityFlag = CUSTOM_ENTRY_DEFAULT;
+		DWORD64 entityNamePtr = 0;
+		auto enabledDistance = 0;
 
-		GetCustomEntityData(ReferenceData, &EntityFlag, &EntityNamePtr, &EnabledDistance, ErectusIni::CustomScrapLooterSettings.ScrapOverrideEnabled, ErectusIni::CustomHarvesterSettings.HarvesterOverrideEnabled);
-		if (EntityFlag & CUSTOM_ENTRY_INVALID) continue;
+		GetCustomEntityData(referenceData, &entityFlag, &entityNamePtr, &enabledDistance,
+			ErectusIni::customScrapLooterSettings.scrapOverrideEnabled,
+			ErectusIni::customHarvesterSettings.harvesterOverrideEnabled);
+		if (entityFlag & CUSTOM_ENTRY_INVALID) continue;
 
-		float Distance = Erectus::GetDistance(EntityData.Position, LocalPlayer.Position);
-		int NormalDistance = int(Distance * 0.01f);
-		if (NormalDistance > EnabledDistance) continue;
+		auto distance = Utils::GetDistance(entityData.position, localPlayer.position);
+		auto normalDistance = static_cast<int>(distance * 0.01f);
+		if (normalDistance > enabledDistance) continue;
 
-		CustomListSize++;
-		CustomList[CustomListIndex].EntityPtr = BufferList[i];
-		CustomList[CustomListIndex].ReferencePtr = EntityData.ReferencePtr;
-		CustomList[CustomListIndex].EntityFormid = EntityData.Formid;
-		CustomList[CustomListIndex].ReferenceFormid = ReferenceData.Formid;
-		CustomList[CustomListIndex].Flag = EntityFlag;
-		CustomList[CustomListIndex].Name = GetEntityName(EntityNamePtr);
-		CustomListIndex++;
+		customListSize++;
+		customList[customListIndex].entityPtr = bufferList[i];
+		customList[customListIndex].referencePtr = entityData.referencePtr;
+		customList[customListIndex].entityFormId = entityData.formId;
+		customList[customListIndex].referenceFormId = referenceData.formId;
+		customList[customListIndex].flag = entityFlag;
+		customList[customListIndex].name = GetEntityName(entityNamePtr);
+		customListIndex++;
 	}
 
-	bool ReturnValue = false;
+	auto returnValue = false;
 
-	if (CustomListSize)
+	if (customListSize)
 	{
-		BufferEntityList = new CustomEntry[CustomListSize];
-		memcpy(&*BufferEntityList, &*CustomList, CustomListSize * sizeof(CustomEntry));
-		BufferEntityListSize = CustomListSize;
-		ReturnValue = true;
+		bufferEntityList = new CustomEntry[customListSize];
+		memcpy(&*bufferEntityList, &*customList, customListSize * sizeof(CustomEntry));
+		bufferEntityListSize = customListSize;
+		returnValue = true;
 	}
 
-	delete[]CustomList;
-	CustomList = nullptr;
+	delete[]customList;
+	customList = nullptr;
 
-	delete[]BufferList;
-	BufferList = nullptr;
+	delete[]bufferList;
+	bufferList = nullptr;
 
-	return ReturnValue;
+	return returnValue;
 }
 
-bool ErectusMemory::UpdateBufferNPCList()
+bool ErectusMemory::UpdateBufferNpcList()
 {
-	DWORD64 LocalPlayerPtr = GetLocalPlayerPtr(true);
-	if (!Erectus::Valid(LocalPlayerPtr)) return false;
+	auto localPlayerPtr = GetLocalPlayerPtr(true);
+	if (!Utils::Valid(localPlayerPtr)) return false;
 
-	Entity LocalPlayer;
-	if (!Erectus::RPM(LocalPlayerPtr, &LocalPlayer, sizeof(LocalPlayer))) return false;
+	Entity localPlayer{};
+	if (!Utils::Rpm(localPlayerPtr, &localPlayer, sizeof localPlayer)) return false;
 
-	int BufferSize = 0;
-	DWORD64* BufferList = GetNPCList(&BufferSize);
-	if (BufferList == nullptr) return false;
+	auto bufferSize = 0;
+	auto* bufferList = GetNpcList(&bufferSize);
+	if (bufferList == nullptr) return false;
 
-	int CustomListSize = 0;
-	CustomEntry* CustomList = new CustomEntry[BufferSize];
-	int CustomListIndex = 0;
+	auto customListSize = 0;
+	auto* customList = new CustomEntry[bufferSize];
+	auto customListIndex = 0;
 
-	for (int i = 0; i < BufferSize; i++)
+	for (auto i = 0; i < bufferSize; i++)
 	{
-		if (!Erectus::Valid(BufferList[i])) continue;
-		if (BufferList[i] == LocalPlayerPtr) continue;
+		if (!Utils::Valid(bufferList[i])) continue;
+		if (bufferList[i] == localPlayerPtr) continue;
 
-		Entity EntityData;
-		if (!Erectus::RPM(BufferList[i], &EntityData, sizeof(EntityData))) continue;
-		if (!Erectus::Valid(EntityData.ReferencePtr)) continue;
+		Entity entityData{};
+		if (!Utils::Rpm(bufferList[i], &entityData, sizeof entityData)) continue;
+		if (!Utils::Valid(entityData.referencePtr)) continue;
 
-		Reference ReferenceData;
-		if (!Erectus::RPM(EntityData.ReferencePtr, &ReferenceData, sizeof(ReferenceData))) continue;
-		if (ReferenceData.vtable != ErectusProcess::Exe + VTABLE_TESNPC) continue;
-		if (ReferenceData.Formid == 0x00000007) continue;
+		Reference referenceData{};
+		if (!Utils::Rpm(entityData.referencePtr, &referenceData, sizeof referenceData)) continue;
+		if (referenceData.vtable != ErectusProcess::exe + VTABLE_TESNPC) continue;
+		if (referenceData.formId == 0x00000007) continue;
 
-		DWORD64 EntityFlag = CUSTOM_ENTRY_DEFAULT;
-		DWORD64 EntityNamePtr = 0;
-		int EnabledDistance = 0;
+		auto entityFlag = CUSTOM_ENTRY_DEFAULT;
+		DWORD64 entityNamePtr = 0;
+		auto enabledDistance = 0;
 
-		GetCustomEntityData(ReferenceData, &EntityFlag, &EntityNamePtr, &EnabledDistance, ErectusIni::CustomScrapLooterSettings.ScrapOverrideEnabled, ErectusIni::CustomHarvesterSettings.HarvesterOverrideEnabled);
-		if (EntityFlag & CUSTOM_ENTRY_INVALID) continue;
+		GetCustomEntityData(referenceData, &entityFlag, &entityNamePtr, &enabledDistance,
+			ErectusIni::customScrapLooterSettings.scrapOverrideEnabled,
+			ErectusIni::customHarvesterSettings.harvesterOverrideEnabled);
+		if (entityFlag & CUSTOM_ENTRY_INVALID) continue;
 
-		if (BlacklistedNPCFaction(ReferenceData))
+		if (BlacklistedNpcFaction(referenceData))
 		{
 			continue;
 		}
 
-		if (ErectusIni::CustomExtraNPCSettings.UseNPCBlacklist)
+		if (ErectusIni::customExtraNpcSettings.useNpcBlacklist)
 		{
-			if (CheckFormidArray(ReferenceData.Formid, ErectusIni::CustomExtraNPCSettings.NPCBlacklistEnabled, ErectusIni::CustomExtraNPCSettings.NPCBlacklist, 64))
+			if (CheckFormIdArray(referenceData.formId, ErectusIni::customExtraNpcSettings.npcBlacklistEnabled,
+				ErectusIni::customExtraNpcSettings.npcBlacklist, 64))
 			{
 				continue;
 			}
 		}
 
-		float Distance = Erectus::GetDistance(EntityData.Position, LocalPlayer.Position);
-		int NormalDistance = int(Distance * 0.01f);
-		if (NormalDistance > EnabledDistance) continue;
+		auto distance = Utils::GetDistance(entityData.position, localPlayer.position);
+		auto normalDistance = static_cast<int>(distance * 0.01f);
+		if (normalDistance > enabledDistance) continue;
 
-		CustomListSize++;
-		CustomList[CustomListIndex].EntityPtr = BufferList[i];
-		CustomList[CustomListIndex].ReferencePtr = EntityData.ReferencePtr;
-		CustomList[CustomListIndex].EntityFormid = EntityData.Formid;
-		CustomList[CustomListIndex].ReferenceFormid = ReferenceData.Formid;
-		CustomList[CustomListIndex].Flag = EntityFlag;
-		CustomList[CustomListIndex].Name = GetEntityName(EntityNamePtr);
-		CustomListIndex++;
+		customListSize++;
+		customList[customListIndex].entityPtr = bufferList[i];
+		customList[customListIndex].referencePtr = entityData.referencePtr;
+		customList[customListIndex].entityFormId = entityData.formId;
+		customList[customListIndex].referenceFormId = referenceData.formId;
+		customList[customListIndex].flag = entityFlag;
+		customList[customListIndex].name = GetEntityName(entityNamePtr);
+		customListIndex++;
 	}
 
-	bool ReturnValue = false;
+	auto returnValue = false;
 
-	if (CustomListSize)
+	if (customListSize)
 	{
-		BufferNPCList = new CustomEntry[CustomListSize];
-		memcpy(&*BufferNPCList, &*CustomList, CustomListSize * sizeof(CustomEntry));
-		BufferNPCListSize = CustomListSize;
-		ReturnValue = true;
+		bufferNpcList = new CustomEntry[customListSize];
+		memcpy(&*bufferNpcList, &*customList, customListSize * sizeof(CustomEntry));
+		bufferNpcListSize = customListSize;
+		returnValue = true;
 	}
 
-	delete[]CustomList;
-	CustomList = nullptr;
+	delete[]customList;
+	customList = nullptr;
 
-	delete[]BufferList;
-	BufferList = nullptr;
+	delete[]bufferList;
+	bufferList = nullptr;
 
-	return ReturnValue;
+	return returnValue;
 }
 
-char* ErectusMemory::GetPlayerName(ClientAccount* ClientAccountData)
+char* ErectusMemory::GetPlayerName(ClientAccount* clientAccountData)
 {
-	if (!ClientAccountData->NameLength)
+	if (!clientAccountData->nameLength)
 	{
 		return nullptr;
 	}
 
-	int PlayerNameSize = ClientAccountData->NameLength + 1;
-	char* PlayerName = new char[PlayerNameSize];
+	const auto playerNameSize = clientAccountData->nameLength + 1;
+	auto* playerName = new char[playerNameSize];
 
-	if (ClientAccountData->NameLength > 15)
+	if (clientAccountData->nameLength > 15)
 	{
-		DWORD64 Buffer;
-		memcpy(&Buffer, ClientAccountData->NameData, sizeof(Buffer));
-		if (!Erectus::Valid(Buffer))
+		DWORD64 buffer;
+		memcpy(&buffer, clientAccountData->nameData, sizeof buffer);
+		if (!Utils::Valid(buffer))
 		{
-			delete[]PlayerName;
-			PlayerName = nullptr;
+			delete[]playerName;
+			playerName = nullptr;
 			return nullptr;
 		}
 
-		if (!Erectus::RPM(Buffer, &*PlayerName, PlayerNameSize))
+		if (!Utils::Rpm(buffer, &*playerName, playerNameSize))
 		{
-			delete[]PlayerName;
-			PlayerName = nullptr;
+			delete[]playerName;
+			playerName = nullptr;
 			return nullptr;
 		}
 	}
 	else
 	{
-		memcpy(PlayerName, ClientAccountData->NameData, PlayerNameSize);
+		memcpy(playerName, clientAccountData->nameData, playerNameSize);
 	}
 
-	if (Erectus::GetTextLength(PlayerName) != ClientAccountData->NameLength)
+	if (Utils::GetTextLength(playerName) != clientAccountData->nameLength)
 	{
-		delete[]PlayerName;
-		PlayerName = nullptr;
+		delete[]playerName;
+		playerName = nullptr;
 		return nullptr;
 	}
 
-	return PlayerName;
+	return playerName;
 }
 
 bool ErectusMemory::UpdateBufferPlayerList()
 {
-	DWORD64 LocalPlayerPtr = GetLocalPlayerPtr(true);
-	if (!Erectus::Valid(LocalPlayerPtr)) return false;
+	auto localPlayerPtr = GetLocalPlayerPtr(true);
+	if (!Utils::Valid(localPlayerPtr)) return false;
 
-	DWORD64 FalloutMainDataPtr;
-	if (!Erectus::RPM(ErectusProcess::Exe + OFFSET_MAIN, &FalloutMainDataPtr, sizeof(FalloutMainDataPtr))) return false;
-	if (!Erectus::Valid(FalloutMainDataPtr)) return false;
+	DWORD64 falloutMainDataPtr;
+	if (!Utils::Rpm(ErectusProcess::exe + OFFSET_MAIN, &falloutMainDataPtr, sizeof falloutMainDataPtr)) return false;
+	if (!Utils::Valid(falloutMainDataPtr)) return false;
 
-	FalloutMain FalloutMainData;
-	if (!Erectus::RPM(FalloutMainDataPtr, &FalloutMainData, sizeof(FalloutMainData))) return false;
-	if (!Erectus::Valid(FalloutMainData.PlatformSessionManagerPtr)) return false;
+	FalloutMain falloutMainData{};
+	if (!Utils::Rpm(falloutMainDataPtr, &falloutMainData, sizeof falloutMainData)) return false;
+	if (!Utils::Valid(falloutMainData.platformSessionManagerPtr)) return false;
 
-	PlatformSessionManager PlatformSessionManagerData;
-	if (!Erectus::RPM(FalloutMainData.PlatformSessionManagerPtr, &PlatformSessionManagerData, sizeof(PlatformSessionManagerData))) return false;
-	if (!Erectus::Valid(PlatformSessionManagerData.ClientAccountManagerPtr)) return false;
+	PlatformSessionManager platformSessionManagerData{};
+	if (!Utils::Rpm(falloutMainData.platformSessionManagerPtr, &platformSessionManagerData,
+		sizeof platformSessionManagerData)) return false;
+	if (!Utils::Valid(platformSessionManagerData.clientAccountManagerPtr)) return false;
 
-	ClientAccountManager ClientAccountManagerData;
-	if (!Erectus::RPM(PlatformSessionManagerData.ClientAccountManagerPtr, &ClientAccountManagerData, sizeof(ClientAccountManagerData))) return false;
-	if (!Erectus::Valid(ClientAccountManagerData.ClientAccountArrayPtr)) return false;
+	ClientAccountManager clientAccountManagerData{};
+	if (!Utils::Rpm(platformSessionManagerData.clientAccountManagerPtr, &clientAccountManagerData,
+		sizeof clientAccountManagerData)) return false;
+	if (!Utils::Valid(clientAccountManagerData.clientAccountArrayPtr)) return false;
 
-	int ClientAccountArraySize = 0;
-	ClientAccountArraySize += ClientAccountManagerData.ClientAccountArraySizeA;
-	ClientAccountArraySize += ClientAccountManagerData.ClientAccountArraySizeB;
-	if (!ClientAccountArraySize) return false;
+	auto clientAccountArraySize = 0;
+	clientAccountArraySize += clientAccountManagerData.clientAccountArraySizeA;
+	clientAccountArraySize += clientAccountManagerData.clientAccountArraySizeB;
+	if (!clientAccountArraySize) return false;
 
-	DWORD64* ClientAccountArray = new DWORD64[ClientAccountArraySize];
-	if (!Erectus::RPM(ClientAccountManagerData.ClientAccountArrayPtr, &*ClientAccountArray, ClientAccountArraySize * sizeof(DWORD64)))
+	auto* clientAccountArray = new DWORD64[clientAccountArraySize];
+	if (!Utils::Rpm(clientAccountManagerData.clientAccountArrayPtr, &*clientAccountArray,
+		clientAccountArraySize * sizeof(DWORD64)))
 	{
-		delete[]ClientAccountArray;
-		ClientAccountArray = nullptr;
+		delete[]clientAccountArray;
+		clientAccountArray = nullptr;
 		return false;
 	}
 
-	int CustomListSize = 0;
-	CustomEntry* CustomList = new CustomEntry[ClientAccountArraySize];
-	int CustomListIndex = 0;
+	auto customListSize = 0;
+	auto* customList = new CustomEntry[clientAccountArraySize];
+	auto customListIndex = 0;
 
-	CustomListSize = 0;
-	CustomListIndex = 0;
+	customListSize = 0;
+	customListIndex = 0;
 
-	for (int i = 0; i < ClientAccountArraySize; i++)
+	for (auto i = 0; i < clientAccountArraySize; i++)
 	{
-		if (!Erectus::Valid(ClientAccountArray[i])) continue;
+		if (!Utils::Valid(clientAccountArray[i])) continue;
 
-		ClientAccountBuffer ClientAccountBufferData;
-		if (!Erectus::RPM(ClientAccountArray[i], &ClientAccountBufferData, sizeof(ClientAccountBufferData))) continue;
-		if (!Erectus::Valid(ClientAccountBufferData.ClientAccountPtr)) continue;
+		ClientAccountBuffer clientAccountBufferData{};
+		if (!Utils::Rpm(clientAccountArray[i], &clientAccountBufferData, sizeof clientAccountBufferData)) continue;
+		if (!Utils::Valid(clientAccountBufferData.clientAccountPtr)) continue;
 
-		ClientAccount ClientAccountData;
-		if (!Erectus::RPM(ClientAccountBufferData.ClientAccountPtr, &ClientAccountData, sizeof(ClientAccountData))) continue;
-		if (ClientAccountData.Formid == 0xFFFFFFFF) continue;
+		ClientAccount clientAccountData{};
+		if (!Utils::Rpm(clientAccountBufferData.clientAccountPtr, &clientAccountData, sizeof clientAccountData))
+			continue;
+		if (clientAccountData.formId == 0xFFFFFFFF) continue;
 
-		DWORD64 EntityPtr = GetPtr(ClientAccountData.Formid);
-		if (!Erectus::Valid(EntityPtr)) continue;
-		if (EntityPtr == LocalPlayerPtr) continue;
+		auto entityPtr = GetPtr(clientAccountData.formId);
+		if (!Utils::Valid(entityPtr)) continue;
+		if (entityPtr == localPlayerPtr) continue;
 
-		Entity EntityData;
-		if (!Erectus::RPM(EntityPtr, &EntityData, sizeof(EntityData))) continue;
-		if (!Erectus::Valid(EntityData.ReferencePtr)) continue;
+		Entity entityData{};
+		if (!Utils::Rpm(entityPtr, &entityData, sizeof entityData)) continue;
+		if (!Utils::Valid(entityData.referencePtr)) continue;
 
-		Reference ReferenceData;
-		if (!Erectus::RPM(EntityData.ReferencePtr, &ReferenceData, sizeof(ReferenceData))) continue;
-		if (ReferenceData.Formid != 0x00000007) continue;
+		Reference referenceData{};
+		if (!Utils::Rpm(entityData.referencePtr, &referenceData, sizeof referenceData)) continue;
+		if (referenceData.formId != 0x00000007) continue;
 
-		CustomListSize++;
-		CustomList[CustomListIndex].EntityPtr = EntityPtr;
-		CustomList[CustomListIndex].ReferencePtr = EntityData.ReferencePtr;
-		CustomList[CustomListIndex].EntityFormid = EntityData.Formid;
-		CustomList[CustomListIndex].ReferenceFormid = ReferenceData.Formid;
-		CustomList[CustomListIndex].Flag = CUSTOM_ENTRY_PLAYER;
-		CustomList[CustomListIndex].Name = GetPlayerName(&ClientAccountData);
-		CustomListIndex++;
+		customListSize++;
+		customList[customListIndex].entityPtr = entityPtr;
+		customList[customListIndex].referencePtr = entityData.referencePtr;
+		customList[customListIndex].entityFormId = entityData.formId;
+		customList[customListIndex].referenceFormId = referenceData.formId;
+		customList[customListIndex].flag = CUSTOM_ENTRY_PLAYER;
+		customList[customListIndex].name = GetPlayerName(&clientAccountData);
+		customListIndex++;
 	}
 
-	bool ReturnValue = false;
+	auto returnValue = false;
 
-	if (CustomListSize)
+	if (customListSize)
 	{
-		BufferPlayerList = new CustomEntry[CustomListSize];
-		memcpy(&*BufferPlayerList, &*CustomList, CustomListSize * sizeof(CustomEntry));
-		BufferPlayerListSize = CustomListSize;
-		ReturnValue = true;
+		bufferPlayerList = new CustomEntry[customListSize];
+		memcpy(&*bufferPlayerList, &*customList, customListSize * sizeof(CustomEntry));
+		bufferPlayerListSize = customListSize;
+		returnValue = true;
 	}
 
-	delete[]CustomList;
-	CustomList = nullptr;
+	delete[]customList;
+	customList = nullptr;
 
-	delete[]ClientAccountArray;
-	ClientAccountArray = nullptr;
+	delete[]clientAccountArray;
+	clientAccountArray = nullptr;
 
-	return ReturnValue;
+	return returnValue;
 }
 
 void ErectusMemory::DeleteCustomEntityList()
 {
-	if (CustomEntityList != nullptr)
+	if (customEntityList != nullptr)
 	{
-		if (CustomEntityListSize)
+		if (customEntityListSize)
 		{
-			for (int i = 0; i < CustomEntityListSize; i++)
+			for (auto i = 0; i < customEntityListSize; i++)
 			{
-				if (CustomEntityList[i].Name != nullptr)
+				if (customEntityList[i].name != nullptr)
 				{
-					delete[]CustomEntityList[i].Name;
-					CustomEntityList[i].Name = nullptr;
+					delete[]customEntityList[i].name;
+					customEntityList[i].name = nullptr;
 				}
 			}
 		}
 
-		delete[]CustomEntityList;
-		CustomEntityList = nullptr;
+		delete[]customEntityList;
+		customEntityList = nullptr;
 	}
 
-	CustomEntityListSize = 0;
-	CustomEntityListUpdated = false;
+	customEntityListSize = 0;
+	customEntityListUpdated = false;
 }
 
 void ErectusMemory::DeleteBufferEntityList()
 {
-	if (BufferEntityList != nullptr)
+	if (bufferEntityList != nullptr)
 	{
-		if (BufferEntityListSize)
+		if (bufferEntityListSize)
 		{
-			for (int i = 0; i < BufferEntityListSize; i++)
+			for (auto i = 0; i < bufferEntityListSize; i++)
 			{
-				if (BufferEntityList[i].Name != nullptr)
+				if (bufferEntityList[i].name != nullptr)
 				{
-					delete[]BufferEntityList[i].Name;
-					BufferEntityList[i].Name = nullptr;
+					delete[]bufferEntityList[i].name;
+					bufferEntityList[i].name = nullptr;
 				}
 			}
 		}
 
-		delete[]BufferEntityList;
-		BufferEntityList = nullptr;
+		delete[]bufferEntityList;
+		bufferEntityList = nullptr;
 	}
 
-	BufferEntityListSize = 0;
-	BufferEntityListUpdated = false;
+	bufferEntityListSize = 0;
+	bufferEntityListUpdated = false;
 }
 
-void ErectusMemory::DeleteCustomNPCList()
+void ErectusMemory::DeleteCustomNpcList()
 {
-	if (CustomNPCList != nullptr)
+	if (customNpcList != nullptr)
 	{
-		if (CustomNPCListSize)
+		if (customNpcListSize)
 		{
-			for (int i = 0; i < CustomNPCListSize; i++)
+			for (auto i = 0; i < customNpcListSize; i++)
 			{
-				if (CustomNPCList[i].Name != nullptr)
+				if (customNpcList[i].name != nullptr)
 				{
-					delete[]CustomNPCList[i].Name;
-					CustomNPCList[i].Name = nullptr;
+					delete[]customNpcList[i].name;
+					customNpcList[i].name = nullptr;
 				}
 			}
 		}
 
-		delete[]CustomNPCList;
-		CustomNPCList = nullptr;
+		delete[]customNpcList;
+		customNpcList = nullptr;
 	}
 
-	CustomNPCListSize = 0;
-	CustomNPCListUpdated = false;
+	customNpcListSize = 0;
+	customNpcListUpdated = false;
 }
 
-void ErectusMemory::DeleteBufferNPCList()
+void ErectusMemory::DeleteBufferNpcList()
 {
-	if (BufferNPCList != nullptr)
+	if (bufferNpcList != nullptr)
 	{
-		if (BufferNPCListSize)
+		if (bufferNpcListSize)
 		{
-			for (int i = 0; i < BufferNPCListSize; i++)
+			for (auto i = 0; i < bufferNpcListSize; i++)
 			{
-				if (BufferNPCList[i].Name != nullptr)
+				if (bufferNpcList[i].name != nullptr)
 				{
-					delete[]BufferNPCList[i].Name;
-					BufferNPCList[i].Name = nullptr;
+					delete[]bufferNpcList[i].name;
+					bufferNpcList[i].name = nullptr;
 				}
 			}
 		}
 
-		delete[]BufferNPCList;
-		BufferNPCList = nullptr;
+		delete[]bufferNpcList;
+		bufferNpcList = nullptr;
 	}
 
-	BufferNPCListSize = 0;
-	BufferNPCListUpdated = false;
+	bufferNpcListSize = 0;
+	bufferNpcListUpdated = false;
 }
 
 void ErectusMemory::DeleteCustomPlayerList()
 {
-	if (CustomPlayerList != nullptr)
+	if (customPlayerList != nullptr)
 	{
-		if (CustomPlayerListSize)
+		if (customPlayerListSize)
 		{
-			for (int i = 0; i < CustomPlayerListSize; i++)
+			for (auto i = 0; i < customPlayerListSize; i++)
 			{
-				if (CustomPlayerList[i].Name != nullptr)
+				if (customPlayerList[i].name != nullptr)
 				{
-					delete[]CustomPlayerList[i].Name;
-					CustomPlayerList[i].Name = nullptr;
+					delete[]customPlayerList[i].name;
+					customPlayerList[i].name = nullptr;
 				}
 			}
 		}
 
-		delete[]CustomPlayerList;
-		CustomPlayerList = nullptr;
+		delete[]customPlayerList;
+		customPlayerList = nullptr;
 	}
 
-	CustomPlayerListSize = 0;
-	CustomPlayerListUpdated = false;
+	customPlayerListSize = 0;
+	customPlayerListUpdated = false;
 }
 
 void ErectusMemory::DeleteBufferPlayerList()
 {
-	if (BufferPlayerList != nullptr)
+	if (bufferPlayerList != nullptr)
 	{
-		if (BufferPlayerListSize)
+		if (bufferPlayerListSize)
 		{
-			for (int i = 0; i < BufferPlayerListSize; i++)
+			for (auto i = 0; i < bufferPlayerListSize; i++)
 			{
-				if (BufferPlayerList[i].Name != nullptr)
+				if (bufferPlayerList[i].name != nullptr)
 				{
-					delete[]BufferPlayerList[i].Name;
-					BufferPlayerList[i].Name = nullptr;
+					delete[]bufferPlayerList[i].name;
+					bufferPlayerList[i].name = nullptr;
 				}
 			}
 		}
 
-		delete[]BufferPlayerList;
-		BufferPlayerList = nullptr;
+		delete[]bufferPlayerList;
+		bufferPlayerList = nullptr;
 	}
 
-	BufferPlayerListSize = 0;
-	BufferPlayerListUpdated = false;
+	bufferPlayerListSize = 0;
+	bufferPlayerListUpdated = false;
 }
 
-bool ErectusMemory::TargetValid(Entity EntityData, Reference ReferenceData)
+bool ErectusMemory::TargetValid(const Entity entityData, const Reference referenceData)
 {
-	if (ReferenceData.vtable != ErectusProcess::Exe + VTABLE_TESNPC)
+	if (referenceData.vtable != ErectusProcess::exe + VTABLE_TESNPC)
 	{
 		return false;
 	}
 
-	if (EntityData.SpawnFlag != 0x02)
+	if (entityData.spawnFlag != 0x02)
 	{
-		if (!ErectusIni::CustomTargetSettings.IgnoreRenderDistance)
+		if (!ErectusIni::customTargetSettings.ignoreRenderDistance)
 		{
 			return false;
 		}
 	}
 
-	ActorSnapshotComponent ActorSnapshotComponentData;
-	if (GetActorSnapshotComponentData(EntityData, &ActorSnapshotComponentData))
+	ActorSnapshotComponent actorSnapshotComponentData{};
+	if (GetActorSnapshotComponentData(entityData, &actorSnapshotComponentData))
 	{
-		if (ErectusIni::CustomTargetSettings.IgnoreEssentialNPCs)
+		if (ErectusIni::customTargetSettings.ignoreEssentialNpCs)
 		{
-			if (ActorSnapshotComponentData.IsEssential)
+			if (actorSnapshotComponentData.isEssential)
 			{
 				return false;
 			}
 		}
 	}
 
-	switch (CheckHealthFlag(EntityData.HealthFlag))
+	switch (CheckHealthFlag(entityData.healthFlag))
 	{
-	case 0x01://Alive
-		return ErectusIni::CustomTargetSettings.TargetLiving;
-	case 0x02://Downed
-		return ErectusIni::CustomTargetSettings.TargetDowned;
-	case 0x03://Dead
-		return ErectusIni::CustomTargetSettings.TargetDead;
-	default://Unknown
-		return ErectusIni::CustomTargetSettings.TargetUnknown;
+	case 0x01: //Alive
+		return ErectusIni::customTargetSettings.targetLiving;
+	case 0x02: //Downed
+		return ErectusIni::customTargetSettings.targetDowned;
+	case 0x03: //Dead
+		return ErectusIni::customTargetSettings.targetDead;
+	default: //Unknown
+		return ErectusIni::customTargetSettings.targetUnknown;
 	}
 }
 
-bool ErectusMemory::FloraHarvested(BYTE HarvestFlagA, BYTE HarvestFlagB)
+bool ErectusMemory::FloraHarvested(const BYTE harvestFlagA, const BYTE harvestFlagB)
 {
-	bool HarvestedA = false;
-	if ((HarvestFlagA >> 5) & 1)
-	{
-		HarvestedA = true;
-	}
-
-	bool HarvestedB = false;
-	if ((HarvestFlagB >> 5) & 1)
-	{
-		HarvestedB = true;
-	}
-
-	if (HarvestedA || HarvestedB)
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+	return harvestFlagA >> 5 & 1 || harvestFlagB >> 5 & 1;
 }
 
-bool ErectusMemory::RenderCustomEntryA(CustomEntry* CustomEntryData, OverlaySettingsA CustomSettingsA)
+bool ErectusMemory::RenderCustomEntryA(CustomEntry* customEntryData, OverlaySettingsA customSettingsA)
 {
-	int Health = -1;
-	BYTE EpicRank = 0;
-	bool AllowNPC = false;
-	if (CustomEntryData->Flag & CUSTOM_ENTRY_NPC)
+	auto health = -1;
+	BYTE epicRank = 0;
+	auto allowNpc = false;
+	if (customEntryData->flag & CUSTOM_ENTRY_NPC)
 	{
-		Entity NPCData;
-		if (!Erectus::RPM(CustomEntryData->EntityPtr, &NPCData, sizeof(NPCData))) return false;
+		Entity npcData{};
+		if (!Utils::Rpm(customEntryData->entityPtr, &npcData, sizeof npcData)) return false;
 
-		ActorSnapshotComponent ActorSnapshotComponentData;
-		if (GetActorSnapshotComponentData(NPCData, &ActorSnapshotComponentData))
+		ActorSnapshotComponent actorSnapshotComponentData{};
+		if (GetActorSnapshotComponentData(npcData, &actorSnapshotComponentData))
 		{
-			Health = int(ActorSnapshotComponentData.MaxHealth + ActorSnapshotComponentData.ModifiedHealth + ActorSnapshotComponentData.LostHealth);
-			EpicRank = ActorSnapshotComponentData.EpicRank;
-			if (EpicRank)
+			health = static_cast<int>(actorSnapshotComponentData.maxHealth + actorSnapshotComponentData.modifiedHealth + actorSnapshotComponentData.lostHealth);
+			epicRank = actorSnapshotComponentData.epicRank;
+			if (epicRank)
 			{
-				switch (CheckHealthFlag(NPCData.HealthFlag))
+				switch (CheckHealthFlag(npcData.healthFlag))
 				{
-				case 0x01://Alive
-					switch (EpicRank)
+				case 0x01: //Alive
+				case 0x02: //Downed
+				case 0x03: //Dead
+					switch (epicRank)
 					{
 					case 1:
-						AllowNPC = ErectusIni::CustomLegendarySettings.OverrideLivingOneStar;
+						allowNpc = ErectusIni::customLegendarySettings.overrideLivingOneStar;
 						break;
 					case 2:
-						AllowNPC = ErectusIni::CustomLegendarySettings.OverrideLivingTwoStar;
+						allowNpc = ErectusIni::customLegendarySettings.overrideLivingTwoStar;
 						break;
 					case 3:
-						AllowNPC = ErectusIni::CustomLegendarySettings.OverrideLivingThreeStar;
+						allowNpc = ErectusIni::customLegendarySettings.overrideLivingThreeStar;
 						break;
 					default:
 						break;
 					}
-					break;
-				case 0x02://Downed
-					switch (EpicRank)
-					{
-					case 1:
-						AllowNPC = ErectusIni::CustomLegendarySettings.OverrideLivingOneStar;
-						break;
-					case 2:
-						AllowNPC = ErectusIni::CustomLegendarySettings.OverrideLivingTwoStar;
-						break;
-					case 3:
-						AllowNPC = ErectusIni::CustomLegendarySettings.OverrideLivingThreeStar;
-						break;
-					default:
-						break;
-					}
-					break;
-				case 0x03://Dead
-					switch (EpicRank)
-					{
-					case 1:
-						AllowNPC = ErectusIni::CustomLegendarySettings.OverrideDeadOneStar;
-						break;
-					case 2:
-						AllowNPC = ErectusIni::CustomLegendarySettings.OverrideDeadTwoStar;
-						break;
-					case 3:
-						AllowNPC = ErectusIni::CustomLegendarySettings.OverrideDeadThreeStar;
-						break;
-					default:
-						break;
-					}
-					break;
 				default:
 					break;
 				}
@@ -1989,468 +1924,449 @@ bool ErectusMemory::RenderCustomEntryA(CustomEntry* CustomEntryData, OverlaySett
 		}
 	}
 
-	if (!CustomSettingsA.Enabled)
+	if (!customSettingsA.enabled)
 	{
-		if (!AllowNPC)
+		if (!allowNpc)
 		{
 			return false;
 		}
 	}
 
-	if (!CustomSettingsA.DrawEnabled && !CustomSettingsA.DrawDisabled)
+	if (!customSettingsA.drawEnabled && !customSettingsA.drawDisabled)
 	{
 		return false;
 	}
 
-	if (CustomSettingsA.EnabledAlpha == 0.0f && CustomSettingsA.DisabledAlpha == 0.0f)
+	if (customSettingsA.enabledAlpha == 0.0f && customSettingsA.disabledAlpha == 0.0f)
 	{
 		return false;
 	}
 
-	if (!CustomSettingsA.DrawNamed && !CustomSettingsA.DrawUnnamed)
+	if (!customSettingsA.drawNamed && !customSettingsA.drawUnnamed)
 	{
 		return false;
 	}
 
-	Entity EntityData;
-	if (!Erectus::RPM(CustomEntryData->EntityPtr, &EntityData, sizeof(EntityData))) return false;
+	Entity entityData{};
+	if (!Utils::Rpm(customEntryData->entityPtr, &entityData, sizeof entityData)) return false;
 
-	if (CustomEntryData->Flag & CUSTOM_ENTRY_PLAYER)
+	if (customEntryData->flag & CUSTOM_ENTRY_PLAYER)
 	{
-		ActorSnapshotComponent ActorSnapshotComponentData;
-		if (GetActorSnapshotComponentData(EntityData, &ActorSnapshotComponentData))
+		ActorSnapshotComponent actorSnapshotComponentData{};
+		if (GetActorSnapshotComponentData(entityData, &actorSnapshotComponentData))
 		{
-			Health = int(ActorSnapshotComponentData.MaxHealth + ActorSnapshotComponentData.ModifiedHealth + ActorSnapshotComponentData.LostHealth);
+			health = static_cast<int>(actorSnapshotComponentData.maxHealth + actorSnapshotComponentData.modifiedHealth + actorSnapshotComponentData.lostHealth);
 		}
 	}
 
-	if (CustomEntryData->Name == nullptr)
+	if (customEntryData->name == nullptr)
 	{
-		CustomEntryData->Flag |= CUSTOM_ENTRY_UNNAMED;
-		CustomEntryData->Name = new char[sizeof("00000000")];
-		sprintf_s(CustomEntryData->Name, sizeof("00000000"), "%08lX", EntityData.Formid);
+		customEntryData->flag |= CUSTOM_ENTRY_UNNAMED;
+		customEntryData->name = new char[sizeof"00000000"];
+		sprintf_s(customEntryData->name, sizeof"00000000", "%08lX", entityData.formId);
 	}
 
-	if (CustomEntryData->Flag & CUSTOM_ENTRY_UNNAMED)
+	if (customEntryData->flag & CUSTOM_ENTRY_UNNAMED)
 	{
-		if (!CustomSettingsA.DrawUnnamed) return false;
+		if (!customSettingsA.drawUnnamed) return false;
 	}
 	else
 	{
-		if (!CustomSettingsA.DrawNamed) return false;
+		if (!customSettingsA.drawNamed) return false;
 	}
 
-	float* Alpha = nullptr;
+	float* alpha = nullptr;
 
-	if (EntityData.SpawnFlag == 0x02)
+	if (entityData.spawnFlag == 0x02)
 	{
-		if (CustomSettingsA.DrawEnabled)
+		if (customSettingsA.drawEnabled)
 		{
-			Alpha = &CustomSettingsA.EnabledAlpha;
+			alpha = &customSettingsA.enabledAlpha;
 		}
 	}
 	else
 	{
-		if (CustomSettingsA.DrawDisabled)
+		if (customSettingsA.drawDisabled)
 		{
-			Alpha = &CustomSettingsA.DisabledAlpha;
+			alpha = &customSettingsA.disabledAlpha;
 		}
 	}
 
-	if (Alpha == nullptr)
+	if (alpha == nullptr)
 	{
 		return false;
 	}
 
-	bool ShowHealthText = false;
+	auto showHealthText = false;
 
-	float* Color = nullptr;
+	float* color = nullptr;
 
-	float LegendaryAlpha = 1.0f;
+	auto legendaryAlpha = 1.0f;
 
-	switch (CheckHealthFlag(EntityData.HealthFlag))
+	switch (CheckHealthFlag(entityData.healthFlag))
 	{
-	case 0x01://Alive
-		ShowHealthText = CustomSettingsA.ShowHealth;
-		if (AllowNPC)
+	case 0x01: //Alive
+		showHealthText = customSettingsA.showHealth;
+		if (allowNpc)
 		{
-			switch (EpicRank)
+			switch (epicRank)
 			{
 			case 1:
-				Color = ErectusIni::CustomLegendarySettings.LivingOneStarColor;
-				if (EntityData.SpawnFlag == 0x02)
+				color = ErectusIni::customLegendarySettings.livingOneStarColor;
+				if (entityData.spawnFlag == 0x02)
 				{
-					Alpha = &LegendaryAlpha;
+					alpha = &legendaryAlpha;
 				}
 				break;
 			case 2:
-				Color = ErectusIni::CustomLegendarySettings.LivingTwoStarColor;
-				if (EntityData.SpawnFlag == 0x02)
+				color = ErectusIni::customLegendarySettings.livingTwoStarColor;
+				if (entityData.spawnFlag == 0x02)
 				{
-					Alpha = &LegendaryAlpha;
+					alpha = &legendaryAlpha;
 				}
 				break;
 			case 3:
-				Color = ErectusIni::CustomLegendarySettings.LivingThreeStarColor;
-				if (EntityData.SpawnFlag == 0x02)
+				color = ErectusIni::customLegendarySettings.livingThreeStarColor;
+				if (entityData.spawnFlag == 0x02)
 				{
-					Alpha = &LegendaryAlpha;
+					alpha = &legendaryAlpha;
 				}
 				break;
 			default:
 				break;
 			}
 		}
-		else if (CustomSettingsA.DrawAlive)
+		else if (customSettingsA.drawAlive)
 		{
-			Color = CustomSettingsA.AliveColor;
+			color = customSettingsA.aliveColor;
 		}
 		break;
-	case 0x02://Downed
-		ShowHealthText = CustomSettingsA.ShowHealth;
-		if (AllowNPC)
+	case 0x02: //Downed
+		showHealthText = customSettingsA.showHealth;
+		if (allowNpc)
 		{
-			switch (EpicRank)
+			switch (epicRank)
 			{
 			case 1:
-				Color = ErectusIni::CustomLegendarySettings.LivingOneStarColor;
-				if (EntityData.SpawnFlag == 0x02)
+				color = ErectusIni::customLegendarySettings.livingOneStarColor;
+				if (entityData.spawnFlag == 0x02)
 				{
-					Alpha = &LegendaryAlpha;
+					alpha = &legendaryAlpha;
 				}
 				break;
 			case 2:
-				Color = ErectusIni::CustomLegendarySettings.LivingTwoStarColor;
-				if (EntityData.SpawnFlag == 0x02)
+				color = ErectusIni::customLegendarySettings.livingTwoStarColor;
+				if (entityData.spawnFlag == 0x02)
 				{
-					Alpha = &LegendaryAlpha;
+					alpha = &legendaryAlpha;
 				}
 				break;
 			case 3:
-				Color = ErectusIni::CustomLegendarySettings.LivingThreeStarColor;
-				if (EntityData.SpawnFlag == 0x02)
+				color = ErectusIni::customLegendarySettings.livingThreeStarColor;
+				if (entityData.spawnFlag == 0x02)
 				{
-					Alpha = &LegendaryAlpha;
+					alpha = &legendaryAlpha;
 				}
 				break;
 			default:
 				break;
 			}
 		}
-		else if (CustomSettingsA.DrawDowned)
+		else if (customSettingsA.drawDowned)
 		{
-			Color = CustomSettingsA.DownedColor;
+			color = customSettingsA.downedColor;
 		}
 		break;
-	case 0x03://Dead
-		ShowHealthText = CustomSettingsA.ShowDeadHealth;
-		if (AllowNPC)
+	case 0x03: //Dead
+		showHealthText = customSettingsA.showDeadHealth;
+		if (allowNpc)
 		{
-			switch (EpicRank)
+			switch (epicRank)
 			{
 			case 1:
-				Color = ErectusIni::CustomLegendarySettings.DeadOneStarColor;
-				if (EntityData.SpawnFlag == 0x02)
+				color = ErectusIni::customLegendarySettings.deadOneStarColor;
+				if (entityData.spawnFlag == 0x02)
 				{
-					Alpha = &LegendaryAlpha;
+					alpha = &legendaryAlpha;
 				}
 				break;
 			case 2:
-				Color = ErectusIni::CustomLegendarySettings.DeadTwoStarColor;
-				if (EntityData.SpawnFlag == 0x02)
+				color = ErectusIni::customLegendarySettings.deadTwoStarColor;
+				if (entityData.spawnFlag == 0x02)
 				{
-					Alpha = &LegendaryAlpha;
+					alpha = &legendaryAlpha;
 				}
 				break;
 			case 3:
-				Color = ErectusIni::CustomLegendarySettings.DeadThreeStarColor;
-				if (EntityData.SpawnFlag == 0x02)
+				color = ErectusIni::customLegendarySettings.deadThreeStarColor;
+				if (entityData.spawnFlag == 0x02)
 				{
-					Alpha = &LegendaryAlpha;
+					alpha = &legendaryAlpha;
 				}
 				break;
 			default:
 				break;
 			}
 		}
-		else if (CustomSettingsA.DrawDead)
+		else if (customSettingsA.drawDead)
 		{
-			Color = CustomSettingsA.DeadColor;
+			color = customSettingsA.deadColor;
 		}
 		break;
-	default://Unknown
-		ShowHealthText = CustomSettingsA.ShowHealth;
-		if (CustomSettingsA.DrawUnknown)
+	default: //Unknown
+		showHealthText = customSettingsA.showHealth;
+		if (customSettingsA.drawUnknown)
 		{
-			Color = CustomSettingsA.UnknownColor;
+			color = customSettingsA.unknownColor;
 		}
 		break;
 	}
 
-	if (Color == nullptr)
+	if (color == nullptr)
 	{
 		return false;
 	}
 
-	DWORD64 CameraPtr = GetCameraPtr();
-	if (!Erectus::Valid(CameraPtr)) return false;
+	auto cameraPtr = GetCameraPtr();
+	if (!Utils::Valid(cameraPtr)) return false;
 
-	Camera CameraData;
-	if (!Erectus::RPM(CameraPtr, &CameraData, sizeof(CameraData))) return false;
+	Camera cameraData{};
+	if (!Utils::Rpm(cameraPtr, &cameraData, sizeof cameraData)) return false;
 
-	float Distance = Erectus::GetDistance(EntityData.Position, CameraData.Origin);
-	int NormalDistance = int(Distance * 0.01f);
-	if (NormalDistance > CustomSettingsA.EnabledDistance) return false;
+	auto distance = Utils::GetDistance(entityData.position, cameraData.origin);
+	auto normalDistance = static_cast<int>(distance * 0.01f);
+	if (normalDistance > customSettingsA.enabledDistance) return false;
 
-	bool ValidPlayer = false;
-	if ((CustomEntryData->Flag & CUSTOM_ENTRY_PLAYER) && ErectusIni::CustomTargetSettings.LockPlayers)
+	if ((customEntryData->flag & CUSTOM_ENTRY_PLAYER && ErectusIni::customTargetSettings.lockPlayers) || (customEntryData->flag & CUSTOM_ENTRY_NPC && ErectusIni::customTargetSettings.lockNpCs))
 	{
-		ValidPlayer = true;
-	}
-
-	bool ValidNPC = false;
-	if ((CustomEntryData->Flag & CUSTOM_ENTRY_NPC) && ErectusIni::CustomTargetSettings.LockNPCs)
-	{
-		ValidNPC = true;
-	}
-
-	if (ValidPlayer || ValidNPC)
-	{
-		Reference ReferenceData;
-		if (Erectus::RPM(EntityData.ReferencePtr, &ReferenceData, sizeof(ReferenceData)))
+		Reference referenceData{};
+		if (Utils::Rpm(entityData.referencePtr, &referenceData, sizeof referenceData))
 		{
-			if (ErectusMemory::TargetValid(EntityData, ReferenceData))
+			if (TargetValid(entityData, referenceData))
 			{
-				if (CustomEntryData->EntityPtr == TargetLockingPtr)
+				if (customEntryData->entityPtr == targetLockingPtr)
 				{
-					TargetLockingValid = true;
-					Color = ErectusIni::CustomTargetSettings.LockingColor;
+					targetLockingValid = true;
+					color = ErectusIni::customTargetSettings.lockingColor;
 				}
-				else if (TargetLockingKeyPressed && !TargetLockingCooldown)
+				else if (targetLockingKeyPressed && !targetLockingCooldown)
 				{
-					float Degrees = Erectus::GetDegrees(EntityData.Position, CameraData.Forward, CameraData.Origin);
-					if (Degrees < TargetLockingClosestDegrees)
+					auto degrees = Utils::GetDegrees(entityData.position, cameraData.forward, cameraData.origin);
+					if (degrees < targetLockingClosestDegrees)
 					{
-						TargetLockingClosestDegrees = Degrees;
-						TargetLockingClosestPtr = CustomEntryData->EntityPtr;
+						targetLockingClosestDegrees = degrees;
+						targetLockingClosestPtr = customEntryData->entityPtr;
 					}
 				}
 			}
 		}
 	}
 
-	float Screen[2] = { 0.0f, 0.0f };
-	if (!Erectus::WTS(CameraData.View, EntityData.Position, Screen)) return false;
+	float screen[2] = { 0.0f, 0.0f };
+	if (!Utils::Wts(cameraData.view, entityData.position, screen)) return false;
 
-	char* NameText = nullptr;
-	if (CustomSettingsA.ShowName && ShowHealthText && CustomSettingsA.ShowDistance)//Name, Health, Distance
+	char* nameText = nullptr;
+	if (customSettingsA.showName && showHealthText && customSettingsA.showDistance) //Name, Health, Distance
 	{
-		int TextSize = Erectus::GetTextLength(CustomEntryData->Name) + sizeof("\n-2147483648 hp [-2147483648 m]");
-		NameText = new char[TextSize];
-		sprintf_s(NameText, TextSize, "%s\n%d hp [%d m]", CustomEntryData->Name, Health, NormalDistance);
+		auto textSize = static_cast<int>(Utils::GetTextLength(customEntryData->name) + sizeof"\n-2147483648 hp [-2147483648 m]");
+		nameText = new char[textSize];
+		sprintf_s(nameText, textSize, "%s\n%d hp [%d m]", customEntryData->name, health, normalDistance);
 	}
-	else if (CustomSettingsA.ShowName && ShowHealthText && !CustomSettingsA.ShowDistance)//Name, Health
+	else if (customSettingsA.showName && showHealthText && !customSettingsA.showDistance) //Name, Health
 	{
-		int TextSize = Erectus::GetTextLength(CustomEntryData->Name) + sizeof("\n-2147483648 hp");
-		NameText = new char[TextSize];
-		sprintf_s(NameText, TextSize, "%s\n%d hp", CustomEntryData->Name, Health);
+		auto textSize = static_cast<int>(Utils::GetTextLength(customEntryData->name) + sizeof"\n-2147483648 hp");
+		nameText = new char[textSize];
+		sprintf_s(nameText, textSize, "%s\n%d hp", customEntryData->name, health);
 	}
-	else if (CustomSettingsA.ShowName && !ShowHealthText && CustomSettingsA.ShowDistance)//Name, Distance
+	else if (customSettingsA.showName && !showHealthText && customSettingsA.showDistance) //Name, Distance
 	{
-		int TextSize = Erectus::GetTextLength(CustomEntryData->Name) + sizeof("\n[-2147483648 m]");
-		NameText = new char[TextSize];
-		sprintf_s(NameText, TextSize, "%s\n[%d m]", CustomEntryData->Name, NormalDistance);
+		auto textSize = static_cast<int>(Utils::GetTextLength(customEntryData->name) + sizeof"\n[-2147483648 m]");
+		nameText = new char[textSize];
+		sprintf_s(nameText, textSize, "%s\n[%d m]", customEntryData->name, normalDistance);
 	}
-	else if (!CustomSettingsA.ShowName && ShowHealthText && CustomSettingsA.ShowDistance)//Health, Distance
+	else if (!customSettingsA.showName && showHealthText && customSettingsA.showDistance) //Health, Distance
 	{
-		int TextSize = sizeof("-2147483648 hp [-2147483648 m]");
-		NameText = new char[TextSize];
-		sprintf_s(NameText, TextSize, "%d hp [%d m]", Health, NormalDistance);
+		int textSize = sizeof"-2147483648 hp [-2147483648 m]";
+		nameText = new char[textSize];
+		sprintf_s(nameText, textSize, "%d hp [%d m]", health, normalDistance);
 	}
-	else if (CustomSettingsA.ShowName && !ShowHealthText && !CustomSettingsA.ShowDistance)//Name
+	else if (customSettingsA.showName && !showHealthText && !customSettingsA.showDistance) //Name
 	{
-		int TextSize = Erectus::GetTextSize(CustomEntryData->Name);
-		NameText = new char[TextSize];
-		sprintf_s(NameText, TextSize, "%s", CustomEntryData->Name);
+		auto textSize = Utils::GetTextSize(customEntryData->name);
+		nameText = new char[textSize];
+		sprintf_s(nameText, textSize, "%s", customEntryData->name);
 	}
-	else if (!CustomSettingsA.ShowName && ShowHealthText && !CustomSettingsA.ShowDistance)//Health
+	else if (!customSettingsA.showName && showHealthText && !customSettingsA.showDistance) //Health
 	{
-		int TextSize = sizeof("-2147483648 hp");
-		NameText = new char[TextSize];
-		sprintf_s(NameText, TextSize, "%d hp", Health);
+		int textSize = sizeof"-2147483648 hp";
+		nameText = new char[textSize];
+		sprintf_s(nameText, textSize, "%d hp", health);
 	}
-	else if (!CustomSettingsA.ShowName && !ShowHealthText && CustomSettingsA.ShowDistance)//Distance
+	else if (!customSettingsA.showName && !showHealthText && customSettingsA.showDistance) //Distance
 	{
-		int TextSize = sizeof("[-2147483648 m]");
-		NameText = new char[TextSize];
-		sprintf_s(NameText, TextSize, "[%d m]", NormalDistance);
+		int textSize = sizeof"[-2147483648 m]";
+		nameText = new char[textSize];
+		sprintf_s(nameText, textSize, "[%d m]", normalDistance);
 	}
 
-	if (NameText != nullptr)
+	if (nameText != nullptr)
 	{
-		if (ErectusIni::CustomUtilitySettings.DebugEsp)
+		if (ErectusIni::customUtilitySettings.debugEsp)
 		{
-			char DebugText[sizeof("0000000000000000\n00000000\n0000000000000000\n00000000")];
-			sprintf_s(DebugText, "%llX\n%08lX\n%llX\n%08lX", CustomEntryData->EntityPtr, CustomEntryData->EntityFormid, CustomEntryData->ReferencePtr, CustomEntryData->ReferenceFormid);
-			ErectusD3D9::D3D9DrawText(DebugText, CustomSettingsA.TextShadowed, CustomSettingsA.TextCentered, Screen, Color, *Alpha);
+			char debugText[sizeof"0000000000000000\n00000000\n0000000000000000\n00000000"];
+			sprintf_s(debugText, "%llX\n%08lX\n%llX\n%08lX", customEntryData->entityPtr, customEntryData->entityFormId,
+				customEntryData->referencePtr, customEntryData->referenceFormId);
+			Renderer::DrawText(debugText, customSettingsA.textShadowed, customSettingsA.textCentered, screen, color, *alpha);
 		}
 		else
 		{
-			ErectusD3D9::D3D9DrawText(NameText, CustomSettingsA.TextShadowed, CustomSettingsA.TextCentered, Screen, Color, *Alpha);
+			Renderer::DrawText(nameText, customSettingsA.textShadowed, customSettingsA.textCentered, screen, color, *alpha);
 		}
 
-		delete[]NameText;
-		NameText = nullptr;
+		delete[]nameText;
+		nameText = nullptr;
 	}
 
 	return true;
 }
 
-bool ErectusMemory::RenderCustomEntryB(CustomEntry* CustomEntryData, OverlaySettingsB CustomSettingsB)
+bool ErectusMemory::RenderCustomEntryB(CustomEntry* customEntryData, OverlaySettingsB customSettingsB)
 {
-	if (!(CustomEntryData->Flag & CUSTOM_ENTRY_WHITELISTED))
-	{
-		if (!CustomSettingsB.Enabled) return false;
-	}
-
-	if (!CustomSettingsB.DrawEnabled && !CustomSettingsB.DrawDisabled)
-	{
+	if (!(customEntryData->flag & CUSTOM_ENTRY_WHITELISTED) && !customSettingsB.enabled)
 		return false;
-	}
 
-	if (CustomSettingsB.EnabledAlpha == 0.0f && CustomSettingsB.DisabledAlpha == 0.0f)
-	{
+	if (!customSettingsB.drawEnabled && !customSettingsB.drawDisabled)
 		return false;
-	}
 
-	if (!CustomSettingsB.DrawNamed && !CustomSettingsB.DrawUnnamed)
-	{
+	if (customSettingsB.enabledAlpha == 0.0f && customSettingsB.disabledAlpha == 0.0f)
 		return false;
+
+	if (!customSettingsB.drawNamed && !customSettingsB.drawUnnamed)
+		return false;
+
+	Entity entityData{};
+	if (!Utils::Rpm(customEntryData->entityPtr, &entityData, sizeof entityData)) return false;
+
+	if (customEntryData->name == nullptr)
+	{
+		customEntryData->flag |= CUSTOM_ENTRY_UNNAMED;
+		customEntryData->name = new char[sizeof"00000000"];
+		sprintf_s(customEntryData->name, sizeof"00000000", "%08lX", entityData.formId);
 	}
 
-	Entity EntityData;
-	if (!Erectus::RPM(CustomEntryData->EntityPtr, &EntityData, sizeof(EntityData))) return false;
-
-	if (CustomEntryData->Name == nullptr)
+	if (customEntryData->flag & CUSTOM_ENTRY_UNNAMED)
 	{
-		CustomEntryData->Flag |= CUSTOM_ENTRY_UNNAMED;
-		CustomEntryData->Name = new char[sizeof("00000000")];
-		sprintf_s(CustomEntryData->Name, sizeof("00000000"), "%08lX", EntityData.Formid);
-	}
-
-	if (CustomEntryData->Flag & CUSTOM_ENTRY_UNNAMED)
-	{
-		if (!CustomSettingsB.DrawUnnamed) return false;
-	}
-	else
-	{
-		if (!CustomSettingsB.DrawNamed) return false;
-	}
-
-	if (CustomEntryData->Flag & CUSTOM_ENTRY_PLAN)
-	{
-		if (!ErectusIni::CustomKnownRecipeSettings.KnownRecipesEnabled && !ErectusIni::CustomKnownRecipeSettings.UnknownRecipesEnabled)
-		{
+		if (!customSettingsB.drawUnnamed)
 			return false;
-		}
+	}
+	else if (!customSettingsB.drawNamed)
+		return false;
 
-		if (!(CustomEntryData->Flag & CUSTOM_ENTRY_FAILED_RECIPE))
+	if (customEntryData->flag & CUSTOM_ENTRY_PLAN)
+	{
+		if (!ErectusIni::customKnownRecipeSettings.knownRecipesEnabled && !ErectusIni::customKnownRecipeSettings.unknownRecipesEnabled)
+			return false;
+
+		if (!(customEntryData->flag & CUSTOM_ENTRY_FAILED_RECIPE))
 		{
-			if (!ErectusIni::CustomKnownRecipeSettings.KnownRecipesEnabled && (CustomEntryData->Flag & CUSTOM_ENTRY_KNOWN_RECIPE))
+			if (!ErectusIni::customKnownRecipeSettings.knownRecipesEnabled && customEntryData->flag & CUSTOM_ENTRY_KNOWN_RECIPE)
 			{
 				return false;
 			}
-			else if (!ErectusIni::CustomKnownRecipeSettings.UnknownRecipesEnabled && (CustomEntryData->Flag & CUSTOM_ENTRY_UNKNOWN_RECIPE))
+			if (!ErectusIni::customKnownRecipeSettings.unknownRecipesEnabled && customEntryData->flag & CUSTOM_ENTRY_UNKNOWN_RECIPE)
 			{
 				return false;
 			}
 		}
 	}
 
-	float* Alpha = nullptr;
+	float* alpha = nullptr;
 
-	if (EntityData.SpawnFlag == 0x02)
+	if (entityData.spawnFlag == 0x02)
 	{
-		if (CustomSettingsB.DrawEnabled)
+		if (customSettingsB.drawEnabled)
 		{
-			if (CustomEntryData->Flag & CUSTOM_ENTRY_FLORA)
+			if (customEntryData->flag & CUSTOM_ENTRY_FLORA)
 			{
-				if (!FloraHarvested(EntityData.HarvestFlagA, EntityData.HarvestFlagB))
+				if (!FloraHarvested(entityData.harvestFlagA, entityData.harvestFlagB))
 				{
-					Alpha = &CustomSettingsB.EnabledAlpha;
+					alpha = &customSettingsB.enabledAlpha;
 				}
-				else if (CustomSettingsB.DrawDisabled)
+				else if (customSettingsB.drawDisabled)
 				{
-					Alpha = &CustomSettingsB.DisabledAlpha;
+					alpha = &customSettingsB.disabledAlpha;
 				}
 			}
 			else
 			{
-				Alpha = &CustomSettingsB.EnabledAlpha;
+				alpha = &customSettingsB.enabledAlpha;
 			}
 		}
 	}
 	else
 	{
-		if (CustomSettingsB.DrawDisabled)
+		if (customSettingsB.drawDisabled)
 		{
-			Alpha = &CustomSettingsB.DisabledAlpha;
+			alpha = &customSettingsB.disabledAlpha;
 		}
 	}
 
-	if (Alpha == nullptr)
+	if (alpha == nullptr)
 	{
 		return false;
 	}
 
-	DWORD64 CameraPtr = GetCameraPtr();
-	if (!Erectus::Valid(CameraPtr)) return false;
+	const auto cameraPtr = GetCameraPtr();
+	if (!Utils::Valid(cameraPtr)) return false;
 
-	Camera CameraData;
-	if (!Erectus::RPM(CameraPtr, &CameraData, sizeof(CameraData))) return false;
+	Camera cameraData{};
+	if (!Utils::Rpm(cameraPtr, &cameraData, sizeof cameraData)) return false;
 
-	float Distance = Erectus::GetDistance(EntityData.Position, CameraData.Origin);
-	int NormalDistance = int(Distance * 0.01f);
-	if (NormalDistance > CustomSettingsB.EnabledDistance) return false;
+	const auto distance = Utils::GetDistance(entityData.position, cameraData.origin);
+	const auto normalDistance = static_cast<int>(distance * 0.01f);
+	if (normalDistance > customSettingsB.enabledDistance) return false;
 
-	float Screen[2] = { 0.0f, 0.0f };
-	if (!Erectus::WTS(CameraData.View, EntityData.Position, Screen)) return false;
+	float screen[2] = { 0.0f, 0.0f };
+	if (!Utils::Wts(cameraData.view, entityData.position, screen)) return false;
 
-	char* NameText = nullptr;
-	if (CustomSettingsB.ShowName && CustomSettingsB.ShowDistance)
+	char* nameText = nullptr;
+	if (customSettingsB.showName && customSettingsB.showDistance)
 	{
-		int DistanceTextSize = Erectus::GetTextLength(CustomEntryData->Name) + sizeof("\n[-2147483648 m]");
-		NameText = new char[DistanceTextSize];
-		sprintf_s(NameText, DistanceTextSize, "%s\n[%d m]", CustomEntryData->Name, NormalDistance);
+		const auto distanceTextSize = static_cast<int>(Utils::GetTextLength(customEntryData->name) + sizeof"\n[-2147483648 m]");
+		nameText = new char[distanceTextSize];
+		sprintf_s(nameText, distanceTextSize, "%s\n[%d m]", customEntryData->name, normalDistance);
 	}
-	else if (CustomSettingsB.ShowName && !CustomSettingsB.ShowDistance)
+	else if (customSettingsB.showName && !customSettingsB.showDistance)
 	{
-		int TextSize = Erectus::GetTextSize(CustomEntryData->Name);
-		NameText = new char[TextSize];
-		sprintf_s(NameText, TextSize, "%s", CustomEntryData->Name);
+		const auto textSize = Utils::GetTextSize(customEntryData->name);
+		nameText = new char[textSize];
+		sprintf_s(nameText, textSize, "%s", customEntryData->name);
 	}
-	else if (!CustomSettingsB.ShowName && CustomSettingsB.ShowDistance)
+	else if (!customSettingsB.showName && customSettingsB.showDistance)
 	{
-		int DistanceTextSize = sizeof("[-2147483648 m]");
-		NameText = new char[DistanceTextSize];
-		sprintf_s(NameText, DistanceTextSize, "[%d m]", NormalDistance);
+		const int distanceTextSize = sizeof"[-2147483648 m]";
+		nameText = new char[distanceTextSize];
+		sprintf_s(nameText, distanceTextSize, "[%d m]", normalDistance);
 	}
 
-	if (NameText != nullptr)
+	if (nameText != nullptr)
 	{
-		if (ErectusIni::CustomUtilitySettings.DebugEsp)
+		if (ErectusIni::customUtilitySettings.debugEsp)
 		{
-			char DebugText[sizeof("0000000000000000\n00000000\n0000000000000000\n00000000")];
-			sprintf_s(DebugText, "%llX\n%08lX\n%llX\n%08lX", CustomEntryData->EntityPtr, CustomEntryData->EntityFormid, CustomEntryData->ReferencePtr, CustomEntryData->ReferenceFormid);
-			ErectusD3D9::D3D9DrawText(DebugText, CustomSettingsB.TextShadowed, CustomSettingsB.TextCentered, Screen, CustomSettingsB.Color, *Alpha);
+			char debugText[sizeof"0000000000000000\n00000000\n0000000000000000\n00000000"];
+			sprintf_s(debugText, "%llX\n%08lX\n%llX\n%08lX", customEntryData->entityPtr, customEntryData->entityFormId,
+				customEntryData->referencePtr, customEntryData->referenceFormId);
+			Renderer::DrawText(debugText, customSettingsB.textShadowed, customSettingsB.textCentered, screen,
+				customSettingsB.color, *alpha);
 		}
 		else
 		{
-			ErectusD3D9::D3D9DrawText(NameText, CustomSettingsB.TextShadowed, CustomSettingsB.TextCentered, Screen, CustomSettingsB.Color, *Alpha);
+			Renderer::DrawText(nameText, customSettingsB.textShadowed, customSettingsB.textCentered, screen,
+				customSettingsB.color, *alpha);
 		}
 
-		delete[]NameText;
-		NameText = nullptr;
+		delete[]nameText;
+		nameText = nullptr;
 	}
 
 	return true;
@@ -2458,112 +2374,112 @@ bool ErectusMemory::RenderCustomEntryB(CustomEntry* CustomEntryData, OverlaySett
 
 bool ErectusMemory::RenderCustomEntityList()
 {
-	CustomEntityListCounter++;
-	if (CustomEntityListCounter > 60)
+	customEntityListCounter++;
+	if (customEntityListCounter > 60)
 	{
-		CustomEntityListCounter = 0;
-		if (BufferEntityListUpdated)
+		customEntityListCounter = 0;
+		if (bufferEntityListUpdated)
 		{
-			if (!BufferEntityListDestructionQueued)
+			if (!bufferEntityListDestructionQueued)
 			{
 				DeleteCustomEntityList();
-				CustomEntityList = new CustomEntry[BufferEntityListSize];
-				memcpy(&*CustomEntityList, &*BufferEntityList, BufferEntityListSize * sizeof(CustomEntry));
-				for (int i = 0; i < BufferEntityListSize; i++) BufferEntityList[i].Name = nullptr;
-				CustomEntityListSize = BufferEntityListSize;
-				CustomEntityListUpdated = true;
-				BufferEntityListDestructionQueued = true;
+				customEntityList = new CustomEntry[bufferEntityListSize];
+				memcpy(&*customEntityList, &*bufferEntityList, bufferEntityListSize * sizeof(CustomEntry));
+				for (auto i = 0; i < bufferEntityListSize; i++) bufferEntityList[i].name = nullptr;
+				customEntityListSize = bufferEntityListSize;
+				customEntityListUpdated = true;
+				bufferEntityListDestructionQueued = true;
 			}
 		}
 	}
 
-	if (CustomEntityListDestructionQueued)
+	if (customEntityListDestructionQueued)
 	{
-		CustomEntityListDestructionQueued = false;
+		customEntityListDestructionQueued = false;
 		DeleteCustomEntityList();
 	}
 
-	if (!CustomEntityListUpdated)
+	if (!customEntityListUpdated)
 	{
 		return false;
 	}
 
-	for (int i = 0; i < CustomEntityListSize; i++)
+	for (auto i = 0; i < customEntityListSize; i++)
 	{
-		if (CustomEntityList[i].Flag & CUSTOM_ENTRY_ENTITY)
+		if (customEntityList[i].flag & CUSTOM_ENTRY_ENTITY)
 		{
-			RenderCustomEntryB(&CustomEntityList[i], ErectusIni::EntitySettings);
+			RenderCustomEntryB(&customEntityList[i], ErectusIni::entitySettings);
 		}
-		else if (CustomEntityList[i].Flag & CUSTOM_ENTRY_JUNK)
+		else if (customEntityList[i].flag & CUSTOM_ENTRY_JUNK)
 		{
-			RenderCustomEntryB(&CustomEntityList[i], ErectusIni::JunkSettings);
+			RenderCustomEntryB(&customEntityList[i], ErectusIni::junkSettings);
 		}
-		else if (CustomEntityList[i].Flag & CUSTOM_ENTRY_ITEM)
+		else if (customEntityList[i].flag & CUSTOM_ENTRY_ITEM)
 		{
-			RenderCustomEntryB(&CustomEntityList[i], ErectusIni::ItemSettings);
+			RenderCustomEntryB(&customEntityList[i], ErectusIni::itemSettings);
 		}
-		else if (CustomEntityList[i].Flag & CUSTOM_ENTRY_CONTAINER)
+		else if (customEntityList[i].flag & CUSTOM_ENTRY_CONTAINER)
 		{
-			RenderCustomEntryB(&CustomEntityList[i], ErectusIni::ContainerSettings);
+			RenderCustomEntryB(&customEntityList[i], ErectusIni::containerSettings);
 		}
-		else if (CustomEntityList[i].Flag & CUSTOM_ENTRY_PLAN)
+		else if (customEntityList[i].flag & CUSTOM_ENTRY_PLAN)
 		{
-			RenderCustomEntryB(&CustomEntityList[i], ErectusIni::PlanSettings);
+			RenderCustomEntryB(&customEntityList[i], ErectusIni::planSettings);
 		}
-		else if (CustomEntityList[i].Flag & CUSTOM_ENTRY_MAGAZINE)
+		else if (customEntityList[i].flag & CUSTOM_ENTRY_MAGAZINE)
 		{
-			RenderCustomEntryB(&CustomEntityList[i], ErectusIni::MagazineSettings);
+			RenderCustomEntryB(&customEntityList[i], ErectusIni::magazineSettings);
 		}
-		else if (CustomEntityList[i].Flag & CUSTOM_ENTRY_BOBBLEHEAD)
+		else if (customEntityList[i].flag & CUSTOM_ENTRY_BOBBLEHEAD)
 		{
-			RenderCustomEntryB(&CustomEntityList[i], ErectusIni::BobbleheadSettings);
+			RenderCustomEntryB(&customEntityList[i], ErectusIni::bobbleheadSettings);
 		}
-		else if (CustomEntityList[i].Flag & CUSTOM_ENTRY_FLORA)
+		else if (customEntityList[i].flag & CUSTOM_ENTRY_FLORA)
 		{
-			RenderCustomEntryB(&CustomEntityList[i], ErectusIni::FloraSettings);
+			RenderCustomEntryB(&customEntityList[i], ErectusIni::floraSettings);
 		}
 	}
 
 	return true;
 }
 
-bool ErectusMemory::RenderCustomNPCList()
+bool ErectusMemory::RenderCustomNpcList()
 {
-	CustomNPCListCounter++;
-	if (CustomNPCListCounter > 60)
+	customNpcListCounter++;
+	if (customNpcListCounter > 60)
 	{
-		CustomNPCListCounter = 0;
-		if (BufferNPCListUpdated)
+		customNpcListCounter = 0;
+		if (bufferNpcListUpdated)
 		{
-			if (!BufferNPCListDestructionQueued)
+			if (!bufferNpcListDestructionQueued)
 			{
-				DeleteCustomNPCList();
-				CustomNPCList = new CustomEntry[BufferNPCListSize];
-				memcpy(&*CustomNPCList, &*BufferNPCList, BufferNPCListSize * sizeof(CustomEntry));
-				for (int i = 0; i < BufferNPCListSize; i++) BufferNPCList[i].Name = nullptr;
-				CustomNPCListSize = BufferNPCListSize;
-				CustomNPCListUpdated = true;
-				BufferNPCListDestructionQueued = true;
+				DeleteCustomNpcList();
+				customNpcList = new CustomEntry[bufferNpcListSize];
+				memcpy(&*customNpcList, &*bufferNpcList, bufferNpcListSize * sizeof(CustomEntry));
+				for (auto i = 0; i < bufferNpcListSize; i++) bufferNpcList[i].name = nullptr;
+				customNpcListSize = bufferNpcListSize;
+				customNpcListUpdated = true;
+				bufferNpcListDestructionQueued = true;
 			}
 		}
 	}
 
-	if (CustomNPCListDestructionQueued)
+	if (customNpcListDestructionQueued)
 	{
-		CustomNPCListDestructionQueued = false;
-		DeleteCustomNPCList();
+		customNpcListDestructionQueued = false;
+		DeleteCustomNpcList();
 	}
 
-	if (!CustomNPCListUpdated)
+	if (!customNpcListUpdated)
 	{
 		return false;
 	}
 
-	for (int i = 0; i < CustomNPCListSize; i++)
+	for (auto i = 0; i < customNpcListSize; i++)
 	{
-		if (CustomNPCList[i].Flag & CUSTOM_ENTRY_NPC)
+		if (customNpcList[i].flag & CUSTOM_ENTRY_NPC)
 		{
-			RenderCustomEntryA(&CustomNPCList[i], ErectusIni::NpcSettings);
+			RenderCustomEntryA(&customNpcList[i], ErectusIni::npcSettings);
 		}
 	}
 
@@ -2572,619 +2488,561 @@ bool ErectusMemory::RenderCustomNPCList()
 
 bool ErectusMemory::RenderCustomPlayerList()
 {
-	CustomPlayerListCounter++;
-	if (CustomPlayerListCounter > 60)
+	customPlayerListCounter++;
+	if (customPlayerListCounter > 60)
 	{
-		CustomPlayerListCounter = 0;
-		if (BufferPlayerListUpdated)
+		customPlayerListCounter = 0;
+		if (bufferPlayerListUpdated)
 		{
-			if (!BufferPlayerListDestructionQueued)
+			if (!bufferPlayerListDestructionQueued)
 			{
 				DeleteCustomPlayerList();
-				CustomPlayerList = new CustomEntry[BufferPlayerListSize];
-				memcpy(&*CustomPlayerList, &*BufferPlayerList, BufferPlayerListSize * sizeof(CustomEntry));
-				for (int i = 0; i < BufferPlayerListSize; i++) BufferPlayerList[i].Name = nullptr;
-				CustomPlayerListSize = BufferPlayerListSize;
-				CustomPlayerListUpdated = true;
-				BufferPlayerListDestructionQueued = true;
+				customPlayerList = new CustomEntry[bufferPlayerListSize];
+				memcpy(&*customPlayerList, &*bufferPlayerList, bufferPlayerListSize * sizeof(CustomEntry));
+				for (auto i = 0; i < bufferPlayerListSize; i++) bufferPlayerList[i].name = nullptr;
+				customPlayerListSize = bufferPlayerListSize;
+				customPlayerListUpdated = true;
+				bufferPlayerListDestructionQueued = true;
 			}
 		}
 	}
 
-	if (CustomPlayerListDestructionQueued)
+	if (customPlayerListDestructionQueued)
 	{
-		CustomPlayerListDestructionQueued = false;
+		customPlayerListDestructionQueued = false;
 		DeleteCustomPlayerList();
 	}
 
-	if (!CustomPlayerListUpdated)
+	if (!customPlayerListUpdated)
 	{
 		return false;
 	}
 
-	for (int i = 0; i < CustomPlayerListSize; i++)
+	for (auto i = 0; i < customPlayerListSize; i++)
 	{
-		if (CustomPlayerList[i].Flag & CUSTOM_ENTRY_PLAYER)
+		if (customPlayerList[i].flag & CUSTOM_ENTRY_PLAYER)
 		{
-			RenderCustomEntryA(&CustomPlayerList[i], ErectusIni::PlayerSettings);
+			RenderCustomEntryA(&customPlayerList[i], ErectusIni::playerSettings);
 		}
 	}
 
 	return true;
 }
 
-bool ErectusMemory::MessagePatcher(bool State)
+bool ErectusMemory::MessagePatcher(const bool state)
 {
-	BYTE FakeMessagesCheck[2];
-	if (!Erectus::RPM(ErectusProcess::Exe + OFFSET_FAKE_MESSAGE, &FakeMessagesCheck, sizeof(FakeMessagesCheck))) return false;
+	BYTE fakeMessagesCheck[2];
+	if (!Utils::Rpm(ErectusProcess::exe + OFFSET_FAKE_MESSAGE, &fakeMessagesCheck, sizeof fakeMessagesCheck)) return
+		false;
 
-	BYTE FakeMessagesEnabled[] = { 0xB0, 0x01 };
-	BYTE FakeMessagesDisabled[] = { 0x32, 0xC0 };
+	BYTE fakeMessagesEnabled[] = { 0xB0, 0x01 };
+	BYTE fakeMessagesDisabled[] = { 0x32, 0xC0 };
 
-	if (!memcmp(FakeMessagesCheck, FakeMessagesEnabled, sizeof(FakeMessagesEnabled)))
+	if (!memcmp(fakeMessagesCheck, fakeMessagesEnabled, sizeof fakeMessagesEnabled))
 	{
-		if (State)
+		if (state)
 		{
 			return true;
 		}
-		else
-		{
-			return Erectus::WPM(ErectusProcess::Exe + OFFSET_FAKE_MESSAGE, &FakeMessagesDisabled, sizeof(FakeMessagesDisabled));
-		}
+		return Utils::Wpm(ErectusProcess::exe + OFFSET_FAKE_MESSAGE, &fakeMessagesDisabled,
+			sizeof fakeMessagesDisabled);
 	}
 
-	if (!memcmp(FakeMessagesCheck, FakeMessagesDisabled, sizeof(FakeMessagesDisabled)))
+	if (!memcmp(fakeMessagesCheck, fakeMessagesDisabled, sizeof fakeMessagesDisabled))
 	{
-		if (State)
+		if (state)
 		{
-			return Erectus::WPM(ErectusProcess::Exe + OFFSET_FAKE_MESSAGE, &FakeMessagesEnabled, sizeof(FakeMessagesEnabled));
+			return Utils::Wpm(ErectusProcess::exe + OFFSET_FAKE_MESSAGE, &fakeMessagesEnabled,
+				sizeof fakeMessagesEnabled);
 		}
-		else
-		{
-			return true;
-		}
+		return true;
 	}
 
 	return false;
 }
 
-bool ErectusMemory::SendMessageToServer(void* Message, size_t Size)
+bool ErectusMemory::SendMessageToServer(void* message, const size_t size)
 {
-	if (!MessagePatcher(AllowMessages))
+	if (!MessagePatcher(allowMessages))
 	{
 		return false;
 	}
 
-	if (!AllowMessages)
+	if (!allowMessages)
 	{
 		return false;
 	}
 
-	size_t AllocSize = Size + sizeof(ExternalFunction);
-	DWORD64 AllocAddress = Erectus::AllocEx(AllocSize);
-	if (AllocAddress == 0) return false;
+	const auto allocSize = size + sizeof(ExternalFunction);
+	const auto allocAddress = Utils::AllocEx(allocSize);
+	if (allocAddress == 0) return false;
 
-	ExternalFunction ExternalFunctionData;
-	ExternalFunctionData.Address = ErectusProcess::Exe + OFFSET_MESSAGE_SENDER;
-	ExternalFunctionData.RCX = AllocAddress + sizeof(ExternalFunction);
-	ExternalFunctionData.RDX = 0;
-	ExternalFunctionData.R8 = 0;
-	ExternalFunctionData.R9 = 0;
+	ExternalFunction externalFunctionData;
+	externalFunctionData.address = ErectusProcess::exe + OFFSET_MESSAGE_SENDER;
+	externalFunctionData.rcx = allocAddress + sizeof(ExternalFunction);
+	externalFunctionData.rdx = 0;
+	externalFunctionData.r8 = 0;
+	externalFunctionData.r9 = 0;
 
-	BYTE* PageData = new BYTE[AllocSize];
-	memset(PageData, 0x00, AllocSize);
-	memcpy(PageData, &ExternalFunctionData, sizeof(ExternalFunctionData));
-	memcpy(&PageData[sizeof(ExternalFunction)], Message, Size);
-	bool Written = Erectus::WPM(AllocAddress, &*PageData, AllocSize);
+	auto* pageData = new BYTE[allocSize];
+	memset(pageData, 0x00, allocSize);
+	memcpy(pageData, &externalFunctionData, sizeof externalFunctionData);
+	memcpy(&pageData[sizeof(ExternalFunction)], message, size);
+	const auto written = Utils::Wpm(allocAddress, &*pageData, allocSize);
 
-	delete[]PageData;
-	PageData = nullptr;
+	delete[]pageData;
+	pageData = nullptr;
 
-	if (!Written)
+	if (!written)
 	{
-		Erectus::FreeEx(AllocAddress);
+		Utils::FreeEx(allocAddress);
 		return false;
 	}
 
-	DWORD64 ParamAddress = AllocAddress + sizeof(ExternalFunction::ASM);
-	HANDLE Thread = CreateRemoteThread(ErectusProcess::Handle, NULL, 0, LPTHREAD_START_ROUTINE(AllocAddress), LPVOID(ParamAddress), 0, 0);
+	const auto paramAddress = allocAddress + sizeof ExternalFunction::ASM;
+	auto* const thread = CreateRemoteThread(ErectusProcess::handle, nullptr, 0, LPTHREAD_START_ROUTINE(allocAddress),
+		LPVOID(paramAddress), 0, nullptr);
 
-	if (Thread == NULL)
+	if (thread == nullptr)
 	{
-		Erectus::FreeEx(AllocAddress);
+		Utils::FreeEx(allocAddress);
 		return false;
 	}
 
-	DWORD ThreadResult = WaitForSingleObject(Thread, 3000);
-	CloseHandle(Thread);
+	const auto threadResult = WaitForSingleObject(thread, 3000);
+	CloseHandle(thread);
 
-	if (ThreadResult == WAIT_TIMEOUT)
+	if (threadResult == WAIT_TIMEOUT)
 	{
 		return false;
 	}
 
-	Erectus::FreeEx(AllocAddress);
+	Utils::FreeEx(allocAddress);
 	return true;
 }
 
 bool ErectusMemory::LootScrap()
 {
-	if (!MessagePatcher(AllowMessages))
+	if (!MessagePatcher(allowMessages))
 	{
 		return false;
 	}
 
-	if (!AllowMessages)
+	if (!allowMessages)
 	{
 		return false;
 	}
 
-	DWORD64 LocalPlayerPtr = GetLocalPlayerPtr(true);
-	if (!Erectus::Valid(LocalPlayerPtr))
+	auto localPlayerPtr = GetLocalPlayerPtr(true);
+	if (!Utils::Valid(localPlayerPtr))
 	{
-		ErectusIni::CustomScrapLooterSettings.ScrapAutomaticLootingEnabled = false;
+		ErectusIni::customScrapLooterSettings.scrapAutomaticLootingEnabled = false;
 		return false;
 	}
 
-	Entity LocalPlayer;
-	if (!Erectus::RPM(LocalPlayerPtr, &LocalPlayer, sizeof(LocalPlayer))) return false;
+	Entity localPlayer{};
+	if (!Utils::Rpm(localPlayerPtr, &localPlayer, sizeof localPlayer)) return false;
 
-	int BufferSize = 0;
-	DWORD64* BufferList = GetEntityList(&BufferSize);
-	if (BufferList == nullptr) return false;
+	auto bufferSize = 0;
+	auto* bufferList = GetEntityList(&bufferSize);
+	if (bufferList == nullptr) return false;
 
-	for (int i = 0; i < BufferSize; i++)
+	for (auto i = 0; i < bufferSize; i++)
 	{
-		if (!Erectus::Valid(BufferList[i])) continue;
-		if (BufferList[i] == LocalPlayerPtr) continue;
+		if (!Utils::Valid(bufferList[i])) continue;
+		if (bufferList[i] == localPlayerPtr) continue;
 
-		Entity EntityData;
-		if (!Erectus::RPM(BufferList[i], &EntityData, sizeof(EntityData))) continue;
-		if (!Erectus::Valid(EntityData.ReferencePtr)) continue;
+		Entity entityData{};
+		if (!Utils::Rpm(bufferList[i], &entityData, sizeof entityData)) continue;
+		if (!Utils::Valid(entityData.referencePtr)) continue;
 
-		if (EntityData.SpawnFlag != 0x02)
+		if (entityData.spawnFlag != 0x02)
 		{
 			continue;
 		}
 
-		Reference ReferenceData;
-		if (!Erectus::RPM(EntityData.ReferencePtr, &ReferenceData, sizeof(ReferenceData))) continue;
-		if (ReferenceData.Formid == 0x00000007) continue;
+		Reference referenceData{};
+		if (!Utils::Rpm(entityData.referencePtr, &referenceData, sizeof referenceData)) continue;
+		if (referenceData.formId == 0x00000007) continue;
 
-		DWORD64 EntityFlag = CUSTOM_ENTRY_DEFAULT;
-		DWORD64 EntityNamePtr = 0;
-		int EnabledDistance = 0;
+		auto entityFlag = CUSTOM_ENTRY_DEFAULT;
+		DWORD64 entityNamePtr = 0;
+		auto enabledDistance = 0;
 
-		GetCustomEntityData(ReferenceData, &EntityFlag, &EntityNamePtr, &EnabledDistance, true, false);
-		if (!(EntityFlag & CUSTOM_ENTRY_VALID_SCRAP)) continue;
+		GetCustomEntityData(referenceData, &entityFlag, &entityNamePtr, &enabledDistance, true, false);
+		if (!(entityFlag & CUSTOM_ENTRY_VALID_SCRAP)) continue;
 
-		float Distance = Erectus::GetDistance(EntityData.Position, LocalPlayer.Position);
-		int NormalDistance = int(Distance * 0.01f);
+		auto distance = Utils::GetDistance(entityData.position, localPlayer.position);
+		auto normalDistance = static_cast<int>(distance * 0.01f);
 
-		if (NormalDistance > ErectusIni::CustomScrapLooterSettings.ScrapLooterDistance)
+		if (normalDistance > ErectusIni::customScrapLooterSettings.scrapLooterDistance)
 		{
 			continue;
 		}
 
-		RequestActivateRefMessage RequestActivateRefMessageData;
-		RequestActivateRefMessageData.vtable = ErectusProcess::Exe + VTABLE_REQUESTACTIVATEREFMSG;
-		RequestActivateRefMessageData.Formid = EntityData.Formid;
-		RequestActivateRefMessageData.Choice = 0xFF;
-		RequestActivateRefMessageData.ForceActivate = 0;
-		SendMessageToServer(&RequestActivateRefMessageData, sizeof(RequestActivateRefMessageData));
+		RequestActivateRefMessage requestActivateRefMessageData{};
+		requestActivateRefMessageData.vtable = ErectusProcess::exe + VTABLE_REQUESTACTIVATEREFMSG;
+		requestActivateRefMessageData.formId = entityData.formId;
+		requestActivateRefMessageData.choice = 0xFF;
+		requestActivateRefMessageData.forceActivate = 0;
+		SendMessageToServer(&requestActivateRefMessageData, sizeof requestActivateRefMessageData);
 	}
 
-	delete[]BufferList;
-	BufferList = nullptr;
+	delete[]bufferList;
+	bufferList = nullptr;
 	return true;
 }
 
 bool ErectusMemory::CheckItemLooterSettings()
 {
-	if (ErectusIni::CustomItemLooterSettings.ItemLooterWeaponsEnabled && ErectusIni::CustomItemLooterSettings.ItemLooterWeaponsDistance > 0)
+	if (ErectusIni::customItemLooterSettings.itemLooterWeaponsEnabled && ErectusIni::customItemLooterSettings.
+		itemLooterWeaponsDistance > 0)
 	{
 		return true;
 	}
-	else if (ErectusIni::CustomItemLooterSettings.ItemLooterArmorEnabled && ErectusIni::CustomItemLooterSettings.ItemLooterArmorDistance > 0)
+	if (ErectusIni::customItemLooterSettings.itemLooterArmorEnabled && ErectusIni::customItemLooterSettings.
+		itemLooterArmorDistance > 0)
 	{
 		return true;
 	}
-	else if (ErectusIni::CustomItemLooterSettings.ItemLooterAmmoEnabled && ErectusIni::CustomItemLooterSettings.ItemLooterAmmoDistance > 0)
+	if (ErectusIni::customItemLooterSettings.itemLooterAmmoEnabled && ErectusIni::customItemLooterSettings.
+		itemLooterAmmoDistance > 0)
 	{
 		return true;
 	}
-	else if (ErectusIni::CustomItemLooterSettings.ItemLooterModsEnabled && ErectusIni::CustomItemLooterSettings.ItemLooterModsDistance > 0)
+	if (ErectusIni::customItemLooterSettings.itemLooterModsEnabled && ErectusIni::customItemLooterSettings.
+		itemLooterModsDistance > 0)
 	{
 		return true;
 	}
-	else if (ErectusIni::CustomItemLooterSettings.ItemLooterMagazinesEnabled && ErectusIni::CustomItemLooterSettings.ItemLooterMagazinesDistance > 0)
+	if (ErectusIni::customItemLooterSettings.itemLooterMagazinesEnabled && ErectusIni::customItemLooterSettings.
+		itemLooterMagazinesDistance > 0)
 	{
 		return true;
 	}
-	else if (ErectusIni::CustomItemLooterSettings.ItemLooterBobbleheadsEnabled && ErectusIni::CustomItemLooterSettings.ItemLooterBobbleheadsDistance > 0)
+	if (ErectusIni::customItemLooterSettings.itemLooterBobbleheadsEnabled && ErectusIni::customItemLooterSettings.
+		itemLooterBobbleheadsDistance > 0)
 	{
 		return true;
 	}
-	else if (ErectusIni::CustomItemLooterSettings.ItemLooterAidEnabled && ErectusIni::CustomItemLooterSettings.ItemLooterAidDistance > 0)
+	if (ErectusIni::customItemLooterSettings.itemLooterAidEnabled && ErectusIni::customItemLooterSettings.
+		itemLooterAidDistance > 0)
 	{
 		return true;
 	}
-	else if (ErectusIni::CustomItemLooterSettings.ItemLooterKnownPlansEnabled && ErectusIni::CustomItemLooterSettings.ItemLooterKnownPlansDistance > 0)
+	if (ErectusIni::customItemLooterSettings.itemLooterKnownPlansEnabled && ErectusIni::customItemLooterSettings.
+		itemLooterKnownPlansDistance > 0)
 	{
 		return true;
 	}
-	else if (ErectusIni::CustomItemLooterSettings.ItemLooterUnknownPlansEnabled && ErectusIni::CustomItemLooterSettings.ItemLooterUnknownPlansDistance > 0)
+	if (ErectusIni::customItemLooterSettings.itemLooterUnknownPlansEnabled && ErectusIni::customItemLooterSettings.
+		itemLooterUnknownPlansDistance > 0)
 	{
 		return true;
 	}
-	else if (ErectusIni::CustomItemLooterSettings.ItemLooterMiscEnabled && ErectusIni::CustomItemLooterSettings.ItemLooterMiscDistance > 0)
+	if (ErectusIni::customItemLooterSettings.itemLooterMiscEnabled && ErectusIni::customItemLooterSettings.
+		itemLooterMiscDistance > 0)
 	{
 		return true;
 	}
-	else if (ErectusIni::CustomItemLooterSettings.ItemLooterUnlistedEnabled && ErectusIni::CustomItemLooterSettings.ItemLooterUnlistedDistance > 0)
+	if (ErectusIni::customItemLooterSettings.itemLooterUnlistedEnabled && ErectusIni::customItemLooterSettings.
+		itemLooterUnlistedDistance > 0)
 	{
 		return true;
 	}
-	else if (ErectusIni::CustomItemLooterSettings.ItemLooterListEnabled && ErectusIni::CustomItemLooterSettings.ItemLooterListDistance > 0)
+	if (ErectusIni::customItemLooterSettings.itemLooterListEnabled && ErectusIni::customItemLooterSettings.
+		itemLooterListDistance > 0)
 	{
 		return CheckItemLooterList();
 	}
-	else
-	{
-		return false;
-	}
+	return false;
 }
 
 bool ErectusMemory::CheckOnlyUseItemLooterList()
 {
-	if (ErectusIni::CustomItemLooterSettings.ItemLooterWeaponsEnabled && ErectusIni::CustomItemLooterSettings.ItemLooterWeaponsDistance > 0)
+	if (ErectusIni::customItemLooterSettings.itemLooterWeaponsEnabled && ErectusIni::customItemLooterSettings.
+		itemLooterWeaponsDistance > 0)
 	{
 		return false;
 	}
-	else if (ErectusIni::CustomItemLooterSettings.ItemLooterArmorEnabled && ErectusIni::CustomItemLooterSettings.ItemLooterArmorDistance > 0)
+	if (ErectusIni::customItemLooterSettings.itemLooterArmorEnabled && ErectusIni::customItemLooterSettings.
+		itemLooterArmorDistance > 0)
 	{
 		return false;
 	}
-	else if (ErectusIni::CustomItemLooterSettings.ItemLooterAmmoEnabled && ErectusIni::CustomItemLooterSettings.ItemLooterAmmoDistance > 0)
+	if (ErectusIni::customItemLooterSettings.itemLooterAmmoEnabled && ErectusIni::customItemLooterSettings.
+		itemLooterAmmoDistance > 0)
 	{
 		return false;
 	}
-	else if (ErectusIni::CustomItemLooterSettings.ItemLooterModsEnabled && ErectusIni::CustomItemLooterSettings.ItemLooterModsDistance > 0)
+	if (ErectusIni::customItemLooterSettings.itemLooterModsEnabled && ErectusIni::customItemLooterSettings.
+		itemLooterModsDistance > 0)
 	{
 		return false;
 	}
-	else if (ErectusIni::CustomItemLooterSettings.ItemLooterMagazinesEnabled && ErectusIni::CustomItemLooterSettings.ItemLooterMagazinesDistance > 0)
+	if (ErectusIni::customItemLooterSettings.itemLooterMagazinesEnabled && ErectusIni::customItemLooterSettings.
+		itemLooterMagazinesDistance > 0)
 	{
 		return false;
 	}
-	else if (ErectusIni::CustomItemLooterSettings.ItemLooterBobbleheadsEnabled && ErectusIni::CustomItemLooterSettings.ItemLooterBobbleheadsDistance > 0)
+	if (ErectusIni::customItemLooterSettings.itemLooterBobbleheadsEnabled && ErectusIni::customItemLooterSettings.itemLooterBobbleheadsDistance > 0)
 	{
 		return false;
 	}
-	else if (ErectusIni::CustomItemLooterSettings.ItemLooterAidEnabled && ErectusIni::CustomItemLooterSettings.ItemLooterAidDistance > 0)
+	if (ErectusIni::customItemLooterSettings.itemLooterAidEnabled && ErectusIni::customItemLooterSettings.itemLooterAidDistance > 0)
 	{
 		return false;
 	}
-	else if (ErectusIni::CustomItemLooterSettings.ItemLooterKnownPlansEnabled && ErectusIni::CustomItemLooterSettings.ItemLooterKnownPlansDistance > 0)
+	if (ErectusIni::customItemLooterSettings.itemLooterKnownPlansEnabled && ErectusIni::customItemLooterSettings.itemLooterKnownPlansDistance > 0)
 	{
 		return false;
 	}
-	else if (ErectusIni::CustomItemLooterSettings.ItemLooterUnknownPlansEnabled && ErectusIni::CustomItemLooterSettings.ItemLooterUnknownPlansDistance > 0)
+	if (ErectusIni::customItemLooterSettings.itemLooterUnknownPlansEnabled && ErectusIni::customItemLooterSettings.itemLooterUnknownPlansDistance > 0)
 	{
 		return false;
 	}
-	else if (ErectusIni::CustomItemLooterSettings.ItemLooterMiscEnabled && ErectusIni::CustomItemLooterSettings.ItemLooterMiscDistance > 0)
+	if (ErectusIni::customItemLooterSettings.itemLooterMiscEnabled && ErectusIni::customItemLooterSettings.itemLooterMiscDistance > 0)
 	{
 		return false;
 	}
-	else if (ErectusIni::CustomItemLooterSettings.ItemLooterUnlistedEnabled && ErectusIni::CustomItemLooterSettings.ItemLooterUnlistedDistance > 0)
+	if (ErectusIni::customItemLooterSettings.itemLooterUnlistedEnabled && ErectusIni::customItemLooterSettings.itemLooterUnlistedDistance > 0)
 	{
 		return false;
 	}
-	else if (ErectusIni::CustomItemLooterSettings.ItemLooterListEnabled && ErectusIni::CustomItemLooterSettings.ItemLooterListDistance > 0)
+	if (ErectusIni::customItemLooterSettings.itemLooterListEnabled && ErectusIni::customItemLooterSettings.itemLooterListDistance > 0)
 	{
 		return CheckItemLooterList();
 	}
-	else
-	{
-		return false;
-	}
+	return false;
 }
 
-bool ErectusMemory::CheckEnabledItem(DWORD Formid, DWORD64 EntityFlag, int NormalDistance)
+bool ErectusMemory::CheckEnabledItem(const DWORD formId, const DWORD64 entityFlag, const int normalDistance)
 {
-	if (ErectusIni::CustomItemLooterSettings.ItemLooterListEnabled)
+	if (ErectusIni::customItemLooterSettings.itemLooterListEnabled)
 	{
-		if (CheckFormidArray(Formid, ErectusIni::CustomItemLooterSettings.ItemLooterEnabledList, ErectusIni::CustomItemLooterSettings.ItemLooterFormidList, 100))
+		if (CheckFormIdArray(formId, ErectusIni::customItemLooterSettings.itemLooterEnabledList, ErectusIni::customItemLooterSettings.itemLooterFormIdList, 100))
 		{
-			if (NormalDistance <= ErectusIni::CustomItemLooterSettings.ItemLooterListDistance)
-			{
+			if (normalDistance <= ErectusIni::customItemLooterSettings.itemLooterListDistance)
 				return true;
-			}
 		}
 	}
 
-	if (EntityFlag & CUSTOM_ENTRY_WEAPON)
-	{
-		if (NormalDistance <= ErectusIni::CustomItemLooterSettings.ItemLooterWeaponsDistance)
-		{
-			return ErectusIni::CustomItemLooterSettings.ItemLooterWeaponsEnabled;
-		}
-	}
-	else if (EntityFlag & CUSTOM_ENTRY_ARMOR)
-	{
-		if (NormalDistance <= ErectusIni::CustomItemLooterSettings.ItemLooterArmorDistance)
-		{
-			return ErectusIni::CustomItemLooterSettings.ItemLooterArmorEnabled;
-		}
-	}
-	else if (EntityFlag & CUSTOM_ENTRY_AMMO)
-	{
-		if (NormalDistance <= ErectusIni::CustomItemLooterSettings.ItemLooterAmmoDistance)
-		{
-			return ErectusIni::CustomItemLooterSettings.ItemLooterAmmoEnabled;
-		}
-	}
-	else if (EntityFlag & CUSTOM_ENTRY_MOD)
-	{
-		if (NormalDistance <= ErectusIni::CustomItemLooterSettings.ItemLooterModsDistance)
-		{
-			return ErectusIni::CustomItemLooterSettings.ItemLooterModsEnabled;
-		}
-	}
-	else if (EntityFlag & CUSTOM_ENTRY_MAGAZINE)
-	{
-		if (NormalDistance <= ErectusIni::ErectusIni::CustomItemLooterSettings.ItemLooterMagazinesDistance)
-		{
-			return ErectusIni::CustomItemLooterSettings.ItemLooterMagazinesEnabled;
-		}
-	}
-	else if (EntityFlag & CUSTOM_ENTRY_BOBBLEHEAD)
-	{
-		if (NormalDistance <= ErectusIni::CustomItemLooterSettings.ItemLooterBobbleheadsDistance)
-		{
-			return ErectusIni::CustomItemLooterSettings.ItemLooterBobbleheadsEnabled;
-		}
-	}
-	else if (EntityFlag & CUSTOM_ENTRY_AID)
-	{
-		if (NormalDistance <= ErectusIni::CustomItemLooterSettings.ItemLooterAidDistance)
-		{
-			return ErectusIni::CustomItemLooterSettings.ItemLooterAidEnabled;
-		}
-	}
-	else if (EntityFlag & CUSTOM_ENTRY_PLAN)
-	{
-		if (EntityFlag & CUSTOM_ENTRY_KNOWN_RECIPE)
-		{
-			if (NormalDistance <= ErectusIni::CustomItemLooterSettings.ItemLooterKnownPlansDistance)
-			{
-				return ErectusIni::CustomItemLooterSettings.ItemLooterKnownPlansEnabled;
-			}
-		}
-		else if (EntityFlag & CUSTOM_ENTRY_UNKNOWN_RECIPE)
-		{
-			if (NormalDistance <= ErectusIni::CustomItemLooterSettings.ItemLooterUnknownPlansDistance)
-			{
-				return ErectusIni::CustomItemLooterSettings.ItemLooterUnknownPlansEnabled;
-			}
-		}
-		else if (EntityFlag & CUSTOM_ENTRY_FAILED_RECIPE)
-		{
-			if (NormalDistance <= ErectusIni::CustomItemLooterSettings.ItemLooterUnknownPlansDistance)
-			{
-				return ErectusIni::CustomItemLooterSettings.ItemLooterUnknownPlansEnabled;
-			}
-		}
-	}
-	else if (EntityFlag & CUSTOM_ENTRY_MISC)
-	{
-		if (NormalDistance <= ErectusIni::CustomItemLooterSettings.ItemLooterMiscDistance)
-		{
-			return ErectusIni::CustomItemLooterSettings.ItemLooterMiscEnabled;
-		}
-	}
-
-	if (ErectusIni::CustomItemLooterSettings.ItemLooterUnlistedEnabled)
-	{
-		if (NormalDistance <= ErectusIni::CustomItemLooterSettings.ItemLooterUnlistedDistance)
-		{
-			return true;
-		}
-	}
+	if (entityFlag & CUSTOM_ENTRY_WEAPON && normalDistance <= ErectusIni::customItemLooterSettings.itemLooterWeaponsDistance)
+		return ErectusIni::customItemLooterSettings.itemLooterWeaponsEnabled;
+	if (entityFlag & CUSTOM_ENTRY_ARMOR && normalDistance <= ErectusIni::customItemLooterSettings.itemLooterArmorDistance)
+		return ErectusIni::customItemLooterSettings.itemLooterArmorEnabled;
+	if (entityFlag & CUSTOM_ENTRY_AMMO && normalDistance <= ErectusIni::customItemLooterSettings.itemLooterAmmoDistance)
+		return ErectusIni::customItemLooterSettings.itemLooterAmmoEnabled;
+	if (entityFlag & CUSTOM_ENTRY_MOD && normalDistance <= ErectusIni::customItemLooterSettings.itemLooterModsDistance)
+		return ErectusIni::customItemLooterSettings.itemLooterModsEnabled;
+	if (entityFlag & CUSTOM_ENTRY_MAGAZINE && normalDistance <= ErectusIni::customItemLooterSettings.itemLooterMagazinesDistance)
+		return ErectusIni::customItemLooterSettings.itemLooterMagazinesEnabled;
+	if (entityFlag & CUSTOM_ENTRY_BOBBLEHEAD && normalDistance <= ErectusIni::customItemLooterSettings.itemLooterBobbleheadsDistance)
+		return ErectusIni::customItemLooterSettings.itemLooterBobbleheadsEnabled;
+	if (entityFlag & CUSTOM_ENTRY_AID && normalDistance <= ErectusIni::customItemLooterSettings.itemLooterAidDistance)
+		return ErectusIni::customItemLooterSettings.itemLooterAidEnabled;
+	if (entityFlag & CUSTOM_ENTRY_KNOWN_RECIPE && normalDistance <= ErectusIni::customItemLooterSettings.itemLooterKnownPlansDistance)
+		return ErectusIni::customItemLooterSettings.itemLooterKnownPlansEnabled;
+	if (entityFlag & CUSTOM_ENTRY_UNKNOWN_RECIPE && normalDistance <= ErectusIni::customItemLooterSettings.itemLooterUnknownPlansDistance)
+		return ErectusIni::customItemLooterSettings.itemLooterUnknownPlansEnabled;
+	if (entityFlag & CUSTOM_ENTRY_FAILED_RECIPE && normalDistance <= ErectusIni::customItemLooterSettings.itemLooterUnknownPlansDistance)
+		return ErectusIni::customItemLooterSettings.itemLooterUnknownPlansEnabled;
+	if (entityFlag & CUSTOM_ENTRY_MISC && normalDistance <= ErectusIni::customItemLooterSettings.itemLooterMiscDistance)
+		return ErectusIni::customItemLooterSettings.itemLooterMiscEnabled;
+	if (ErectusIni::customItemLooterSettings.itemLooterUnlistedEnabled && normalDistance <= ErectusIni::customItemLooterSettings.itemLooterUnlistedDistance)
+		return true;
 
 	return false;
 }
 
 bool ErectusMemory::LootItems()
 {
-	if (!MessagePatcher(AllowMessages))
+	if (!MessagePatcher(allowMessages))
 	{
 		return false;
 	}
 
-	if (!AllowMessages)
+	if (!allowMessages)
 	{
 		return false;
 	}
 
-	DWORD64 LocalPlayerPtr = GetLocalPlayerPtr(true);
-	if (!Erectus::Valid(LocalPlayerPtr))
+	auto localPlayerPtr = GetLocalPlayerPtr(true);
+	if (!Utils::Valid(localPlayerPtr))
 	{
-		ErectusIni::CustomItemLooterSettings.ItemAutomaticLootingEnabled = false;
+		ErectusIni::customItemLooterSettings.itemAutomaticLootingEnabled = false;
 		return false;
 	}
 
-	Entity LocalPlayer;
-	if (!Erectus::RPM(LocalPlayerPtr, &LocalPlayer, sizeof(LocalPlayer))) return false;
+	Entity localPlayer{};
+	if (!Utils::Rpm(localPlayerPtr, &localPlayer, sizeof localPlayer)) return false;
 
-	int BufferSize = 0;
-	DWORD64* BufferList = GetEntityList(&BufferSize);
-	if (BufferList == nullptr) return false;
+	auto bufferSize = 0;
+	auto* bufferList = GetEntityList(&bufferSize);
+	if (bufferList == nullptr) return false;
 
-	bool OnlyUseItemLooterList = CheckOnlyUseItemLooterList();
-	bool UseItemLooterBlacklist = CheckItemLooterBlacklist();
+	auto onlyUseItemLooterList = CheckOnlyUseItemLooterList();
+	auto useItemLooterBlacklist = CheckItemLooterBlacklist();
 
-	for (int i = 0; i < BufferSize; i++)
+	for (auto i = 0; i < bufferSize; i++)
 	{
-		if (!Erectus::Valid(BufferList[i])) continue;
-		if (BufferList[i] == LocalPlayerPtr) continue;
+		if (!Utils::Valid(bufferList[i])) continue;
+		if (bufferList[i] == localPlayerPtr) continue;
 
-		Entity EntityData;
-		if (!Erectus::RPM(BufferList[i], &EntityData, sizeof(EntityData))) continue;
-		if (!Erectus::Valid(EntityData.ReferencePtr)) continue;
+		Entity entityData{};
+		if (!Utils::Rpm(bufferList[i], &entityData, sizeof entityData)) continue;
+		if (!Utils::Valid(entityData.referencePtr)) continue;
 
-		if (EntityData.SpawnFlag != 0x02)
+		if (entityData.spawnFlag != 0x02)
 		{
 			continue;
 		}
 
-		Reference ReferenceData;
-		if (!Erectus::RPM(EntityData.ReferencePtr, &ReferenceData, sizeof(ReferenceData))) continue;
+		Reference referenceData{};
+		if (!Utils::Rpm(entityData.referencePtr, &referenceData, sizeof referenceData)) continue;
 
-		if (UseItemLooterBlacklist)
+		if (useItemLooterBlacklist)
 		{
-			if (CheckFormidArray(ReferenceData.Formid, ErectusIni::CustomItemLooterSettings.ItemLooterBlacklistEnabled, ErectusIni::CustomItemLooterSettings.ItemLooterBlacklist, 64))
+			if (CheckFormIdArray(referenceData.formId, ErectusIni::customItemLooterSettings.itemLooterBlacklistEnabled,
+				ErectusIni::customItemLooterSettings.itemLooterBlacklist, 64))
 			{
 				continue;
 			}
 		}
 
-		if (OnlyUseItemLooterList)
+		if (onlyUseItemLooterList)
 		{
-			if (!CheckFormidArray(ReferenceData.Formid, ErectusIni::CustomItemLooterSettings.ItemLooterEnabledList, ErectusIni::CustomItemLooterSettings.ItemLooterFormidList, 100))
+			if (!CheckFormIdArray(referenceData.formId, ErectusIni::customItemLooterSettings.itemLooterEnabledList,
+				ErectusIni::customItemLooterSettings.itemLooterFormIdList, 100))
 			{
 				continue;
 			}
 		}
 
-		DWORD64 EntityFlag = CUSTOM_ENTRY_DEFAULT;
-		DWORD64 EntityNamePtr = 0;
-		int EnabledDistance = 0;
+		auto entityFlag = CUSTOM_ENTRY_DEFAULT;
+		DWORD64 entityNamePtr = 0;
+		auto enabledDistance = 0;
 
-		GetCustomEntityData(ReferenceData, &EntityFlag, &EntityNamePtr, &EnabledDistance, false, false);
-		if (!(EntityFlag & CUSTOM_ENTRY_VALID_ITEM)) continue;
-		if (EntityFlag & CUSTOM_ENTRY_JUNK) continue;
+		GetCustomEntityData(referenceData, &entityFlag, &entityNamePtr, &enabledDistance, false, false);
+		if (!(entityFlag & CUSTOM_ENTRY_VALID_ITEM)) continue;
+		if (entityFlag & CUSTOM_ENTRY_JUNK) continue;
 
-		float Distance = Erectus::GetDistance(EntityData.Position, LocalPlayer.Position);
-		int NormalDistance = int(Distance * 0.01f);
+		auto distance = Utils::GetDistance(entityData.position, localPlayer.position);
+		auto normalDistance = static_cast<int>(distance * 0.01f);
 
-		if (!OnlyUseItemLooterList)
+		if (!onlyUseItemLooterList)
 		{
-			if (!CheckEnabledItem(ReferenceData.Formid, EntityFlag, NormalDistance))
+			if (!CheckEnabledItem(referenceData.formId, entityFlag, normalDistance))
 			{
 				continue;
 			}
 		}
 		else
 		{
-			if (NormalDistance > ErectusIni::CustomItemLooterSettings.ItemLooterListDistance)
+			if (normalDistance > ErectusIni::customItemLooterSettings.itemLooterListDistance)
 			{
 				continue;
 			}
 		}
 
-		RequestActivateRefMessage RequestActivateRefMessageData;
-		RequestActivateRefMessageData.vtable = ErectusProcess::Exe + VTABLE_REQUESTACTIVATEREFMSG;
-		RequestActivateRefMessageData.Formid = EntityData.Formid;
-		RequestActivateRefMessageData.Choice = 0xFF;
-		RequestActivateRefMessageData.ForceActivate = 0;
-		SendMessageToServer(&RequestActivateRefMessageData, sizeof(RequestActivateRefMessageData));
+		RequestActivateRefMessage requestActivateRefMessageData{};
+		requestActivateRefMessageData.vtable = ErectusProcess::exe + VTABLE_REQUESTACTIVATEREFMSG;
+		requestActivateRefMessageData.formId = entityData.formId;
+		requestActivateRefMessageData.choice = 0xFF;
+		requestActivateRefMessageData.forceActivate = 0;
+		SendMessageToServer(&requestActivateRefMessageData, sizeof requestActivateRefMessageData);
 	}
 
-	delete[]BufferList;
-	BufferList = nullptr;
+	delete[]bufferList;
+	bufferList = nullptr;
 	return true;
 }
 
 void ErectusMemory::DeleteOldWeaponList()
 {
-	if (OldWeaponList != nullptr)
+	if (oldWeaponList != nullptr)
 	{
-		if (OldWeaponListSize)
+		if (oldWeaponListSize)
 		{
-			for (int i = 0; i < OldWeaponListSize; i++)
+			for (auto i = 0; i < oldWeaponListSize; i++)
 			{
-				if (OldWeaponList[i].WeaponData != nullptr)
+				if (oldWeaponList[i].weaponData != nullptr)
 				{
-					delete[]OldWeaponList[i].WeaponData;
-					OldWeaponList[i].WeaponData = nullptr;
+					delete[]oldWeaponList[i].weaponData;
+					oldWeaponList[i].weaponData = nullptr;
 				}
 
-				if (OldWeaponList[i].AimModelData != nullptr)
+				if (oldWeaponList[i].aimModelData != nullptr)
 				{
-					delete[]OldWeaponList[i].AimModelData;
-					OldWeaponList[i].AimModelData = nullptr;
+					delete[]oldWeaponList[i].aimModelData;
+					oldWeaponList[i].aimModelData = nullptr;
 				}
 			}
 		}
 
-		delete[]OldWeaponList;
-		OldWeaponList = nullptr;
+		delete[]oldWeaponList;
+		oldWeaponList = nullptr;
 	}
 
-	OldWeaponListSize = 0;
-	OldWeaponListUpdated = false;
+	oldWeaponListSize = 0;
+	oldWeaponListUpdated = false;
 }
 
 bool ErectusMemory::UpdateOldWeaponData()
 {
-	DWORD64 DataHandlerPtr;
-	if (!Erectus::RPM(ErectusProcess::Exe + OFFSET_DATA_HANDLER, &DataHandlerPtr, sizeof(DataHandlerPtr))) return false;
-	if (!Erectus::Valid(DataHandlerPtr)) return false;
+	DWORD64 dataHandlerPtr;
+	if (!Utils::Rpm(ErectusProcess::exe + OFFSET_DATA_HANDLER, &dataHandlerPtr, sizeof dataHandlerPtr)) return false;
+	if (!Utils::Valid(dataHandlerPtr)) return false;
 
-	ReferenceList WeaponList;
-	if (!Erectus::RPM(DataHandlerPtr + 0x580, &WeaponList, sizeof(WeaponList))) return false;
-	if (!Erectus::Valid(WeaponList.ArrayPtr) || !WeaponList.ArraySize || WeaponList.ArraySize > 0x7FFF) return false;
+	ReferenceList weaponList{};
+	if (!Utils::Rpm(dataHandlerPtr + 0x580, &weaponList, sizeof weaponList)) return false;
+	if (!Utils::Valid(weaponList.arrayPtr) || !weaponList.arraySize || weaponList.arraySize > 0x7FFF) return false;
 
-	DWORD64* WeaponPtrArray = new DWORD64[WeaponList.ArraySize];
-	if (!Erectus::RPM(WeaponList.ArrayPtr, &*WeaponPtrArray, WeaponList.ArraySize * sizeof(DWORD64)))
+	auto* weaponPtrArray = new DWORD64[weaponList.arraySize];
+	if (!Utils::Rpm(weaponList.arrayPtr, &*weaponPtrArray, weaponList.arraySize * sizeof(DWORD64)))
 	{
-		delete[]WeaponPtrArray;
-		WeaponPtrArray = nullptr;
+		delete[]weaponPtrArray;
+		weaponPtrArray = nullptr;
 		return false;
 	}
 
-	OldWeaponList = new OldWeapon[WeaponList.ArraySize];
-	OldWeaponListSize = WeaponList.ArraySize;
+	oldWeaponList = new OldWeapon[weaponList.arraySize];
+	oldWeaponListSize = weaponList.arraySize;
 
-	for (int i = 0; i < WeaponList.ArraySize; i++)
+	for (auto i = 0; i < weaponList.arraySize; i++)
 	{
-		OldWeaponList[i].WeaponData = nullptr;
-		OldWeaponList[i].AimModelData = nullptr;
+		oldWeaponList[i].weaponData = nullptr;
+		oldWeaponList[i].aimModelData = nullptr;
 
-		if (!Erectus::Valid(WeaponPtrArray[i])) continue;
+		if (!Utils::Valid(weaponPtrArray[i])) continue;
 
-		Weapon WeaponData;
-		if (!Erectus::RPM(WeaponPtrArray[i], &WeaponData, sizeof(WeaponData))) continue;
+		Weapon weaponData{};
+		if (!Utils::Rpm(weaponPtrArray[i], &weaponData, sizeof weaponData)) continue;
 
-		OldWeaponList[i].WeaponData = new Weapon;
-		memcpy(&*OldWeaponList[i].WeaponData, &WeaponData, sizeof(WeaponData));
+		oldWeaponList[i].weaponData = new Weapon;
+		memcpy(&*oldWeaponList[i].weaponData, &weaponData, sizeof weaponData);
 
-		if (!Erectus::Valid(WeaponData.AimModelPtr)) continue;
+		if (!Utils::Valid(weaponData.aimModelPtr)) continue;
 
-		AimModel AimModelData;
-		if (!Erectus::RPM(WeaponData.AimModelPtr, &AimModelData, sizeof(AimModelData))) continue;
+		AimModel aimModelData{};
+		if (!Utils::Rpm(weaponData.aimModelPtr, &aimModelData, sizeof aimModelData)) continue;
 
-		OldWeaponList[i].AimModelData = new AimModel;
-		memcpy(&*OldWeaponList[i].AimModelData, &AimModelData, sizeof(AimModelData));
+		oldWeaponList[i].aimModelData = new AimModel;
+		memcpy(&*oldWeaponList[i].aimModelData, &aimModelData, sizeof aimModelData);
 	}
 
-	delete[]WeaponPtrArray;
-	WeaponPtrArray = nullptr;
+	delete[]weaponPtrArray;
+	weaponPtrArray = nullptr;
 	return true;
 }
 
-int ErectusMemory::GetOldWeaponIndex(DWORD Formid)
+int ErectusMemory::GetOldWeaponIndex(const DWORD formId)
 {
-	for (int i = 0; i < OldWeaponListSize; i++)
+	for (auto i = 0; i < oldWeaponListSize; i++)
 	{
-		if (OldWeaponList[i].WeaponData != nullptr)
+		if ((oldWeaponList[i].weaponData != nullptr) && (oldWeaponList[i].weaponData->formId == formId))
 		{
-			if (OldWeaponList[i].WeaponData->Formid == Formid)
-			{
-				return i;
-			}
+			return i;
 		}
 	}
 
@@ -3193,599 +3051,602 @@ int ErectusMemory::GetOldWeaponIndex(DWORD Formid)
 
 bool ErectusMemory::WeaponEditingEnabled()
 {
-	WeaponSettings BufferSettings = ErectusIni::CustomWeaponSettings;
-	BufferSettings.Capacity = ErectusIni::DefaultWeaponSettings.Capacity;
-	BufferSettings.Speed = ErectusIni::DefaultWeaponSettings.Speed;
-	BufferSettings.Reach = ErectusIni::DefaultWeaponSettings.Reach;
-	if (!memcmp(&BufferSettings, &ErectusIni::DefaultWeaponSettings, sizeof(WeaponSettings))) return false;
-	else return true;
+	auto bufferSettings = ErectusIni::customWeaponSettings;
+	bufferSettings.capacity = ErectusIni::defaultWeaponSettings.capacity;
+	bufferSettings.speed = ErectusIni::defaultWeaponSettings.speed;
+	bufferSettings.reach = ErectusIni::defaultWeaponSettings.reach;
+	if (!memcmp(&bufferSettings, &ErectusIni::defaultWeaponSettings, sizeof(WeaponSettings)))
+		return false;
+
+	return true;
 }
 
-bool ErectusMemory::EditWeapon(int Index, bool RevertWeaponData)
+bool ErectusMemory::EditWeapon(const int index, const bool revertWeaponData)
 {
-	DWORD64 DataHandlerPtr;
-	if (!Erectus::RPM(ErectusProcess::Exe + OFFSET_DATA_HANDLER, &DataHandlerPtr, sizeof(DataHandlerPtr))) return false;
-	if (!Erectus::Valid(DataHandlerPtr)) return false;
+	DWORD64 dataHandlerPtr;
+	if (!Utils::Rpm(ErectusProcess::exe + OFFSET_DATA_HANDLER, &dataHandlerPtr, sizeof dataHandlerPtr)) return false;
+	if (!Utils::Valid(dataHandlerPtr)) return false;
 
-	ReferenceList WeaponList;
-	if (!Erectus::RPM(DataHandlerPtr + 0x580, &WeaponList, sizeof(WeaponList))) return false;
-	if (!Erectus::Valid(WeaponList.ArrayPtr) || !WeaponList.ArraySize || WeaponList.ArraySize > 0x7FFF) return false;
+	ReferenceList weaponList{};
+	if (!Utils::Rpm(dataHandlerPtr + 0x580, &weaponList, sizeof weaponList)) return false;
+	if (!Utils::Valid(weaponList.arrayPtr) || !weaponList.arraySize || weaponList.arraySize > 0x7FFF) return false;
 
-	DWORD64 WeaponPtr;
-	if (!Erectus::RPM(WeaponList.ArrayPtr + Index * sizeof(DWORD64), &WeaponPtr, sizeof(WeaponPtr))) return false;
-	if (!Erectus::Valid(WeaponPtr)) return false;
+	DWORD64 weaponPtr;
+	if (!Utils::Rpm(weaponList.arrayPtr + index * sizeof(DWORD64), &weaponPtr, sizeof weaponPtr)) return false;
+	if (!Utils::Valid(weaponPtr)) return false;
 
-	Weapon WeaponData;
-	if (!Erectus::RPM(WeaponPtr, &WeaponData, sizeof(WeaponData))) return false;
-	if (OldWeaponList[Index].WeaponData == nullptr) return false;
+	Weapon weaponData{};
+	if (!Utils::Rpm(weaponPtr, &weaponData, sizeof weaponData)) return false;
+	if (oldWeaponList[index].weaponData == nullptr) return false;
 
-	int CurrentWeaponIndex = Index;
-	if (OldWeaponList[CurrentWeaponIndex].WeaponData->Formid != WeaponData.Formid)
+	auto currentWeaponIndex = index;
+	if (oldWeaponList[currentWeaponIndex].weaponData->formId != weaponData.formId)
 	{
-		int BufferIndex = GetOldWeaponIndex(WeaponData.Formid);
-		if (BufferIndex == -1) return false;
-		else CurrentWeaponIndex = BufferIndex;
+		const auto bufferIndex = GetOldWeaponIndex(weaponData.formId);
+		if (bufferIndex == -1) return false;
+		currentWeaponIndex = bufferIndex;
 	}
 
-	bool WriteWeaponData = false;
-	bool WriteAimModelData = false;
+	auto writeWeaponData = false;
+	auto writeAimModelData = false;
 
-	if (!RevertWeaponData && ErectusIni::CustomWeaponSettings.InstantReload)
+	if (!revertWeaponData && ErectusIni::customWeaponSettings.instantReload)
 	{
-		if (WeaponData.ReloadSpeed != 100.0f)
+		if (weaponData.reloadSpeed != 100.0f)
 		{
-			WeaponData.ReloadSpeed = 100.0f;
-			WriteWeaponData = true;
+			weaponData.reloadSpeed = 100.0f;
+			writeWeaponData = true;
 		}
 	}
 	else
 	{
-		if (WeaponData.ReloadSpeed != OldWeaponList[CurrentWeaponIndex].WeaponData->ReloadSpeed)
+		if (weaponData.reloadSpeed != oldWeaponList[currentWeaponIndex].weaponData->reloadSpeed)
 		{
-			WeaponData.ReloadSpeed = OldWeaponList[CurrentWeaponIndex].WeaponData->ReloadSpeed;
-			WriteWeaponData = true;
+			weaponData.reloadSpeed = oldWeaponList[currentWeaponIndex].weaponData->reloadSpeed;
+			writeWeaponData = true;
 		}
 	}
 
-	if (!RevertWeaponData && ErectusIni::CustomWeaponSettings.Automaticflag)
+	if (!revertWeaponData && ErectusIni::customWeaponSettings.automaticflag)
 	{
-		if (!((WeaponData.FlagB >> 7) & 1))
+		if (!(weaponData.flagB >> 7 & 1))
 		{
-			WeaponData.FlagB |= (1 << 7);
-			WriteWeaponData = true;
+			weaponData.flagB |= 1 << 7;
+			writeWeaponData = true;
 		}
 	}
 	else
 	{
-		if (WeaponData.FlagB != OldWeaponList[CurrentWeaponIndex].WeaponData->FlagB)
+		if (weaponData.flagB != oldWeaponList[currentWeaponIndex].weaponData->flagB)
 		{
-			WeaponData.FlagB = OldWeaponList[CurrentWeaponIndex].WeaponData->FlagB;
-			WriteWeaponData = true;
+			weaponData.flagB = oldWeaponList[currentWeaponIndex].weaponData->flagB;
+			writeWeaponData = true;
 		}
 	}
 
-	if (!RevertWeaponData && ErectusIni::CustomWeaponSettings.CapacityEnabled)
+	if (!revertWeaponData && ErectusIni::customWeaponSettings.capacityEnabled)
 	{
-		if (WeaponData.Capacity != short(ErectusIni::CustomWeaponSettings.Capacity))
+		if (weaponData.capacity != static_cast<short>(ErectusIni::customWeaponSettings.capacity))
 		{
-			WeaponData.Capacity = short(ErectusIni::CustomWeaponSettings.Capacity);
-			WriteWeaponData = true;
+			weaponData.capacity = static_cast<short>(ErectusIni::customWeaponSettings.capacity);
+			writeWeaponData = true;
 		}
 	}
 	else
 	{
-		if (WeaponData.Capacity != OldWeaponList[CurrentWeaponIndex].WeaponData->Capacity)
+		if (weaponData.capacity != oldWeaponList[currentWeaponIndex].weaponData->capacity)
 		{
-			WeaponData.Capacity = OldWeaponList[CurrentWeaponIndex].WeaponData->Capacity;
-			WriteWeaponData = true;
+			weaponData.capacity = oldWeaponList[currentWeaponIndex].weaponData->capacity;
+			writeWeaponData = true;
 		}
 	}
 
-	if (!RevertWeaponData && ErectusIni::CustomWeaponSettings.SpeedEnabled)
+	if (!revertWeaponData && ErectusIni::customWeaponSettings.speedEnabled)
 	{
-		if (WeaponData.Speed != ErectusIni::CustomWeaponSettings.Speed)
+		if (weaponData.speed != ErectusIni::customWeaponSettings.speed)
 		{
-			WeaponData.Speed = ErectusIni::CustomWeaponSettings.Speed;
-			WriteWeaponData = true;
+			weaponData.speed = ErectusIni::customWeaponSettings.speed;
+			writeWeaponData = true;
 		}
 	}
 	else
 	{
-		if (WeaponData.Speed != OldWeaponList[CurrentWeaponIndex].WeaponData->Speed)
+		if (weaponData.speed != oldWeaponList[currentWeaponIndex].weaponData->speed)
 		{
-			WeaponData.Speed = OldWeaponList[CurrentWeaponIndex].WeaponData->Speed;
-			WriteWeaponData = true;
+			weaponData.speed = oldWeaponList[currentWeaponIndex].weaponData->speed;
+			writeWeaponData = true;
 		}
 	}
 
-	if (!RevertWeaponData && ErectusIni::CustomWeaponSettings.ReachEnabled)
+	if (!revertWeaponData && ErectusIni::customWeaponSettings.reachEnabled)
 	{
-		if (WeaponData.Reach != ErectusIni::CustomWeaponSettings.Reach)
+		if (weaponData.reach != ErectusIni::customWeaponSettings.reach)
 		{
-			WeaponData.Reach = ErectusIni::CustomWeaponSettings.Reach;
-			WriteWeaponData = true;
+			weaponData.reach = ErectusIni::customWeaponSettings.reach;
+			writeWeaponData = true;
 		}
 	}
 	else
 	{
-		if (WeaponData.Reach != OldWeaponList[CurrentWeaponIndex].WeaponData->Reach)
+		if (weaponData.reach != oldWeaponList[currentWeaponIndex].weaponData->reach)
 		{
-			WeaponData.Reach = OldWeaponList[CurrentWeaponIndex].WeaponData->Reach;
-			WriteWeaponData = true;
+			weaponData.reach = oldWeaponList[currentWeaponIndex].weaponData->reach;
+			writeWeaponData = true;
 		}
 	}
 
-	if (WriteWeaponData)
+	if (writeWeaponData)
 	{
-		Erectus::WPM(WeaponPtr, &WeaponData, sizeof(WeaponData));
+		Utils::Wpm(weaponPtr, &weaponData, sizeof weaponData);
 	}
 
-	if (!Erectus::Valid(WeaponData.AimModelPtr))
+	if (!Utils::Valid(weaponData.aimModelPtr))
 	{
 		return true;
 	}
 
-	if (OldWeaponList[CurrentWeaponIndex].AimModelData == nullptr)
+	if (oldWeaponList[currentWeaponIndex].aimModelData == nullptr)
 	{
 		return false;
 	}
 
-	AimModel AimModelData;
-	if (!Erectus::RPM(WeaponData.AimModelPtr, &AimModelData, sizeof(AimModelData))) return false;
+	AimModel aimModelData{};
+	if (!Utils::Rpm(weaponData.aimModelPtr, &aimModelData, sizeof aimModelData)) return false;
 
-	BYTE NoRecoil[sizeof(AimModel::RecoilData)];
-	memset(NoRecoil, 0x00, sizeof(NoRecoil));
+	BYTE noRecoil[sizeof AimModel::recoilData];
+	memset(noRecoil, 0x00, sizeof noRecoil);
 
-	BYTE NoSpread[sizeof(AimModel::SpreadData)];
-	memset(NoSpread, 0x00, sizeof(NoSpread));
+	BYTE noSpread[sizeof AimModel::spreadData];
+	memset(noSpread, 0x00, sizeof noSpread);
 
-	if (!RevertWeaponData && ErectusIni::CustomWeaponSettings.NoRecoil)
+	if (!revertWeaponData && ErectusIni::customWeaponSettings.noRecoil)
 	{
-		if (memcmp(AimModelData.RecoilData, NoRecoil, sizeof(AimModel::RecoilData)))
+		if (memcmp(aimModelData.recoilData, noRecoil, sizeof AimModel::recoilData) != 0)
 		{
-			memcpy(AimModelData.RecoilData, NoRecoil, sizeof(AimModel::RecoilData));
-			WriteAimModelData = true;
+			memcpy(aimModelData.recoilData, noRecoil, sizeof AimModel::recoilData);
+			writeAimModelData = true;
 		}
 	}
 	else
 	{
-		if (memcmp(AimModelData.RecoilData, OldWeaponList[CurrentWeaponIndex].AimModelData->RecoilData, sizeof(AimModel::RecoilData)))
+		if (memcmp(aimModelData.recoilData, oldWeaponList[currentWeaponIndex].aimModelData->recoilData,
+			sizeof AimModel::recoilData) != 0)
 		{
-			memcpy(AimModelData.RecoilData, OldWeaponList[CurrentWeaponIndex].AimModelData->RecoilData, sizeof(AimModel::RecoilData));
-			WriteAimModelData = true;
+			memcpy(aimModelData.recoilData, oldWeaponList[currentWeaponIndex].aimModelData->recoilData,
+				sizeof AimModel::recoilData);
+			writeAimModelData = true;
 		}
 	}
 
-	if (!RevertWeaponData && ErectusIni::CustomWeaponSettings.NoSpread)
+	if (!revertWeaponData && ErectusIni::customWeaponSettings.noSpread)
 	{
-		if (memcmp(AimModelData.SpreadData, NoSpread, sizeof(AimModel::SpreadData)))
+		if (memcmp(aimModelData.spreadData, noSpread, sizeof AimModel::spreadData) != 0)
 		{
-			memcpy(AimModelData.SpreadData, NoSpread, sizeof(AimModel::SpreadData));
-			WriteAimModelData = true;
+			memcpy(aimModelData.spreadData, noSpread, sizeof AimModel::spreadData);
+			writeAimModelData = true;
 		}
 	}
 	else
 	{
-		if (memcmp(AimModelData.SpreadData, OldWeaponList[CurrentWeaponIndex].AimModelData->SpreadData, sizeof(AimModel::SpreadData)))
+		if (memcmp(aimModelData.spreadData, oldWeaponList[currentWeaponIndex].aimModelData->spreadData, sizeof AimModel::spreadData) != 0)
 		{
-			memcpy(AimModelData.SpreadData, OldWeaponList[CurrentWeaponIndex].AimModelData->SpreadData, sizeof(AimModel::SpreadData));
-			WriteAimModelData = true;
+			memcpy(aimModelData.spreadData, oldWeaponList[currentWeaponIndex].aimModelData->spreadData, sizeof AimModel::spreadData);
+			writeAimModelData = true;
 		}
 	}
 
-	if (!RevertWeaponData && ErectusIni::CustomWeaponSettings.NoSway)
+	if (!revertWeaponData && ErectusIni::customWeaponSettings.noSway)
 	{
-		if (AimModelData.Sway != 100.0f)
+		if (aimModelData.sway != 100.0f)
 		{
-			AimModelData.Sway = 100.0f;
-			WriteAimModelData = true;
+			aimModelData.sway = 100.0f;
+			writeAimModelData = true;
 		}
 	}
 	else
 	{
-		if (AimModelData.Sway != OldWeaponList[CurrentWeaponIndex].AimModelData->Sway)
+		if (aimModelData.sway != oldWeaponList[currentWeaponIndex].aimModelData->sway)
 		{
-			AimModelData.Sway = OldWeaponList[CurrentWeaponIndex].AimModelData->Sway;
-			WriteAimModelData = true;
+			aimModelData.sway = oldWeaponList[currentWeaponIndex].aimModelData->sway;
+			writeAimModelData = true;
 		}
 	}
 
-	if (WriteAimModelData)
+	if (writeAimModelData)
 	{
-		return Erectus::WPM(WeaponData.AimModelPtr, &AimModelData, sizeof(AimModelData));
+		return Utils::Wpm(weaponData.aimModelPtr, &aimModelData, sizeof aimModelData);
 	}
 
 	return true;
 }
 
-bool ErectusMemory::InfiniteAmmo(bool State)
+bool ErectusMemory::InfiniteAmmo(const bool state)
 {
-	BYTE InfiniteAmmoOn[] = { 0x66, 0xB8, 0xE7, 0x03 };
-	BYTE InfiniteAmmoOff[] = { 0x8B, 0x44, 0x24, 0x50 };
-	BYTE InfiniteAmmoCheck[sizeof(InfiniteAmmoOff)];
+	BYTE infiniteAmmoOn[] = { 0x66, 0xB8, 0xE7, 0x03 };
+	BYTE infiniteAmmoOff[] = { 0x8B, 0x44, 0x24, 0x50 };
+	BYTE infiniteAmmoCheck[sizeof infiniteAmmoOff];
 
-	if (!Erectus::RPM(ErectusProcess::Exe + OFFSET_INFINITE_AMMO, &InfiniteAmmoCheck, sizeof(InfiniteAmmoCheck)))
+	if (!Utils::Rpm(ErectusProcess::exe + OFFSET_INFINITE_AMMO, &infiniteAmmoCheck, sizeof infiniteAmmoCheck))
 	{
 		return false;
 	}
 
-	if (State && !memcmp(InfiniteAmmoCheck, InfiniteAmmoOff, sizeof(InfiniteAmmoOff)))
+	if (state && !memcmp(infiniteAmmoCheck, infiniteAmmoOff, sizeof infiniteAmmoOff))
 	{
-		return Erectus::WPM(ErectusProcess::Exe + OFFSET_INFINITE_AMMO, &InfiniteAmmoOn, sizeof(InfiniteAmmoOn));
+		return Utils::Wpm(ErectusProcess::exe + OFFSET_INFINITE_AMMO, &infiniteAmmoOn, sizeof infiniteAmmoOn);
 	}
-	else if (!State && !memcmp(InfiniteAmmoCheck, InfiniteAmmoOn, sizeof(InfiniteAmmoOn)))
+	if (!state && !memcmp(infiniteAmmoCheck, infiniteAmmoOn, sizeof infiniteAmmoOn))
 	{
-		return Erectus::WPM(ErectusProcess::Exe + OFFSET_INFINITE_AMMO, &InfiniteAmmoOff, sizeof(InfiniteAmmoOff));
+		return Utils::Wpm(ErectusProcess::exe + OFFSET_INFINITE_AMMO, &infiniteAmmoOff, sizeof infiniteAmmoOff);
 	}
-	else
-	{
-		return false;
-	}
+	return false;
 }
 
-bool ErectusMemory::LockedTargetValid(bool* IsPlayer)
+bool ErectusMemory::LockedTargetValid(bool* isPlayer)
 {
-	if (!Erectus::Valid(TargetLockingPtr))
+	if (!Utils::Valid(targetLockingPtr))
 	{
 		return false;
 	}
 
-	Entity EntityData;
-	if (!Erectus::RPM(TargetLockingPtr, &EntityData, sizeof(EntityData))) return false;
-	if (!Erectus::Valid(EntityData.ReferencePtr)) return false;
+	Entity entityData{};
+	if (!Utils::Rpm(targetLockingPtr, &entityData, sizeof entityData)) return false;
+	if (!Utils::Valid(entityData.referencePtr)) return false;
 
-	Reference ReferenceData;
-	if (!Erectus::RPM(EntityData.ReferencePtr, &ReferenceData, sizeof(ReferenceData))) return false;
-	bool Result = ErectusMemory::TargetValid(EntityData, ReferenceData);
+	Reference referenceData{};
+	if (!Utils::Rpm(entityData.referencePtr, &referenceData, sizeof referenceData)) return false;
+	const auto result = ErectusMemory::TargetValid(entityData, referenceData);
 
-	if (ReferenceData.Formid == 0x00000007)
+	if (referenceData.formId == 0x00000007)
 	{
-		*IsPlayer = true;
+		*isPlayer = true;
 	}
 	else
 	{
-		*IsPlayer = false;
+		*isPlayer = false;
 	}
 
-	return Result;
+	return result;
 }
 
-bool ErectusMemory::DamageRedirection(DWORD64* TargetingPage, bool* TargetingPageValid, bool IsExiting, bool State)
+bool ErectusMemory::DamageRedirection(DWORD64* targetingPage, bool* targetingPageValid, const bool isExiting, const bool state)
 {
-	BYTE PageJmpOn[] = { 0x48, 0xBB, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xE3 };
-	BYTE PageJmpOff[] = { 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC };
-	BYTE PageJmpCheck[sizeof(PageJmpOff)];
+	BYTE pageJmpOn[] = { 0x48, 0xBB, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xE3 };
+	BYTE pageJmpOff[] = { 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC };
+	BYTE pageJmpCheck[sizeof pageJmpOff];
 
-	BYTE RedirectionOn[] = { 0xE9, 0x69, 0xFE, 0xFF, 0xFF };
-	BYTE RedirectionOff[] = { 0x48, 0x8B, 0x5C, 0x24, 0x50 };
-	BYTE RedirectionCheck[sizeof(RedirectionOff)];
+	BYTE redirectionOn[] = { 0xE9, 0x69, 0xFE, 0xFF, 0xFF };
+	BYTE redirectionOff[] = { 0x48, 0x8B, 0x5C, 0x24, 0x50 };
+	BYTE redirectionCheck[sizeof redirectionOff];
 
-	if (!Erectus::RPM(ErectusProcess::Exe + OFFSET_REDIRECTION_JMP, &PageJmpCheck, sizeof(PageJmpCheck))) return false;
+	if (!Utils::Rpm(ErectusProcess::exe + OFFSET_REDIRECTION_JMP, &pageJmpCheck, sizeof pageJmpCheck)) return false;
 
-	DWORD64 PageCheck;
-	memcpy(&PageCheck, &PageJmpCheck[2], sizeof(PageCheck));
-	if (Erectus::Valid(PageCheck) && PageCheck != *TargetingPage)
+	DWORD64 pageCheck;
+	memcpy(&pageCheck, &pageJmpCheck[2], sizeof pageCheck);
+	if (Utils::Valid(pageCheck) && pageCheck != *targetingPage)
 	{
-		BYTE PageOpcode[] = { 0x48, 0xBB, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0F, 0x00 };
-		BYTE PageOpcodeCheck[sizeof(PageOpcode)];
-		if (!Erectus::RPM(PageCheck, &PageOpcodeCheck, sizeof(PageOpcodeCheck))) return false;
-		if (memcmp(PageOpcodeCheck, PageOpcode, sizeof(PageOpcode))) return false;
-		if (!Erectus::WPM(ErectusProcess::Exe + OFFSET_REDIRECTION_JMP, &PageJmpOff, sizeof(PageJmpOff))) return false;
-		if (!Erectus::FreeEx(PageCheck)) return false;
+		BYTE pageOpcode[] = { 0x48, 0xBB, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0F, 0x00 };
+		BYTE pageOpcodeCheck[sizeof pageOpcode];
+		if (!Utils::Rpm(pageCheck, &pageOpcodeCheck, sizeof pageOpcodeCheck))
+			return false;
+		if (memcmp(pageOpcodeCheck, pageOpcode, sizeof pageOpcode) != 0)
+			return false;
+		if (!Utils::Wpm(ErectusProcess::exe + OFFSET_REDIRECTION_JMP, &pageJmpOff, sizeof pageJmpOff))
+			return false;
+		if (!Utils::FreeEx(pageCheck))
+			return false;
 	}
 
-	if (!*TargetingPage)
+	if (!*targetingPage)
 	{
-		DWORD64 Page = Erectus::AllocEx(sizeof(Opk));
-		if (!Page) return false;
-		*TargetingPage = Page;
+		const auto page = Utils::AllocEx(sizeof(Opk));
+		if (!page) return false;
+		*targetingPage = page;
 	}
 
-	if (!*TargetingPageValid)
+	if (!*targetingPageValid)
 	{
-		TargetLocking TargetLockingData;
-		TargetLockingData.TargetLockingPtr = TargetLockingPtr;
-		DWORD64 OriginalFunction = ErectusProcess::Exe + OFFSET_REDIRECTION + sizeof(RedirectionOff);
-		DWORD64 OriginalFunctionCheck;
-		if (!Erectus::RPM(*TargetingPage + 0x30, &OriginalFunctionCheck, sizeof(OriginalFunctionCheck))) return false;
-		if (OriginalFunctionCheck != OriginalFunction)
-		{
-			memcpy(&TargetLockingData.RedirectionASM[0x30], &OriginalFunction, sizeof(OriginalFunction));
-		}
-		if (!Erectus::WPM(*TargetingPage, &TargetLockingData, sizeof(TargetLockingData))) return false;
-		*TargetingPageValid = true;
+		TargetLocking targetLockingData;
+		targetLockingData.targetLockingPtr = targetLockingPtr;
+		auto originalFunction = ErectusProcess::exe + OFFSET_REDIRECTION + sizeof redirectionOff;
+		DWORD64 originalFunctionCheck;
+		if (!Utils::Rpm(*targetingPage + 0x30, &originalFunctionCheck, sizeof originalFunctionCheck))
+			return false;
+
+		if (originalFunctionCheck != originalFunction)
+			memcpy(&targetLockingData.redirectionAsm[0x30], &originalFunction, sizeof originalFunction);
+
+		if (!Utils::Wpm(*targetingPage, &targetLockingData, sizeof targetLockingData))
+			return false;
+
+		*targetingPageValid = true;
 		return false;
 	}
-	else
+	TargetLocking targetLockingData;
+	if (!Utils::Rpm(*targetingPage, &targetLockingData, sizeof targetLockingData))
+		return false;
+
+	if (targetLockingData.targetLockingPtr != targetLockingPtr)
 	{
-		TargetLocking TargetLockingData;
-		if (!Erectus::RPM(*TargetingPage, &TargetLockingData, sizeof(TargetLockingData))) return false;
-		if (TargetLockingData.TargetLockingPtr != TargetLockingPtr)
+		targetLockingData.targetLockingPtr = targetLockingPtr;
+		if (!Utils::Wpm(*targetingPage, &targetLockingData, sizeof targetLockingData)) return false;
+		memcpy(&pageJmpOn[2], &*targetingPage, sizeof(DWORD64));
+	}
+	memcpy(&pageJmpOn[2], &*targetingPage, sizeof(DWORD64));
+
+	auto isPlayer = false;
+	auto targetValid = LockedTargetValid(&isPlayer);
+	if ((!ErectusIni::customTargetSettings.indirectPlayers && isPlayer) || (!ErectusIni::customTargetSettings.indirectNpCs && !isPlayer))
+		targetValid = false;
+
+	const auto redirection = Utils::Rpm(ErectusProcess::exe + OFFSET_REDIRECTION, &redirectionCheck,
+		sizeof redirectionCheck);
+
+	if (*targetingPageValid && state && targetValid)
+	{
+		if (redirection && !memcmp(redirectionCheck, redirectionOff, sizeof redirectionOff))
 		{
-			TargetLockingData.TargetLockingPtr = TargetLockingPtr;
-			if (!Erectus::WPM(*TargetingPage, &TargetLockingData, sizeof(TargetLockingData))) return false;
-			memcpy(&PageJmpOn[2], &*TargetingPage, sizeof(DWORD64));
-		}
-		memcpy(&PageJmpOn[2], &*TargetingPage, sizeof(DWORD64));
-	}
-
-	bool IsPlayer = false;
-	bool TargetValid = LockedTargetValid(&IsPlayer);
-	if (!ErectusIni::CustomTargetSettings.IndirectPlayers && IsPlayer)
-	{
-		TargetValid = false;
-	}
-	else if (!ErectusIni::CustomTargetSettings.IndirectNPCs && !IsPlayer)
-	{
-		TargetValid = false;
-	}
-
-	bool Redirection = Erectus::RPM(ErectusProcess::Exe + OFFSET_REDIRECTION, &RedirectionCheck, sizeof(RedirectionCheck));
-
-	if (*TargetingPageValid && State && TargetValid)
-	{
-		if (Redirection && !memcmp(RedirectionCheck, RedirectionOff, sizeof(RedirectionOff)))
-		{
-			Erectus::WPM(ErectusProcess::Exe + OFFSET_REDIRECTION, &RedirectionOn, sizeof(RedirectionOn));
+			Utils::Wpm(ErectusProcess::exe + OFFSET_REDIRECTION, &redirectionOn, sizeof redirectionOn);
 		}
 	}
 	else
 	{
-		if (Redirection && !memcmp(RedirectionCheck, RedirectionOn, sizeof(RedirectionOn)))
+		if (redirection && !memcmp(redirectionCheck, redirectionOn, sizeof redirectionOn))
 		{
-			Erectus::WPM(ErectusProcess::Exe + OFFSET_REDIRECTION, &RedirectionOff, sizeof(RedirectionOff));
+			Utils::Wpm(ErectusProcess::exe + OFFSET_REDIRECTION, &redirectionOff, sizeof redirectionOff);
 		}
 	}
 
-	if (*TargetingPageValid && !IsExiting && !memcmp(PageJmpCheck, PageJmpOff, sizeof(PageJmpOff)))
+	if (*targetingPageValid && !isExiting && !memcmp(pageJmpCheck, pageJmpOff, sizeof pageJmpOff))
 	{
-		return Erectus::WPM(ErectusProcess::Exe + OFFSET_REDIRECTION_JMP, &PageJmpOn, sizeof(PageJmpOn));
+		return Utils::Wpm(ErectusProcess::exe + OFFSET_REDIRECTION_JMP, &pageJmpOn, sizeof pageJmpOn);
 	}
-	else if (IsExiting && !memcmp(PageJmpCheck, PageJmpOn, sizeof(PageJmpOn)))
+	if (isExiting && !memcmp(pageJmpCheck, pageJmpOn, sizeof pageJmpOn))
 	{
-		return Erectus::WPM(ErectusProcess::Exe + OFFSET_REDIRECTION_JMP, &PageJmpOff, sizeof(PageJmpOff));
+		return Utils::Wpm(ErectusProcess::exe + OFFSET_REDIRECTION_JMP, &pageJmpOff, sizeof pageJmpOff);
 	}
-	else
-	{
-		return true;
-	}
+	return true;
 }
 
 bool ErectusMemory::MovePlayer()
 {
-	DWORD64 CameraPtr = GetCameraPtr();
-	if (!Erectus::Valid(CameraPtr)) return false;
+	const auto cameraPtr = GetCameraPtr();
+	if (!Utils::Valid(cameraPtr)) return false;
 
 	DWORD64 bhkCharProxyControllerPtr;
-	if (!Erectus::RPM(ErectusProcess::Exe + OFFSET_CHAR_CONTROLLER, &bhkCharProxyControllerPtr, sizeof(bhkCharProxyControllerPtr))) return false;
-	if (!Erectus::Valid(bhkCharProxyControllerPtr)) return false;
+	if (!Utils::Rpm(ErectusProcess::exe + OFFSET_CHAR_CONTROLLER, &bhkCharProxyControllerPtr,
+		sizeof bhkCharProxyControllerPtr)) return false;
+	if (!Utils::Valid(bhkCharProxyControllerPtr)) return false;
 
-	bhkCharProxyController bhkCharProxyControllerData;
-	if (!Erectus::RPM(bhkCharProxyControllerPtr, &bhkCharProxyControllerData, sizeof(bhkCharProxyControllerData))) return false;
-	if (!Erectus::Valid(bhkCharProxyControllerData.hknpBSCharacterProxyPtr)) return false;
+	BhkCharProxyController bhkCharProxyControllerData{};
+	if (!Utils::Rpm(bhkCharProxyControllerPtr, &bhkCharProxyControllerData, sizeof bhkCharProxyControllerData)) return
+		false;
+	if (!Utils::Valid(bhkCharProxyControllerData.hknpBsCharacterProxyPtr)) return false;
 
-	hknpBSCharacterProxy hknpBSCharacterProxyData;
-	if (!Erectus::RPM(bhkCharProxyControllerData.hknpBSCharacterProxyPtr, &hknpBSCharacterProxyData, sizeof(hknpBSCharacterProxyData))) return false;
+	HknpBsCharacterProxy hknpBsCharacterProxyData{};
+	if (!Utils::Rpm(bhkCharProxyControllerData.hknpBsCharacterProxyPtr, &hknpBsCharacterProxyData,
+		sizeof hknpBsCharacterProxyData)) return false;
 
-	Camera CameraData;
-	if (!Erectus::RPM(CameraPtr, &CameraData, sizeof(CameraData))) return false;
+	Camera cameraData{};
+	if (!Utils::Rpm(cameraPtr, &cameraData, sizeof cameraData)) return false;
 
-	float VelocityA[4];
-	memset(VelocityA, 0x00, sizeof(VelocityA));
+	float velocityA[4];
+	memset(velocityA, 0x00, sizeof velocityA);
 
-	float VelocityB[4];
-	memset(VelocityB, 0x00, sizeof(VelocityB));
+	float velocityB[4];
+	memset(velocityB, 0x00, sizeof velocityB);
 
-	float Speed = ErectusIni::CustomLocalPlayerSettings.NoclipSpeed;
+	auto speed = ErectusIni::customLocalPlayerSettings.noclipSpeed;
 	if (GetAsyncKeyState(VK_SHIFT))
 	{
-		Speed *= 1.5f;
+		speed *= 1.5f;
 	}
 
-	bool WritePosition = false;
+	auto writePosition = false;
 
 	if (GetAsyncKeyState('W'))
 	{
-		hknpBSCharacterProxyData.Position[0] += (CameraData.Forward[0] * Speed);
-		hknpBSCharacterProxyData.Position[1] += (CameraData.Forward[1] * Speed);
-		hknpBSCharacterProxyData.Position[2] += (CameraData.Forward[2] * Speed);
-		WritePosition = true;
+		hknpBsCharacterProxyData.position[0] += cameraData.forward[0] * speed;
+		hknpBsCharacterProxyData.position[1] += cameraData.forward[1] * speed;
+		hknpBsCharacterProxyData.position[2] += cameraData.forward[2] * speed;
+		writePosition = true;
 	}
 
 	if (GetAsyncKeyState('A'))
 	{
-		hknpBSCharacterProxyData.Position[0] -= (CameraData.Forward[1] * Speed);
-		hknpBSCharacterProxyData.Position[1] += (CameraData.Forward[0] * Speed);
-		WritePosition = true;
+		hknpBsCharacterProxyData.position[0] -= cameraData.forward[1] * speed;
+		hknpBsCharacterProxyData.position[1] += cameraData.forward[0] * speed;
+		writePosition = true;
 	}
 
 	if (GetAsyncKeyState('S'))
 	{
-		hknpBSCharacterProxyData.Position[0] -= (CameraData.Forward[0] * Speed);
-		hknpBSCharacterProxyData.Position[1] -= (CameraData.Forward[1] * Speed);
-		hknpBSCharacterProxyData.Position[2] -= (CameraData.Forward[2] * Speed);
-		WritePosition = true;
+		hknpBsCharacterProxyData.position[0] -= cameraData.forward[0] * speed;
+		hknpBsCharacterProxyData.position[1] -= cameraData.forward[1] * speed;
+		hknpBsCharacterProxyData.position[2] -= cameraData.forward[2] * speed;
+		writePosition = true;
 	}
 
 	if (GetAsyncKeyState('D'))
 	{
-		hknpBSCharacterProxyData.Position[0] += (CameraData.Forward[1] * Speed);
-		hknpBSCharacterProxyData.Position[1] -= (CameraData.Forward[0] * Speed);
-		WritePosition = true;
+		hknpBsCharacterProxyData.position[0] += cameraData.forward[1] * speed;
+		hknpBsCharacterProxyData.position[1] -= cameraData.forward[0] * speed;
+		writePosition = true;
 	}
 
-	if (memcmp(hknpBSCharacterProxyData.VelocityA, VelocityA, sizeof(VelocityA)))
+	if (memcmp(hknpBsCharacterProxyData.velocityA, velocityA, sizeof velocityA) != 0)
 	{
-		memcpy(hknpBSCharacterProxyData.VelocityA, VelocityA, sizeof(VelocityA));
-		WritePosition = true;
+		memcpy(hknpBsCharacterProxyData.velocityA, velocityA, sizeof velocityA);
+		writePosition = true;
 	}
 
-	if (memcmp(hknpBSCharacterProxyData.VelocityB, VelocityB, sizeof(VelocityB)))
+	if (memcmp(hknpBsCharacterProxyData.velocityB, velocityB, sizeof velocityB) != 0)
 	{
-		memcpy(hknpBSCharacterProxyData.VelocityB, VelocityB, sizeof(VelocityB));
-		WritePosition = true;
+		memcpy(hknpBsCharacterProxyData.velocityB, velocityB, sizeof velocityB);
+		writePosition = true;
 	}
 
-	if (WritePosition)
+	if (writePosition)
 	{
-		return Erectus::WPM(bhkCharProxyControllerData.hknpBSCharacterProxyPtr, &hknpBSCharacterProxyData, sizeof(hknpBSCharacterProxyData));
+		return Utils::Wpm(bhkCharProxyControllerData.hknpBsCharacterProxyPtr, &hknpBsCharacterProxyData,
+			sizeof hknpBsCharacterProxyData);
 	}
 
 	return true;
 }
 
-void ErectusMemory::Noclip(bool State)
+void ErectusMemory::Noclip(const bool state)
 {
-	BYTE NoclipOnA[] = { 0x0F, 0x1F, 0x44, 0x00, 0x00 };
-	BYTE NoclipOffA[] = { 0xE8, 0xC3, 0xC5, 0xFE, 0xFF };
-	BYTE NoclipCheckA[sizeof(NoclipOffA)];
+	BYTE noclipOnA[] = { 0x0F, 0x1F, 0x44, 0x00, 0x00 };
+	BYTE noclipOffA[] = { 0xE8, 0xC3, 0xC5, 0xFE, 0xFF };
+	BYTE noclipCheckA[sizeof noclipOffA];
 
-	BYTE NoclipOnB[] = { 0x0F, 0x1F, 0x40, 0x00 };
-	BYTE NoclipOffB[] = { 0x41, 0xFF, 0x50, 0x40 };
-	BYTE NoclipCheckB[sizeof(NoclipOffB)];
+	BYTE noclipOnB[] = { 0x0F, 0x1F, 0x40, 0x00 };
+	BYTE noclipOffB[] = { 0x41, 0xFF, 0x50, 0x40 };
+	BYTE noclipCheckB[sizeof noclipOffB];
 
-	BYTE NoclipOnC[] = { 0x0F, 0x1F, 0x44, 0x00, 0x00 };
-	BYTE NoclipOffC[] = { 0xE8, 0x9A, 0xA1, 0x34, 0x01 };
-	BYTE NoclipCheckC[sizeof(NoclipOffC)];
+	BYTE noclipOnC[] = { 0x0F, 0x1F, 0x44, 0x00, 0x00 };
+	BYTE noclipOffC[] = { 0xE8, 0x9A, 0xA1, 0x34, 0x01 };
+	BYTE noclipCheckC[sizeof noclipOffC];
 
-	BYTE NoclipOnD[] = { 0x66, 0x0F, 0x1F, 0x44, 0x00, 0x00 };
-	BYTE NoclipOffD[] = { 0xFF, 0x15, 0x59, 0xEC, 0xFF, 0x01 };
-	BYTE NoclipCheckD[sizeof(NoclipOffD)];
+	BYTE noclipOnD[] = { 0x66, 0x0F, 0x1F, 0x44, 0x00, 0x00 };
+	BYTE noclipOffD[] = { 0xFF, 0x15, 0x59, 0xEC, 0xFF, 0x01 };
+	BYTE noclipCheckD[sizeof noclipOffD];
 
-	bool NoclipA = Erectus::RPM(ErectusProcess::Exe + OFFSET_NOCLIP_A, &NoclipCheckA, sizeof(NoclipCheckA));
-	bool NoclipB = Erectus::RPM(ErectusProcess::Exe + OFFSET_NOCLIP_B, &NoclipCheckB, sizeof(NoclipCheckB));
-	bool NoclipC = Erectus::RPM(ErectusProcess::Exe + OFFSET_NOCLIP_C, &NoclipCheckC, sizeof(NoclipCheckC));
-	bool NoclipD = Erectus::RPM(ErectusProcess::Exe + OFFSET_NOCLIP_D, &NoclipCheckD, sizeof(NoclipCheckD));
+	const auto noclipA = Utils::Rpm(ErectusProcess::exe + OFFSET_NOCLIP_A, &noclipCheckA, sizeof noclipCheckA);
+	const auto noclipB = Utils::Rpm(ErectusProcess::exe + OFFSET_NOCLIP_B, &noclipCheckB, sizeof noclipCheckB);
+	const auto noclipC = Utils::Rpm(ErectusProcess::exe + OFFSET_NOCLIP_C, &noclipCheckC, sizeof noclipCheckC);
+	const auto noclipD = Utils::Rpm(ErectusProcess::exe + OFFSET_NOCLIP_D, &noclipCheckD, sizeof noclipCheckD);
 
-	if (State)
+	if (state)
 	{
-		if (NoclipA && !memcmp(NoclipCheckA, NoclipOffA, sizeof(NoclipOffA)))
+		if (noclipA && !memcmp(noclipCheckA, noclipOffA, sizeof noclipOffA))
 		{
-			Erectus::WPM(ErectusProcess::Exe + OFFSET_NOCLIP_A, &NoclipOnA, sizeof(NoclipOnA));
+			Utils::Wpm(ErectusProcess::exe + OFFSET_NOCLIP_A, &noclipOnA, sizeof noclipOnA);
 		}
 
-		if (NoclipB && !memcmp(NoclipCheckB, NoclipOffB, sizeof(NoclipOffB)))
+		if (noclipB && !memcmp(noclipCheckB, noclipOffB, sizeof noclipOffB))
 		{
-			Erectus::WPM(ErectusProcess::Exe + OFFSET_NOCLIP_B, &NoclipOnB, sizeof(NoclipOnB));
+			Utils::Wpm(ErectusProcess::exe + OFFSET_NOCLIP_B, &noclipOnB, sizeof noclipOnB);
 		}
 
-		if (NoclipC && !memcmp(NoclipCheckC, NoclipOffC, sizeof(NoclipOffC)))
+		if (noclipC && !memcmp(noclipCheckC, noclipOffC, sizeof noclipOffC))
 		{
-			Erectus::WPM(ErectusProcess::Exe + OFFSET_NOCLIP_C, &NoclipOnC, sizeof(NoclipOnC));
+			Utils::Wpm(ErectusProcess::exe + OFFSET_NOCLIP_C, &noclipOnC, sizeof noclipOnC);
 		}
 
-		if (NoclipD && !memcmp(NoclipCheckD, NoclipOffD, sizeof(NoclipOffD)))
+		if (noclipD && !memcmp(noclipCheckD, noclipOffD, sizeof noclipOffD))
 		{
-			Erectus::WPM(ErectusProcess::Exe + OFFSET_NOCLIP_D, &NoclipOnD, sizeof(NoclipOnD));
+			Utils::Wpm(ErectusProcess::exe + OFFSET_NOCLIP_D, &noclipOnD, sizeof noclipOnD);
 		}
 
 		MovePlayer();
 	}
 	else
 	{
-		if (NoclipA && !memcmp(NoclipCheckA, NoclipOnA, sizeof(NoclipOnA)))
+		if (noclipA && !memcmp(noclipCheckA, noclipOnA, sizeof noclipOnA))
 		{
-			Erectus::WPM(ErectusProcess::Exe + OFFSET_NOCLIP_A, &NoclipOffA, sizeof(NoclipOffA));
+			Utils::Wpm(ErectusProcess::exe + OFFSET_NOCLIP_A, &noclipOffA, sizeof noclipOffA);
 		}
 
-		if (NoclipB && !memcmp(NoclipCheckB, NoclipOnB, sizeof(NoclipOnB)))
+		if (noclipB && !memcmp(noclipCheckB, noclipOnB, sizeof noclipOnB))
 		{
-			Erectus::WPM(ErectusProcess::Exe + OFFSET_NOCLIP_B, &NoclipOffB, sizeof(NoclipOffB));
+			Utils::Wpm(ErectusProcess::exe + OFFSET_NOCLIP_B, &noclipOffB, sizeof noclipOffB);
 		}
 
-		if (NoclipC && !memcmp(NoclipCheckC, NoclipOnC, sizeof(NoclipOnC)))
+		if (noclipC && !memcmp(noclipCheckC, noclipOnC, sizeof noclipOnC))
 		{
-			Erectus::WPM(ErectusProcess::Exe + OFFSET_NOCLIP_C, &NoclipOffC, sizeof(NoclipOffC));
+			Utils::Wpm(ErectusProcess::exe + OFFSET_NOCLIP_C, &noclipOffC, sizeof noclipOffC);
 		}
 
-		if (NoclipD && !memcmp(NoclipCheckD, NoclipOnD, sizeof(NoclipOnD)))
+		if (noclipD && !memcmp(noclipCheckD, noclipOnD, sizeof noclipOnD))
 		{
-			Erectus::WPM(ErectusProcess::Exe + OFFSET_NOCLIP_D, &NoclipOffD, sizeof(NoclipOffD));
+			Utils::Wpm(ErectusProcess::exe + OFFSET_NOCLIP_D, &noclipOffD, sizeof noclipOffD);
 		}
 	}
 }
 
-bool ErectusMemory::ActorValue(DWORD64* ActorValuePage, bool* ActorValuePageValid, bool State)
+bool ErectusMemory::ActorValue(DWORD64* actorValuePage, bool* actorValuePageValid, const bool state)
 {
-	if (!*ActorValuePage)
+	if (!*actorValuePage)
 	{
-		DWORD64 Page = Erectus::AllocEx(sizeof(ActorValueHook));
-		if (!Page) return false;
-		*ActorValuePage = Page;
+		const auto page = Utils::AllocEx(sizeof(ActorValueHook));
+		if (!page) return false;
+		*actorValuePage = page;
 	}
 
-	DWORD64 LocalPlayerPtr = GetLocalPlayerPtr(false);
-	if (!Erectus::Valid(LocalPlayerPtr)) return false;
+	const auto localPlayerPtr = GetLocalPlayerPtr(false);
+	if (!Utils::Valid(localPlayerPtr)) return false;
 
-	Entity LocalPlayer;
-	if (!Erectus::RPM(LocalPlayerPtr, &LocalPlayer, sizeof(LocalPlayer))) return false;
-	if (!Erectus::Valid(LocalPlayer.vtable0050)) return false;
+	Entity localPlayer{};
+	if (!Utils::Rpm(localPlayerPtr, &localPlayer, sizeof localPlayer)) return false;
+	if (!Utils::Valid(localPlayer.vtable0050)) return false;
 
-	DWORD64 ActorValueFunction;
-	if (!Erectus::RPM(LocalPlayer.vtable0050 + 0x48, &ActorValueFunction, sizeof(ActorValueFunction))) return false;
-	if (!Erectus::Valid(ActorValueFunction)) return false;
+	DWORD64 actorValueFunction;
+	if (!Utils::Rpm(localPlayer.vtable0050 + 0x48, &actorValueFunction, sizeof actorValueFunction)) return false;
+	if (!Utils::Valid(actorValueFunction)) return false;
 
-	ActorValueHook ActorValueHookData;
-	ActorValueHookData.ActionPointsEnabled = int(ErectusIni::CustomLocalPlayerSettings.ActionPointsEnabled);
-	ActorValueHookData.ActionPoints = float(ErectusIni::CustomLocalPlayerSettings.ActionPoints);
-	ActorValueHookData.StrengthEnabled = int(ErectusIni::CustomLocalPlayerSettings.StrengthEnabled);
-	ActorValueHookData.Strength = float(ErectusIni::CustomLocalPlayerSettings.Strength);
-	ActorValueHookData.PerceptionEnabled = int(ErectusIni::CustomLocalPlayerSettings.PerceptionEnabled);
-	ActorValueHookData.Perception = float(ErectusIni::CustomLocalPlayerSettings.Perception);
-	ActorValueHookData.EnduranceEnabled = int(ErectusIni::CustomLocalPlayerSettings.EnduranceEnabled);
-	ActorValueHookData.Endurance = float(ErectusIni::CustomLocalPlayerSettings.Endurance);
-	ActorValueHookData.CharismaEnabled = int(ErectusIni::CustomLocalPlayerSettings.CharismaEnabled);
-	ActorValueHookData.Charisma = float(ErectusIni::ErectusIni::CustomLocalPlayerSettings.Charisma);
-	ActorValueHookData.IntelligenceEnabled = int(ErectusIni::CustomLocalPlayerSettings.IntelligenceEnabled);
-	ActorValueHookData.Intelligence = float(ErectusIni::CustomLocalPlayerSettings.Intelligence);
-	ActorValueHookData.AgilityEnabled = int(ErectusIni::CustomLocalPlayerSettings.AgilityEnabled);
-	ActorValueHookData.Agility = float(ErectusIni::CustomLocalPlayerSettings.Agility);
-	ActorValueHookData.LuckEnabled = int(ErectusIni::CustomLocalPlayerSettings.LuckEnabled);
-	ActorValueHookData.Luck = float(ErectusIni::CustomLocalPlayerSettings.Luck);
-	ActorValueHookData.OriginalFunction = ErectusProcess::Exe + OFFSET_ACTOR_VALUE;
+	ActorValueHook actorValueHookData;
+	actorValueHookData.actionPointsEnabled = static_cast<int>(ErectusIni::customLocalPlayerSettings.actionPointsEnabled);
+	actorValueHookData.actionPoints = static_cast<float>(ErectusIni::customLocalPlayerSettings.actionPoints);
+	actorValueHookData.strengthEnabled = static_cast<int>(ErectusIni::customLocalPlayerSettings.strengthEnabled);
+	actorValueHookData.strength = static_cast<float>(ErectusIni::customLocalPlayerSettings.strength);
+	actorValueHookData.perceptionEnabled = static_cast<int>(ErectusIni::customLocalPlayerSettings.perceptionEnabled);
+	actorValueHookData.perception = static_cast<float>(ErectusIni::customLocalPlayerSettings.perception);
+	actorValueHookData.enduranceEnabled = static_cast<int>(ErectusIni::customLocalPlayerSettings.enduranceEnabled);
+	actorValueHookData.endurance = static_cast<float>(ErectusIni::customLocalPlayerSettings.endurance);
+	actorValueHookData.charismaEnabled = static_cast<int>(ErectusIni::customLocalPlayerSettings.charismaEnabled);
+	actorValueHookData.charisma = static_cast<float>(ErectusIni::customLocalPlayerSettings.charisma);
+	actorValueHookData.intelligenceEnabled = static_cast<int>(ErectusIni::customLocalPlayerSettings.intelligenceEnabled);
+	actorValueHookData.intelligence = static_cast<float>(ErectusIni::customLocalPlayerSettings.intelligence);
+	actorValueHookData.agilityEnabled = static_cast<int>(ErectusIni::customLocalPlayerSettings.agilityEnabled);
+	actorValueHookData.agility = static_cast<float>(ErectusIni::customLocalPlayerSettings.agility);
+	actorValueHookData.luckEnabled = static_cast<int>(ErectusIni::customLocalPlayerSettings.luckEnabled);
+	actorValueHookData.luck = static_cast<float>(ErectusIni::customLocalPlayerSettings.luck);
+	actorValueHookData.originalFunction = ErectusProcess::exe + OFFSET_ACTOR_VALUE;
 
-	if (ActorValueFunction != (ErectusProcess::Exe + OFFSET_ACTOR_VALUE) && ActorValueFunction != *ActorValuePage)
+	if (actorValueFunction != ErectusProcess::exe + OFFSET_ACTOR_VALUE && actorValueFunction != *actorValuePage)
 	{
-		if (Erectus::vtableSwap(LocalPlayer.vtable0050 + 0x48, ErectusProcess::Exe + OFFSET_ACTOR_VALUE))
+		if (Utils::VtableSwap(localPlayer.vtable0050 + 0x48, ErectusProcess::exe + OFFSET_ACTOR_VALUE))
 		{
-			Erectus::FreeEx(ActorValueFunction);
+			Utils::FreeEx(actorValueFunction);
 		}
 	}
 
-	if (State)
+	if (state)
 	{
-		if (*ActorValuePageValid)
+		if (*actorValuePageValid)
 		{
-			ActorValueHook ActorValueHookCheck;
-			if (!Erectus::RPM(*ActorValuePage, &ActorValueHookCheck, sizeof(ActorValueHookCheck))) return false;
-			if (memcmp(&ActorValueHookData, &ActorValueHookCheck, sizeof(ActorValueHookCheck)))
+			ActorValueHook actorValueHookCheck;
+			if (!Utils::Rpm(*actorValuePage, &actorValueHookCheck, sizeof actorValueHookCheck)) return false;
+			if (memcmp(&actorValueHookData, &actorValueHookCheck, sizeof actorValueHookCheck) != 0)
 			{
-				return Erectus::WPM(*ActorValuePage, &ActorValueHookData, sizeof(ActorValueHookData));
+				return Utils::Wpm(*actorValuePage, &actorValueHookData, sizeof actorValueHookData);
 			}
 		}
 		else
 		{
-			if (!Erectus::WPM(*ActorValuePage, &ActorValueHookData, sizeof(ActorValueHookData))) return false;
-			if (!Erectus::vtableSwap(LocalPlayer.vtable0050 + 0x48, *ActorValuePage)) return false;
-			*ActorValuePageValid = true;
+			if (!Utils::Wpm(*actorValuePage, &actorValueHookData, sizeof actorValueHookData)) return false;
+			if (!Utils::VtableSwap(localPlayer.vtable0050 + 0x48, *actorValuePage)) return false;
+			*actorValuePageValid = true;
 		}
 	}
 	else
 	{
-		if (ActorValueFunction != (ErectusProcess::Exe + OFFSET_ACTOR_VALUE))
+		if (actorValueFunction != ErectusProcess::exe + OFFSET_ACTOR_VALUE)
 		{
-			if (Erectus::vtableSwap(LocalPlayer.vtable0050 + 0x48, ErectusProcess::Exe + OFFSET_ACTOR_VALUE))
+			if (Utils::VtableSwap(localPlayer.vtable0050 + 0x48, ErectusProcess::exe + OFFSET_ACTOR_VALUE))
 			{
-				Erectus::FreeEx(ActorValueFunction);
+				Utils::FreeEx(actorValueFunction);
 			}
 		}
 
-		if (*ActorValuePage)
+		if (*actorValuePage)
 		{
-			if (Erectus::FreeEx(*ActorValuePage))
+			if (Utils::FreeEx(*actorValuePage))
 			{
-				*ActorValuePage = 0;
-				*ActorValuePageValid = false;
+				*actorValuePage = 0;
+				*actorValuePageValid = false;
 			}
 		}
 	}
@@ -3793,466 +3654,473 @@ bool ErectusMemory::ActorValue(DWORD64* ActorValuePage, bool* ActorValuePageVali
 	return true;
 }
 
-bool ErectusMemory::SetActorValueMaximum(DWORD Formid, float DefaultValue, float CustomValue, bool State)
+bool ErectusMemory::SetActorValueMaximum(const DWORD formId, const float defaultValue, const float customValue, const bool state)
 {
-	DWORD64 ActorValuePtr = GetPtr(Formid);
-	if (!Erectus::Valid(ActorValuePtr)) return false;
+	const auto actorValuePtr = GetPtr(formId);
+	if (!Utils::Valid(actorValuePtr)) return false;
 
-	ActorValueInformation ActorValueData;
-	if (!Erectus::RPM(ActorValuePtr, &ActorValueData, sizeof(ActorValueData))) return false;
+	ActorValueInformation actorValueData{};
+	if (!Utils::Rpm(actorValuePtr, &actorValueData, sizeof actorValueData)) return false;
 
-	if (State)
+	if (state)
 	{
-		if (ActorValueData.MaximumValue != CustomValue)
+		if (actorValueData.maximumValue != customValue)
 		{
-			ActorValueData.MaximumValue = CustomValue;
-			return Erectus::WPM(ActorValuePtr, &ActorValueData, sizeof(ActorValueData));
+			actorValueData.maximumValue = customValue;
+			return Utils::Wpm(actorValuePtr, &actorValueData, sizeof actorValueData);
 		}
 	}
 	else
 	{
-		if (ActorValueData.MaximumValue != DefaultValue)
+		if (actorValueData.maximumValue != defaultValue)
 		{
-			ActorValueData.MaximumValue = DefaultValue;
-			return Erectus::WPM(ActorValuePtr, &ActorValueData, sizeof(ActorValueData));
+			actorValueData.maximumValue = defaultValue;
+			return Utils::Wpm(actorValuePtr, &actorValueData, sizeof actorValueData);
 		}
 	}
 
 	return true;
 }
 
-bool ErectusMemory::OnePositionKill(DWORD64* OpkPage, bool* OpkPageValid, bool State)
+bool ErectusMemory::OnePositionKill(DWORD64* opkPage, bool* opkPageValid, const bool state)
 {
-	if (!*OpkPage)
+	if (!*opkPage)
 	{
-		DWORD64 Page = Erectus::AllocEx(sizeof(Opk));
-		if (!Page) return false;
-		*OpkPage = Page;
+		const auto page = Utils::AllocEx(sizeof(Opk));
+		if (!page)
+			return false;
+		*opkPage = page;
 	}
 
-	BYTE OpkOn[] = { 0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xE0, 0xCC, 0xCC, 0xCC };
-	BYTE OpkOff[] = { 0x0F, 0x10, 0x87, 0x90, 0x04, 0x00, 0x00, 0x0F, 0x58, 0x45, 0xA7, 0x0F, 0x29, 0x45, 0xF7 };
-	BYTE OpkCheck[sizeof(OpkOff)];
+	BYTE opkOn[] = { 0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xE0, 0xCC, 0xCC, 0xCC };
+	BYTE opkOff[] = { 0x0F, 0x10, 0x87, 0x90, 0x04, 0x00, 0x00, 0x0F, 0x58, 0x45, 0xA7, 0x0F, 0x29, 0x45, 0xF7 };
+	BYTE opkCheck[sizeof opkOff];
 
-	if (!Erectus::RPM(ErectusProcess::Exe + OFFSET_OPK, &OpkCheck, sizeof(OpkCheck)))
+	if (!Utils::Rpm(ErectusProcess::exe + OFFSET_OPK, &opkCheck, sizeof opkCheck))
 	{
 		return false;
 	}
 
-	DWORD64 OriginalFunction = ErectusProcess::Exe + OFFSET_OPK + sizeof(OpkOff);
-	memcpy(&OpkOn[2], &*OpkPage, sizeof(DWORD64));
+	const auto originalFunction = ErectusProcess::exe + OFFSET_OPK + sizeof opkOff;
+	memcpy(&opkOn[2], &*opkPage, sizeof(DWORD64));
 
-	DWORD64 PageCheck;
-	memcpy(&PageCheck, &OpkCheck[2], sizeof(DWORD64));
+	DWORD64 pageCheck;
+	memcpy(&pageCheck, &opkCheck[2], sizeof(DWORD64));
 
-	if (Erectus::Valid(PageCheck) && PageCheck != *OpkPage)
+	if (Utils::Valid(pageCheck) && pageCheck != *opkPage)
 	{
-		Opk Buffer;
-		if (!Erectus::RPM(PageCheck, &Buffer, sizeof(Buffer))) return false;
-		if (Buffer.OriginalFunction != OriginalFunction) return false;
-		if (!Erectus::WPM(ErectusProcess::Exe + OFFSET_OPK, &OpkOff, sizeof(OpkOff))) return false;
-		Erectus::FreeEx(PageCheck);
+		Opk buffer;
+		if (!Utils::Rpm(pageCheck, &buffer, sizeof buffer)) return false;
+		if (buffer.originalFunction != originalFunction) return false;
+		if (!Utils::Wpm(ErectusProcess::exe + OFFSET_OPK, &opkOff, sizeof opkOff)) return false;
+		Utils::FreeEx(pageCheck);
 	}
 
-	if (State)
+	if (state)
 	{
-		if (*OpkPageValid)
+		if (*opkPageValid)
 		{
 			return true;
 		}
-		else
-		{
-			Opk OpkData;
-			OpkData.OpkPlayers = 0;
-			OpkData.OpkNpcs = 0;
-			OpkData.OriginalFunction = OriginalFunction;
-			memset(OpkData.OpkPlayerPosition, 0x00, sizeof(OpkData.OpkPlayerPosition));
-			memset(OpkData.OpkNpcPosition, 0x00, sizeof(OpkData.OpkNpcPosition));
+		Opk opkData;
+		opkData.opkPlayers = 0;
+		opkData.opkNpcs = 0;
+		opkData.originalFunction = originalFunction;
+		memset(opkData.opkPlayerPosition, 0x00, sizeof opkData.opkPlayerPosition);
+		memset(opkData.opkNpcPosition, 0x00, sizeof opkData.opkNpcPosition);
 
-			if (!Erectus::WPM(*OpkPage, &OpkData, sizeof(OpkData))) return false;
-			if (!Erectus::WPM(ErectusProcess::Exe + OFFSET_OPK, &OpkOn, sizeof(OpkOn))) return false;
-			*OpkPageValid = true;
-		}
+		if (!Utils::Wpm(*opkPage, &opkData, sizeof opkData)) return false;
+		if (!Utils::Wpm(ErectusProcess::exe + OFFSET_OPK, &opkOn, sizeof opkOn)) return false;
+		*opkPageValid = true;
 	}
 	else
 	{
-		if (PageCheck == *OpkPage)
+		if (pageCheck == *opkPage)
 		{
-			Erectus::WPM(ErectusProcess::Exe + OFFSET_OPK, &OpkOff, sizeof(OpkOff));
+			Utils::Wpm(ErectusProcess::exe + OFFSET_OPK, &opkOff, sizeof opkOff);
 		}
 
-		if (*OpkPage)
+		if ((*opkPage) && (Utils::FreeEx(*opkPage)))
 		{
-			if (Erectus::FreeEx(*OpkPage))
-			{
-				*OpkPage = 0;
-				*OpkPageValid = false;
-			}
+			*opkPage = 0;
+			*opkPageValid = false;
 		}
+
 	}
 
 	return true;
 }
 
-bool ErectusMemory::CheckOpkDistance(DWORD64 OpkPage, bool Players)
+bool ErectusMemory::CheckOpkDistance(const DWORD64 opkPage, const bool players)
 {
-	Opk OpkData;
-	if (!Erectus::RPM(OpkPage, &OpkData, sizeof(OpkData))) return false;
+	Opk opkData;
+	if (!Utils::Rpm(opkPage, &opkData, sizeof opkData)) return false;
 
-	DWORD64 CameraPtr = GetCameraPtr();
-	if (!Erectus::Valid(CameraPtr)) return false;
+	const auto cameraPtr = GetCameraPtr();
+	if (!Utils::Valid(cameraPtr)) return false;
 
-	Camera CameraData;
-	if (!Erectus::RPM(CameraPtr, &CameraData, sizeof(CameraData))) return false;
+	Camera cameraData{};
+	if (!Utils::Rpm(cameraPtr, &cameraData, sizeof cameraData)) return false;
 
-	float EditedOrigin[3];
-	EditedOrigin[0] = CameraData.Origin[0] / 70.0f;
-	EditedOrigin[1] = CameraData.Origin[1] / 70.0f;
-	EditedOrigin[2] = CameraData.Origin[2] / 70.0f;
+	float editedOrigin[3];
+	editedOrigin[0] = cameraData.origin[0] / 70.0f;
+	editedOrigin[1] = cameraData.origin[1] / 70.0f;
+	editedOrigin[2] = cameraData.origin[2] / 70.0f;
 
-	if (Players)
+	if (players)
 	{
-		float Distance = Erectus::GetDistance(OpkData.OpkPlayerPosition, EditedOrigin);
-		if (Distance > 20.0f) return false;
+		const auto distance = Utils::GetDistance(opkData.opkPlayerPosition, editedOrigin);
+		if (distance > 20.0f) return false;
 	}
 	else
 	{
-		float Distance = Erectus::GetDistance(OpkData.OpkNpcPosition, EditedOrigin);
-		if (Distance > 20.0f) return false;
+		const auto distance = Utils::GetDistance(opkData.opkNpcPosition, editedOrigin);
+		if (distance > 20.0f) return false;
 	}
 
 	return true;
 }
 
-bool ErectusMemory::SetOpkData(DWORD64 OpkPage, bool Players, bool State)
+bool ErectusMemory::SetOpkData(const DWORD64 opkPage, const bool players, const bool state)
 {
-	Opk OpkData;
-	if (!Erectus::RPM(OpkPage, &OpkData, sizeof(OpkData))) return false;
+	Opk opkData;
+	if (!Utils::Rpm(opkPage, &opkData, sizeof opkData)) return false;
 
-	if (!State)
+	if (!state)
 	{
-		bool WriteData = false;
+		auto writeData = false;
 
-		if (Players && OpkData.OpkPlayers)
+		if (players && opkData.opkPlayers)
 		{
-			OpkData.OpkPlayers = 0;
-			memset(OpkData.OpkPlayerPosition, 0x00, sizeof(OpkData.OpkPlayerPosition));
-			WriteData = true;
+			opkData.opkPlayers = 0;
+			memset(opkData.opkPlayerPosition, 0x00, sizeof opkData.opkPlayerPosition);
+			writeData = true;
 		}
-		else if (!Players && OpkData.OpkNpcs)
+		else if (!players && opkData.opkNpcs)
 		{
-			OpkData.OpkNpcs = 0;
-			memset(OpkData.OpkNpcPosition, 0x00, sizeof(OpkData.OpkNpcPosition));
-			WriteData = true;
+			opkData.opkNpcs = 0;
+			memset(opkData.opkNpcPosition, 0x00, sizeof opkData.opkNpcPosition);
+			writeData = true;
 		}
 
-		if (WriteData)
+		if (writeData)
 		{
-			Erectus::WPM(OpkPage, &OpkData, sizeof(OpkData));
+			Utils::Wpm(opkPage, &opkData, sizeof opkData);
 		}
 
 		return true;
 	}
 
-	if (CheckOpkDistance(OpkPage, Players))
+	if (CheckOpkDistance(opkPage, players))
 	{
 		return true;
 	}
 
-	DWORD64 CameraPtr = GetCameraPtr();
-	if (!Erectus::Valid(CameraPtr)) return false;
+	const auto cameraPtr = GetCameraPtr();
+	if (!Utils::Valid(cameraPtr)) return false;
 
-	Camera CameraData;
-	if (!Erectus::RPM(CameraPtr, &CameraData, sizeof(CameraData))) return false;
+	Camera cameraData{};
+	if (!Utils::Rpm(cameraPtr, &cameraData, sizeof cameraData)) return false;
 
-	float EditedOrigin[3];
-	EditedOrigin[0] = CameraData.Origin[0] / 70.0f;
-	EditedOrigin[1] = CameraData.Origin[1] / 70.0f;
-	EditedOrigin[2] = CameraData.Origin[2] / 70.0f;
+	float editedOrigin[3];
+	editedOrigin[0] = cameraData.origin[0] / 70.0f;
+	editedOrigin[1] = cameraData.origin[1] / 70.0f;
+	editedOrigin[2] = cameraData.origin[2] / 70.0f;
 
-	float OpkPosition[3];
-	Erectus::ProjectView(OpkPosition, CameraData.Forward, EditedOrigin, 3.0f);
+	float opkPosition[3];
+	Utils::ProjectView(opkPosition, cameraData.forward, editedOrigin, 3.0f);
 
-	if (Players)
+	if (players)
 	{
-		OpkData.OpkPlayerPosition[0] = OpkPosition[0];
-		OpkData.OpkPlayerPosition[1] = OpkPosition[1];
-		OpkData.OpkPlayerPosition[2] = OpkPosition[2];
-		OpkData.OpkPlayers = 1;
+		opkData.opkPlayerPosition[0] = opkPosition[0];
+		opkData.opkPlayerPosition[1] = opkPosition[1];
+		opkData.opkPlayerPosition[2] = opkPosition[2];
+		opkData.opkPlayers = 1;
 	}
 	else
 	{
-		OpkData.OpkNpcPosition[0] = OpkPosition[0];
-		OpkData.OpkNpcPosition[1] = OpkPosition[1];
-		OpkData.OpkNpcPosition[2] = OpkPosition[2];
-		OpkData.OpkNpcs = 1;
+		opkData.opkNpcPosition[0] = opkPosition[0];
+		opkData.opkNpcPosition[1] = opkPosition[1];
+		opkData.opkNpcPosition[2] = opkPosition[2];
+		opkData.opkNpcs = 1;
 	}
 
-	return Erectus::WPM(OpkPage, &OpkData, sizeof(OpkData));
+	return Utils::Wpm(opkPage, &opkData, sizeof opkData);
 }
 
 bool ErectusMemory::InsideInteriorCell()
 {
-	DWORD64 EntityListTypePtr;
-	if (!Erectus::RPM(ErectusProcess::Exe + OFFSET_ENTITY_LIST, &EntityListTypePtr, sizeof(EntityListTypePtr))) return false;
-	if (!Erectus::Valid(EntityListTypePtr)) return false;
+	DWORD64 entityListTypePtr;
+	if (!Utils::Rpm(ErectusProcess::exe + OFFSET_ENTITY_LIST, &entityListTypePtr, sizeof entityListTypePtr)) return
+		false;
+	if (!Utils::Valid(entityListTypePtr)) return false;
 
-	EntityListType EntityListTypeData;
-	if (!Erectus::RPM(EntityListTypePtr, &EntityListTypeData, sizeof(EntityListTypeData))) return false;
-	if (!Erectus::Valid(EntityListTypeData.InteriorListPtr)) return false;
-	if (!Erectus::Valid(EntityListTypeData.InteriorListCheck)) return false;
-	if (!Erectus::Valid(EntityListTypeData.ExteriorListPtr)) return false;
-	if (!Erectus::Valid(EntityListTypeData.ExteriorListCheck)) return false;
+	EntityListType entityListTypeData{};
+	if (!Utils::Rpm(entityListTypePtr, &entityListTypeData, sizeof entityListTypeData)) return false;
+	if (!Utils::Valid(entityListTypeData.interiorListPtr)) return false;
+	if (!Utils::Valid(entityListTypeData.interiorListCheck)) return false;
+	if (!Utils::Valid(entityListTypeData.exteriorListPtr)) return false;
+	if (!Utils::Valid(entityListTypeData.exteriorListCheck)) return false;
 
-	if (EntityListTypeData.InteriorListPtr != EntityListTypeData.InteriorListCheck)
+	if (entityListTypeData.interiorListPtr != entityListTypeData.interiorListCheck)
 	{
 		return true;
 	}
-	else
-	{
-		return false;
-	}
+	return false;
 }
 
 int ErectusMemory::RenderLocalPlayerData()
 {
-	DWORD64 LocalPlayerPtr = GetLocalPlayerPtr(false);
-	if (!Erectus::Valid(LocalPlayerPtr)) return 0;
+	const auto localPlayerPtr = GetLocalPlayerPtr(false);
+	if (!Utils::Valid(localPlayerPtr)) return 0;
 
-	Entity LocalPlayer;
-	if (!Erectus::RPM(LocalPlayerPtr, &LocalPlayer, sizeof(LocalPlayer))) return 0;
+	Entity localPlayer{};
+	if (!Utils::Rpm(localPlayerPtr, &localPlayer, sizeof localPlayer)) return 0;
 
-	DWORD CellFormid = 0;
-	if (Erectus::Valid(LocalPlayer.CellPtr))
+	DWORD cellFormId = 0;
+	if (Utils::Valid(localPlayer.cellPtr))
 	{
-		if (!Erectus::RPM(LocalPlayer.CellPtr + 0x20, &CellFormid, sizeof(CellFormid)))
+		if (!Utils::Rpm(localPlayer.cellPtr + 0x20, &cellFormId, sizeof cellFormId))
 		{
-			CellFormid = 0;
+			cellFormId = 0;
 		}
 	}
 
-	float PlayerHealth = -1.0f;
-	ActorSnapshotComponent ActorSnapshotComponentData;
-	if (GetActorSnapshotComponentData(LocalPlayer, &ActorSnapshotComponentData))
+	auto playerHealth = -1.0f;
+	ActorSnapshotComponent actorSnapshotComponentData{};
+	if (GetActorSnapshotComponentData(localPlayer, &actorSnapshotComponentData))
 	{
-		PlayerHealth = ActorSnapshotComponentData.MaxHealth + ActorSnapshotComponentData.ModifiedHealth + ActorSnapshotComponentData.LostHealth;
+		playerHealth = actorSnapshotComponentData.maxHealth + actorSnapshotComponentData.modifiedHealth +
+			actorSnapshotComponentData.lostHealth;
 	}
 
-	char EntityFormidText[256];
-	sprintf_s(EntityFormidText, "Entity Formid: %08lX", LocalPlayer.Formid);
+	char entityFormIdText[256];
+	sprintf_s(entityFormIdText, "Entity FormId: %08lX", localPlayer.formId);
 
-	char StashFormidText[256];
-	sprintf_s(StashFormidText, "STASH Formid: %08lX", LocalPlayer.Formid0C24);
+	char stashFormIdText[256];
+	sprintf_s(stashFormIdText, "STASH FormId: %08lX", localPlayer.formId0C24);
 
-	char CellFormidText[256];
-	sprintf_s(CellFormidText, "Cell Formid: %08lX", CellFormid);
+	char cellFormIdText[256];
+	sprintf_s(cellFormIdText, "Cell FormId: %08lX", cellFormId);
 
-	char PositionTextX[256];
-	sprintf_s(PositionTextX, "X: %f", LocalPlayer.Position[0]);
+	char positionTextX[256];
+	sprintf_s(positionTextX, "X: %f", localPlayer.position[0]);
 
-	char PositionTextY[256];
-	sprintf_s(PositionTextY, "Y: %f", LocalPlayer.Position[1]);
+	char positionTextY[256];
+	sprintf_s(positionTextY, "Y: %f", localPlayer.position[1]);
 
-	char PositionTextZ[256];
-	sprintf_s(PositionTextZ, "Z: %f", LocalPlayer.Position[2]);
+	char positionTextZ[256];
+	sprintf_s(positionTextZ, "Z: %f", localPlayer.position[2]);
 
-	char YawTest[256];
-	sprintf_s(YawTest, "Yaw: %f", LocalPlayer.Yaw);
+	char yawTest[256];
+	sprintf_s(yawTest, "Yaw: %f", localPlayer.yaw);
 
-	char PitchText[256];
-	sprintf_s(PitchText, "Pitch: %f", LocalPlayer.Pitch);
+	char pitchText[256];
+	sprintf_s(pitchText, "Pitch: %f", localPlayer.pitch);
 
-	char HealthText[256];
-	sprintf_s(HealthText, "Health: %f", PlayerHealth);
+	char healthText[256];
+	sprintf_s(healthText, "Health: %f", playerHealth);
 
-	char* TextArray[]
+	char* textArray[]
 	{
-		EntityFormidText,
-		StashFormidText,
-		CellFormidText,
-		PositionTextX,
-		PositionTextY,
-		PositionTextZ,
-		YawTest,
-		PitchText,
-		HealthText,
+		entityFormIdText,
+		stashFormIdText,
+		cellFormIdText,
+		positionTextX,
+		positionTextY,
+		positionTextZ,
+		yawTest,
+		pitchText,
+		healthText,
 	};
 
-	float TextColor[3] = { 1.0f, 1.0f, 1.0f };
-	float TextAlpha = 1.0f;
+	float textColor[3] = { 1.0f, 1.0f, 1.0f };
+	const auto textAlpha = 1.0f;
 
-	int Index = 0;
+	auto index = 0;
 
-	while (Index < sizeof(TextArray) / sizeof(char*))
+	while (index < sizeof textArray / sizeof(char*))
 	{
-		float TextPosition[2] = { 0.0f, float(Index) * 16.0f };
-		ErectusD3D9::D3D9DrawText(TextArray[Index], true, false, TextPosition, TextColor, TextAlpha);
-		Index++;
+		float textPosition[2] = { 0.0f, static_cast<float>(index) * 16.0f };
+		Renderer::DrawText(textArray[index], true, false, textPosition, textColor, textAlpha);
+		index++;
 	}
 
-	return Index;
+	return index;
 }
 
 void ErectusMemory::RenderData()
 {
-	int Spacing = 0;
-	if (ErectusIni::CustomUtilitySettings.DebugPlayer)
+	auto spacing = 0;
+	if (ErectusIni::customUtilitySettings.debugPlayer)
 	{
-		Spacing = RenderLocalPlayerData();
+		spacing = RenderLocalPlayerData();
 	}
 
-	float EnabledTextColor[3] = { 0.0f, 1.0f, 0.0f };
-	float DisabledTextColor[3] = { 1.0f, 0.0f, 0.0f };
-	float TextAlpha = 1.0f;
+	float enabledTextColor[3] = { 0.0f, 1.0f, 0.0f };
+	float disabledTextColor[3] = { 1.0f, 0.0f, 0.0f };
+	const auto textAlpha = 1.0f;
 
-	char ScrapLooterText[256];
-	sprintf_s(ScrapLooterText, "Scrap Looter (Automatic): %d", int(ErectusIni::CustomScrapLooterSettings.ScrapAutomaticLootingEnabled));
+	char scrapLooterText[256];
+	sprintf_s(scrapLooterText, "Scrap Looter (Automatic): %d",
+		static_cast<int>(ErectusIni::customScrapLooterSettings.scrapAutomaticLootingEnabled));
 
-	char ItemLooterText[256];
-	sprintf_s(ItemLooterText, "Item Looter (Automatic): %d", int(ErectusIni::CustomItemLooterSettings.ItemAutomaticLootingEnabled));
+	char itemLooterText[256];
+	sprintf_s(itemLooterText, "Item Looter (Automatic): %d",
+		static_cast<int>(ErectusIni::customItemLooterSettings.itemAutomaticLootingEnabled));
 
-	char NPCLooterText[256];
-	sprintf_s(NPCLooterText, "NPC Looter (76m Distance Limit): %d", int(ErectusIni::NPCLooterSettings.EntityLooterEnabled));
+	char npcLooterText[256];
+	sprintf_s(npcLooterText, "NPC Looter (76m Distance Limit): %d",
+		static_cast<int>(ErectusIni::npcLooterSettings.entityLooterEnabled));
 
-	char ContainerLooterText[256];
-	sprintf_s(ContainerLooterText, "Container Looter (6m Distance Limit): %d", int(ErectusIni::ContainerLooterSettings.EntityLooterEnabled));
+	char containerLooterText[256];
+	sprintf_s(containerLooterText, "Container Looter (6m Distance Limit): %d",
+		static_cast<int>(ErectusIni::containerLooterSettings.entityLooterEnabled));
 
-	char HarvesterText[256];
-	sprintf_s(HarvesterText, "Flora Harvester (6m Distance Limit): %d", int(ErectusIni::CustomHarvesterSettings.HarvesterEnabled));
+	char harvesterText[256];
+	sprintf_s(harvesterText, "Flora Harvester (6m Distance Limit): %d",
+		static_cast<int>(ErectusIni::customHarvesterSettings.harvesterEnabled));
 
-	char PositionSpoofingText[256];
-	sprintf_s(PositionSpoofingText, "Position Spoofing (Active): %d (Height: %d)", int(ErectusThread::PositionSpoofingToggle), ErectusIni::CustomLocalPlayerSettings.PositionSpoofingHeight);
+	char positionSpoofingText[256];
+	sprintf_s(positionSpoofingText, "Position Spoofing (Active): %d (Height: %d)",
+		static_cast<int>(ErectusThread::positionSpoofingToggle), ErectusIni::customLocalPlayerSettings.positionSpoofingHeight);
 
-	char DrawAlphaCodeText[256];
-	sprintf_s(DrawAlphaCodeText, "%d %d %d %d %d %d %d %d - Alpha", ErectusImGui::AlphaCode[0], ErectusImGui::AlphaCode[1], ErectusImGui::AlphaCode[2], ErectusImGui::AlphaCode[3], ErectusImGui::AlphaCode[4], ErectusImGui::AlphaCode[5], ErectusImGui::AlphaCode[6], ErectusImGui::AlphaCode[7]);
+	char drawAlphaCodeText[256];
+	sprintf_s(drawAlphaCodeText, "%d %d %d %d %d %d %d %d - Alpha", ErectusImGui::alphaCode[0],
+		ErectusImGui::alphaCode[1], ErectusImGui::alphaCode[2], ErectusImGui::alphaCode[3],
+		ErectusImGui::alphaCode[4], ErectusImGui::alphaCode[5], ErectusImGui::alphaCode[6],
+		ErectusImGui::alphaCode[7]);
 
-	char DrawBravoCodeText[256];
-	sprintf_s(DrawBravoCodeText, "%d %d %d %d %d %d %d %d - Bravo", ErectusImGui::BravoCode[0], ErectusImGui::BravoCode[1], ErectusImGui::BravoCode[2], ErectusImGui::BravoCode[3], ErectusImGui::BravoCode[4], ErectusImGui::BravoCode[5], ErectusImGui::BravoCode[6], ErectusImGui::BravoCode[7]);
+	char drawBravoCodeText[256];
+	sprintf_s(drawBravoCodeText, "%d %d %d %d %d %d %d %d - Bravo", ErectusImGui::bravoCode[0],
+		ErectusImGui::bravoCode[1], ErectusImGui::bravoCode[2], ErectusImGui::bravoCode[3],
+		ErectusImGui::bravoCode[4], ErectusImGui::bravoCode[5], ErectusImGui::bravoCode[6],
+		ErectusImGui::bravoCode[7]);
 
-	char DrawCharlieCodeText[256];
-	sprintf_s(DrawCharlieCodeText, "%d %d %d %d %d %d %d %d - Charlie", ErectusImGui::CharlieCode[0], ErectusImGui::CharlieCode[1], ErectusImGui::CharlieCode[2], ErectusImGui::CharlieCode[3], ErectusImGui::CharlieCode[4], ErectusImGui::CharlieCode[5], ErectusImGui::CharlieCode[6], ErectusImGui::CharlieCode[7]);
+	char drawCharlieCodeText[256];
+	sprintf_s(drawCharlieCodeText, "%d %d %d %d %d %d %d %d - Charlie", ErectusImGui::charlieCode[0],
+		ErectusImGui::charlieCode[1], ErectusImGui::charlieCode[2], ErectusImGui::charlieCode[3],
+		ErectusImGui::charlieCode[4], ErectusImGui::charlieCode[5], ErectusImGui::charlieCode[6],
+		ErectusImGui::charlieCode[7]);
 
-	bool PositionSpoofingState = ErectusIni::CustomLocalPlayerSettings.PositionSpoofingEnabled;
-	if (PositionSpoofingState)
+	const auto positionSpoofingState = InsideInteriorCell()
+		? false
+		: ErectusIni::customLocalPlayerSettings.positionSpoofingEnabled;
+
+	auto alphaCodeState = false;
+	for (auto i : ErectusImGui::alphaCode)
 	{
-		if (InsideInteriorCell())
+		if (i)
 		{
-			PositionSpoofingState = false;
-		}
-	}
-
-	bool AlphaCodeState = false;
-	for (int i = 0; i < 8; i++)
-	{
-		if (ErectusImGui::AlphaCode[i])
-		{
-			AlphaCodeState = true;
+			alphaCodeState = true;
 			break;
 		}
 	}
 
-	bool BravoCodeState = false;
-	for (int i = 0; i < 8; i++)
+	auto bravoCodeState = false;
+	for (auto i : ErectusImGui::bravoCode)
 	{
-		if (ErectusImGui::BravoCode[i])
+		if (i)
 		{
-			BravoCodeState = true;
+			bravoCodeState = true;
 			break;
 		}
 	}
 
-	bool CharlieCodeState = false;
-	for (int i = 0; i < 8; i++)
+	auto charlieCodeState = false;
+	for (auto i : ErectusImGui::charlieCode)
 	{
-		if (ErectusImGui::CharlieCode[i])
+		if (i)
 		{
-			CharlieCodeState = true;
+			charlieCodeState = true;
 			break;
 		}
 	}
 
-	char* TextArray[]
+	char* textArray[]
 	{
-		ScrapLooterText,
-		ItemLooterText,
-		NPCLooterText,
-		ContainerLooterText,
-		HarvesterText,
-		PositionSpoofingText,
-		DrawAlphaCodeText,
-		DrawBravoCodeText,
-		DrawCharlieCodeText,
+		scrapLooterText,
+		itemLooterText,
+		npcLooterText,
+		containerLooterText,
+		harvesterText,
+		positionSpoofingText,
+		drawAlphaCodeText,
+		drawBravoCodeText,
+		drawCharlieCodeText,
 	};
 
-	bool StateArray[]
+	bool stateArray[]
 	{
-		ErectusIni::CustomScrapLooterSettings.ScrapAutomaticLootingEnabled,
-		ErectusIni::CustomItemLooterSettings.ItemAutomaticLootingEnabled,
-		ErectusIni::NPCLooterSettings.EntityLooterEnabled,
-		ErectusIni::ContainerLooterSettings.EntityLooterEnabled,
-		ErectusIni::CustomHarvesterSettings.HarvesterEnabled,
-		PositionSpoofingState,
-		AlphaCodeState,
-		BravoCodeState,
-		CharlieCodeState,
+		ErectusIni::customScrapLooterSettings.scrapAutomaticLootingEnabled,
+		ErectusIni::customItemLooterSettings.itemAutomaticLootingEnabled,
+		ErectusIni::npcLooterSettings.entityLooterEnabled,
+		ErectusIni::containerLooterSettings.entityLooterEnabled,
+		ErectusIni::customHarvesterSettings.harvesterEnabled,
+		positionSpoofingState,
+		alphaCodeState,
+		bravoCodeState,
+		charlieCodeState,
 	};
 
-	bool EnabledArray[]
+	bool enabledArray[]
 	{
-		ErectusIni::CustomScrapLooterSettings.ScrapAutomaticStatus,
-		ErectusIni::CustomItemLooterSettings.ItemAutomaticStatus,
-		ErectusIni::NPCLooterSettings.EntityLooterStatusEnabled,
-		ErectusIni::ContainerLooterSettings.EntityLooterStatusEnabled,
-		ErectusIni::CustomHarvesterSettings.HarvesterStatusEnabled,
-		ErectusIni::CustomLocalPlayerSettings.DrawPositionSpoofingEnabled,
-		ErectusIni::CustomNukeCodeSettings.DrawCodeAlpha,
-		ErectusIni::CustomNukeCodeSettings.DrawCodeBravo,
-		ErectusIni::CustomNukeCodeSettings.DrawCodeCharlie,
+		ErectusIni::customScrapLooterSettings.scrapAutomaticStatus,
+		ErectusIni::customItemLooterSettings.itemAutomaticStatus,
+		ErectusIni::npcLooterSettings.entityLooterStatusEnabled,
+		ErectusIni::containerLooterSettings.entityLooterStatusEnabled,
+		ErectusIni::customHarvesterSettings.harvesterStatusEnabled,
+		ErectusIni::customLocalPlayerSettings.drawPositionSpoofingEnabled,
+		ErectusIni::customNukeCodeSettings.drawCodeAlpha,
+		ErectusIni::customNukeCodeSettings.drawCodeBravo,
+		ErectusIni::customNukeCodeSettings.drawCodeCharlie,
 	};
 
-	for (int i = 0; i < sizeof(TextArray) / sizeof(char*); i++)
+	for (auto i = 0; i < sizeof textArray / sizeof(char*); i++)
 	{
-		if (!EnabledArray[i]) continue;
-		float* TextColor = nullptr;
-		if (StateArray[i]) TextColor = EnabledTextColor;
-		else TextColor = DisabledTextColor;
-		float TextPosition[2] = { 0.0f, float(Spacing) * 16.0f };
-		ErectusD3D9::D3D9DrawText(TextArray[i], true, false, TextPosition, TextColor, TextAlpha);
-		Spacing++;
+		if (!enabledArray[i]) continue;
+		float* textColor;
+		if (stateArray[i])
+			textColor = enabledTextColor;
+		else
+			textColor = disabledTextColor;
+		float textPosition[2] = { 0.0f, static_cast<float>(spacing) * 16.0f };
+		Renderer::DrawText(textArray[i], true, false, textPosition, textColor, textAlpha);
+		spacing++;
 	}
 }
 
-bool ErectusMemory::ReferenceSwap(DWORD* SourceFormid, DWORD* DestinationFormid)
+bool ErectusMemory::ReferenceSwap(DWORD* sourceFormId, DWORD* destinationFormId)
 {
-	if (*SourceFormid == *DestinationFormid)
+	if (*sourceFormId == *destinationFormId)
 	{
 		return true;
 	}
 
-	DWORD64 SourcePointer = GetPtr(*SourceFormid);
-	if (!Erectus::Valid(SourcePointer))
+	auto sourcePointer = GetPtr(*sourceFormId);
+	if (!Utils::Valid(sourcePointer))
 	{
-		*SourceFormid = 0x00000000;
+		*sourceFormId = 0x00000000;
 		return false;
 	}
 
-	DWORD64 DestinationAddress = GetAddress(*DestinationFormid);
-	if (!Erectus::Valid(DestinationAddress))
+	const auto destinationAddress = GetAddress(*destinationFormId);
+	if (!Utils::Valid(destinationAddress))
 	{
-		*DestinationFormid = 0x00000000;
+		*destinationFormId = 0x00000000;
 		return false;
 	}
 
-	return Erectus::WPM(DestinationAddress, &SourcePointer, sizeof(SourcePointer));
+	return Utils::Wpm(destinationAddress, &sourcePointer, sizeof sourcePointer);
 }
 
 bool ErectusMemory::CheckItemTransferList()
 {
-	for (int i = 0; i < 32; i++)
+	for (auto i = 0; i < 32; i++)
 	{
-		if (ErectusIni::CustomTransferSettings.Whitelist[i])
+		if (ErectusIni::customTransferSettings.whitelist[i])
 		{
-			if (ErectusIni::CustomTransferSettings.Whitelisted[i])
+			if (ErectusIni::customTransferSettings.whitelisted[i])
 			{
 				return true;
 			}
@@ -4262,244 +4130,248 @@ bool ErectusMemory::CheckItemTransferList()
 	return false;
 }
 
-bool ErectusMemory::TransferItems(DWORD SourceFormid, DWORD DestinationFormid)
+bool ErectusMemory::TransferItems(DWORD sourceFormId, DWORD destinationFormId)
 {
-	DWORD64 SourcePtr = GetPtr(SourceFormid);
-	if (!Erectus::Valid(SourcePtr)) return false;
+	auto sourcePtr = GetPtr(sourceFormId);
+	if (!Utils::Valid(sourcePtr)) return false;
 
-	DWORD64 DestinationPtr = GetPtr(DestinationFormid);
-	if (!Erectus::Valid(DestinationPtr)) return false;
+	auto destinationPtr = GetPtr(destinationFormId);
+	if (!Utils::Valid(destinationPtr)) return false;
 
-	Entity EntityData;
-	if (!Erectus::RPM(SourcePtr, &EntityData, sizeof(EntityData))) return false;
-	if (!Erectus::Valid(EntityData.InventoryPtr)) return false;
+	Entity entityData{};
+	if (!Utils::Rpm(sourcePtr, &entityData, sizeof entityData)) return false;
+	if (!Utils::Valid(entityData.inventoryPtr)) return false;
 
-	Inventory InventoryData;
-	if (!Erectus::RPM(EntityData.InventoryPtr, &InventoryData, sizeof(InventoryData))) return false;
-	if (!Erectus::Valid(InventoryData.ItemArrayPtr) || InventoryData.ItemArrayEnd < InventoryData.ItemArrayPtr) return false;
+	Inventory inventoryData{};
+	if (!Utils::Rpm(entityData.inventoryPtr, &inventoryData, sizeof inventoryData)) return false;
+	if (!Utils::Valid(inventoryData.itemArrayPtr) || inventoryData.itemArrayEnd < inventoryData.itemArrayPtr) return
+		false;
 
-	DWORD64 ItemArraySize = (InventoryData.ItemArrayEnd - InventoryData.ItemArrayPtr) / sizeof(Item);
-	if (!ItemArraySize || ItemArraySize > 0x7FFF) return false;
+	auto itemArraySize = (inventoryData.itemArrayEnd - inventoryData.itemArrayPtr) / sizeof(Item);
+	if (!itemArraySize || itemArraySize > 0x7FFF) return false;
 
-	Item* ItemData = new Item[ItemArraySize];
-	if (!Erectus::RPM(InventoryData.ItemArrayPtr, &*ItemData, ItemArraySize * sizeof(Item)))
+	auto* itemData = new Item[itemArraySize];
+	if (!Utils::Rpm(inventoryData.itemArrayPtr, &*itemData, itemArraySize * sizeof(Item)))
 	{
-		delete[]ItemData;
-		ItemData = nullptr;
+		delete[]itemData;
+		itemData = nullptr;
 		return false;
 	}
 
-	for (DWORD64 i = 0; i < ItemArraySize; i++)
+	for (DWORD64 i = 0; i < itemArraySize; i++)
 	{
-		if (!Erectus::Valid(ItemData[i].ReferencePtr)) continue;
-		if (!Erectus::Valid(ItemData[i].DisplayPtr) || ItemData[i].Iterations < ItemData[i].DisplayPtr) continue;
+		if (!Utils::Valid(itemData[i].referencePtr)) continue;
+		if (!Utils::Valid(itemData[i].displayPtr) || itemData[i].iterations < itemData[i].displayPtr) continue;
 
-		if (ErectusIni::CustomTransferSettings.UseWhitelist || ErectusIni::CustomTransferSettings.UseBlacklist)
+		if (ErectusIni::customTransferSettings.useWhitelist || ErectusIni::customTransferSettings.useBlacklist)
 		{
-			Reference ReferenceData;
-			if (!Erectus::RPM(ItemData[i].ReferencePtr, &ReferenceData, sizeof(ReferenceData))) continue;
+			Reference referenceData{};
+			if (!Utils::Rpm(itemData[i].referencePtr, &referenceData, sizeof referenceData)) continue;
 
-			if (ErectusIni::CustomTransferSettings.UseWhitelist)
+			if (ErectusIni::customTransferSettings.useWhitelist)
 			{
-				if (!CheckFormidArray(ReferenceData.Formid, ErectusIni::CustomTransferSettings.Whitelisted, ErectusIni::CustomTransferSettings.Whitelist, 32))
+				if (!CheckFormIdArray(referenceData.formId, ErectusIni::customTransferSettings.whitelisted,
+					ErectusIni::customTransferSettings.whitelist, 32))
 				{
 					continue;
 				}
 			}
 
-			if (ErectusIni::CustomTransferSettings.UseBlacklist)
+			if (ErectusIni::customTransferSettings.useBlacklist)
 			{
-				if (CheckFormidArray(ReferenceData.Formid, ErectusIni::CustomTransferSettings.Blacklisted, ErectusIni::CustomTransferSettings.Blacklist, 32))
+				if (CheckFormIdArray(referenceData.formId, ErectusIni::customTransferSettings.blacklisted,
+					ErectusIni::customTransferSettings.blacklist, 32))
 				{
 					continue;
 				}
 			}
 		}
 
-		DWORD64 Iterations = (ItemData[i].Iterations - ItemData[i].DisplayPtr) / sizeof(ItemCount);
-		if (!Iterations || Iterations > 0x7FFF) continue;
+		auto iterations = (itemData[i].iterations - itemData[i].displayPtr) / sizeof(ItemCount);
+		if (!iterations || iterations > 0x7FFF) continue;
 
-		ItemCount* ItemCountData = new ItemCount[Iterations];
-		if (!Erectus::RPM(ItemData[i].DisplayPtr, &*ItemCountData, Iterations * sizeof(ItemCount)))
+		auto* itemCountData = new ItemCount[iterations];
+		if (!Utils::Rpm(itemData[i].displayPtr, &*itemCountData, iterations * sizeof(ItemCount)))
 		{
-			delete[]ItemCountData;
-			ItemCountData = nullptr;
+			delete[]itemCountData;
+			itemCountData = nullptr;
 			continue;
 		}
 
-		int Count = 0;
-		for (DWORD64 c = 0; c < Iterations; c++)
+		auto count = 0;
+		for (DWORD64 c = 0; c < iterations; c++)
 		{
-			Count += ItemCountData[c].Count;
+			count += itemCountData[c].count;
 		}
 
-		delete[]ItemCountData;
-		ItemCountData = nullptr;
+		delete[]itemCountData;
+		itemCountData = nullptr;
 
-		if (Count == 0)
+		if (count == 0)
 		{
 			continue;
 		}
 
-		TransferMessage TransferMessageData;
-		TransferMessageData.vtable = ErectusProcess::Exe + VTABLE_REQUESTTRANSFERITEMMSG;
-		TransferMessageData.SrcFormid = SourceFormid;
-		TransferMessageData.UnknownId = 0xE0001F7A;
-		TransferMessageData.DstFormid = DestinationFormid;
-		TransferMessageData.ItemId = ItemData[i].ItemId;
-		TransferMessageData.Count = Count;
-		TransferMessageData.UnknownA = 0x00000000;
-		TransferMessageData.UnknownB = 0x00;
-		TransferMessageData.UnknownC = 0x01;
-		TransferMessageData.UnknownD = 0x00;
-		TransferMessageData.UnknownE = 0x02;
-		SendMessageToServer(&TransferMessageData, sizeof(TransferMessageData));
+		TransferMessage transferMessageData{};
+		transferMessageData.vtable = ErectusProcess::exe + VTABLE_REQUESTTRANSFERITEMMSG;
+		transferMessageData.srcFormId = sourceFormId;
+		transferMessageData.unknownId = 0xE0001F7A;
+		transferMessageData.dstFormId = destinationFormId;
+		transferMessageData.itemId = itemData[i].itemId;
+		transferMessageData.count = count;
+		transferMessageData.unknownA = 0x00000000;
+		transferMessageData.unknownB = 0x00;
+		transferMessageData.unknownC = 0x01;
+		transferMessageData.unknownD = 0x00;
+		transferMessageData.unknownE = 0x02;
+		SendMessageToServer(&transferMessageData, sizeof transferMessageData);
 	}
 
-	delete[]ItemData;
-	ItemData = nullptr;
+	delete[]itemData;
+	itemData = nullptr;
 	return true;
 }
 
-bool ErectusMemory::GetTeleportPosition(int Index)
+bool ErectusMemory::GetTeleportPosition(const int index)
 {
-	DWORD64 LocalPlayerPtr = GetLocalPlayerPtr(true);
-	if (!Erectus::Valid(LocalPlayerPtr)) return false;
+	const auto localPlayerPtr = GetLocalPlayerPtr(true);
+	if (!Utils::Valid(localPlayerPtr)) return false;
 
-	Entity LocalPlayer;
-	if (!Erectus::RPM(LocalPlayerPtr, &LocalPlayer, sizeof(LocalPlayer))) return false;
-	if (!Erectus::Valid(LocalPlayer.CellPtr)) return false;
+	Entity localPlayer{};
+	if (!Utils::Rpm(localPlayerPtr, &localPlayer, sizeof localPlayer)) return false;
+	if (!Utils::Valid(localPlayer.cellPtr)) return false;
 
-	DWORD CellFormid;
-	if (!Erectus::RPM(LocalPlayer.CellPtr + 0x20, &CellFormid, sizeof(CellFormid))) return false;
+	DWORD cellFormId;
+	if (!Utils::Rpm(localPlayer.cellPtr + 0x20, &cellFormId, sizeof cellFormId)) return false;
 
-	ErectusIni::CustomTeleportSettings.TeleportEntryData[Index].Destination[0] = LocalPlayer.Position[0];
-	ErectusIni::CustomTeleportSettings.TeleportEntryData[Index].Destination[1] = LocalPlayer.Position[1];
-	ErectusIni::CustomTeleportSettings.TeleportEntryData[Index].Destination[2] = LocalPlayer.Position[2];
-	ErectusIni::CustomTeleportSettings.TeleportEntryData[Index].Destination[3] = LocalPlayer.Yaw;
-	ErectusIni::CustomTeleportSettings.TeleportEntryData[Index].CellFormid = CellFormid;
+	ErectusIni::customTeleportSettings.teleportEntryData[index].destination[0] = localPlayer.position[0];
+	ErectusIni::customTeleportSettings.teleportEntryData[index].destination[1] = localPlayer.position[1];
+	ErectusIni::customTeleportSettings.teleportEntryData[index].destination[2] = localPlayer.position[2];
+	ErectusIni::customTeleportSettings.teleportEntryData[index].destination[3] = localPlayer.yaw;
+	ErectusIni::customTeleportSettings.teleportEntryData[index].cellFormId = cellFormId;
 
 	return true;
 }
 
-bool ErectusMemory::RequestTeleport(int Index)
+bool ErectusMemory::RequestTeleport(const int index)
 {
-	DWORD64 CellPtr = GetPtr(ErectusIni::CustomTeleportSettings.TeleportEntryData[Index].CellFormid);
-	if (!Erectus::Valid(CellPtr)) return false;
+	const auto cellPtr = GetPtr(ErectusIni::customTeleportSettings.teleportEntryData[index].cellFormId);
+	if (!Utils::Valid(cellPtr)) return false;
 
-	RequestTeleportMessage RequestTeleportMessageData;
-	RequestTeleportMessageData.vtable = ErectusProcess::Exe + VTABLE_REQUESTTELEPORTTOLOCATIONMSG;
-	RequestTeleportMessageData.PositionX = ErectusIni::CustomTeleportSettings.TeleportEntryData[Index].Destination[0];
-	RequestTeleportMessageData.PositionY = ErectusIni::CustomTeleportSettings.TeleportEntryData[Index].Destination[1];
-	RequestTeleportMessageData.PositionZ = ErectusIni::CustomTeleportSettings.TeleportEntryData[Index].Destination[2];
-	RequestTeleportMessageData.RotationX = 0.0f;
-	RequestTeleportMessageData.RotationY = 0.0f;
-	RequestTeleportMessageData.RotationZ = ErectusIni::CustomTeleportSettings.TeleportEntryData[Index].Destination[3];
-	RequestTeleportMessageData.CellPtr = CellPtr;
-
-	return SendMessageToServer(&RequestTeleportMessageData, sizeof(RequestTeleportMessageData));
-}
-
-DWORD ErectusMemory::GetLocalPlayerFormid()
-{
-	DWORD64 LocalPlayerPtr = GetLocalPlayerPtr(true);
-	if (!Erectus::Valid(LocalPlayerPtr)) return 0;
-
-	Entity LocalPlayer;
-	if (!Erectus::RPM(LocalPlayerPtr, &LocalPlayer, sizeof(LocalPlayer))) return 0;
-
-	return LocalPlayer.Formid;
-}
-
-DWORD ErectusMemory::GetStashFormid()
-{
-	DWORD64 LocalPlayerPtr = GetLocalPlayerPtr(true);
-	if (!Erectus::Valid(LocalPlayerPtr)) return 0;
-
-	Entity LocalPlayer;
-	if (!Erectus::RPM(LocalPlayerPtr, &LocalPlayer, sizeof(LocalPlayer))) return 0;
-
-	return LocalPlayer.Formid0C24;
-}
-
-bool ErectusMemory::FreezeActionPoints(DWORD64* FreezeApPage, bool* FreezeApPageValid, bool State)
-{
-	if (!*FreezeApPage)
+	RequestTeleportMessage requestTeleportMessageData =
 	{
-		DWORD64 Page = Erectus::AllocEx(sizeof(FreezeAp));
-		if (!Page) return false;
-		*FreezeApPage = Page;
+		.vtable = ErectusProcess::exe + VTABLE_REQUESTTELEPORTTOLOCATIONMSG,
+		.positionX = ErectusIni::customTeleportSettings.teleportEntryData[index].destination[0],
+		.positionY = ErectusIni::customTeleportSettings.teleportEntryData[index].destination[1],
+		.positionZ = ErectusIni::customTeleportSettings.teleportEntryData[index].destination[2],
+		.rotationX = 0.0f,
+		.rotationY = 0.0f,
+		.rotationZ = ErectusIni::customTeleportSettings.teleportEntryData[index].destination[3],
+		.cellPtr = cellPtr
+	};
+
+	return SendMessageToServer(&requestTeleportMessageData, sizeof requestTeleportMessageData);
+}
+
+DWORD ErectusMemory::GetLocalPlayerFormId()
+{
+	const auto localPlayerPtr = GetLocalPlayerPtr(true);
+	if (!Utils::Valid(localPlayerPtr)) return 0;
+
+	Entity localPlayer{};
+	if (!Utils::Rpm(localPlayerPtr, &localPlayer, sizeof localPlayer)) return 0;
+
+	return localPlayer.formId;
+}
+
+DWORD ErectusMemory::GetStashFormId()
+{
+	const auto localPlayerPtr = GetLocalPlayerPtr(true);
+	if (!Utils::Valid(localPlayerPtr)) return 0;
+
+	Entity localPlayer{};
+	if (!Utils::Rpm(localPlayerPtr, &localPlayer, sizeof localPlayer)) return 0;
+
+	return localPlayer.formId0C24;
+}
+
+bool ErectusMemory::FreezeActionPoints(DWORD64* freezeApPage, bool* freezeApPageValid, const bool state)
+{
+	if (!*freezeApPage)
+	{
+		const auto page = Utils::AllocEx(sizeof(FreezeAp));
+		if (!page)
+			return false;
+
+		*freezeApPage = page;
 	}
 
-	BYTE FreezeApOn[]
+	BYTE freezeApOn[]
 	{
-		0x0F, 0x1F, 0x40, 0x00,							//nop [rax+00]
-		0x48, 0xBF,										//mov rdi (Page)
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,	//Page (mov rdi)
-		0xFF, 0xE7,										//jmp rdi
-		0x0F, 0x1F, 0x40, 0x00,							//nop [rax+00]
+		0x0F, 0x1F, 0x40, 0x00, //nop [rax+00]
+		0x48, 0xBF, //mov rdi (Page)
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, //Page (mov rdi)
+		0xFF, 0xE7, //jmp rdi
+		0x0F, 0x1F, 0x40, 0x00, //nop [rax+00]
 	};
 
-	BYTE FreezeApOff[]
+	BYTE freezeApOff[]
 	{
-		0x8B, 0xD6,										//mov edx, esi
-		0x48, 0x8B, 0xC8,								//mov rcx, rax
-		0x48, 0x8B, 0x5C, 0x24, 0x30,					//mov rbx, [rsp+30]
-		0x48, 0x8B, 0x74, 0x24, 0x38,					//mov rsi, [rsp+38]
-		0x48, 0x83, 0xC4, 0x20,							//add rsp, 20
-		0x5F,											//pop rdi
+		0x8B, 0xD6, //mov edx, esi
+		0x48, 0x8B, 0xC8, //mov rcx, rax
+		0x48, 0x8B, 0x5C, 0x24, 0x30, //mov rbx, [rsp+30]
+		0x48, 0x8B, 0x74, 0x24, 0x38, //mov rsi, [rsp+38]
+		0x48, 0x83, 0xC4, 0x20, //add rsp, 20
+		0x5F, //pop rdi
 	};
 
-	BYTE FreezeApCheck[sizeof(FreezeApOff)];
+	BYTE freezeApCheck[sizeof freezeApOff];
 
-	if (!Erectus::RPM(ErectusProcess::Exe + OFFSET_AV_REGEN, &FreezeApCheck, sizeof(FreezeApCheck)))
+	if (!Utils::Rpm(ErectusProcess::exe + OFFSET_AV_REGEN, &freezeApCheck, sizeof freezeApCheck))
 	{
 		return false;
 	}
 
-	DWORD64 PageCheck;
-	memcpy(&PageCheck, &FreezeApCheck[0x6], sizeof(DWORD64));
+	DWORD64 pageCheck;
+	memcpy(&pageCheck, &freezeApCheck[0x6], sizeof(DWORD64));
 
-	if (Erectus::Valid(PageCheck) && PageCheck != *FreezeApPage)
+	if (Utils::Valid(pageCheck) && pageCheck != *freezeApPage)
 	{
-		for (int i = 0; i < 0x6; i++) if (FreezeApCheck[i] != FreezeApOn[i]) return false;
-		if (!Erectus::WPM(ErectusProcess::Exe + OFFSET_AV_REGEN, &FreezeApOff, sizeof(FreezeApOff))) return false;
-		Erectus::FreeEx(PageCheck);
+		for (auto i = 0; i < 0x6; i++) if (freezeApCheck[i] != freezeApOn[i]) return false;
+		if (!Utils::Wpm(ErectusProcess::exe + OFFSET_AV_REGEN, &freezeApOff, sizeof freezeApOff)) return false;
+		Utils::FreeEx(pageCheck);
 	}
 
-	if (State)
+	if (state)
 	{
-		FreezeAp FreezeApData;
-		FreezeApData.FreezeApEnabled = ErectusIni::CustomLocalPlayerSettings.FreezeApEnabled;
+		FreezeAp freezeApData;
+		freezeApData.freezeApEnabled = ErectusIni::customLocalPlayerSettings.freezeApEnabled;
 
-		if (*FreezeApPageValid)
+		if (*freezeApPageValid)
 		{
-			FreezeAp FreezeApPageCheck;
-			if (!Erectus::RPM(*FreezeApPage, &FreezeApPageCheck, sizeof(FreezeApPageCheck))) return false;
-			if (!memcmp(&FreezeApData, &FreezeApPageCheck, sizeof(FreezeApPageCheck))) return true;
-			return Erectus::WPM(*FreezeApPage, &FreezeApData, sizeof(FreezeApData));
+			FreezeAp freezeApPageCheck;
+			if (!Utils::Rpm(*freezeApPage, &freezeApPageCheck, sizeof freezeApPageCheck)) return false;
+			if (!memcmp(&freezeApData, &freezeApPageCheck, sizeof freezeApPageCheck)) return true;
+			return Utils::Wpm(*freezeApPage, &freezeApData, sizeof freezeApData);
 		}
-		else
-		{
-			if (!Erectus::WPM(*FreezeApPage, &FreezeApData, sizeof(FreezeApData))) return false;
-			memcpy(&FreezeApOn[0x6], &*FreezeApPage, sizeof(DWORD64));
-			if (!Erectus::WPM(ErectusProcess::Exe + OFFSET_AV_REGEN, &FreezeApOn, sizeof(FreezeApOn))) return false;
-			*FreezeApPageValid = true;
-		}
+		if (!Utils::Wpm(*freezeApPage, &freezeApData, sizeof freezeApData)) return false;
+		memcpy(&freezeApOn[0x6], &*freezeApPage, sizeof(DWORD64));
+		if (!Utils::Wpm(ErectusProcess::exe + OFFSET_AV_REGEN, &freezeApOn, sizeof freezeApOn)) return false;
+		*freezeApPageValid = true;
 	}
 	else
 	{
-		if (PageCheck == *FreezeApPage)
+		if (pageCheck == *freezeApPage)
 		{
-			Erectus::WPM(ErectusProcess::Exe + OFFSET_AV_REGEN, &FreezeApOff, sizeof(FreezeApOff));
+			Utils::Wpm(ErectusProcess::exe + OFFSET_AV_REGEN, &freezeApOff, sizeof freezeApOff);
 		}
 
-		if (*FreezeApPage)
+		if (*freezeApPage)
 		{
-			if (Erectus::FreeEx(*FreezeApPage))
+			if (Utils::FreeEx(*freezeApPage))
 			{
-				*FreezeApPage = 0;
-				*FreezeApPageValid = false;
+				*freezeApPage = 0;
+				*freezeApPageValid = false;
 			}
 		}
 	}
@@ -4507,392 +4379,379 @@ bool ErectusMemory::FreezeActionPoints(DWORD64* FreezeApPage, bool* FreezeApPage
 	return true;
 }
 
-bool ErectusMemory::SetClientState(DWORD64 ClientState)
+bool ErectusMemory::SetClientState(const DWORD64 clientState)
 {
-	DWORD64 LocalPlayerPtr = GetLocalPlayerPtr(true);
-	if (!Erectus::Valid(LocalPlayerPtr)) return false;
+	const auto localPlayerPtr = GetLocalPlayerPtr(true);
+	if (!Utils::Valid(localPlayerPtr))
+		return false;
 
 	if (InsideInteriorCell())
-	{
 		return false;
-	}
 
-	ClientStateMsg ClientStateMsgData;
-	ClientStateMsgData.vtable = ErectusProcess::Exe + VTABLE_CLIENTSTATEMSG;
-	ClientStateMsgData.ClientState = ClientState;
+	ClientStateMsg clientStateMsgData{ .vtable = ErectusProcess::exe + VTABLE_CLIENTSTATEMSG, .clientState = clientState };
 
-	return SendMessageToServer(&ClientStateMsgData, sizeof(ClientStateMsgData));
+	return SendMessageToServer(&clientStateMsgData, sizeof clientStateMsgData);
 }
 
-bool ErectusMemory::PositionSpoofing(bool State)
+bool ErectusMemory::PositionSpoofing(const bool state)
 {
-	BYTE PositionSpoofingOn[] = { 0xBA, 0x00, 0x00, 0x00, 0x00, 0xEB, 0x11, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC };
-	BYTE PositionSpoofingOff[] = { 0xBA, 0x01, 0x00, 0xF8, 0xFF, 0x3B, 0xC2, 0x7C, 0x0F, 0x8B, 0xD0, 0x41, 0xB8, 0xFF, 0xFF, 0x07, 0x00, 0x41, 0x3B, 0xC0, 0x41, 0x0F, 0x4F, 0xD0 };
-	BYTE PositionSpoofingCheck[sizeof(PositionSpoofingOff)];
+	BYTE positionSpoofingOn[] = {
+		0xBA, 0x00, 0x00, 0x00, 0x00, 0xEB, 0x11, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC,
+		0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC
+	};
+	BYTE positionSpoofingOff[] = {
+		0xBA, 0x01, 0x00, 0xF8, 0xFF, 0x3B, 0xC2, 0x7C, 0x0F, 0x8B, 0xD0, 0x41, 0xB8, 0xFF, 0xFF, 0x07, 0x00, 0x41,
+		0x3B, 0xC0, 0x41, 0x0F, 0x4F, 0xD0
+	};
+	BYTE positionSpoofingCheck[sizeof positionSpoofingOff];
 
-	if (!Erectus::RPM(ErectusProcess::Exe + OFFSET_SERVER_POSITION, &PositionSpoofingCheck, sizeof(PositionSpoofingCheck)))
+	if (!Utils::Rpm(ErectusProcess::exe + OFFSET_SERVER_POSITION, &positionSpoofingCheck,
+		sizeof positionSpoofingCheck))
 	{
 		return false;
 	}
 
-	if (!State)
+	if (!state)
 	{
-		PositionSpoofingCheck[1] = 0x00;
-		PositionSpoofingCheck[2] = 0x00;
-		PositionSpoofingCheck[3] = 0x00;
-		PositionSpoofingCheck[4] = 0x00;
+		positionSpoofingCheck[1] = 0x00;
+		positionSpoofingCheck[2] = 0x00;
+		positionSpoofingCheck[3] = 0x00;
+		positionSpoofingCheck[4] = 0x00;
 
-		if (!memcmp(PositionSpoofingCheck, PositionSpoofingOn, sizeof(PositionSpoofingOn)))
+		if (!memcmp(positionSpoofingCheck, positionSpoofingOn, sizeof positionSpoofingOn))
 		{
-			return Erectus::WPM(ErectusProcess::Exe + OFFSET_SERVER_POSITION, &PositionSpoofingOff, sizeof(PositionSpoofingOff));
+			return Utils::Wpm(ErectusProcess::exe + OFFSET_SERVER_POSITION, &positionSpoofingOff,
+				sizeof positionSpoofingOff);
 		}
-		else
-		{
-			return true;
-		}
+		return true;
 	}
 
-	int SpoofingHeightCheck;
-	memcpy(&SpoofingHeightCheck, &PositionSpoofingCheck[1], sizeof(SpoofingHeightCheck));
-	memcpy(&PositionSpoofingOn[1], &ErectusIni::CustomLocalPlayerSettings.PositionSpoofingHeight, sizeof(ErectusIni::CustomLocalPlayerSettings.PositionSpoofingHeight));
+	int spoofingHeightCheck;
+	memcpy(&spoofingHeightCheck, &positionSpoofingCheck[1], sizeof spoofingHeightCheck);
+	memcpy(&positionSpoofingOn[1], &ErectusIni::customLocalPlayerSettings.positionSpoofingHeight,
+		sizeof ErectusIni::customLocalPlayerSettings.positionSpoofingHeight);
 
-	if (!memcmp(PositionSpoofingCheck, PositionSpoofingOn, sizeof(PositionSpoofingOn)))
+	if (!memcmp(positionSpoofingCheck, positionSpoofingOn, sizeof positionSpoofingOn))
 	{
 		return true;
 	}
-	else if (!memcmp(PositionSpoofingCheck, PositionSpoofingOff, sizeof(PositionSpoofingOff)))
+	if (!memcmp(positionSpoofingCheck, positionSpoofingOff, sizeof positionSpoofingOff))
 	{
-		return Erectus::WPM(ErectusProcess::Exe + OFFSET_SERVER_POSITION, &PositionSpoofingOn, sizeof(PositionSpoofingOn));
+		return Utils::Wpm(ErectusProcess::exe + OFFSET_SERVER_POSITION, &positionSpoofingOn,
+			sizeof positionSpoofingOn);
 	}
-	else if (SpoofingHeightCheck != ErectusIni::CustomLocalPlayerSettings.PositionSpoofingHeight)
+	if (spoofingHeightCheck != ErectusIni::customLocalPlayerSettings.positionSpoofingHeight)
 	{
-		if (PositionSpoofingCheck[0] != 0xBA || SpoofingHeightCheck < -524287 || SpoofingHeightCheck > 524287)
+		if (positionSpoofingCheck[0] != 0xBA || spoofingHeightCheck < -524287 || spoofingHeightCheck > 524287)
 		{
 			return false;
 		}
-		else
-		{
-			return Erectus::WPM(ErectusProcess::Exe + OFFSET_SERVER_POSITION, &PositionSpoofingOn, sizeof(PositionSpoofingOn));
-		}
+		return Utils::Wpm(ErectusProcess::exe + OFFSET_SERVER_POSITION, &positionSpoofingOn,
+			sizeof positionSpoofingOn);
 	}
-	else
-	{
-		return false;
-	}
+	return false;
 }
 
-DWORD ErectusMemory::GetEntityId(Entity EntityData)
+DWORD ErectusMemory::GetEntityId(Entity entityData)
 {
-	if (!(EntityData.IdValue[0] & 1)) return 0;
+	if (!(entityData.idValue[0] & 1)) return 0;
 
 	DWORD v1;
-	memcpy(&v1, EntityData.IdValue, sizeof(v1));
+	memcpy(&v1, entityData.idValue, sizeof v1);
 
-	DWORD v2 = v1 >> 1;
-	DWORD v3 = v2 + v2;
+	const auto v2 = v1 >> 1;
+	const auto v3 = v2 + v2;
 
 	DWORD v4;
-	if (!Erectus::RPM(ErectusProcess::Exe + OFFSET_ENTITY_ID + v3 * 0x8, &v4, sizeof(v4))) return 0;
+	if (!Utils::Rpm(ErectusProcess::exe + OFFSET_ENTITY_ID + v3 * 0x8, &v4, sizeof v4)) return 0;
 
-	DWORD v5 = v4 & 0x7FF80000;
-	DWORD v6 = v5 | v2;
+	const auto v5 = v4 & 0x7FF80000;
+	const auto v6 = v5 | v2;
 
 	return v6;
 }
 
-bool ErectusMemory::SendHitsToServer(Hits* HitsData, size_t HitsDataSize)
+bool ErectusMemory::SendHitsToServer(Hits* hitsData, const size_t hitsDataSize)
 {
-	size_t AllocSize = sizeof(ExternalFunction) + sizeof(RequestHitsOnActors) + HitsDataSize;
-	DWORD64 AllocAddress = Erectus::AllocEx(AllocSize);
-	if (AllocAddress == 0) return false;
+	const auto allocSize = sizeof(ExternalFunction) + sizeof(RequestHitsOnActors) + hitsDataSize;
+	const auto allocAddress = Utils::AllocEx(allocSize);
+	if (allocAddress == 0) return false;
 
-	ExternalFunction ExternalFunctionData;
-	ExternalFunctionData.Address = ErectusProcess::Exe + OFFSET_MESSAGE_SENDER;
-	ExternalFunctionData.RCX = AllocAddress + sizeof(ExternalFunction);
-	ExternalFunctionData.RDX = 0;
-	ExternalFunctionData.R8 = 0;
-	ExternalFunctionData.R9 = 0;
+	ExternalFunction externalFunctionData;
+	externalFunctionData.address = ErectusProcess::exe + OFFSET_MESSAGE_SENDER;
+	externalFunctionData.rcx = allocAddress + sizeof(ExternalFunction);
+	externalFunctionData.rdx = 0;
+	externalFunctionData.r8 = 0;
+	externalFunctionData.r9 = 0;
 
-	BYTE* PageData = new BYTE[AllocSize];
-	memset(PageData, 0x00, AllocSize);
+	auto* pageData = new BYTE[allocSize];
+	memset(pageData, 0x00, allocSize);
 
-	RequestHitsOnActors RequestHitsOnActorsData;
-	memset(&RequestHitsOnActorsData, 0x00, sizeof(RequestHitsOnActors));
+	RequestHitsOnActors requestHitsOnActorsData{};
+	memset(&requestHitsOnActorsData, 0x00, sizeof(RequestHitsOnActors));
 
-	RequestHitsOnActorsData.vtable = ErectusProcess::Exe + VTABLE_REQUESTHITSONACTORS;
-	RequestHitsOnActorsData.HitsArrayPtr = AllocAddress + sizeof(ExternalFunction) + sizeof(RequestHitsOnActors);
-	RequestHitsOnActorsData.HitsArrayEnd = AllocAddress + sizeof(ExternalFunction) + sizeof(RequestHitsOnActors) + HitsDataSize;
+	requestHitsOnActorsData.vtable = ErectusProcess::exe + VTABLE_REQUESTHITSONACTORS;
+	requestHitsOnActorsData.hitsArrayPtr = allocAddress + sizeof(ExternalFunction) + sizeof(RequestHitsOnActors);
+	requestHitsOnActorsData.hitsArrayEnd = allocAddress + sizeof(ExternalFunction) + sizeof(RequestHitsOnActors) +
+		hitsDataSize;
 
-	memcpy(PageData, &ExternalFunctionData, sizeof(ExternalFunctionData));
-	memcpy(&PageData[sizeof(ExternalFunction)], &RequestHitsOnActorsData, sizeof(RequestHitsOnActorsData));
-	memcpy(&PageData[sizeof(ExternalFunction) + sizeof(RequestHitsOnActors)], &*HitsData, HitsDataSize);
+	memcpy(pageData, &externalFunctionData, sizeof externalFunctionData);
+	memcpy(&pageData[sizeof(ExternalFunction)], &requestHitsOnActorsData, sizeof requestHitsOnActorsData);
+	memcpy(&pageData[sizeof(ExternalFunction) + sizeof(RequestHitsOnActors)], &*hitsData, hitsDataSize);
 
-	bool PageWritten = Erectus::WPM(AllocAddress, &*PageData, AllocSize);
+	const auto pageWritten = Utils::Wpm(allocAddress, &*pageData, allocSize);
 
-	delete[]PageData;
-	PageData = nullptr;
+	delete[]pageData;
+	pageData = nullptr;
 
-	if (!PageWritten)
+	if (!pageWritten)
 	{
-		Erectus::FreeEx(AllocAddress);
+		Utils::FreeEx(allocAddress);
 		return false;
 	}
 
-	DWORD64 ParamAddress = AllocAddress + sizeof(ExternalFunction::ASM);
-	HANDLE Thread = CreateRemoteThread(ErectusProcess::Handle, NULL, 0, LPTHREAD_START_ROUTINE(AllocAddress), LPVOID(ParamAddress), 0, 0);
+	const auto paramAddress = allocAddress + sizeof ExternalFunction::ASM;
+	auto* const thread = CreateRemoteThread(ErectusProcess::handle, nullptr, 0, LPTHREAD_START_ROUTINE(allocAddress),
+		LPVOID(paramAddress), 0, nullptr);
 
-	if (Thread == NULL)
+	if (thread == nullptr)
 	{
-		Erectus::FreeEx(AllocAddress);
+		Utils::FreeEx(allocAddress);
 		return false;
 	}
 
-	DWORD ThreadResult = WaitForSingleObject(Thread, 3000);
-	CloseHandle(Thread);
+	const auto threadResult = WaitForSingleObject(thread, 3000);
+	CloseHandle(thread);
 
-	if (ThreadResult == WAIT_TIMEOUT)
+	if (threadResult == WAIT_TIMEOUT)
 	{
 		return false;
 	}
 
-	Erectus::FreeEx(AllocAddress);
+	Utils::FreeEx(allocAddress);
 	return true;
 }
 
-bool ErectusMemory::SendDamage(DWORD WeaponId, BYTE* ShotsHit, BYTE* ShotsFired, BYTE Count)
+bool ErectusMemory::SendDamage(const DWORD weaponId, BYTE* shotsHit, BYTE* shotsFired, const BYTE count)
 {
-	if (!MessagePatcher(AllowMessages))
+	if (!MessagePatcher(allowMessages))
 	{
 		return false;
 	}
 
-	if (!AllowMessages)
+	if (!allowMessages)
 	{
 		return false;
 	}
 
-	if (!WeaponId)
+	if (!weaponId)
 	{
 		return false;
 	}
 
-	bool IsPlayer = false;
-	bool TargetValid = LockedTargetValid(&IsPlayer);
-	if (!ErectusIni::CustomTargetSettings.DirectPlayers && IsPlayer)
-	{
-		TargetValid = false;
-	}
-	else if (!ErectusIni::CustomTargetSettings.DirectNPCs && !IsPlayer)
-	{
-		TargetValid = false;
-	}
-
-	if (!TargetValid)
-	{
+	auto isPlayer = false;
+	LockedTargetValid(&isPlayer);
+	if ((!ErectusIni::customTargetSettings.directPlayers && isPlayer) || (!ErectusIni::customTargetSettings.directNpCs && !isPlayer))
 		return false;
+
+	const auto localPlayerPtr = GetLocalPlayerPtr(true);
+	if (!Utils::Valid(localPlayerPtr)) return false;
+
+	Entity localPlayer{};
+	if (!Utils::Rpm(localPlayerPtr, &localPlayer, sizeof localPlayer)) return false;
+
+	const auto localPlayerId = GetEntityId(localPlayer);
+	if (!localPlayerId) return false;
+
+	Entity target{};
+	if (!Utils::Rpm(targetLockingPtr, &target, sizeof target)) return false;
+
+	const auto targetId = GetEntityId(target);
+	if (!targetId) return false;
+
+	auto* hitsData = new Hits[count];
+	memset(hitsData, 0x00, count * sizeof(Hits));
+
+	if (*shotsHit == 0 || *shotsHit == 255)
+	{
+		*shotsHit = 1;
 	}
 
-	DWORD64 LocalPlayerPtr = GetLocalPlayerPtr(true);
-	if (!Erectus::Valid(LocalPlayerPtr)) return false;
-
-	Entity LocalPlayer;
-	if (!Erectus::RPM(LocalPlayerPtr, &LocalPlayer, sizeof(LocalPlayer))) return false;
-
-	DWORD LocalPlayerId = GetEntityId(LocalPlayer);
-	if (!LocalPlayerId) return false;
-
-	Entity Target;
-	if (!Erectus::RPM(TargetLockingPtr, &Target, sizeof(Target))) return false;
-
-	DWORD TargetId = GetEntityId(Target);
-	if (!TargetId) return false;
-
-	Hits* HitsData = new Hits[Count];
-	memset(HitsData, 0x00, Count * sizeof(Hits));
-
-	if (*ShotsHit == 0 || *ShotsHit == 255)
+	if (*shotsFired == 255)
 	{
-		*ShotsHit = 1;
+		*shotsFired = 0;
 	}
 
-	if (*ShotsFired == 255)
+	for (BYTE i = 0; i < count; i++)
 	{
-		*ShotsFired = 0;
-	}
+		hitsData[i].valueA = localPlayerId;
+		hitsData[i].valueB = targetId;
+		hitsData[i].valueC = 0;
+		hitsData[i].initializationType = 0x3;
+		hitsData[i].uiWeaponServerId = weaponId;
+		hitsData[i].limbEnum = 0xFFFFFFFF;
+		hitsData[i].hitEffectId = 0;
+		hitsData[i].uEquipIndex = 0;
+		hitsData[i].uAckIndex = *shotsHit;
+		hitsData[i].uFireId = *shotsFired;
+		hitsData[i].bPredictedKill = 0;
+		hitsData[i].padding0023 = 0;
+		hitsData[i].explosionLocationX = 0.0f;
+		hitsData[i].explosionLocationY = 0.0f;
+		hitsData[i].explosionLocationZ = 0.0f;
+		hitsData[i].fProjectilePower = 1.0f;
+		hitsData[i].bVatsAttack = 0;
+		hitsData[i].bVatsCritical = 0;
+		hitsData[i].bTargetWasDead = 0;
+		hitsData[i].padding0037 = 0;
 
-	for (BYTE i = 0; i < Count; i++)
-	{
-		HitsData[i].ValueA = LocalPlayerId;
-		HitsData[i].ValueB = TargetId;
-		HitsData[i].ValueC = 0;
-		HitsData[i].InitializationType = 0x3;
-		HitsData[i].uiWeaponServerID = WeaponId;
-		HitsData[i].LIMB_ENUM = 0xFFFFFFFF;
-		HitsData[i].HitEffectID = 0;
-		HitsData[i].uEquipIndex = 0;
-		HitsData[i].uAckIndex = *ShotsHit;
-		HitsData[i].uFireID = *ShotsFired;
-		HitsData[i].bPredictedKill = 0;
-		HitsData[i].Padding0023 = 0;
-		HitsData[i].ExplosionLocationX = 0.0f;
-		HitsData[i].ExplosionLocationY = 0.0f;
-		HitsData[i].ExplosionLocationZ = 0.0f;
-		HitsData[i].fProjectilePower = 1.0f;
-		HitsData[i].bVatsAttack = 0;
-		HitsData[i].bVatsCritical = 0;
-		HitsData[i].bTargetWasDead = 0;
-		HitsData[i].Padding0037 = 0;
-
-		if (ErectusIni::CustomTargetSettings.SendDamageMax < 10)
+		if (ErectusIni::customTargetSettings.sendDamageMax < 10)
 		{
-			if (Erectus::GetRangedInt(1, 10) <= int(10 - ErectusIni::CustomTargetSettings.SendDamageMax))
+			if (Utils::GetRangedInt(1, 10) <= static_cast<int>(10 - ErectusIni::customTargetSettings.sendDamageMax))
 			{
-				if (*ShotsHit == 0 || *ShotsHit == 255)
+				if (*shotsHit == 0 || *shotsHit == 255)
 				{
-					*ShotsHit = 1;
+					*shotsHit = 1;
 				}
 				else
 				{
-					*ShotsHit += 1;
+					*shotsHit += 1;
 				}
 			}
 			else
 			{
-				*ShotsHit = 1;
+				*shotsHit = 1;
 			}
 		}
 		else
 		{
-			*ShotsHit = 1;
+			*shotsHit = 1;
 		}
 
-		for (int c = 0; c < Erectus::GetRangedInt(1, 6); c++)
+		for (auto c = 0; c < Utils::GetRangedInt(1, 6); c++)
 		{
-			if (*ShotsFired == 255)
+			if (*shotsFired == 255)
 			{
-				*ShotsFired = 0;
+				*shotsFired = 0;
 			}
 			else
 			{
-				*ShotsFired += 1;
+				*shotsFired += 1;
 			}
 		}
 	}
 
-	bool Result = SendHitsToServer(HitsData, Count * sizeof(Hits));
+	const auto result = SendHitsToServer(hitsData, count * sizeof(Hits));
 
-	delete[]HitsData;
+	delete[]hitsData;
 
-	return Result;
+	return result;
 }
 
-DWORD64 ErectusMemory::GetNukeCodePtr(DWORD Formid)
+DWORD64 ErectusMemory::GetNukeCodePtr(const DWORD formId)
 {
-	ReferenceList QuestTextList;
-	if (!Erectus::RPM(ErectusProcess::Exe + OFFSET_NUKE_CODE, &QuestTextList, sizeof(QuestTextList))) return 0;
-	if (!Erectus::Valid(QuestTextList.ArrayPtr) || !QuestTextList.ArraySize || QuestTextList.ArraySize > 0x7FFF) return 0;
+	ReferenceList questTextList{};
+	if (!Utils::Rpm(ErectusProcess::exe + OFFSET_NUKE_CODE, &questTextList, sizeof questTextList)) return 0;
+	if (!Utils::Valid(questTextList.arrayPtr) || !questTextList.arraySize || questTextList.arraySize > 0x7FFF) return 0;
 
-	DWORD64* QuestTextArray = new DWORD64[QuestTextList.ArraySize];
-	if (!Erectus::RPM(QuestTextList.ArrayPtr, &*QuestTextArray, QuestTextList.ArraySize * sizeof(DWORD64)))
+	auto* questTextArray = new DWORD64[questTextList.arraySize];
+	if (!Utils::Rpm(questTextList.arrayPtr, &*questTextArray, questTextList.arraySize * sizeof(DWORD64)))
 	{
-		delete[]QuestTextArray;
-		QuestTextArray = nullptr;
+		delete[]questTextArray;
+		questTextArray = nullptr;
 		return 0;
 	}
 
-	DWORD64 NukeCodePtr = 0;
-	for (int i = 0; i < QuestTextList.ArraySize; i++)
+	DWORD64 nukeCodePtr = 0;
+	for (auto i = 0; i < questTextList.arraySize; i++)
 	{
-		if (!Erectus::Valid(QuestTextArray[i])) continue;
+		if (!Utils::Valid(questTextArray[i])) continue;
 
-		BGSQuestText BGSQuestTextData;
-		if (!Erectus::RPM(QuestTextArray[i], &BGSQuestTextData, sizeof(BGSQuestTextData))) continue;
-		if (!Erectus::Valid(BGSQuestTextData.FormidPtr) || !Erectus::Valid(BGSQuestTextData.CodePtr)) continue;
+		BgsQuestText bgsQuestTextData{};
+		if (!Utils::Rpm(questTextArray[i], &bgsQuestTextData, sizeof bgsQuestTextData)) continue;
+		if (!Utils::Valid(bgsQuestTextData.formIdPtr) || !Utils::Valid(bgsQuestTextData.codePtr)) continue;
 
-		DWORD FormidCheck;
-		if (!Erectus::RPM(BGSQuestTextData.FormidPtr + 0x4, &FormidCheck, sizeof(FormidCheck))) continue;
-		if (FormidCheck != Formid) continue;
+		DWORD formIdCheck;
+		if (!Utils::Rpm(bgsQuestTextData.formIdPtr + 0x4, &formIdCheck, sizeof formIdCheck)) continue;
+		if (formIdCheck != formId) continue;
 
-		NukeCodePtr = BGSQuestTextData.CodePtr;
+		nukeCodePtr = bgsQuestTextData.codePtr;
 		break;
 	}
 
-	delete[]QuestTextArray;
-	QuestTextArray = nullptr;
-	return NukeCodePtr;
+	delete[]questTextArray;
+	questTextArray = nullptr;
+	return nukeCodePtr;
 }
 
-bool ErectusMemory::GetNukeCode(DWORD Formid, int* NukeCode)
+bool ErectusMemory::GetNukeCode(const DWORD formId, int* nukeCode)
 {
-	DWORD64 NukeCodePtr = GetNukeCodePtr(Formid);
-	if (!NukeCodePtr) return false;
+	const auto nukeCodePtr = GetNukeCodePtr(formId);
+	if (!nukeCodePtr) return false;
 
-	float NukeCodeArray[16];
-	if (!Erectus::RPM(NukeCodePtr, &NukeCodeArray, sizeof(NukeCodeArray))) return false;
+	float nukeCodeArray[16];
+	if (!Utils::Rpm(nukeCodePtr, &nukeCodeArray, sizeof nukeCodeArray)) return false;
 
-	for (int i = 0; i < 8; i++)
+	for (auto i = 0; i < 8; i++)
 	{
-		if (NukeCodeArray[i * 2 + 1] < 0.0f || NukeCodeArray[i * 2 + 1] > 9.0f)
+		if (nukeCodeArray[i * 2 + 1] < 0.0f || nukeCodeArray[i * 2 + 1] > 9.0f)
 		{
-			memset(NukeCode, 0x00, sizeof(int) * 8);
+			memset(nukeCode, 0x00, sizeof(int) * 8);
 			return false;
 		}
-		else
-		{
-			NukeCode[i] = int(NukeCodeArray[i * 2 + 1]);
-		}
+		nukeCode[i] = static_cast<int>(nukeCodeArray[i * 2 + 1]);
 	}
 
 	return true;
 }
 
-DWORD ErectusMemory::GetFavoritedWeaponId(BYTE Index)
+DWORD ErectusMemory::GetFavoritedWeaponId(const BYTE index)
 {
-	DWORD64 LocalPlayerPtr = GetLocalPlayerPtr(true);
-	if (!Erectus::Valid(LocalPlayerPtr)) return 0;
+	const auto localPlayerPtr = GetLocalPlayerPtr(true);
+	if (!Utils::Valid(localPlayerPtr)) return 0;
 
-	Entity LocalPlayer;
-	if (!Erectus::RPM(LocalPlayerPtr, &LocalPlayer, sizeof(LocalPlayer))) return 0;
-	if (!Erectus::Valid(LocalPlayer.InventoryPtr)) return 0;
+	Entity localPlayer{};
+	if (!Utils::Rpm(localPlayerPtr, &localPlayer, sizeof localPlayer)) return 0;
+	if (!Utils::Valid(localPlayer.inventoryPtr)) return 0;
 
-	Inventory InventoryData;
-	if (!Erectus::RPM(LocalPlayer.InventoryPtr, &InventoryData, sizeof(InventoryData))) return 0;
-	if (!Erectus::Valid(InventoryData.ItemArrayPtr) || InventoryData.ItemArrayEnd < InventoryData.ItemArrayPtr) return 0;
+	Inventory inventoryData{};
+	if (!Utils::Rpm(localPlayer.inventoryPtr, &inventoryData, sizeof inventoryData)) return 0;
+	if (!Utils::Valid(inventoryData.itemArrayPtr) || inventoryData.itemArrayEnd < inventoryData.itemArrayPtr) return 0;
 
-	DWORD64 ItemArraySize = (InventoryData.ItemArrayEnd - InventoryData.ItemArrayPtr) / sizeof(Item);
-	if (!ItemArraySize || ItemArraySize > 0x7FFF) return 0;
+	const auto itemArraySize = (inventoryData.itemArrayEnd - inventoryData.itemArrayPtr) / sizeof(Item);
+	if (!itemArraySize || itemArraySize > 0x7FFF) return 0;
 
-	Item* ItemData = new Item[ItemArraySize];
-	if (!Erectus::RPM(InventoryData.ItemArrayPtr, &*ItemData, ItemArraySize * sizeof(Item)))
+	auto* itemData = new Item[itemArraySize];
+	if (!Utils::Rpm(inventoryData.itemArrayPtr, &*itemData, itemArraySize * sizeof(Item)))
 	{
-		delete[]ItemData;
-		ItemData = nullptr;
+		delete[]itemData;
+		itemData = nullptr;
 		return 0;
 	}
 
-	for (DWORD64 i = 0; i < ItemArraySize; i++)
+	for (DWORD64 i = 0; i < itemArraySize; i++)
 	{
-		if (!Erectus::Valid(ItemData[i].ReferencePtr)) continue;
-		if (ItemData[i].FavoriteIndex != Index) continue;
+		if (!Utils::Valid(itemData[i].referencePtr)) continue;
+		if (itemData[i].favoriteIndex != index) continue;
 
-		Reference ReferenceData;
-		if (!Erectus::RPM(ItemData[i].ReferencePtr, &ReferenceData, sizeof(ReferenceData))) break;
-		if (ReferenceData.vtable != ErectusProcess::Exe + VTABLE_TESOBJECTWEAP) break;
+		Reference referenceData{};
+		if (!Utils::Rpm(itemData[i].referencePtr, &referenceData, sizeof referenceData)) break;
+		if (referenceData.vtable != ErectusProcess::exe + VTABLE_TESOBJECTWEAP) break;
 
-		DWORD WeaponId = ItemData[i].ItemId;
-		delete[]ItemData;
-		ItemData = nullptr;
-		return WeaponId;
+		const auto weaponId = itemData[i].itemId;
+		delete[]itemData;
+		itemData = nullptr;
+		return weaponId;
 	}
 
-	delete[]ItemData;
-	ItemData = nullptr;
+	delete[]itemData;
+	itemData = nullptr;
 	return 0;
 }
 
-char ErectusMemory::GetFavoriteSlot(BYTE FavoriteIndex)
+char ErectusMemory::GetFavoriteSlot(const BYTE favoriteIndex)
 {
-	switch (FavoriteIndex)
+	switch (favoriteIndex)
 	{
 	case 0x00:
 		return '1';
@@ -4923,274 +4782,258 @@ char ErectusMemory::GetFavoriteSlot(BYTE FavoriteIndex)
 	}
 }
 
-DWORD64 ErectusMemory::rttiGetNamePtr(DWORD64 vtable)
+DWORD64 ErectusMemory::RttiGetNamePtr(const DWORD64 vtable)
 {
-	DWORD64 Buffer;
-	if (!Erectus::RPM(vtable - 0x8, &Buffer, sizeof(Buffer))) return 0;
-	if (!Erectus::Valid(Buffer)) return 0;
+	DWORD64 buffer;
+	if (!Utils::Rpm(vtable - 0x8, &buffer, sizeof buffer)) return 0;
+	if (!Utils::Valid(buffer)) return 0;
 
-	DWORD Offset;
-	if (!Erectus::RPM(Buffer + 0xC, &Offset, sizeof(Offset))) return 0;
-	if (Offset == 0 || Offset > 0x7FFFFFFF) return 0;
+	DWORD offset;
+	if (!Utils::Rpm(buffer + 0xC, &offset, sizeof offset)) return 0;
+	if (offset == 0 || offset > 0x7FFFFFFF) return 0;
 
-	return ErectusProcess::Exe + Offset + 0x10;
+	return ErectusProcess::exe + offset + 0x10;
 }
 
-char* ErectusMemory::GetInstancedItemName(DWORD64 DisplayPtr)
+char* ErectusMemory::GetInstancedItemName(const DWORD64 displayPtr)
 {
-	if (!Erectus::Valid(DisplayPtr)) return nullptr;
+	if (!Utils::Valid(displayPtr)) return nullptr;
 
-	DWORD64 InstancedArrayPtr;
-	if (!Erectus::RPM(DisplayPtr, &InstancedArrayPtr, sizeof(InstancedArrayPtr))) return nullptr;
-	if (!Erectus::Valid(InstancedArrayPtr)) return nullptr;
+	DWORD64 instancedArrayPtr;
+	if (!Utils::Rpm(displayPtr, &instancedArrayPtr, sizeof instancedArrayPtr)) return nullptr;
+	if (!Utils::Valid(instancedArrayPtr)) return nullptr;
 
-	ItemInstancedArray ItemInstancedArrayData;
-	if (!Erectus::RPM(InstancedArrayPtr, &ItemInstancedArrayData, sizeof(ItemInstancedArrayData))) return nullptr;
-	if (!Erectus::Valid(ItemInstancedArrayData.ArrayPtr) || ItemInstancedArrayData.ArrayEnd < ItemInstancedArrayData.ArrayPtr) return nullptr;
+	ItemInstancedArray itemInstancedArrayData{};
+	if (!Utils::Rpm(instancedArrayPtr, &itemInstancedArrayData, sizeof itemInstancedArrayData)) return nullptr;
+	if (!Utils::Valid(itemInstancedArrayData.arrayPtr) || itemInstancedArrayData.arrayEnd < itemInstancedArrayData.
+		arrayPtr) return nullptr;
 
-	DWORD64 InstancedArraySize = (ItemInstancedArrayData.ArrayEnd - ItemInstancedArrayData.ArrayPtr) / sizeof(DWORD64);
-	if (!InstancedArraySize || InstancedArraySize > 0x7FFF) return nullptr;
+	const auto instancedArraySize = (itemInstancedArrayData.arrayEnd - itemInstancedArrayData.arrayPtr) / sizeof(DWORD64);
+	if (!instancedArraySize || instancedArraySize > 0x7FFF) return nullptr;
 
-	DWORD64* InstancedArray = new DWORD64[InstancedArraySize];
-	if (!Erectus::RPM(ItemInstancedArrayData.ArrayPtr, &*InstancedArray, InstancedArraySize * sizeof(DWORD64)))
+	auto* instancedArray = new DWORD64[instancedArraySize];
+	if (!Utils::Rpm(itemInstancedArrayData.arrayPtr, &*instancedArray, instancedArraySize * sizeof(DWORD64)))
 	{
-		delete[]InstancedArray;
-		InstancedArray = nullptr;
+		delete[]instancedArray;
+		instancedArray = nullptr;
 		return nullptr;
 	}
 
-	for (DWORD64 i = 0; i < InstancedArraySize; i++)
+	for (DWORD64 i = 0; i < instancedArraySize; i++)
 	{
-		if (!Erectus::Valid(InstancedArray[i])) continue;
+		if (!Utils::Valid(instancedArray[i])) continue;
 
-		ExtraTextDisplayData ExtraTextDisplayDataData;
-		if (!Erectus::RPM(InstancedArray[i], &ExtraTextDisplayDataData, sizeof(ExtraTextDisplayDataData))) continue;
+		ExtraTextDisplayData extraTextDisplayDataData{};
+		if (!Utils::Rpm(instancedArray[i], &extraTextDisplayDataData, sizeof extraTextDisplayDataData)) continue;
 
-		DWORD64 rttiNamePtr = rttiGetNamePtr(ExtraTextDisplayDataData.vtable);
+		const auto rttiNamePtr = RttiGetNamePtr(extraTextDisplayDataData.vtable);
 		if (!rttiNamePtr) continue;
 
-		char rttiNameCheck[sizeof(".?AVExtraTextDisplayData@@")];
-		if (!Erectus::RPM(rttiNamePtr, &rttiNameCheck, sizeof(rttiNameCheck))) continue;
-		if (strcmp(rttiNameCheck, ".?AVExtraTextDisplayData@@")) continue;
+		char rttiNameCheck[sizeof".?AVExtraTextDisplayData@@"];
+		if (!Utils::Rpm(rttiNamePtr, &rttiNameCheck, sizeof rttiNameCheck)) continue;
+		if (strcmp(rttiNameCheck, ".?AVExtraTextDisplayData@@") != 0) continue;
 
-		delete[]InstancedArray;
-		InstancedArray = nullptr;
-		return GetEntityName(ExtraTextDisplayDataData.InstancedNamePtr);
+		delete[]instancedArray;
+		instancedArray = nullptr;
+		return GetEntityName(extraTextDisplayDataData.instancedNamePtr);
 	}
 
-	delete[]InstancedArray;
-	InstancedArray = nullptr;
+	delete[]instancedArray;
+	instancedArray = nullptr;
 	return nullptr;
 }
 
 char** ErectusMemory::GetFavoritedWeapons()
 {
-	DWORD64 LocalPlayerPtr = GetLocalPlayerPtr(true);
-	if (!Erectus::Valid(LocalPlayerPtr)) return nullptr;
+	const auto localPlayerPtr = GetLocalPlayerPtr(true);
+	if (!Utils::Valid(localPlayerPtr)) return nullptr;
 
-	Entity LocalPlayer;
-	if (!Erectus::RPM(LocalPlayerPtr, &LocalPlayer, sizeof(LocalPlayer))) return nullptr;
-	if (!Erectus::Valid(LocalPlayer.InventoryPtr)) return nullptr;
+	Entity localPlayer{};
+	if (!Utils::Rpm(localPlayerPtr, &localPlayer, sizeof localPlayer)) return nullptr;
+	if (!Utils::Valid(localPlayer.inventoryPtr)) return nullptr;
 
-	Inventory InventoryData;
-	if (!Erectus::RPM(LocalPlayer.InventoryPtr, &InventoryData, sizeof(InventoryData))) return nullptr;
-	if (!Erectus::Valid(InventoryData.ItemArrayPtr) || InventoryData.ItemArrayEnd < InventoryData.ItemArrayPtr) return nullptr;
+	Inventory inventoryData{};
+	if (!Utils::Rpm(localPlayer.inventoryPtr, &inventoryData, sizeof inventoryData)) return nullptr;
+	if (!Utils::Valid(inventoryData.itemArrayPtr) || inventoryData.itemArrayEnd < inventoryData.itemArrayPtr) return
+		nullptr;
 
-	DWORD64 ItemArraySize = (InventoryData.ItemArrayEnd - InventoryData.ItemArrayPtr) / sizeof(Item);
-	if (!ItemArraySize || ItemArraySize > 0x7FFF) return nullptr;
+	const auto itemArraySize = (inventoryData.itemArrayEnd - inventoryData.itemArrayPtr) / sizeof(Item);
+	if (!itemArraySize || itemArraySize > 0x7FFF) return nullptr;
 
-	Item* ItemData = new Item[ItemArraySize];
-	if (!Erectus::RPM(InventoryData.ItemArrayPtr, &*ItemData, ItemArraySize * sizeof(Item)))
+	auto* itemData = new Item[itemArraySize];
+	if (!Utils::Rpm(inventoryData.itemArrayPtr, &*itemData, itemArraySize * sizeof(Item)))
 	{
-		delete[]ItemData;
-		ItemData = nullptr;
+		delete[]itemData;
+		itemData = nullptr;
 		return nullptr;
 	}
 
-	char** Array = new char* [13];
-	Array[0] = new char[sizeof("[?] No Weapon Selected")];
-	sprintf_s(Array[0], sizeof("[?] No Weapon Selected"), "[?] No Weapon Selected");
-	for (int i = 1; i < 13; i++)
+	auto* array = new char* [13];
+	array[0] = new char[sizeof"[?] No Weapon Selected"];
+	sprintf_s(array[0], sizeof"[?] No Weapon Selected", "[?] No Weapon Selected");
+	for (auto i = 1; i < 13; i++)
 	{
-		Array[i] = nullptr;
+		array[i] = nullptr;
 	}
 
-	for (DWORD64 i = 0; i < ItemArraySize; i++)
+	for (DWORD64 i = 0; i < itemArraySize; i++)
 	{
-		if (!Erectus::Valid(ItemData[i].ReferencePtr)) continue;
-		if (ItemData[i].FavoriteIndex > 12) continue;
+		if (!Utils::Valid(itemData[i].referencePtr)) continue;
+		if (itemData[i].favoriteIndex > 12) continue;
 
-		Reference ReferenceData;
-		if (!Erectus::RPM(ItemData[i].ReferencePtr, &ReferenceData, sizeof(ReferenceData))) continue;
-		if (ReferenceData.vtable != ErectusProcess::Exe + VTABLE_TESOBJECTWEAP) continue;
+		Reference referenceData{};
+		if (!Utils::Rpm(itemData[i].referencePtr, &referenceData, sizeof referenceData)) continue;
+		if (referenceData.vtable != ErectusProcess::exe + VTABLE_TESOBJECTWEAP) continue;
 
-		char* TempWeaponName = ErectusMemory::GetInstancedItemName(ItemData[i].DisplayPtr);
-		if (TempWeaponName == nullptr)
+		auto* tempWeaponName = ErectusMemory::GetInstancedItemName(itemData[i].displayPtr);
+		if (tempWeaponName == nullptr)
 		{
-			TempWeaponName = GetEntityName(ReferenceData.NamePtr0098);
-			if (TempWeaponName == nullptr)
+			tempWeaponName = GetEntityName(referenceData.namePtr0098);
+			if (tempWeaponName == nullptr)
 			{
 				continue;
 			}
 		}
 
-		int ArrayTextSize = sizeof("[?] ") + Erectus::GetTextLength(TempWeaponName);
-		char* ArrayText = new char[ArrayTextSize];
-		sprintf_s(ArrayText, ArrayTextSize, "[%c] %s", GetFavoriteSlot(ItemData[i].FavoriteIndex), TempWeaponName);
+		const auto arrayTextSize = static_cast <int>(sizeof"[?] " + Utils::GetTextLength(tempWeaponName));
+		auto* arrayText = new char[arrayTextSize];
+		sprintf_s(arrayText, arrayTextSize, "[%c] %s", GetFavoriteSlot(itemData[i].favoriteIndex), tempWeaponName);
 
-		Array[ItemData[i].FavoriteIndex + 1] = ArrayText;
-		delete[]TempWeaponName;
-		TempWeaponName = nullptr;
+		array[itemData[i].favoriteIndex + 1] = arrayText;
+		delete[]tempWeaponName;
+		tempWeaponName = nullptr;
 	}
 
-	for (int i = 1; i < 13; i++)
+	for (auto i = 1; i < 13; i++)
 	{
-		if (Array[i] == nullptr)
+		if (array[i] == nullptr)
 		{
-			Array[i] = new char[sizeof("[?] Favorited Item InValid")];
-			sprintf_s(Array[i], sizeof("[?] Favorited Item InValid"), "[%c] Favorited Item InValid", GetFavoriteSlot(BYTE(i - 1)));
+			array[i] = new char[sizeof"[?] Favorited Item InValid"];
+			sprintf_s(array[i], sizeof"[?] Favorited Item InValid", "[%c] Favorited Item InValid",
+				GetFavoriteSlot(BYTE(i - 1)));
 		}
 	}
 
-	delete[]ItemData;
-	ItemData = nullptr;
-	return Array;
+	delete[]itemData;
+	itemData = nullptr;
+	return array;
 }
 
-char* ErectusMemory::GetFavoritedWeaponText(BYTE Index)
+char* ErectusMemory::GetFavoritedWeaponText(const BYTE index)
 {
-	DWORD64 LocalPlayerPtr = GetLocalPlayerPtr(true);
-	if (!Erectus::Valid(LocalPlayerPtr)) return nullptr;
+	const auto localPlayerPtr = GetLocalPlayerPtr(true);
+	if (!Utils::Valid(localPlayerPtr)) return nullptr;
 
-	Entity LocalPlayer;
-	if (!Erectus::RPM(LocalPlayerPtr, &LocalPlayer, sizeof(LocalPlayer))) return nullptr;
-	if (!Erectus::Valid(LocalPlayer.InventoryPtr)) return nullptr;
+	Entity localPlayer{};
+	if (!Utils::Rpm(localPlayerPtr, &localPlayer, sizeof localPlayer)) return nullptr;
+	if (!Utils::Valid(localPlayer.inventoryPtr)) return nullptr;
 
-	Inventory InventoryData;
-	if (!Erectus::RPM(LocalPlayer.InventoryPtr, &InventoryData, sizeof(InventoryData))) return nullptr;
-	if (!Erectus::Valid(InventoryData.ItemArrayPtr) || InventoryData.ItemArrayEnd < InventoryData.ItemArrayPtr) return nullptr;
+	Inventory inventoryData{};
+	if (!Utils::Rpm(localPlayer.inventoryPtr, &inventoryData, sizeof inventoryData)) return nullptr;
+	if (!Utils::Valid(inventoryData.itemArrayPtr) || inventoryData.itemArrayEnd < inventoryData.itemArrayPtr) return
+		nullptr;
 
-	DWORD64 ItemArraySize = (InventoryData.ItemArrayEnd - InventoryData.ItemArrayPtr) / sizeof(Item);
-	if (!ItemArraySize || ItemArraySize > 0x7FFF) return nullptr;
+	const auto itemArraySize = (inventoryData.itemArrayEnd - inventoryData.itemArrayPtr) / sizeof(Item);
+	if (!itemArraySize || itemArraySize > 0x7FFF) return nullptr;
 
-	Item* ItemData = new Item[ItemArraySize];
-	if (!Erectus::RPM(InventoryData.ItemArrayPtr, &*ItemData, ItemArraySize * sizeof(Item)))
+	auto* itemData = new Item[itemArraySize];
+	if (!Utils::Rpm(inventoryData.itemArrayPtr, &*itemData, itemArraySize * sizeof(Item)))
 	{
-		delete[]ItemData;
-		ItemData = nullptr;
+		delete[]itemData;
+		itemData = nullptr;
 		return nullptr;
 	}
 
-	for (DWORD64 i = 0; i < ItemArraySize; i++)
+	for (DWORD64 i = 0; i < itemArraySize; i++)
 	{
-		if (!Erectus::Valid(ItemData[i].ReferencePtr)) continue;
-		if (ItemData[i].FavoriteIndex != Index) continue;
+		if (!Utils::Valid(itemData[i].referencePtr)) continue;
+		if (itemData[i].favoriteIndex != index) continue;
 
-		Reference ReferenceData;
-		if (!Erectus::RPM(ItemData[i].ReferencePtr, &ReferenceData, sizeof(ReferenceData))) break;
-		if (ReferenceData.vtable != ErectusProcess::Exe + VTABLE_TESOBJECTWEAP) break;
+		Reference referenceData{};
+		if (!Utils::Rpm(itemData[i].referencePtr, &referenceData, sizeof referenceData)) break;
+		if (referenceData.vtable != ErectusProcess::exe + VTABLE_TESOBJECTWEAP) break;
 
-		char* TempWeaponName = ErectusMemory::GetInstancedItemName(ItemData[i].DisplayPtr);
-		if (TempWeaponName == nullptr)
+		auto* tempWeaponName = ErectusMemory::GetInstancedItemName(itemData[i].displayPtr);
+		if (tempWeaponName == nullptr)
 		{
-			TempWeaponName = GetEntityName(ReferenceData.NamePtr0098);
-			if (TempWeaponName == nullptr)
+			tempWeaponName = GetEntityName(referenceData.namePtr0098);
+			if (tempWeaponName == nullptr)
 			{
 				continue;
 			}
 		}
 
-		int WeaponTextSize = sizeof("[?] ") + Erectus::GetTextLength(TempWeaponName);
-		char* WeaponText = new char[WeaponTextSize];
-		sprintf_s(WeaponText, WeaponTextSize, "[%c] %s", GetFavoriteSlot(ItemData[i].FavoriteIndex), TempWeaponName);
+		const auto weaponTextSize = static_cast <int>(sizeof"[?] " + Utils::GetTextLength(tempWeaponName));
+		auto* weaponText = new char[weaponTextSize];
+		sprintf_s(weaponText, weaponTextSize, "[%c] %s", GetFavoriteSlot(itemData[i].favoriteIndex), tempWeaponName);
 
-		delete[]TempWeaponName;
-		TempWeaponName = nullptr;
+		delete[]tempWeaponName;
+		tempWeaponName = nullptr;
 
-		delete[]ItemData;
-		ItemData = nullptr;
-		return WeaponText;
+		delete[]itemData;
+		itemData = nullptr;
+		return weaponText;
 	}
 
-	delete[]ItemData;
-	ItemData = nullptr;
+	delete[]itemData;
+	itemData = nullptr;
 	return nullptr;
 }
 
-bool ErectusMemory::EntityInventoryValid(Entity EntityData)
+bool ErectusMemory::EntityInventoryValid(const Entity entityData)
 {
-	if (!Erectus::Valid(EntityData.InventoryPtr))
+	if (!Utils::Valid(entityData.inventoryPtr))
 	{
 		return false;
 	}
 
-	Inventory InventoryData;
-	if (!Erectus::RPM(EntityData.InventoryPtr, &InventoryData, sizeof(InventoryData))) return false;
-	if (!Erectus::Valid(InventoryData.ItemArrayPtr) || InventoryData.ItemArrayEnd < InventoryData.ItemArrayPtr) return false;
+	Inventory inventoryData{};
+	if (!Utils::Rpm(entityData.inventoryPtr, &inventoryData, sizeof inventoryData)) return false;
+	if (!Utils::Valid(inventoryData.itemArrayPtr) || inventoryData.itemArrayEnd < inventoryData.itemArrayPtr) return
+		false;
 
-	DWORD64 ItemArraySize = (InventoryData.ItemArrayEnd - InventoryData.ItemArrayPtr) / sizeof(Item);
-	if (!ItemArraySize || ItemArraySize > 0x7FFF) return false;
+	const auto itemArraySize = (inventoryData.itemArrayEnd - inventoryData.itemArrayPtr) / sizeof(Item);
+	if (!itemArraySize || itemArraySize > 0x7FFF) return false;
 
-	Item* ItemData = new Item[ItemArraySize];
-	if (!Erectus::RPM(InventoryData.ItemArrayPtr, &*ItemData, ItemArraySize * sizeof(Item)))
+	auto* itemData = new Item[itemArraySize];
+	if (!Utils::Rpm(inventoryData.itemArrayPtr, &*itemData, itemArraySize * sizeof(Item)))
 	{
-		delete[]ItemData;
-		ItemData = nullptr;
+		delete[]itemData;
+		itemData = nullptr;
 		return false;
 	}
 
-	for (DWORD64 i = 0; i < ItemArraySize; i++)
+	for (DWORD64 i = 0; i < itemArraySize; i++)
 	{
-		if (!Erectus::Valid(ItemData[i].ReferencePtr)) continue;
+		if (!Utils::Valid(itemData[i].referencePtr)) continue;
 
-		Reference ReferenceData;
-		if (!Erectus::RPM(ItemData[i].ReferencePtr, &ReferenceData, sizeof(ReferenceData))) continue;
-		if ((ReferenceData.RecordFlagA >> 2) & 1) continue;
+		Reference referenceData{};
+		if (!Utils::Rpm(itemData[i].referencePtr, &referenceData, sizeof referenceData)) continue;
+		if (referenceData.recordFlagA >> 2 & 1) continue;
 
-		delete[]ItemData;
-		ItemData = nullptr;
+		delete[]itemData;
+		itemData = nullptr;
 		return true;
 	}
 
-	delete[]ItemData;
-	ItemData = nullptr;
+	delete[]itemData;
+	itemData = nullptr;
 	return false;
 }
 
-bool ErectusMemory::AllowLegendaryWeapons(EntityLooterSettings* CustomEntityLooterSettings)
+bool ErectusMemory::AllowLegendaryWeapons(EntityLooterSettings* customEntityLooterSettings)
 {
-	if (!CustomEntityLooterSettings->EntityLooterAllWeaponsEnabled)
+	if (!customEntityLooterSettings->entityLooterAllWeaponsEnabled)
 	{
-		if (CustomEntityLooterSettings->EntityLooterOneStarWeaponsEnabled)
+		if (customEntityLooterSettings->entityLooterOneStarWeaponsEnabled)
 		{
 			return true;
 		}
-		else if (CustomEntityLooterSettings->EntityLooterTwoStarWeaponsEnabled)
+		if (customEntityLooterSettings->entityLooterTwoStarWeaponsEnabled)
 		{
 			return true;
 		}
-		else if (CustomEntityLooterSettings->EntityLooterThreeStarWeaponsEnabled)
-		{
-			return true;
-		}
-	}
-
-	return false;
-}
-
-bool ErectusMemory::AllowLegendaryArmor(EntityLooterSettings* CustomEntityLooterSettings)
-{
-	if (!CustomEntityLooterSettings->EntityLooterAllArmorEnabled)
-	{
-		if (CustomEntityLooterSettings->EntityLooterOneStarArmorEnabled)
-		{
-			return true;
-		}
-		else if (CustomEntityLooterSettings->EntityLooterTwoStarArmorEnabled)
-		{
-			return true;
-		}
-		else if (CustomEntityLooterSettings->EntityLooterThreeStarArmorEnabled)
+		if (customEntityLooterSettings->entityLooterThreeStarWeaponsEnabled)
 		{
 			return true;
 		}
@@ -5199,87 +5042,87 @@ bool ErectusMemory::AllowLegendaryArmor(EntityLooterSettings* CustomEntityLooter
 	return false;
 }
 
-bool ErectusMemory::CheckEntityLooterItem(DWORD Formid, DWORD64 EntityFlag, EntityLooterSettings* CustomEntityLooterSettings, bool LegendaryWeaponsEnabled, bool LegendaryArmorEnabled)
+bool ErectusMemory::AllowLegendaryArmor(EntityLooterSettings* customEntityLooterSettings)
 {
-	if (CustomEntityLooterSettings->EntityLooterCapsEnabled)
+	if (customEntityLooterSettings->entityLooterAllArmorEnabled || customEntityLooterSettings->entityLooterOneStarArmorEnabled || customEntityLooterSettings->entityLooterTwoStarArmorEnabled || customEntityLooterSettings->entityLooterThreeStarArmorEnabled)
+		return true;
+
+	return false;
+}
+
+bool ErectusMemory::CheckEntityLooterItem(const DWORD formId, const DWORD64 entityFlag, EntityLooterSettings* customEntityLooterSettings, const bool legendaryWeaponsEnabled, const bool legendaryArmorEnabled)
+{
+	if (customEntityLooterSettings->entityLooterCapsEnabled && formId == 0x0000000F)
 	{
-		if (Formid == 0x0000000F)
+		return true;
+	}
+
+	if (customEntityLooterSettings->entityLooterListEnabled)
+	{
+		if (CheckFormIdArray(formId, customEntityLooterSettings->entityLooterEnabledList,
+			customEntityLooterSettings->entityLooterFormIdList, 100))
 		{
 			return true;
 		}
 	}
 
-	if (CustomEntityLooterSettings->EntityLooterListEnabled)
+	if (entityFlag & CUSTOM_ENTRY_WEAPON)
 	{
-		if (CheckFormidArray(Formid, CustomEntityLooterSettings->EntityLooterEnabledList, CustomEntityLooterSettings->EntityLooterFormidList, 100))
+		if (customEntityLooterSettings->entityLooterAllWeaponsEnabled)
 		{
 			return true;
 		}
+		return legendaryWeaponsEnabled;
+	}
+	if (entityFlag & CUSTOM_ENTRY_ARMOR)
+	{
+		if (customEntityLooterSettings->entityLooterAllArmorEnabled)
+		{
+			return true;
+		}
+		return legendaryArmorEnabled;
+	}
+	if (entityFlag & CUSTOM_ENTRY_AMMO)
+	{
+		return customEntityLooterSettings->entityLooterAmmoEnabled;
+	}
+	if (entityFlag & CUSTOM_ENTRY_MOD)
+	{
+		return customEntityLooterSettings->entityLooterModsEnabled;
+	}
+	if (entityFlag & CUSTOM_ENTRY_JUNK)
+	{
+		return customEntityLooterSettings->entityLooterJunkEnabled;
+	}
+	if (entityFlag & CUSTOM_ENTRY_AID)
+	{
+		return customEntityLooterSettings->entityLooterAidEnabled;
+	}
+	if (entityFlag & CUSTOM_ENTRY_TREASURE_MAP)
+	{
+		return customEntityLooterSettings->entityLooterTreasureMapsEnabled;
+	}
+	if (entityFlag & CUSTOM_ENTRY_PLAN)
+	{
+		if (entityFlag & CUSTOM_ENTRY_KNOWN_RECIPE)
+		{
+			return customEntityLooterSettings->entityLooterKnownPlansEnabled;
+		}
+		if (entityFlag & CUSTOM_ENTRY_UNKNOWN_RECIPE)
+		{
+			return customEntityLooterSettings->entityLooterUnknownPlansEnabled;
+		}
+		if (entityFlag & CUSTOM_ENTRY_FAILED_RECIPE)
+		{
+			return customEntityLooterSettings->entityLooterUnknownPlansEnabled;
+		}
+	}
+	else if (entityFlag & CUSTOM_ENTRY_MISC)
+	{
+		return customEntityLooterSettings->entityLooterMiscEnabled;
 	}
 
-	if (EntityFlag & CUSTOM_ENTRY_WEAPON)
-	{
-		if (CustomEntityLooterSettings->EntityLooterAllWeaponsEnabled)
-		{
-			return true;
-		}
-		else
-		{
-			return LegendaryWeaponsEnabled;
-		}
-	}
-	else if (EntityFlag & CUSTOM_ENTRY_ARMOR)
-	{
-		if (CustomEntityLooterSettings->EntityLooterAllArmorEnabled)
-		{
-			return true;
-		}
-		else
-		{
-			return LegendaryArmorEnabled;
-		}
-	}
-	else if (EntityFlag & CUSTOM_ENTRY_AMMO)
-	{
-		return CustomEntityLooterSettings->EntityLooterAmmoEnabled;
-	}
-	else if (EntityFlag & CUSTOM_ENTRY_MOD)
-	{
-		return CustomEntityLooterSettings->EntityLooterModsEnabled;
-	}
-	else if (EntityFlag & CUSTOM_ENTRY_JUNK)
-	{
-		return CustomEntityLooterSettings->EntityLooterJunkEnabled;
-	}
-	else if (EntityFlag & CUSTOM_ENTRY_AID)
-	{
-		return CustomEntityLooterSettings->EntityLooterAidEnabled;
-	}
-	else if (EntityFlag & CUSTOM_ENTRY_TREASURE_MAP)
-	{
-		return CustomEntityLooterSettings->EntityLooterTreasureMapsEnabled;
-	}
-	else if (EntityFlag & CUSTOM_ENTRY_PLAN)
-	{
-		if (EntityFlag & CUSTOM_ENTRY_KNOWN_RECIPE)
-		{
-			return CustomEntityLooterSettings->EntityLooterKnownPlansEnabled;
-		}
-		else if (EntityFlag & CUSTOM_ENTRY_UNKNOWN_RECIPE)
-		{
-			return CustomEntityLooterSettings->EntityLooterUnknownPlansEnabled;
-		}
-		else if (EntityFlag & CUSTOM_ENTRY_FAILED_RECIPE)
-		{
-			return CustomEntityLooterSettings->EntityLooterUnknownPlansEnabled;
-		}
-	}
-	else if (EntityFlag & CUSTOM_ENTRY_MISC)
-	{
-		return CustomEntityLooterSettings->EntityLooterMiscEnabled;
-	}
-
-	if (CustomEntityLooterSettings->EntityLooterUnlistedEnabled)
+	if (customEntityLooterSettings->entityLooterUnlistedEnabled)
 	{
 		return true;
 	}
@@ -5287,11 +5130,11 @@ bool ErectusMemory::CheckEntityLooterItem(DWORD Formid, DWORD64 EntityFlag, Enti
 	return false;
 }
 
-bool ErectusMemory::IsLegendaryFormid(DWORD Formid)
+bool ErectusMemory::IsLegendaryFormId(const DWORD formId)
 {
-	for (size_t i = 0; i < sizeof(LegendaryFormidArray) / sizeof(DWORD); i++)
+	for (auto i : legendaryFormIdArray)
 	{
-		if (Formid == LegendaryFormidArray[i])
+		if (formId == i)
 		{
 			return true;
 		}
@@ -5300,122 +5143,124 @@ bool ErectusMemory::IsLegendaryFormid(DWORD Formid)
 	return false;
 }
 
-BYTE ErectusMemory::GetLegendaryRank(DWORD64 DisplayPtr)
+BYTE ErectusMemory::GetLegendaryRank(const DWORD64 displayPtr)
 {
-	if (!Erectus::Valid(DisplayPtr)) return 0;
+	if (!Utils::Valid(displayPtr)) return 0;
 
-	DWORD64 InstancedArrayPtr;
-	if (!Erectus::RPM(DisplayPtr, &InstancedArrayPtr, sizeof(InstancedArrayPtr))) return 0;
-	if (!Erectus::Valid(InstancedArrayPtr)) return 0;
+	DWORD64 instancedArrayPtr;
+	if (!Utils::Rpm(displayPtr, &instancedArrayPtr, sizeof instancedArrayPtr)) return 0;
+	if (!Utils::Valid(instancedArrayPtr)) return 0;
 
-	ItemInstancedArray ItemInstancedArrayData;
-	if (!Erectus::RPM(InstancedArrayPtr, &ItemInstancedArrayData, sizeof(ItemInstancedArrayData))) return 0;
-	if (!Erectus::Valid(ItemInstancedArrayData.ArrayPtr) || ItemInstancedArrayData.ArrayEnd < ItemInstancedArrayData.ArrayPtr) return 0;
+	ItemInstancedArray itemInstancedArrayData{};
+	if (!Utils::Rpm(instancedArrayPtr, &itemInstancedArrayData, sizeof itemInstancedArrayData)) return 0;
+	if (!Utils::Valid(itemInstancedArrayData.arrayPtr) || itemInstancedArrayData.arrayEnd < itemInstancedArrayData.
+		arrayPtr) return 0;
 
-	DWORD64 InstancedArraySize = (ItemInstancedArrayData.ArrayEnd - ItemInstancedArrayData.ArrayPtr) / sizeof(DWORD64);
-	if (!InstancedArraySize || InstancedArraySize > 0x7FFF) return 0;
+	const auto instancedArraySize = (itemInstancedArrayData.arrayEnd - itemInstancedArrayData.arrayPtr) / sizeof(DWORD64);
+	if (!instancedArraySize || instancedArraySize > 0x7FFF) return 0;
 
-	DWORD64* InstancedArray = new DWORD64[InstancedArraySize];
-	if (!Erectus::RPM(ItemInstancedArrayData.ArrayPtr, &*InstancedArray, InstancedArraySize * sizeof(DWORD64)))
+	auto* instancedArray = new DWORD64[instancedArraySize];
+	if (!Utils::Rpm(itemInstancedArrayData.arrayPtr, &*instancedArray, instancedArraySize * sizeof(DWORD64)))
 	{
-		delete[]InstancedArray;
-		InstancedArray = nullptr;
+		delete[]instancedArray;
+		instancedArray = nullptr;
 		return 0;
 	}
 
-	DWORD64 ObjectInstanceExtraPtr = 0;
+	DWORD64 objectInstanceExtraPtr = 0;
 
-	for (DWORD64 i = 0; i < InstancedArraySize; i++)
+	for (DWORD64 i = 0; i < instancedArraySize; i++)
 	{
-		if (!Erectus::Valid(InstancedArray[i])) continue;
+		if (!Utils::Valid(instancedArray[i])) continue;
 
-		ExtraTextDisplayData ExtraTextDisplayDataData;
-		if (!Erectus::RPM(InstancedArray[i], &ExtraTextDisplayDataData, sizeof(ExtraTextDisplayDataData))) continue;
+		ExtraTextDisplayData extraTextDisplayDataData{};
+		if (!Utils::Rpm(instancedArray[i], &extraTextDisplayDataData, sizeof extraTextDisplayDataData)) continue;
 
-		DWORD64 rttiNamePtr = rttiGetNamePtr(ExtraTextDisplayDataData.vtable);
+		const auto rttiNamePtr = RttiGetNamePtr(extraTextDisplayDataData.vtable);
 		if (!rttiNamePtr) continue;
 
-		char rttiNameCheck[sizeof(".?AVBGSObjectInstanceExtra@@")];
-		if (!Erectus::RPM(rttiNamePtr, &rttiNameCheck, sizeof(rttiNameCheck))) continue;
-		if (strcmp(rttiNameCheck, ".?AVBGSObjectInstanceExtra@@")) continue;
+		char rttiNameCheck[sizeof".?AVBGSObjectInstanceExtra@@"];
+		if (!Utils::Rpm(rttiNamePtr, &rttiNameCheck, sizeof rttiNameCheck))
+			continue;
+		if (strcmp(rttiNameCheck, ".?AVBGSObjectInstanceExtra@@") != 0)
+			continue;
 
-		ObjectInstanceExtraPtr = InstancedArray[i];
+		objectInstanceExtraPtr = instancedArray[i];
 		break;
 	}
 
-	delete[]InstancedArray;
-	InstancedArray = nullptr;
+	delete[]instancedArray;
+	instancedArray = nullptr;
 
-	if (!ObjectInstanceExtraPtr)
+	if (!objectInstanceExtraPtr)
 	{
 		return 0;
 	}
 
-	ObjectInstanceExtra ObjectInstanceExtraData;
-	if (!Erectus::RPM(ObjectInstanceExtraPtr, &ObjectInstanceExtraData, sizeof(ObjectInstanceExtraData))) return 0;
-	if (!Erectus::Valid(ObjectInstanceExtraData.ModDataPtr)) return 0;
+	ObjectInstanceExtra objectInstanceExtraData{};
+	if (!Utils::Rpm(objectInstanceExtraPtr, &objectInstanceExtraData, sizeof objectInstanceExtraData)) return 0;
+	if (!Utils::Valid(objectInstanceExtraData.modDataPtr)) return 0;
 
-	ModInstance ModInstanceData;
-	if (!Erectus::RPM(ObjectInstanceExtraData.ModDataPtr, &ModInstanceData, sizeof(ModInstanceData))) return 0;
-	if (!Erectus::Valid(ModInstanceData.ModListPtr) || !ModInstanceData.ModListSize) return 0;
+	ModInstance modInstanceData{};
+	if (!Utils::Rpm(objectInstanceExtraData.modDataPtr, &modInstanceData, sizeof modInstanceData)) return 0;
+	if (!Utils::Valid(modInstanceData.modListPtr) || !modInstanceData.modListSize) return 0;
 
-	DWORD64 ModArraySize = ModInstanceData.ModListSize / 0x8;
-	if (!ModArraySize || ModArraySize > 0x7FFF) return 0;
+	const DWORD64 modArraySize = modInstanceData.modListSize / 0x8;
+	if (!modArraySize || modArraySize > 0x7FFF) return 0;
 
-	DWORD* ModArray = new DWORD[ModArraySize * 2];
-	if (!Erectus::RPM(ModInstanceData.ModListPtr, &*ModArray, ModArraySize * 2 * sizeof(DWORD)))
+	auto* modArray = new DWORD[modArraySize * 2];
+	if (!Utils::Rpm(modInstanceData.modListPtr, &*modArray, modArraySize * 2 * sizeof(DWORD)))
 	{
-		delete[]ModArray;
+		delete[]modArray;
 		return 0;
 	}
 
-	BYTE LegendaryRank = 0;
-
-	for (DWORD64 i = 0; i < ModArraySize; i++)
+	BYTE legendaryRank = 0;
+	for (DWORD64 i = 0; i < modArraySize; i++)
 	{
-		if (IsLegendaryFormid(ModArray[i * 2]))
+		if (IsLegendaryFormId(modArray[i * 2]))
 		{
-			LegendaryRank++;
+			legendaryRank++;
 		}
 	}
 
-	delete[]ModArray;
-	return LegendaryRank;
+	delete[]modArray;
+	return legendaryRank;
 }
 
-bool ErectusMemory::ValidLegendary(BYTE LegendaryRank, DWORD64 EntityFlag, EntityLooterSettings* CustomEntityLooterSettings, bool LegendaryWeaponsEnabled, bool LegendaryArmorEnabled)
+bool ErectusMemory::ValidLegendary(const BYTE legendaryRank, const DWORD64 entityFlag, EntityLooterSettings* customEntityLooterSettings, const bool legendaryWeaponsEnabled, const bool legendaryArmorEnabled)
 {
-	if (EntityFlag & CUSTOM_ENTRY_WEAPON)
+	if (entityFlag & CUSTOM_ENTRY_WEAPON)
 	{
-		if (LegendaryWeaponsEnabled)
+		if (legendaryWeaponsEnabled)
 		{
-			switch (LegendaryRank)
+			switch (legendaryRank)
 			{
 			case 0x01:
-				return CustomEntityLooterSettings->EntityLooterOneStarWeaponsEnabled;
+				return customEntityLooterSettings->entityLooterOneStarWeaponsEnabled;
 			case 0x02:
-				return CustomEntityLooterSettings->EntityLooterTwoStarWeaponsEnabled;
+				return customEntityLooterSettings->entityLooterTwoStarWeaponsEnabled;
 			case 0x03:
-				return CustomEntityLooterSettings->EntityLooterThreeStarWeaponsEnabled;
+				return customEntityLooterSettings->entityLooterThreeStarWeaponsEnabled;
 			default:
-				return CustomEntityLooterSettings->EntityLooterAllWeaponsEnabled;
+				return customEntityLooterSettings->entityLooterAllWeaponsEnabled;
 			}
 		}
 	}
-	else if (EntityFlag & CUSTOM_ENTRY_ARMOR)
+	else if (entityFlag & CUSTOM_ENTRY_ARMOR)
 	{
-		if (LegendaryArmorEnabled)
+		if (legendaryArmorEnabled)
 		{
-			switch (LegendaryRank)
+			switch (legendaryRank)
 			{
 			case 0x01:
-				return CustomEntityLooterSettings->EntityLooterOneStarArmorEnabled;
+				return customEntityLooterSettings->entityLooterOneStarArmorEnabled;
 			case 0x02:
-				return CustomEntityLooterSettings->EntityLooterTwoStarArmorEnabled;
+				return customEntityLooterSettings->entityLooterTwoStarArmorEnabled;
 			case 0x03:
-				return CustomEntityLooterSettings->EntityLooterThreeStarArmorEnabled;
+				return customEntityLooterSettings->entityLooterThreeStarArmorEnabled;
 			default:
-				return CustomEntityLooterSettings->EntityLooterAllArmorEnabled;
+				return customEntityLooterSettings->entityLooterAllArmorEnabled;
 			}
 		}
 	}
@@ -5423,578 +5268,466 @@ bool ErectusMemory::ValidLegendary(BYTE LegendaryRank, DWORD64 EntityFlag, Entit
 	return false;
 }
 
-bool ErectusMemory::TransferEntityItems(Entity EntityData, Reference ReferenceData, Entity LocalPlayer, bool OnlyUseEntityLooterList, bool UseEntityLooterBlacklist)
+bool ErectusMemory::TransferEntityItems(Entity entityData, Reference referenceData, Entity localPlayer,
+	bool onlyUseEntityLooterList, bool useEntityLooterBlacklist)
 {
-	EntityLooterSettings* CurrentEntityLooterSettings = nullptr;
-	switch (ReferenceData.vtable - ErectusProcess::Exe)
+	EntityLooterSettings* currentEntityLooterSettings = nullptr;
+	switch (referenceData.vtable - ErectusProcess::exe)
 	{
 	case VTABLE_TESNPC:
-		CurrentEntityLooterSettings = &ErectusIni::NPCLooterSettings;
+		currentEntityLooterSettings = &ErectusIni::npcLooterSettings;
 		break;
 	case VTABLE_TESOBJECTCONT:
-		CurrentEntityLooterSettings = &ErectusIni::ContainerLooterSettings;
+		currentEntityLooterSettings = &ErectusIni::containerLooterSettings;
 		break;
 	default:
 		return false;
 	}
 
-	if (!Erectus::Valid(EntityData.InventoryPtr))
+	if (!Utils::Valid(entityData.inventoryPtr))
+		return false;
+
+	Inventory inventoryData{};
+	if (!Utils::Rpm(entityData.inventoryPtr, &inventoryData, sizeof inventoryData)) return false;
+	if (!Utils::Valid(inventoryData.itemArrayPtr) || inventoryData.itemArrayEnd < inventoryData.itemArrayPtr) return
+		false;
+
+	auto itemArraySize = (inventoryData.itemArrayEnd - inventoryData.itemArrayPtr) / sizeof(Item);
+	if (!itemArraySize || itemArraySize > 0x7FFF) return false;
+
+	auto* itemData = new Item[itemArraySize];
+	if (!Utils::Rpm(inventoryData.itemArrayPtr, &*itemData, itemArraySize * sizeof(Item)))
 	{
+		delete[]itemData;
+		itemData = nullptr;
 		return false;
 	}
 
-	Inventory InventoryData;
-	if (!Erectus::RPM(EntityData.InventoryPtr, &InventoryData, sizeof(InventoryData))) return false;
-	if (!Erectus::Valid(InventoryData.ItemArrayPtr) || InventoryData.ItemArrayEnd < InventoryData.ItemArrayPtr) return false;
+	auto legendaryWeaponsEnabled = AllowLegendaryWeapons(currentEntityLooterSettings);
+	auto legendaryArmorEnabled = AllowLegendaryArmor(currentEntityLooterSettings);
 
-	DWORD64 ItemArraySize = (InventoryData.ItemArrayEnd - InventoryData.ItemArrayPtr) / sizeof(Item);
-	if (!ItemArraySize || ItemArraySize > 0x7FFF) return false;
-
-	Item* ItemData = new Item[ItemArraySize];
-	if (!Erectus::RPM(InventoryData.ItemArrayPtr, &*ItemData, ItemArraySize * sizeof(Item)))
+	for (DWORD64 i = 0; i < itemArraySize; i++)
 	{
-		delete[]ItemData;
-		ItemData = nullptr;
-		return false;
-	}
+		if (!Utils::Valid(itemData[i].referencePtr)) continue;
+		if (!Utils::Valid(itemData[i].displayPtr) || itemData[i].iterations < itemData[i].displayPtr) continue;
 
-	bool LegendaryWeaponsEnabled = AllowLegendaryWeapons(CurrentEntityLooterSettings);
-	bool LegendaryArmorEnabled = AllowLegendaryArmor(CurrentEntityLooterSettings);
+		Reference itemReferenceData{};
+		if (!Utils::Rpm(itemData[i].referencePtr, &itemReferenceData, sizeof itemReferenceData)) continue;
+		if (itemReferenceData.recordFlagA >> 2 & 1) continue;
 
-	for (DWORD64 i = 0; i < ItemArraySize; i++)
-	{
-		if (!Erectus::Valid(ItemData[i].ReferencePtr)) continue;
-		if (!Erectus::Valid(ItemData[i].DisplayPtr) || ItemData[i].Iterations < ItemData[i].DisplayPtr) continue;
-
-		Reference ItemReferenceData;
-		if (!Erectus::RPM(ItemData[i].ReferencePtr, &ItemReferenceData, sizeof(ItemReferenceData))) continue;
-		if ((ItemReferenceData.RecordFlagA >> 2) & 1) continue;
-
-		if (UseEntityLooterBlacklist)
+		if (useEntityLooterBlacklist)
 		{
-			if (CheckFormidArray(ItemReferenceData.Formid, CurrentEntityLooterSettings->EntityLooterBlacklistEnabled, CurrentEntityLooterSettings->EntityLooterBlacklist, 64))
+			if (CheckFormIdArray(itemReferenceData.formId, currentEntityLooterSettings->entityLooterBlacklistEnabled,
+				currentEntityLooterSettings->entityLooterBlacklist, 64))
 			{
 				continue;
 			}
 		}
 
-		if (OnlyUseEntityLooterList)
+		if (onlyUseEntityLooterList)
 		{
-			if (!CheckFormidArray(ItemReferenceData.Formid, CurrentEntityLooterSettings->EntityLooterEnabledList, CurrentEntityLooterSettings->EntityLooterFormidList, 100))
+			if (!CheckFormIdArray(itemReferenceData.formId, currentEntityLooterSettings->entityLooterEnabledList,
+				currentEntityLooterSettings->entityLooterFormIdList, 100))
 			{
 				continue;
 			}
 		}
 
-		DWORD64 EntityFlag = CUSTOM_ENTRY_DEFAULT;
-		DWORD64 EntityNamePtr = 0;
-		int EnabledDistance = 0;
+		auto entityFlag = CUSTOM_ENTRY_DEFAULT;
+		DWORD64 entityNamePtr = 0;
+		auto enabledDistance = 0;
 
-		GetCustomEntityData(ItemReferenceData, &EntityFlag, &EntityNamePtr, &EnabledDistance, false, false);
-		if (!(EntityFlag & CUSTOM_ENTRY_VALID_ITEM)) continue;
+		GetCustomEntityData(itemReferenceData, &entityFlag, &entityNamePtr, &enabledDistance, false, false);
+		if (!(entityFlag & CUSTOM_ENTRY_VALID_ITEM)) continue;
 
-		if (!OnlyUseEntityLooterList)
+		if (!onlyUseEntityLooterList)
 		{
-			if (!CheckEntityLooterItem(ItemReferenceData.Formid, EntityFlag, CurrentEntityLooterSettings, LegendaryWeaponsEnabled, LegendaryArmorEnabled))
+			if (!CheckEntityLooterItem(itemReferenceData.formId, entityFlag, currentEntityLooterSettings,
+				legendaryWeaponsEnabled, legendaryArmorEnabled))
 			{
 				continue;
 			}
 		}
 
-		DWORD64 Iterations = (ItemData[i].Iterations - ItemData[i].DisplayPtr) / sizeof(ItemCount);
-		if (!Iterations || Iterations > 0x7FFF) continue;
+		auto iterations = (itemData[i].iterations - itemData[i].displayPtr) / sizeof(ItemCount);
+		if (!iterations || iterations > 0x7FFF) continue;
 
-		ItemCount* ItemCountData = new ItemCount[Iterations];
-		if (!Erectus::RPM(ItemData[i].DisplayPtr, &*ItemCountData, Iterations * sizeof(ItemCount)))
+		auto* itemCountData = new ItemCount[iterations];
+		if (!Utils::Rpm(itemData[i].displayPtr, &*itemCountData, iterations * sizeof(ItemCount)))
 		{
-			delete[]ItemCountData;
-			ItemCountData = nullptr;
+			delete[]itemCountData;
+			itemCountData = nullptr;
 			continue;
 		}
 
-		int Count = 0;
-		for (DWORD64 c = 0; c < Iterations; c++)
+		auto count = 0;
+		for (DWORD64 c = 0; c < iterations; c++)
 		{
-			Count += ItemCountData[c].Count;
+			count += itemCountData[c].count;
 		}
 
-		delete[]ItemCountData;
-		ItemCountData = nullptr;
+		delete[]itemCountData;
+		itemCountData = nullptr;
 
-		if (Count == 0)
+		if (count == 0)
 		{
 			continue;
 		}
 
-		if (EntityFlag & CUSTOM_ENTRY_WEAPON)
+		if (entityFlag & CUSTOM_ENTRY_WEAPON)
 		{
-			if (LegendaryWeaponsEnabled)
+			if (legendaryWeaponsEnabled)
 			{
-				BYTE LegendaryRank = GetLegendaryRank(ItemData[i].DisplayPtr);
-				if (!ValidLegendary(LegendaryRank, EntityFlag, CurrentEntityLooterSettings, LegendaryWeaponsEnabled, LegendaryArmorEnabled))
+				auto legendaryRank = GetLegendaryRank(itemData[i].displayPtr);
+				if (!ValidLegendary(legendaryRank, entityFlag, currentEntityLooterSettings, legendaryWeaponsEnabled,
+					legendaryArmorEnabled))
 				{
 					continue;
 				}
 			}
 		}
-		else if (EntityFlag & CUSTOM_ENTRY_ARMOR)
+		else if (entityFlag & CUSTOM_ENTRY_ARMOR)
 		{
-			if (LegendaryArmorEnabled)
+			if (legendaryArmorEnabled)
 			{
-				BYTE LegendaryRank = GetLegendaryRank(ItemData[i].DisplayPtr);
-				if (!ValidLegendary(LegendaryRank, EntityFlag, CurrentEntityLooterSettings, LegendaryWeaponsEnabled, LegendaryArmorEnabled))
+				auto legendaryRank = GetLegendaryRank(itemData[i].displayPtr);
+				if (!ValidLegendary(legendaryRank, entityFlag, currentEntityLooterSettings, legendaryWeaponsEnabled,
+					legendaryArmorEnabled))
 				{
 					continue;
 				}
 			}
 		}
 
-		TransferMessage TransferMessageData;
-		TransferMessageData.vtable = ErectusProcess::Exe + VTABLE_REQUESTTRANSFERITEMMSG;
-		TransferMessageData.SrcFormid = EntityData.Formid;
-		TransferMessageData.UnknownId = 0xE0001F7A;
-		TransferMessageData.DstFormid = LocalPlayer.Formid;
-		TransferMessageData.ItemId = ItemData[i].ItemId;
-		TransferMessageData.Count = Count;
-		TransferMessageData.UnknownA = 0x00000000;
-		TransferMessageData.UnknownB = 0x00;
-		TransferMessageData.UnknownC = 0x01;
-		TransferMessageData.UnknownD = 0x00;
-		TransferMessageData.UnknownE = 0x02;
-		SendMessageToServer(&TransferMessageData, sizeof(TransferMessageData));
+		TransferMessage transferMessageData{};
+		transferMessageData.vtable = ErectusProcess::exe + VTABLE_REQUESTTRANSFERITEMMSG;
+		transferMessageData.srcFormId = entityData.formId;
+		transferMessageData.unknownId = 0xE0001F7A;
+		transferMessageData.dstFormId = localPlayer.formId;
+		transferMessageData.itemId = itemData[i].itemId;
+		transferMessageData.count = count;
+		transferMessageData.unknownA = 0x00000000;
+		transferMessageData.unknownB = 0x00;
+		transferMessageData.unknownC = 0x01;
+		transferMessageData.unknownD = 0x00;
+		transferMessageData.unknownE = 0x02;
+		SendMessageToServer(&transferMessageData, sizeof transferMessageData);
 	}
 
-	delete[]ItemData;
-	ItemData = nullptr;
+	delete[]itemData;
+	itemData = nullptr;
 	return true;
 }
 
-bool ErectusMemory::ContainerValid(Reference ReferenceData)
+bool ErectusMemory::ContainerValid(const Reference referenceData)
 {
-	if (!Erectus::Valid(ReferenceData.KeywordArrayData00C0))
+	if (!Utils::Valid(referenceData.keywordArrayData00C0))
 	{
 		return false;
 	}
 
 	int nifTextLength;
-	if (!Erectus::RPM(ReferenceData.KeywordArrayData00C0 + 0x10, &nifTextLength, sizeof(nifTextLength))) return false;
+	if (!Utils::Rpm(referenceData.keywordArrayData00C0 + 0x10, &nifTextLength, sizeof nifTextLength)) return false;
 	if (nifTextLength == 41)
 	{
-		char ContainerMarkerCheck[sizeof("ContainerMarker")];
-		if (!Erectus::RPM(ReferenceData.KeywordArrayData00C0 + 0x2E, &ContainerMarkerCheck, sizeof(ContainerMarkerCheck))) return false;
+		char containerMarkerCheck[sizeof"ContainerMarker"];
+		if (!Utils::Rpm(referenceData.keywordArrayData00C0 + 0x2E, &containerMarkerCheck,
+			sizeof containerMarkerCheck)) return false;
 
-		ContainerMarkerCheck[15] = '\0';
-		if (!strcmp(ContainerMarkerCheck, "ContainerMarker"))
+		containerMarkerCheck[15] = '\0';
+		if (!strcmp(containerMarkerCheck, "ContainerMarker"))
 		{
 			return false;
 		}
 	}
 
-	if (!Erectus::Valid(ReferenceData.NamePtr00B0))
+	if (!Utils::Valid(referenceData.namePtr00B0))
 	{
 		return false;
 	}
 
-	DWORD64 NameBuffer;
-	if (!Erectus::RPM(ReferenceData.NamePtr00B0 + 0x10, &NameBuffer, sizeof(NameBuffer))) return false;
-	if (!NameBuffer) return false;
+	DWORD64 nameBuffer;
+	if (!Utils::Rpm(referenceData.namePtr00B0 + 0x10, &nameBuffer, sizeof nameBuffer)) return false;
+	if (!nameBuffer) return false;
 
-	if (!Erectus::Valid(NameBuffer))
+	if (!Utils::Valid(nameBuffer))
 	{
-		NameBuffer = ReferenceData.NamePtr00B0;
+		nameBuffer = referenceData.namePtr00B0;
 	}
 
-	int NameTextLength;
-	if (!Erectus::RPM(NameBuffer + 0x10, &NameTextLength, sizeof(NameTextLength))) return false;
-	if (!NameTextLength || NameTextLength > 0x7FFF) return false;
+	int nameTextLength;
+	if (!Utils::Rpm(nameBuffer + 0x10, &nameTextLength, sizeof nameTextLength)) return false;
+	if (!nameTextLength || nameTextLength > 0x7FFF) return false;
 
 	return true;
 }
 
-bool ErectusMemory::LootEntity(Entity EntityData, Reference ReferenceData, Entity LocalPlayer, bool OnlyUseEntityLooterList, bool UseEntityLooterBlacklist)
+bool ErectusMemory::LootEntity(Entity entityData, Reference referenceData, Entity localPlayer,
+	bool onlyUseEntityLooterList, bool useEntityLooterBlacklist)
 {
-	bool IsEntityNPC = false;
-	bool IsEntityContainer = false;
+	auto isEntityNpc = false;
+	auto isEntityContainer = false;
 
-	int MaxDistance = 0;
-	switch (ReferenceData.vtable - ErectusProcess::Exe)
+	auto maxDistance = 0;
+	switch (referenceData.vtable - ErectusProcess::exe)
 	{
 	case VTABLE_TESNPC:
-		IsEntityNPC = true;
-		MaxDistance = 76;
+		isEntityNpc = true;
+		maxDistance = 76;
 		break;
 	case VTABLE_TESOBJECTCONT:
-		IsEntityContainer = true;
-		MaxDistance = 6;
+		isEntityContainer = true;
+		maxDistance = 6;
 		break;
 	default:
 		return false;
 	}
 
-	if (IsEntityNPC)
-	{
-		if (ReferenceData.Formid == 0x00000007)
-		{
-			return false;
-		}
-
-		if (CheckHealthFlag(EntityData.HealthFlag) != 0x3)
-		{
-			return false;
-		}
-	}
-
-	float Distance = Erectus::GetDistance(EntityData.Position, LocalPlayer.Position);
-	int NormalDistance = int(Distance * 0.01f);
-
-	if (NormalDistance > MaxDistance)
-	{
+	if (isEntityNpc && (referenceData.formId == 0x00000007 || CheckHealthFlag(entityData.healthFlag) != 0x3))
 		return false;
-	}
 
-	if (IsEntityContainer)
-	{
-		if (!ContainerValid(ReferenceData))
-		{
-			return false;
-		}
-	}
+	auto normalDistance = static_cast<int>(Utils::GetDistance(entityData.position, localPlayer.position) * 0.01f);
 
-	if (!EntityInventoryValid(EntityData))
-	{
+	if (normalDistance > maxDistance)
 		return false;
-	}
 
-	return TransferEntityItems(EntityData, ReferenceData, LocalPlayer, OnlyUseEntityLooterList, UseEntityLooterBlacklist);
+	if (isEntityContainer && !ContainerValid(referenceData))
+		return false;
+
+	if (!EntityInventoryValid(entityData))
+		return false;
+
+	return TransferEntityItems(entityData, referenceData, localPlayer, onlyUseEntityLooterList, useEntityLooterBlacklist);
 }
 
-bool ErectusMemory::CheckEntityLooterSettings(EntityLooterSettings* CustomEntityLooterSettings)
+bool ErectusMemory::CheckEntityLooterSettings(EntityLooterSettings* customEntityLooterSettings)
 {
-	if (CustomEntityLooterSettings->EntityLooterAllWeaponsEnabled)
-	{
+	if (customEntityLooterSettings->entityLooterAllWeaponsEnabled)
 		return true;
-	}
-	else if (CustomEntityLooterSettings->EntityLooterAllArmorEnabled)
-	{
+	if (customEntityLooterSettings->entityLooterAllArmorEnabled)
 		return true;
-	}
-	else if (CustomEntityLooterSettings->EntityLooterOneStarWeaponsEnabled)
-	{
+	if (customEntityLooterSettings->entityLooterOneStarWeaponsEnabled)
 		return true;
-	}
-	else if (CustomEntityLooterSettings->EntityLooterOneStarArmorEnabled)
-	{
+	if (customEntityLooterSettings->entityLooterOneStarArmorEnabled)
 		return true;
-	}
-	else if (CustomEntityLooterSettings->EntityLooterTwoStarWeaponsEnabled)
-	{
+	if (customEntityLooterSettings->entityLooterTwoStarWeaponsEnabled)
 		return true;
-	}
-	else if (CustomEntityLooterSettings->EntityLooterTwoStarArmorEnabled)
-	{
+	if (customEntityLooterSettings->entityLooterTwoStarArmorEnabled)
 		return true;
-	}
-	else if (CustomEntityLooterSettings->EntityLooterThreeStarWeaponsEnabled)
-	{
+	if (customEntityLooterSettings->entityLooterThreeStarWeaponsEnabled)
 		return true;
-	}
-	else if (CustomEntityLooterSettings->EntityLooterThreeStarArmorEnabled)
-	{
+	if (customEntityLooterSettings->entityLooterThreeStarArmorEnabled)
 		return true;
-	}
-	else if (CustomEntityLooterSettings->EntityLooterAmmoEnabled)
-	{
+	if (customEntityLooterSettings->entityLooterAmmoEnabled)
 		return true;
-	}
-	else if (CustomEntityLooterSettings->EntityLooterModsEnabled)
-	{
+	if (customEntityLooterSettings->entityLooterModsEnabled)
 		return true;
-	}
-	else if (CustomEntityLooterSettings->EntityLooterCapsEnabled)
-	{
+	if (customEntityLooterSettings->entityLooterCapsEnabled)
 		return true;
-	}
-	else if (CustomEntityLooterSettings->EntityLooterJunkEnabled)
-	{
+	if (customEntityLooterSettings->entityLooterJunkEnabled)
 		return true;
-	}
-	else if (CustomEntityLooterSettings->EntityLooterAidEnabled)
-	{
+	if (customEntityLooterSettings->entityLooterAidEnabled)
 		return true;
-	}
-	else if (CustomEntityLooterSettings->EntityLooterTreasureMapsEnabled)
-	{
+	if (customEntityLooterSettings->entityLooterTreasureMapsEnabled)
 		return true;
-	}
-	else if (CustomEntityLooterSettings->EntityLooterKnownPlansEnabled)
-	{
+	if (customEntityLooterSettings->entityLooterKnownPlansEnabled)
 		return true;
-	}
-	else if (CustomEntityLooterSettings->EntityLooterUnknownPlansEnabled)
-	{
+	if (customEntityLooterSettings->entityLooterUnknownPlansEnabled)
 		return true;
-	}
-	else if (CustomEntityLooterSettings->EntityLooterMiscEnabled)
-	{
+	if (customEntityLooterSettings->entityLooterMiscEnabled)
 		return true;
-	}
-	else if (CustomEntityLooterSettings->EntityLooterUnlistedEnabled)
-	{
+	if (customEntityLooterSettings->entityLooterUnlistedEnabled)
 		return true;
-	}
-	else if (CustomEntityLooterSettings->EntityLooterListEnabled)
-	{
-		return CheckEntityLooterList(CustomEntityLooterSettings);
-	}
-	else
-	{
-		return false;
-	}
+	if (customEntityLooterSettings->entityLooterListEnabled)
+		return CheckEntityLooterList(customEntityLooterSettings);
+
+	return false;
 }
 
-bool ErectusMemory::CheckOnlyUseEntityLooterList(EntityLooterSettings* CustomEntityLooterSettings)
+bool ErectusMemory::CheckOnlyUseEntityLooterList(EntityLooterSettings* customEntityLooterSettings)
 {
-	if (CustomEntityLooterSettings->EntityLooterAllWeaponsEnabled)
-	{
+	if (customEntityLooterSettings->entityLooterAllWeaponsEnabled)
 		return false;
-	}
-	else if (CustomEntityLooterSettings->EntityLooterAllArmorEnabled)
-	{
+	if (customEntityLooterSettings->entityLooterAllArmorEnabled)
 		return false;
-	}
-	else if (CustomEntityLooterSettings->EntityLooterOneStarWeaponsEnabled)
-	{
+	if (customEntityLooterSettings->entityLooterOneStarWeaponsEnabled)
 		return false;
-	}
-	else if (CustomEntityLooterSettings->EntityLooterOneStarArmorEnabled)
-	{
+	if (customEntityLooterSettings->entityLooterOneStarArmorEnabled)
 		return false;
-	}
-	else if (CustomEntityLooterSettings->EntityLooterTwoStarWeaponsEnabled)
-	{
+	if (customEntityLooterSettings->entityLooterTwoStarWeaponsEnabled)
 		return false;
-	}
-	else if (CustomEntityLooterSettings->EntityLooterTwoStarArmorEnabled)
-	{
+	if (customEntityLooterSettings->entityLooterTwoStarArmorEnabled)
 		return false;
-	}
-	else if (CustomEntityLooterSettings->EntityLooterThreeStarWeaponsEnabled)
-	{
+	if (customEntityLooterSettings->entityLooterThreeStarWeaponsEnabled)
 		return false;
-	}
-	else if (CustomEntityLooterSettings->EntityLooterThreeStarArmorEnabled)
-	{
+	if (customEntityLooterSettings->entityLooterThreeStarArmorEnabled)
 		return false;
-	}
-	else if (CustomEntityLooterSettings->EntityLooterAmmoEnabled)
-	{
+	if (customEntityLooterSettings->entityLooterAmmoEnabled)
 		return false;
-	}
-	else if (CustomEntityLooterSettings->EntityLooterModsEnabled)
-	{
+	if (customEntityLooterSettings->entityLooterModsEnabled)
 		return false;
-	}
-	else if (CustomEntityLooterSettings->EntityLooterCapsEnabled)
-	{
+	if (customEntityLooterSettings->entityLooterCapsEnabled)
 		return false;
-	}
-	else if (CustomEntityLooterSettings->EntityLooterJunkEnabled)
-	{
+	if (customEntityLooterSettings->entityLooterJunkEnabled)
 		return false;
-	}
-	else if (CustomEntityLooterSettings->EntityLooterAidEnabled)
-	{
+	if (customEntityLooterSettings->entityLooterAidEnabled)
 		return false;
-	}
-	else if (CustomEntityLooterSettings->EntityLooterTreasureMapsEnabled)
-	{
+	if (customEntityLooterSettings->entityLooterTreasureMapsEnabled)
 		return false;
-	}
-	else if (CustomEntityLooterSettings->EntityLooterKnownPlansEnabled)
-	{
+	if (customEntityLooterSettings->entityLooterKnownPlansEnabled)
 		return false;
-	}
-	else if (CustomEntityLooterSettings->EntityLooterUnknownPlansEnabled)
-	{
+	if (customEntityLooterSettings->entityLooterUnknownPlansEnabled)
 		return false;
-	}
-	else if (CustomEntityLooterSettings->EntityLooterMiscEnabled)
-	{
+	if (customEntityLooterSettings->entityLooterMiscEnabled)
 		return false;
-	}
-	else if (CustomEntityLooterSettings->EntityLooterUnlistedEnabled)
-	{
+	if (customEntityLooterSettings->entityLooterUnlistedEnabled)
 		return false;
-	}
-	else if (CustomEntityLooterSettings->EntityLooterListEnabled)
-	{
-		return CheckEntityLooterList(CustomEntityLooterSettings);
-	}
-	else
-	{
-		return false;
-	}
+	if (customEntityLooterSettings->entityLooterListEnabled)
+		return CheckEntityLooterList(customEntityLooterSettings);
+
+	return false;
 }
 
-bool ErectusMemory::HarvestFlora(Entity EntityData, Reference ReferenceData, Entity LocalPlayer)
+bool ErectusMemory::HarvestFlora(Entity entityData, Reference referenceData, Entity localPlayer)
 {
-	if (FloraHarvested(EntityData.HarvestFlagA, EntityData.HarvestFlagB))
-	{
+	if (FloraHarvested(entityData.harvestFlagA, entityData.harvestFlagB))
 		return false;
-	}
 
-	float Distance = Erectus::GetDistance(EntityData.Position, LocalPlayer.Position);
-	int NormalDistance = int(Distance * 0.01f);
-
-	if (NormalDistance > 6)
-	{
+	auto normalDistance = static_cast<int>(Utils::GetDistance(entityData.position, localPlayer.position) * 0.01f);
+	if (normalDistance > 6)
 		return false;
-	}
 
-	if (!FloraValid(ReferenceData))
-	{
+	if (!FloraValid(referenceData))
 		return false;
-	}
 
-	RequestActivateRefMessage RequestActivateRefMessageData;
-	RequestActivateRefMessageData.vtable = ErectusProcess::Exe + VTABLE_REQUESTACTIVATEREFMSG;
-	RequestActivateRefMessageData.Formid = EntityData.Formid;
-	RequestActivateRefMessageData.Choice = 0xFF;
-	RequestActivateRefMessageData.ForceActivate = 0;
+	RequestActivateRefMessage requestActivateRefMessageData{};
+	requestActivateRefMessageData.vtable = ErectusProcess::exe + VTABLE_REQUESTACTIVATEREFMSG;
+	requestActivateRefMessageData.formId = entityData.formId;
+	requestActivateRefMessageData.choice = 0xFF;
+	requestActivateRefMessageData.forceActivate = 0;
 
-	return SendMessageToServer(&RequestActivateRefMessageData, sizeof(RequestActivateRefMessageData));
+	return SendMessageToServer(&requestActivateRefMessageData, sizeof requestActivateRefMessageData);
 }
 
 bool ErectusMemory::Harvester()
 {
-	if (!MessagePatcher(AllowMessages))
+	if (!MessagePatcher(allowMessages))
 	{
 		return false;
 	}
 
-	if (!AllowMessages)
+	if (!allowMessages)
 	{
 		return false;
 	}
 
-	bool UseNPCLooter = false;
-	if (ErectusIni::NPCLooterSettings.EntityLooterEnabled)
-	{
-		UseNPCLooter = CheckEntityLooterSettings(&ErectusIni::NPCLooterSettings);
-	}
+	auto useNpcLooter = ErectusIni::npcLooterSettings.entityLooterEnabled && CheckEntityLooterSettings(&ErectusIni::npcLooterSettings);
 
-	bool UseContainerLooter = false;
-	if (ErectusIni::ContainerLooterSettings.EntityLooterEnabled)
-	{
-		UseContainerLooter = CheckEntityLooterSettings(&ErectusIni::ContainerLooterSettings);
-	}
+	auto useContainerLooter = ErectusIni::containerLooterSettings.entityLooterEnabled && CheckEntityLooterSettings(&ErectusIni::containerLooterSettings);
 
-	bool UseFloraHarvester = false;
-	if (ErectusIni::CustomHarvesterSettings.HarvesterEnabled)
-	{
-		UseFloraHarvester = CheckIngredientList();
-	}
+	auto useFloraHarvester = ErectusIni::customHarvesterSettings.harvesterEnabled && CheckIngredientList();
 
-	if (!UseNPCLooter && !UseContainerLooter && !UseFloraHarvester)
+	if (!useNpcLooter && !useContainerLooter && !useFloraHarvester)
 	{
 		return false;
 	}
 
-	DWORD64 LocalPlayerPtr = GetLocalPlayerPtr(true);
-	if (!Erectus::Valid(LocalPlayerPtr)) return false;
+	auto localPlayerPtr = GetLocalPlayerPtr(true);
+	if (!Utils::Valid(localPlayerPtr)) return false;
 
-	Entity LocalPlayer;
-	if (!Erectus::RPM(LocalPlayerPtr, &LocalPlayer, sizeof(LocalPlayer))) return false;
+	Entity localPlayer{};
+	if (!Utils::Rpm(localPlayerPtr, &localPlayer, sizeof localPlayer)) return false;
 
-	bool OnlyUseNPCLooterList = false;
-	bool UseNPCLooterBlacklist = false;
-	if (UseNPCLooter)
+	auto onlyUseNpcLooterList = false;
+	auto useNpcLooterBlacklist = false;
+	if (useNpcLooter)
 	{
-		OnlyUseNPCLooterList = CheckOnlyUseEntityLooterList(&ErectusIni::NPCLooterSettings);
-		UseNPCLooterBlacklist = CheckEntityLooterBlacklist(&ErectusIni::NPCLooterSettings);
+		onlyUseNpcLooterList = CheckOnlyUseEntityLooterList(&ErectusIni::npcLooterSettings);
+		useNpcLooterBlacklist = CheckEntityLooterBlacklist(&ErectusIni::npcLooterSettings);
 	}
 
-	bool OnlyUseContainerLooterList = false;
-	bool UseContainerLooterBlacklist = false;
-	if (UseContainerLooter)
+	auto onlyUseContainerLooterList = false;
+	auto useContainerLooterBlacklist = false;
+	if (useContainerLooter)
 	{
-		OnlyUseContainerLooterList = CheckOnlyUseEntityLooterList(&ErectusIni::ContainerLooterSettings);
-		UseContainerLooterBlacklist = CheckEntityLooterBlacklist(&ErectusIni::ContainerLooterSettings);
+		onlyUseContainerLooterList = CheckOnlyUseEntityLooterList(&ErectusIni::containerLooterSettings);
+		useContainerLooterBlacklist = CheckEntityLooterBlacklist(&ErectusIni::containerLooterSettings);
 	}
 
-	if (UseNPCLooter)
+	if (useNpcLooter)
 	{
-		int TemporaryNPCSize = 0;
-		DWORD64* TemporaryNPCList = GetNPCList(&TemporaryNPCSize);
-		if (TemporaryNPCList == nullptr) return false;
+		auto temporaryNpcSize = 0;
+		auto* temporaryNpcList = GetNpcList(&temporaryNpcSize);
+		if (temporaryNpcList == nullptr) return false;
 
-		for (int i = 0; i < TemporaryNPCSize; i++)
+		for (auto i = 0; i < temporaryNpcSize; i++)
 		{
-			if (!Erectus::Valid(TemporaryNPCList[i])) continue;
-			if (TemporaryNPCList[i] == LocalPlayerPtr) continue;
+			if (!Utils::Valid(temporaryNpcList[i])) continue;
+			if (temporaryNpcList[i] == localPlayerPtr) continue;
 
-			Entity EntityData;
-			if (!Erectus::RPM(TemporaryNPCList[i], &EntityData, sizeof(EntityData))) continue;
-			if (!Erectus::Valid(EntityData.ReferencePtr)) continue;
+			Entity entityData{};
+			if (!Utils::Rpm(temporaryNpcList[i], &entityData, sizeof entityData)) continue;
+			if (!Utils::Valid(entityData.referencePtr)) continue;
 
-			if (EntityData.SpawnFlag != 0x02)
+			if (entityData.spawnFlag != 0x02)
 			{
 				continue;
 			}
 
-			Reference ReferenceData;
-			if (!Erectus::RPM(EntityData.ReferencePtr, &ReferenceData, sizeof(ReferenceData))) continue;
-			if (ReferenceData.vtable != ErectusProcess::Exe + VTABLE_TESNPC) continue;
-			if (ReferenceData.Formid == 0x00000007) continue;
+			Reference referenceData{};
+			if (!Utils::Rpm(entityData.referencePtr, &referenceData, sizeof referenceData)) continue;
+			if (referenceData.vtable != ErectusProcess::exe + VTABLE_TESNPC) continue;
+			if (referenceData.formId == 0x00000007) continue;
 
-			LootEntity(EntityData, ReferenceData, LocalPlayer, OnlyUseNPCLooterList, UseNPCLooterBlacklist);
+			LootEntity(entityData, referenceData, localPlayer, onlyUseNpcLooterList, useNpcLooterBlacklist);
 		}
 
-		delete[]TemporaryNPCList;
-		TemporaryNPCList = nullptr;
+		delete[]temporaryNpcList;
+		temporaryNpcList = nullptr;
 	}
 
-	if (UseContainerLooter || UseFloraHarvester)
+	if (useContainerLooter || useFloraHarvester)
 	{
-		int TemporaryEntitySize = 0;
-		DWORD64* TemporaryEntityList = GetEntityList(&TemporaryEntitySize);
-		if (TemporaryEntityList == nullptr) return false;
+		auto temporaryEntitySize = 0;
+		auto* temporaryEntityList = GetEntityList(&temporaryEntitySize);
+		if (temporaryEntityList == nullptr) return false;
 
-		for (int i = 0; i < TemporaryEntitySize; i++)
+		for (auto i = 0; i < temporaryEntitySize; i++)
 		{
-			if (!Erectus::Valid(TemporaryEntityList[i])) continue;
-			if (TemporaryEntityList[i] == LocalPlayerPtr) continue;
+			if (!Utils::Valid(temporaryEntityList[i])) continue;
+			if (temporaryEntityList[i] == localPlayerPtr) continue;
 
-			Entity EntityData;
-			if (!Erectus::RPM(TemporaryEntityList[i], &EntityData, sizeof(EntityData))) continue;
-			if (!Erectus::Valid(EntityData.ReferencePtr)) continue;
+			Entity entityData{};
+			if (!Utils::Rpm(temporaryEntityList[i], &entityData, sizeof entityData)) continue;
+			if (!Utils::Valid(entityData.referencePtr)) continue;
 
-			if (EntityData.SpawnFlag != 0x02)
+			if (entityData.spawnFlag != 0x02)
 			{
 				continue;
 			}
 
-			Reference ReferenceData;
-			if (!Erectus::RPM(EntityData.ReferencePtr, &ReferenceData, sizeof(ReferenceData))) continue;
+			Reference referenceData{};
+			if (!Utils::Rpm(entityData.referencePtr, &referenceData, sizeof referenceData)) continue;
 
-			if (ReferenceData.vtable == ErectusProcess::Exe + VTABLE_TESOBJECTCONT)
+			if (referenceData.vtable == ErectusProcess::exe + VTABLE_TESOBJECTCONT)
 			{
-				if (UseContainerLooter)
+				if (useContainerLooter)
 				{
-					LootEntity(EntityData, ReferenceData, LocalPlayer, OnlyUseContainerLooterList, UseContainerLooterBlacklist);
+					LootEntity(entityData, referenceData, localPlayer, onlyUseContainerLooterList,
+						useContainerLooterBlacklist);
 				}
 			}
-			else if (ReferenceData.vtable == ErectusProcess::Exe + VTABLE_TESFLORA)
+			else if (referenceData.vtable == ErectusProcess::exe + VTABLE_TESFLORA)
 			{
-				if (UseFloraHarvester)
+				if (useFloraHarvester)
 				{
-					HarvestFlora(EntityData, ReferenceData, LocalPlayer);
+					HarvestFlora(entityData, referenceData, localPlayer);
 				}
 			}
 		}
 
-		delete[]TemporaryEntityList;
-		TemporaryEntityList = nullptr;
+		delete[]temporaryEntityList;
+		temporaryEntityList = nullptr;
 	}
 
 	return true;
@@ -6002,188 +5735,191 @@ bool ErectusMemory::Harvester()
 
 bool ErectusMemory::MeleeAttack()
 {
-	if (!MessagePatcher(AllowMessages))
+	if (!MessagePatcher(allowMessages))
 	{
 		return false;
 	}
 
-	if (!AllowMessages)
+	if (!allowMessages)
 	{
 		return false;
 	}
 
-	DWORD64 LocalPlayerPtr = GetLocalPlayerPtr(true);
-	if (!Erectus::Valid(LocalPlayerPtr)) return false;
+	const auto localPlayerPtr = GetLocalPlayerPtr(true);
+	if (!Utils::Valid(localPlayerPtr)) return false;
 
-	DWORD64 AllocAddress = Erectus::AllocEx(sizeof(ExternalFunction));
-	if (AllocAddress == 0) return false;
+	const auto allocAddress = Utils::AllocEx(sizeof(ExternalFunction));
+	if (allocAddress == 0) return false;
 
-	ExternalFunction ExternalFunctionData;
-	ExternalFunctionData.Address = ErectusProcess::Exe + OFFSET_MELEE_ATTACK;
-	ExternalFunctionData.RCX = LocalPlayerPtr;
-	ExternalFunctionData.RDX = 0;
-	ExternalFunctionData.R8 = 1;
-	ExternalFunctionData.R9 = 0;
+	ExternalFunction externalFunctionData;
+	externalFunctionData.address = ErectusProcess::exe + OFFSET_MELEE_ATTACK;
+	externalFunctionData.rcx = localPlayerPtr;
+	externalFunctionData.rdx = 0;
+	externalFunctionData.r8 = 1;
+	externalFunctionData.r9 = 0;
 
-	bool Written = Erectus::WPM(AllocAddress, &ExternalFunctionData, sizeof(ExternalFunction));
+	const auto written = Utils::Wpm(allocAddress, &externalFunctionData, sizeof(ExternalFunction));
 
-	if (!Written)
+	if (!written)
 	{
-		Erectus::FreeEx(AllocAddress);
+		Utils::FreeEx(allocAddress);
 		return false;
 	}
 
-	DWORD64 ParamAddress = AllocAddress + sizeof(ExternalFunction::ASM);
-	HANDLE Thread = CreateRemoteThread(ErectusProcess::Handle, NULL, 0, LPTHREAD_START_ROUTINE(AllocAddress), LPVOID(ParamAddress), 0, 0);
+	const auto paramAddress = allocAddress + sizeof ExternalFunction::ASM;
+	auto* const thread = CreateRemoteThread(ErectusProcess::handle, nullptr, 0, LPTHREAD_START_ROUTINE(allocAddress),
+		LPVOID(paramAddress), 0, nullptr);
 
-	if (Thread == NULL)
+	if (thread == nullptr)
 	{
-		Erectus::FreeEx(AllocAddress);
+		Utils::FreeEx(allocAddress);
 		return false;
 	}
 
-	DWORD ThreadResult = WaitForSingleObject(Thread, 3000);
-	CloseHandle(Thread);
+	const auto threadResult = WaitForSingleObject(thread, 3000);
+	CloseHandle(thread);
 
-	if (ThreadResult == WAIT_TIMEOUT)
+	if (threadResult == WAIT_TIMEOUT)
 	{
 		return false;
 	}
 
-	Erectus::FreeEx(AllocAddress);
+	Utils::FreeEx(allocAddress);
 	return true;
 }
 
 bool ErectusMemory::ChargenEditing()
 {
-	DWORD64 ChargenPtr;
-	if (!Erectus::RPM(ErectusProcess::Exe + OFFSET_CHARGEN, &ChargenPtr, sizeof(ChargenPtr))) return false;
-	if (!Erectus::Valid(ChargenPtr)) return false;
+	DWORD64 chargenPtr;
+	if (!Utils::Rpm(ErectusProcess::exe + OFFSET_CHARGEN, &chargenPtr, sizeof chargenPtr)) return false;
+	if (!Utils::Valid(chargenPtr)) return false;
 
-	Chargen ChargenData;
-	if (!Erectus::RPM(ChargenPtr, &ChargenData, sizeof(ChargenData))) return false;
+	Chargen chargenData{};
+	if (!Utils::Rpm(chargenPtr, &chargenData, sizeof chargenData)) return false;
 
-	bool EditChargenData = false;
+	auto shouldEdit = false;
 
-	if (ChargenData.Thin != ErectusIni::CustomChargenSettings.Thin)
+	if (chargenData.thin != ErectusIni::customChargenSettings.thin)
 	{
-		ChargenData.Thin = ErectusIni::CustomChargenSettings.Thin;
-		EditChargenData = true;
+		chargenData.thin = ErectusIni::customChargenSettings.thin;
+		shouldEdit = true;
 	}
 
-	if (ChargenData.Muscular != ErectusIni::CustomChargenSettings.Muscular)
+	if (chargenData.muscular != ErectusIni::customChargenSettings.muscular)
 	{
-		ChargenData.Muscular = ErectusIni::CustomChargenSettings.Muscular;
-		EditChargenData = true;
+		chargenData.muscular = ErectusIni::customChargenSettings.muscular;
+		shouldEdit = true;
 	}
 
-	if (ChargenData.Large != ErectusIni::CustomChargenSettings.Large)
+	if (chargenData.large != ErectusIni::customChargenSettings.large)
 	{
-		ChargenData.Large = ErectusIni::CustomChargenSettings.Large;
-		EditChargenData = true;
+		chargenData.large = ErectusIni::customChargenSettings.large;
+		shouldEdit = true;
 	}
 
-	if (EditChargenData)
+	if (shouldEdit)
 	{
-		return Erectus::WPM(ChargenPtr, &ChargenData, sizeof(ChargenData));
+		return Utils::Wpm(chargenPtr, &chargenData, sizeof chargenData);
 	}
 
 	return true;
 }
 
-bool ErectusMemory::CreateProjectile(DWORD ItemId, float* Position, float* Rotation)
+bool ErectusMemory::CreateProjectile(const DWORD itemId, const float* position, const float* rotation)
 {
-	if (!MessagePatcher(AllowMessages))
+	if (!MessagePatcher(allowMessages))
 	{
 		return false;
 	}
 
-	if (!AllowMessages)
+	if (!allowMessages)
 	{
 		return false;
 	}
 
-	DWORD64 AllocAddress = Erectus::AllocEx(sizeof(ExecutionProjectile));
-	if (AllocAddress == 0) return false;
+	const auto allocAddress = Utils::AllocEx(sizeof(ExecutionProjectile));
+	if (allocAddress == 0) return false;
 
-	CreateProjectileMessageClient CreateProjectileMessageClientData;
-	CreateProjectileMessageClientData.vtable = ErectusProcess::Exe + VTABLE_CREATEPROJECTILEMESSAGECLIENT;
-	CreateProjectileMessageClientData.PositionX = Position[0];
-	CreateProjectileMessageClientData.PositionY = Position[1];
-	CreateProjectileMessageClientData.PositionZ = Position[2];
-	CreateProjectileMessageClientData.RotationArrayPtr = AllocAddress + 0xD0;
-	CreateProjectileMessageClientData.RotationArrayEnd = AllocAddress + 0xD0 + sizeof(float[3]);
-	CreateProjectileMessageClientData.RotationArrayPad = AllocAddress + 0xD0 + sizeof(float[3]);
-	CreateProjectileMessageClientData.ItemId = ItemId;
-	CreateProjectileMessageClientData.UnknownA = 0xFFFFFFFF;
-	CreateProjectileMessageClientData.UnknownB = 0xFFFFFFFF;
-	CreateProjectileMessageClientData.UnknownC = 0x00000000;
-	CreateProjectileMessageClientData.UnknownD = 1.0f;
-	CreateProjectileMessageClientData.UnknownE = 0x00000000;
-	CreateProjectileMessageClientData.UnknownArrayPtrA = AllocAddress + 0xE0;
-	CreateProjectileMessageClientData.UnknownArrayEndA = AllocAddress + 0xE0 + sizeof(WORD[1]);
-	CreateProjectileMessageClientData.UnknownArrayPadA = AllocAddress + 0xE0 + sizeof(WORD[1]);
-	CreateProjectileMessageClientData.UnknownF = 0xFF;
-	CreateProjectileMessageClientData.UnknownArrayPtrB = AllocAddress + 0xF0;
-	CreateProjectileMessageClientData.UnknownArrayEndB = AllocAddress + 0xF0 + sizeof(BYTE[1]);
-	CreateProjectileMessageClientData.UnknownArrayPadB = AllocAddress + 0xF0 + sizeof(BYTE[1]);
-	CreateProjectileMessageClientData.UnknownG = 0x00;
+	CreateProjectileMessageClient createProjectileMessageClientData{};
+	createProjectileMessageClientData.vtable = ErectusProcess::exe + VTABLE_CREATEPROJECTILEMESSAGECLIENT;
+	createProjectileMessageClientData.positionX = position[0];
+	createProjectileMessageClientData.positionY = position[1];
+	createProjectileMessageClientData.positionZ = position[2];
+	createProjectileMessageClientData.rotationArrayPtr = allocAddress + 0xD0;
+	createProjectileMessageClientData.rotationArrayEnd = allocAddress + 0xD0 + sizeof(float[3]);
+	createProjectileMessageClientData.rotationArrayPad = allocAddress + 0xD0 + sizeof(float[3]);
+	createProjectileMessageClientData.itemId = itemId;
+	createProjectileMessageClientData.unknownA = 0xFFFFFFFF;
+	createProjectileMessageClientData.unknownB = 0xFFFFFFFF;
+	createProjectileMessageClientData.unknownC = 0x00000000;
+	createProjectileMessageClientData.unknownD = 1.0f;
+	createProjectileMessageClientData.unknownE = 0x00000000;
+	createProjectileMessageClientData.unknownArrayPtrA = allocAddress + 0xE0;
+	createProjectileMessageClientData.unknownArrayEndA = allocAddress + 0xE0 + sizeof(WORD[1]);
+	createProjectileMessageClientData.unknownArrayPadA = allocAddress + 0xE0 + sizeof(WORD[1]);
+	createProjectileMessageClientData.unknownF = 0xFF;
+	createProjectileMessageClientData.unknownArrayPtrB = allocAddress + 0xF0;
+	createProjectileMessageClientData.unknownArrayEndB = allocAddress + 0xF0 + sizeof(BYTE[1]);
+	createProjectileMessageClientData.unknownArrayPadB = allocAddress + 0xF0 + sizeof(BYTE[1]);
+	createProjectileMessageClientData.unknownG = 0x00;
 
-	ExecutionProjectile ExecutionProjectileData;
-	ExecutionProjectileData.Address = ErectusProcess::Exe + OFFSET_MESSAGE_SENDER;
-	ExecutionProjectileData.RCX = AllocAddress + 0x40;
-	ExecutionProjectileData.RDX = 0;
-	memcpy(ExecutionProjectileData.Message, &CreateProjectileMessageClientData, sizeof(CreateProjectileMessageClientData));
-	ExecutionProjectileData.RotationX = Rotation[0];
-	ExecutionProjectileData.RotationY = Rotation[1];
-	ExecutionProjectileData.RotationZ = Rotation[2];
-	ExecutionProjectileData.UnknownArrayValueA = WORD(Erectus::GetRangedInt(999, 9999));
-	ExecutionProjectileData.UnknownArrayValueB = 0x01;
+	ExecutionProjectile executionProjectileData;
+	executionProjectileData.address = ErectusProcess::exe + OFFSET_MESSAGE_SENDER;
+	executionProjectileData.rcx = allocAddress + 0x40;
+	executionProjectileData.rdx = 0;
+	memcpy(executionProjectileData.message, &createProjectileMessageClientData, sizeof createProjectileMessageClientData);
+	executionProjectileData.rotationX = rotation[0];
+	executionProjectileData.rotationY = rotation[1];
+	executionProjectileData.rotationZ = rotation[2];
+	executionProjectileData.unknownArrayValueA = WORD(Utils::GetRangedInt(999, 9999));
+	executionProjectileData.unknownArrayValueB = 0x01;
 
-	if (!Erectus::WPM(AllocAddress, &ExecutionProjectileData, sizeof(ExecutionProjectileData)))
+	if (!Utils::Wpm(allocAddress, &executionProjectileData, sizeof executionProjectileData))
 	{
-		Erectus::FreeEx(AllocAddress);
+		Utils::FreeEx(allocAddress);
 		return false;
 	}
 
-	DWORD64 ParamAddress = AllocAddress + sizeof(ExecutionProjectile::ASM);
-	HANDLE Thread = CreateRemoteThread(ErectusProcess::Handle, NULL, 0, LPTHREAD_START_ROUTINE(AllocAddress), LPVOID(ParamAddress), 0, 0);
+	const auto paramAddress = allocAddress + sizeof ExecutionProjectile::ASM;
+	auto* const thread = CreateRemoteThread(ErectusProcess::handle, nullptr, 0, LPTHREAD_START_ROUTINE(allocAddress),
+		LPVOID(paramAddress), 0, nullptr);
 
-	if (Thread == NULL)
+	if (thread == nullptr)
 	{
-		Erectus::FreeEx(AllocAddress);
+		Utils::FreeEx(allocAddress);
 		return false;
 	}
 
-	DWORD ThreadResult = WaitForSingleObject(Thread, 3000);
-	CloseHandle(Thread);
+	const auto threadResult = WaitForSingleObject(thread, 3000);
+	CloseHandle(thread);
 
-	if (ThreadResult == WAIT_TIMEOUT)
+	if (threadResult == WAIT_TIMEOUT)
 	{
 		return false;
 	}
 
-	Erectus::FreeEx(AllocAddress);
+	Utils::FreeEx(allocAddress);
 	return true;
 }
 
-bool ErectusMemory::CreateForwardProjectile(DWORD ItemId)
+bool ErectusMemory::CreateForwardProjectile(const DWORD itemId)
 {
-	if (ItemId == 0)
+	if (itemId == 0)
 	{
 		return false;
 	}
 
-	DWORD64 CameraPtr = GetCameraPtr();
-	if (!Erectus::Valid(CameraPtr)) return false;
+	const auto cameraPtr = GetCameraPtr();
+	if (!Utils::Valid(cameraPtr)) return false;
 
-	Camera CameraData;
-	if (!Erectus::RPM(CameraPtr, &CameraData, sizeof(CameraData))) return false;
+	Camera cameraData{};
+	if (!Utils::Rpm(cameraPtr, &cameraData, sizeof cameraData)) return false;
 
-	float Rotation[3];
-	Rotation[0] = -atan2f(CameraData.Forward[2], sqrtf(powf(CameraData.Forward[0], 2.0f) + powf(CameraData.Forward[1], 2.0f)));
-	Rotation[1] = 0.0f;
-	Rotation[2] = -atan2f(-CameraData.Forward[0], CameraData.Forward[1]);
+	float rotation[3];
+	rotation[0] = -atan2f(cameraData.forward[2],
+		sqrtf(powf(cameraData.forward[0], 2.0f) + powf(cameraData.forward[1], 2.0f)));
+	rotation[1] = 0.0f;
+	rotation[2] = -atan2f(-cameraData.forward[0], cameraData.forward[1]);
 
-	return CreateProjectile(ItemId, CameraData.Origin, Rotation);
+	return CreateProjectile(itemId, cameraData.origin, rotation);
 }

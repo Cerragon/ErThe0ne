@@ -2,12 +2,11 @@
 
 //Main
 #include <thread>
-#include <iostream>
 #include <Windows.h>
 #include <TlHelp32.h>
 
+
 //Icon
-#include "resource.h"
 
 //Overlay
 #include <dwmapi.h>
@@ -22,12 +21,14 @@
 //ImGui
 #include "imgui.h"
 #include "imgui_internal.h"
-#include "imgui_impl_dx9.h"
-#include "imgui_impl_win32.h"
 
 //mINI
 #define MINI_CASE_SENSITIVE
 #include "ini.h"
+
+//overlay
+constexpr LPCSTR OVERLAY_WINDOW_NAME = "Er";
+constexpr LPCSTR OVERLAY_WINDOW_CLASS = "ErCLS";
 
 //Offsets
 constexpr auto OFFSET_LOCAL_PLAYER = 0x05B49F78UL;//1.3.1.26;
@@ -81,543 +82,541 @@ constexpr auto VTABLE_REQUESTHITSONACTORS = 0x03B1B700UL;//1.3.1.26;
 constexpr auto VTABLE_CREATEPROJECTILEMESSAGECLIENT = 0x03AE8A38UL;//1.3.1.26;
 
 //CustomEntry Flags
-#define CUSTOM_ENTRY_DEFAULT                            0x0000000000000000ULL
-#define CUSTOM_ENTRY_UNNAMED                            0x0000000000000001ULL
-#define CUSTOM_ENTRY_PLAYER                             0x0000000000000002ULL
-#define CUSTOM_ENTRY_NPC                                0x0000000000000004ULL
-#define CUSTOM_ENTRY_CONTAINER                          0x0000000000000008ULL
-#define CUSTOM_ENTRY_JUNK                               0x0000000000000010ULL
-#define CUSTOM_ENTRY_PLAN                               0x0000000000000020ULL
-#define CUSTOM_ENTRY_ITEM                               0x0000000000000040ULL
-#define CUSTOM_ENTRY_ENTITY                             0x0000000000000080ULL
-#define CUSTOM_ENTRY_VALID_SCRAP                        0x0000000000000100ULL
-#define CUSTOM_ENTRY_VALID_ITEM                         0x0000000000000200ULL
-#define CUSTOM_ENTRY_MAGAZINE                           0x0000000000000400ULL
-#define CUSTOM_ENTRY_BOBBLEHEAD                         0x0000000000000800ULL
-#define	CUSTOM_ENTRY_FLORA                              0x0000000000001000ULL
-#define CUSTOM_ENTRY_MISC                               0x0000000000002000ULL
-#define CUSTOM_ENTRY_MOD                                0x0000000000004000ULL
-#define CUSTOM_ENTRY_WEAPON                             0x0000000000008000ULL
-#define CUSTOM_ENTRY_ARMOR                              0x0000000000010000ULL
-#define CUSTOM_ENTRY_AMMO                               0x0000000000020000ULL
-#define CUSTOM_ENTRY_AID                                0x0000000000040000ULL
-#define CUSTOM_ENTRY_VALID_INGREDIENT                   0x0000000000080000ULL
-#define CUSTOM_ENTRY_KNOWN_RECIPE                       0x0000000000100000ULL
-#define CUSTOM_ENTRY_UNKNOWN_RECIPE                     0x0000000000200000ULL
-#define CUSTOM_ENTRY_FAILED_RECIPE                      0x0000000000400000ULL
-#define CUSTOM_ENTRY_TREASURE_MAP                       0x0000000000800000ULL
-#define CUSTOM_ENTRY_WHITELISTED                        0x4000000000000000ULL
-#define CUSTOM_ENTRY_INVALID                            0x8000000000000000ULL
-
-extern Settings gSettings;
+constexpr auto CUSTOM_ENTRY_DEFAULT = 0x0000000000000000ULL;
+constexpr auto CUSTOM_ENTRY_UNNAMED = 0x0000000000000001ULL;
+constexpr auto CUSTOM_ENTRY_PLAYER = 0x0000000000000002ULL;
+constexpr auto CUSTOM_ENTRY_NPC = 0x0000000000000004ULL;
+constexpr auto CUSTOM_ENTRY_CONTAINER = 0x0000000000000008ULL;
+constexpr auto CUSTOM_ENTRY_JUNK = 0x0000000000000010ULL;
+constexpr auto CUSTOM_ENTRY_PLAN = 0x0000000000000020ULL;
+constexpr auto CUSTOM_ENTRY_ITEM = 0x0000000000000040ULL;
+constexpr auto CUSTOM_ENTRY_ENTITY = 0x0000000000000080ULL;
+constexpr auto CUSTOM_ENTRY_VALID_SCRAP = 0x0000000000000100ULL;
+constexpr auto CUSTOM_ENTRY_VALID_ITEM = 0x0000000000000200ULL;
+constexpr auto CUSTOM_ENTRY_MAGAZINE = 0x0000000000000400ULL;
+constexpr auto CUSTOM_ENTRY_BOBBLEHEAD = 0x0000000000000800ULL;
+constexpr auto CUSTOM_ENTRY_FLORA = 0x0000000000001000ULL;
+constexpr auto CUSTOM_ENTRY_MISC = 0x0000000000002000ULL;
+constexpr auto CUSTOM_ENTRY_MOD = 0x0000000000004000ULL;
+constexpr auto CUSTOM_ENTRY_WEAPON = 0x0000000000008000ULL;
+constexpr auto CUSTOM_ENTRY_ARMOR = 0x0000000000010000ULL;
+constexpr auto CUSTOM_ENTRY_AMMO = 0x0000000000020000ULL;
+constexpr auto CUSTOM_ENTRY_AID = 0x0000000000040000ULL;
+constexpr auto CUSTOM_ENTRY_VALID_INGREDIENT = 0x0000000000080000ULL;
+constexpr auto CUSTOM_ENTRY_KNOWN_RECIPE = 0x0000000000100000ULL;
+constexpr auto CUSTOM_ENTRY_UNKNOWN_RECIPE = 0x0000000000200000ULL;
+constexpr auto CUSTOM_ENTRY_FAILED_RECIPE = 0x0000000000400000ULL;
+constexpr auto CUSTOM_ENTRY_TREASURE_MAP = 0x0000000000800000ULL;
+constexpr auto CUSTOM_ENTRY_WHITELISTED = 0x4000000000000000ULL;
+constexpr auto CUSTOM_ENTRY_INVALID = 0x8000000000000000ULL;
 
 //Game Classes
 class Entity
 {
 public:
 	DWORD64 vtable;//0x0
-	BYTE Padding0008[0x8];
-	BYTE HarvestFlagA;//0x10
-	BYTE Padding0011[0x8];
-	BYTE HarvestFlagB;//0x19
-	BYTE Padding001A[0x6];
-	DWORD Formid;//0x20
-	BYTE Padding0024[0x14];
-	BYTE IdValue[4];//0x38
-	BYTE Padding003C[0x14];
+	BYTE padding0008[0x8];
+	BYTE harvestFlagA;//0x10
+	BYTE padding0011[0x8];
+	BYTE harvestFlagB;//0x19
+	BYTE padding001A[0x6];
+	DWORD formId;//0x20
+	BYTE padding0024[0x14];
+	BYTE idValue[4];//0x38
+	BYTE padding003C[0x14];
 	DWORD64 vtable0050;//0x50
-	BYTE Padding0058[0x8];
-	float Pitch;//0x60
-	BYTE Padding0064[0x4];
-	float Yaw;//0x68
-	BYTE Padding006C[0x4];
-	float Position[3];//0x70
-	BYTE Padding007C[0x4];
-	DWORD64 InventoryPtr;//0x80
-	BYTE Padding0088[0x8];
-	DWORD64 ActorCorePtr;//0x90
-	BYTE Padding0098[0x10];
-	DWORD64 CellPtr;//0xA8
-	DWORD64 SkeletonPtr;//0xB0
-	DWORD64 ReferencePtr;//0xB8
-	BYTE Padding00C0[0xE];
-	BYTE SpawnFlag;//0xCE
-	BYTE Padding00CF[0xC9];
-	BYTE MovementFlag;//0x198
-	BYTE SprintFlag;//0x199
-	BYTE HealthFlag;//0x19A
-	BYTE Padding019B[0xA89];
-	DWORD Formid0C24;//0xC24
+	BYTE padding0058[0x8];
+	float pitch;//0x60
+	BYTE padding0064[0x4];
+	float yaw;//0x68
+	BYTE padding006C[0x4];
+	float position[3];//0x70
+	BYTE padding007C[0x4];
+	DWORD64 inventoryPtr;//0x80
+	BYTE padding0088[0x8];
+	DWORD64 actorCorePtr;//0x90
+	BYTE padding0098[0x10];
+	DWORD64 cellPtr;//0xA8
+	DWORD64 skeletonPtr;//0xB0
+	DWORD64 referencePtr;//0xB8
+	BYTE padding00C0[0xE];
+	BYTE spawnFlag;//0xCE
+	BYTE padding00Cf[0xC9];
+	BYTE movementFlag;//0x198
+	BYTE sprintFlag;//0x199
+	BYTE healthFlag;//0x19A
+	BYTE padding019B[0xA89];
+	DWORD formId0C24;//0xC24
 };
 class Reference
 {
 public:
 	DWORD64 vtable;//0x0
-	BYTE Padding0008[0x10];
-	BYTE RecordFlagA;//0x18
-	BYTE Padding0019[0x7];
-	DWORD Formid;//0x20
-	BYTE Padding0024[0x74];
-	DWORD64 NamePtr0098;//0x98
-	BYTE Padding00A0[0x10];
-	DWORD64 NamePtr00B0;//0xB0
-	DWORD64 KeywordArrayData00B8;//0xB8
-	DWORD64 KeywordArrayData00C0;//0xC0
-	BYTE Padding00B8[0x19];
-	BYTE OMODFlag;//0xE1
-	BYTE Padding00E2[0xE];
-	DWORD64 FactionArrayPtr;//0xF0
-	BYTE Padding00F8[0x8];
-	int FactionArraySize;//0x100
-	BYTE Padding0104[0x5C];
-	DWORD64 NamePtr0160;//0x160
-	BYTE Padding0168[0x48];
-	DWORD64 KeywordArrayData01B0;//0x1B0
-	DWORD64 KeywordArrayData01B8;//0x1B8
-	DWORD64 KeywordArrayData01C0;//0x1C0
-	BYTE Padding01C4[0x10];
-	BYTE PlanFlag;//0x1D8
-	BYTE Padding01D9[0xF];
-	DWORD64 ComponentArrayPtr;//0x1E8
-	BYTE Padding01F0[0x8];
-	int ComponentArraySize;//0x1F8
-	BYTE Padding01FC[0x14];
-	DWORD64 HarvestedPtr;//0x210
+	BYTE padding0008[0x10];
+	BYTE recordFlagA;//0x18
+	BYTE padding0019[0x7];
+	DWORD formId;//0x20
+	BYTE padding0024[0x74];
+	DWORD64 namePtr0098;//0x98
+	BYTE padding00A0[0x10];
+	DWORD64 namePtr00B0;//0xB0
+	DWORD64 keywordArrayData00B8;//0xB8
+	DWORD64 keywordArrayData00C0;//0xC0
+	BYTE padding00B8[0x19];
+	BYTE omodFlag;//0xE1
+	BYTE padding00E2[0xE];
+	DWORD64 factionArrayPtr;//0xF0
+	BYTE padding00F8[0x8];
+	int factionArraySize;//0x100
+	BYTE padding0104[0x5C];
+	DWORD64 namePtr0160;//0x160
+	BYTE padding0168[0x48];
+	DWORD64 keywordArrayData01B0;//0x1B0
+	DWORD64 keywordArrayData01B8;//0x1B8
+	DWORD64 keywordArrayData01C0;//0x1C0
+	BYTE padding01C4[0x10];
+	BYTE planFlag;//0x1D8
+	BYTE padding01D9[0xF];
+	DWORD64 componentArrayPtr;//0x1E8
+	BYTE padding01F0[0x8];
+	int componentArraySize;//0x1F8
+	BYTE padding01Fc[0x14];
+	DWORD64 harvestedPtr;//0x210
 };
 
-namespace memoryClasses {
+namespace MemoryClasses {
 	class LeveledList
 	{
 	public:
 		DWORD64 vtable;//0x0
-		BYTE Padding0008[0x18];
-		DWORD Formid;//0x20
-		BYTE Padding0024[0x8C];
-		DWORD64 ListEntryArrayPtr;//0xB0
-		BYTE Padding00B8[0x9];
-		BYTE ListEntryArraySize;//0xC1
+		BYTE padding0008[0x18];
+		DWORD formId;//0x20
+		BYTE padding0024[0x8C];
+		DWORD64 listEntryArrayPtr;//0xB0
+		BYTE padding00B8[0x9];
+		BYTE listEntryArraySize;//0xC1
 	};
 	class RequestActivateRefMessage
 	{
 	public:
 		DWORD64 vtable;//0x0
-		DWORD Formid;//0x8
-		BYTE Choice;//0xC
-		BYTE ForceActivate;//0xB
+		DWORD formId;//0x8
+		BYTE choice;//0xC
+		BYTE forceActivate;//0xB
 	};
 
 	class TransferMessage
 	{
 	public:
 		DWORD64 vtable;//0x0
-		DWORD SrcFormid;//0x8
-		DWORD UnknownId;//0xC
-		DWORD DstFormid;//0x10
-		DWORD ItemId;//0x14
-		int Count;//0x18
-		DWORD UnknownA;//0x1C
-		BYTE UnknownB;//0x20
-		BYTE UnknownC;//0x21
-		BYTE UnknownD;//0x22
-		BYTE UnknownE;//0x23
+		DWORD srcFormId;//0x8
+		DWORD unknownId;//0xC
+		DWORD dstFormId;//0x10
+		DWORD itemId;//0x14
+		int count;//0x18
+		DWORD unknownA;//0x1C
+		BYTE unknownB;//0x20
+		BYTE unknownC;//0x21
+		BYTE unknownD;//0x22
+		BYTE unknownE;//0x23
 	};
 
 	class RequestTeleportMessage
 	{
 	public:
 		DWORD64 vtable;//0x0
-		float PositionX;//0x8
-		float PositionY;//0xC
-		float PositionZ;//0x10
-		float RotationX;//0x14
-		float RotationY;//0x18
-		float RotationZ;//0x1C
-		DWORD64 CellPtr;//0x20
+		float positionX;//0x8
+		float positionY;//0xC
+		float positionZ;//0x10
+		float rotationX;//0x14
+		float rotationY;//0x18
+		float rotationZ;//0x1C
+		DWORD64 cellPtr;//0x20
 	};
 
 	class ClientStateMsg
 	{
 	public:
 		DWORD64 vtable;//0x0
-		DWORD64 ClientState;//0x8
+		DWORD64 clientState;//0x8
 	};
 
 	class Camera
 	{
 	public:
 		DWORD64 vtable;//0x0
-		BYTE Padding0008[0x68];
-		float Forward[3];//0x70
-		BYTE Padding007C[0x24];
-		float Origin[3];//0xA0
-		BYTE Padding00AC[0x84];
-		float View[16];//0x130
+		BYTE padding0008[0x68];
+		float forward[3];//0x70
+		BYTE padding007C[0x24];
+		float origin[3];//0xA0
+		BYTE padding00Ac[0x84];
+		float view[16];//0x130
 	};
 
 	class FalloutMain
 	{
 	public:
 		DWORD64 vtable;//0x0
-		BYTE Padding0008[0x338];
-		DWORD64 PlatformSessionManagerPtr;//0x340
+		BYTE padding0008[0x338];
+		DWORD64 platformSessionManagerPtr;//0x340
 	};
 
 	class PlatformSessionManager
 	{
 	public:
 		DWORD64 vtable;//0x0
-		BYTE Padding0008[0x78];
-		DWORD64 ClientAccountManagerPtr;//0x80
+		BYTE padding0008[0x78];
+		DWORD64 clientAccountManagerPtr;//0x80
 	};
 
 	class ClientAccountManager
 	{
 	public:
 		DWORD64 vtable;//0x0
-		BYTE Padding0008[0x38];
-		DWORD64 ClientAccountArrayPtr;//0x40
-		BYTE Padding0048[0x8];
-		int ClientAccountArraySizeA;//0x50
-		BYTE Padding0054[0x4];
-		int ClientAccountArraySizeB;//0x58
+		BYTE padding0008[0x38];
+		DWORD64 clientAccountArrayPtr;//0x40
+		BYTE padding0048[0x8];
+		int clientAccountArraySizeA;//0x50
+		BYTE padding0054[0x4];
+		int clientAccountArraySizeB;//0x58
 	};
 
 	class ClientAccountBuffer
 	{
 	public:
-		DWORD64 NamePtr;//0x0
-		DWORD64 ClientAccountPtr;//0x8
+		DWORD64 namePtr;//0x0
+		DWORD64 clientAccountPtr;//0x8
 	};
 
 	class ClientAccount
 	{
 	public:
 		DWORD64 vtable;//0x0
-		BYTE Padding0008[0x8];
-		BYTE NameData[0x10];//0x10
-		int NameLength;//0x20
-		BYTE Padding0024[0x58];
-		DWORD Formid;//0x7C
+		BYTE padding0008[0x8];
+		BYTE nameData[0x10];//0x10
+		int nameLength;//0x20
+		BYTE padding0024[0x58];
+		DWORD formId;//0x7C
 	};
 
 	class EntityListType
 	{
 	public:
-		BYTE Padding0000[0x80];
-		DWORD64 InteriorListPtr;//0x80
-		DWORD64 InteriorListCheck;//0x88
-		BYTE Padding0090[0x18];
-		DWORD64 ExteriorListPtr;//0xA8
-		DWORD64 ExteriorListCheck;//0xB0
+		BYTE padding0000[0x80];
+		DWORD64 interiorListPtr;//0x80
+		DWORD64 interiorListCheck;//0x88
+		BYTE padding0090[0x18];
+		DWORD64 exteriorListPtr;//0xA8
+		DWORD64 exteriorListCheck;//0xB0
 	};
 
 	class EntityList
 	{
 	public:
-		BYTE Padding0000[0x88];
-		DWORD64 ListPtr;//0x88
-		BYTE Padding0088[0x8];
-		int ListSize;//0x98
+		BYTE padding0000[0x88];
+		DWORD64 listPtr;//0x88
+		BYTE padding0088[0x8];
+		int listSize;//0x98
 	};
 
 	class Component
 	{
 	public:
-		DWORD64 ComponentReferencePtr;//0x0
-		DWORD64 ComponentCountReferencePtr;//0x8
+		DWORD64 componentReferencePtr;//0x0
+		DWORD64 componentCountReferencePtr;//0x8
 	};
 
 	class ReferenceList
 	{
 	public:
-		DWORD64 ArrayPtr;//0x0
-		BYTE Padding0008[0x8];
-		int ArraySize;//0x10
+		DWORD64 arrayPtr;//0x0
+		BYTE padding0008[0x8];
+		int arraySize;//0x10
 	};
 
 	class Weapon
 	{
 	public:
 		DWORD64 vtable;//0x08
-		BYTE Padding0008[0x18];
-		DWORD Formid;//0x20
-		BYTE Padding0024[0x19C];
-		DWORD64 KeywordArrayPtr;//0x1C0
-		int KeywordArraySize;//0x1C8
-		BYTE Padding01D0[0xE0];
-		DWORD64 AimModelPtr;//0x2B0
-		BYTE Padding02B8[0x44];
-		float ReloadSpeed;//0x2FC
-		BYTE Padding0300[0x4];
-		float Speed;//0x304
-		float Reach;//0x308
-		BYTE Padding030C[0x2C];
-		float ActionPointCost;//0x338
-		BYTE Padding033C[0x24];
-		BYTE FlagA;//0x360
-		BYTE FlagB;//0x361
-		BYTE FlagC;//0x362
-		BYTE FlagD;//0x363
-		BYTE Padding0364[0x1C];
-		short Capacity;//0x380
+		BYTE padding0008[0x18];
+		DWORD formId;//0x20
+		BYTE padding0024[0x19C];
+		DWORD64 keywordArrayPtr;//0x1C0
+		int keywordArraySize;//0x1C8
+		BYTE padding01D0[0xE0];
+		DWORD64 aimModelPtr;//0x2B0
+		BYTE padding02B8[0x44];
+		float reloadSpeed;//0x2FC
+		BYTE padding0300[0x4];
+		float speed;//0x304
+		float reach;//0x308
+		BYTE padding030C[0x2C];
+		float actionPointCost;//0x338
+		BYTE padding033C[0x24];
+		BYTE flagA;//0x360
+		BYTE flagB;//0x361
+		BYTE flagC;//0x362
+		BYTE flagD;//0x363
+		BYTE padding0364[0x1C];
+		short capacity;//0x380
 	};
 
 	class AimModel
 	{
 	public:
 		DWORD64 vtable;//0x8
-		BYTE Padding0008[0x18];
-		DWORD Formid;//0x20
-		BYTE Padding0024[0x4];
-		BYTE SpreadData[0x18];//0x28
-		BYTE RecoilData[0x24];//0x40
-		float Sway;//0x64
+		BYTE padding0008[0x18];
+		DWORD formId;//0x20
+		BYTE padding0024[0x4];
+		BYTE spreadData[0x18];//0x28
+		BYTE recoilData[0x24];//0x40
+		float sway;//0x64
 	};
 
-	class bhkCharProxyController
+	class BhkCharProxyController
 	{
 	public:
 		DWORD64 vtable;//0x0
-		BYTE Padding0008[0x4A8];
-		DWORD64 hknpBSCharacterProxyPtr;//0x4B0
+		BYTE padding0008[0x4A8];
+		DWORD64 hknpBsCharacterProxyPtr;//0x4B0
 	};
 
-	class hknpBSCharacterProxy
+	class HknpBsCharacterProxy
 	{
 	public:
 		DWORD64 vtable;//0x0
-		BYTE Padding0008[0x48];
-		float Rotation[2];//0x50
-		BYTE Padding0058[0x18];
-		float Position[3];//0x70
-		BYTE Padding007C[0x24];
-		float VelocityA[4];//0xA0
-		float VelocityB[4];//0xB0
+		BYTE padding0008[0x48];
+		float rotation[2];//0x50
+		BYTE padding0058[0x18];
+		float position[3];//0x70
+		BYTE padding007C[0x24];
+		float velocityA[4];//0xA0
+		float velocityB[4];//0xB0
 	};
 
 	class Inventory
 	{
 	public:
 		DWORD64 vtable;//0x0
-		BYTE Padding0008[0x58];
-		DWORD64 ItemArrayPtr;//0x60
-		DWORD64 ItemArrayEnd;//0x68
+		BYTE padding0008[0x58];
+		DWORD64 itemArrayPtr;//0x60
+		DWORD64 itemArrayEnd;//0x68
 	};
 
 	class Item
 	{
 	public:
-		DWORD64 ReferencePtr;//0x0
-		BYTE Padding0008[0x8];
-		DWORD64 DisplayPtr;//0x10
-		BYTE Padding0018[0x8];
-		DWORD64 Iterations;//0x20
-		BYTE EquipFlag;//0x28
-		BYTE Padding0025[0x3];
-		DWORD ItemId;//0x2C
-		BYTE FavoriteIndex;//0x30
-		BYTE Padding0031[0x7];
+		DWORD64 referencePtr;//0x0
+		BYTE padding0008[0x8];
+		DWORD64 displayPtr;//0x10
+		BYTE padding0018[0x8];
+		DWORD64 iterations;//0x20
+		BYTE equipFlag;//0x28
+		BYTE padding0025[0x3];
+		DWORD itemId;//0x2C
+		BYTE favoriteIndex;//0x30
+		BYTE padding0031[0x7];
 	};
 
 	class ItemCount
 	{
 	public:
-		BYTE Padding0000[0x8];
-		int Count;//0x8
-		BYTE Padding000C[0x4];
+		BYTE padding0000[0x8];
+		int count;//0x8
+		BYTE padding000C[0x4];
 	};
 
 	class ItemInstancedArray
 	{
 	public:
-		BYTE Padding0000[0x10];
-		DWORD64 ArrayPtr;//0x10
-		DWORD64 ArrayEnd;//0x18
+		BYTE padding0000[0x10];
+		DWORD64 arrayPtr;//0x10
+		DWORD64 arrayEnd;//0x18
 	};
 
 	class ExtraTextDisplayData
 	{
 	public:
 		DWORD64 vtable;//0x0
-		BYTE Padding0008[0x8];
-		DWORD64 InstancedNamePtr;//0x10
+		BYTE padding0008[0x8];
+		DWORD64 instancedNamePtr;//0x10
 	};
 
 	class ActorValueInformation
 	{
 	public:
 		DWORD64 vtable;//0x8
-		BYTE Padding0008[0x18];
-		DWORD Formid;//0x20
-		BYTE Padding0024[0x1DC];
-		float MaximumValue;//0x200
+		BYTE padding0008[0x18];
+		DWORD formId;//0x20
+		BYTE padding0024[0x1DC];
+		float maximumValue;//0x200
 	};
 
 	class RequestHitsOnActors
 	{
 	public:
 		DWORD64 vtable;//0x0
-		DWORD64 HitsArrayPtr;//0x8
-		DWORD64 HitsArrayEnd;//0x10
-		BYTE Padding0018[0x48];
+		DWORD64 hitsArrayPtr;//0x8
+		DWORD64 hitsArrayEnd;//0x10
+		BYTE padding0018[0x48];
 	};
 
-	class BGSQuestText
+	class BgsQuestText
 	{
 	public:
 		DWORD64 vtable;//0x0
-		DWORD64 FormidPtr;//0x8
-		BYTE Padding0010[0x28];
-		DWORD64 CodePtr;//0x38
+		DWORD64 formIdPtr;//0x8
+		BYTE padding0010[0x28];
+		DWORD64 codePtr;//0x38
 	};
 
 	class ActorSnapshotComponent
 	{
 	public:
 		//ActorCoreSnapshotComponent
-		DWORD64 ActorCorevtable;//0x0
-		BYTE ActorCorePadding0008[0x98];
+		DWORD64 actorCorevtable;//0x0
+		BYTE actorCorePadding0008[0x98];
 		//ActorServerAuthSnapshotData
 		DWORD64 vtable;//0x0
-		BYTE Padding0008[0x33];
-		BYTE IsEssential;//0x3B
-		BYTE Padding003C[0x34];
-		float MaxHealth;//0x70
-		float ModifiedHealth;//0x74
-		BYTE Padding0078[0x4];
-		float LostHealth;//0x7C
-		BYTE Padding0080[0xA0];
-		BYTE EpicRank;//0x120
-		BYTE Padding0121[0x7];
+		BYTE padding0008[0x33];
+		BYTE isEssential;//0x3B
+		BYTE padding003C[0x34];
+		float maxHealth;//0x70
+		float modifiedHealth;//0x74
+		BYTE padding0078[0x4];
+		float lostHealth;//0x7C
+		BYTE padding0080[0xA0];
+		BYTE epicRank;//0x120
+		BYTE padding0121[0x7];
 	};
 
 	class ListEntry
 	{
 	public:
-		DWORD64 ReferencePtr;//0x0
-		DWORD64 ExtraData;//0x8
-		DWORD64 Conditions;//0x10
-		float Quantity;//0x18
-		DWORD QuantityPadding;//0x1C
-		DWORD64 QuantityGlobal;//0x20
-		DWORD64 QuantityGlobalPadding;//0x28;
-		float ChanceNoneValue;//0x30
-		DWORD ChanceNoneValuePadding;//0x34
-		DWORD64 ChanceNoneGlobal;//0x38
-		DWORD64 ChanceNoneCurveTable;//0x40
-		float MinimumLevel;//0x48
-		DWORD MinimumLevelPadding;//0x4C
-		DWORD64 MinimumLevelGlobal;//0x50
-		DWORD64 MinimumLevelCurveTable;//0x58
-		DWORD64 MinimumLevelCurveTablePadding;//0x68
+		DWORD64 referencePtr;//0x0
+		DWORD64 extraData;//0x8
+		DWORD64 conditions;//0x10
+		float quantity;//0x18
+		DWORD quantityPadding;//0x1C
+		DWORD64 quantityGlobal;//0x20
+		DWORD64 quantityGlobalPadding;//0x28;
+		float chanceNoneValue;//0x30
+		DWORD chanceNoneValuePadding;//0x34
+		DWORD64 chanceNoneGlobal;//0x38
+		DWORD64 chanceNoneCurveTable;//0x40
+		float minimumLevel;//0x48
+		DWORD minimumLevelPadding;//0x4C
+		DWORD64 minimumLevelGlobal;//0x50
+		DWORD64 minimumLevelCurveTable;//0x58
+		DWORD64 minimumLevelCurveTablePadding;//0x68
 	};
 
 	class ProcessLists
 	{
 	public:
 		DWORD64 vtable;//0x0
-		BYTE Padding0008[0x48];
-		DWORD64 NPCIdArrayPtrA;//0x50
-		BYTE Padding0058[0x8];
-		int NPCIdArraySizeA;//0x60
-		BYTE Padding0064[0x1C];
-		DWORD64 NPCIdArrayPtrB;//0x80
-		BYTE Padding0088[0x8];
-		int NPCIdArraySizeB;//0x90
+		BYTE padding0008[0x48];
+		DWORD64 npcIdArrayPtrA;//0x50
+		BYTE padding0058[0x8];
+		int npcIdArraySizeA;//0x60
+		BYTE padding0064[0x1C];
+		DWORD64 npcIdArrayPtrB;//0x80
+		BYTE padding0088[0x8];
+		int npcIdArraySizeB;//0x90
 	};
 
 	class Chargen
 	{
 	public:
-		BYTE Padding[0x28];
-		float Thin;//0x28
-		float Muscular;//0x2C
-		float Large;//0x30
+		BYTE padding[0x28];
+		float thin;//0x28
+		float muscular;//0x2C
+		float large;//0x30
 	};
 
 	class ModInstance
 	{
 	public:
-		DWORD64 ModListPtr;//0x0
-		int ModListSize;//0x8
+		DWORD64 modListPtr;//0x0
+		int modListSize;//0x8
 	};
 
 	class ObjectInstanceExtra
 	{
 	public:
-		BYTE Padding0000[0x10];
-		DWORD64 ModDataPtr;//0x10
+		BYTE padding0000[0x10];
+		DWORD64 modDataPtr;//0x10
 	};
 
 	class CreateProjectileMessageClient
 	{
 	public:
 		DWORD64 vtable;//0x0
-		float PositionX;//0x8
-		float PositionY;//0xC
-		float PositionZ;//0x10
-		BYTE Padding0014[0x4];
-		DWORD64 RotationArrayPtr;//0x18 (float, XYZ)
-		DWORD64 RotationArrayEnd;//0x20
-		DWORD64 RotationArrayPad;//0x28
-		DWORD ItemId;//0x30
-		DWORD UnknownA;//0x34 (0xFFFFFFFF)
-		DWORD UnknownB;//0x38 (0xFFFFFFFF)
-		DWORD UnknownC;//0x3C (0x00000000)
-		float UnknownD;//0x40 (1.0f)
-		DWORD UnknownE;//0x44 (0x00000000)
-		DWORD64 UnknownArrayPtrA;//0x48 (WORD, 0xFFFF)
-		DWORD64 UnknownArrayEndA;//0x50
-		DWORD64 UnknownArrayPadA;//0x58
-		BYTE UnknownF;//0x60 (0xFF)
-		BYTE Padding0061[0x7];
-		DWORD64 UnknownArrayPtrB;//0x68 (BYTE, 0x01)
-		DWORD64 UnknownArrayEndB;//0x70
-		DWORD64 UnknownArrayPadB;//0x78
-		BYTE UnknownG;//0x80 (0x00)
-		BYTE Padding0081[0xF];
+		float positionX;//0x8
+		float positionY;//0xC
+		float positionZ;//0x10
+		BYTE padding0014[0x4];
+		DWORD64 rotationArrayPtr;//0x18 (float, XYZ)
+		DWORD64 rotationArrayEnd;//0x20
+		DWORD64 rotationArrayPad;//0x28
+		DWORD itemId;//0x30
+		DWORD unknownA;//0x34 (0xFFFFFFFF)
+		DWORD unknownB;//0x38 (0xFFFFFFFF)
+		DWORD unknownC;//0x3C (0x00000000)
+		float unknownD;//0x40 (1.0f)
+		DWORD unknownE;//0x44 (0x00000000)
+		DWORD64 unknownArrayPtrA;//0x48 (WORD, 0xFFFF)
+		DWORD64 unknownArrayEndA;//0x50
+		DWORD64 unknownArrayPadA;//0x58
+		BYTE unknownF;//0x60 (0xFF)
+		BYTE padding0061[0x7];
+		DWORD64 unknownArrayPtrB;//0x68 (BYTE, 0x01)
+		DWORD64 unknownArrayEndB;//0x70
+		DWORD64 unknownArrayPadB;//0x78
+		BYTE unknownG;//0x80 (0x00)
+		BYTE padding0081[0xF];
 	};
 	class OldWeapon
 	{
 	public:
-		Weapon* WeaponData;
-		AimModel* AimModelData;
+		Weapon* weaponData;
+		AimModel* aimModelData;
 	};
 
 	class Hits
 	{
 	public:
-		DWORD ValueA;//0x0 (Local Player)
-		DWORD ValueB;//0x4 (Entity)
-		DWORD ValueC;//0x8 (Projectile == 0)
-		DWORD InitializationType;//0xC (3 == Default/Gun, 4 == Explosive)
-		DWORD uiWeaponServerID;//0x10
-		DWORD LIMB_ENUM;//0x20 (0xFFFFFFFF == Default/Body)
-		DWORD HitEffectID;//0x18 (0 == Default/Gun)
+		DWORD valueA;//0x0 (Local Player)
+		DWORD valueB;//0x4 (Entity)
+		DWORD valueC;//0x8 (Projectile == 0)
+		DWORD initializationType;//0xC (3 == Default/Gun, 4 == Explosive)
+		DWORD uiWeaponServerId;//0x10
+		DWORD limbEnum;//0x20 (0xFFFFFFFF == Default/Body)
+		DWORD hitEffectId;//0x18 (0 == Default/Gun)
 		DWORD uEquipIndex;//0x1C (0 == Default/Gun)
 		BYTE uAckIndex;//0x20 (Shots Hit, Always > 0)
-		BYTE uFireID;//0x21 (Shots Fired)
+		BYTE uFireId;//0x21 (Shots Fired)
 		BYTE bPredictedKill;//0x22
-		BYTE Padding0023;//0x23 (0)
-		float ExplosionLocationX;//0x24
-		float ExplosionLocationY;//0x28
-		float ExplosionLocationZ;//0x2C
+		BYTE padding0023;//0x23 (0)
+		float explosionLocationX;//0x24
+		float explosionLocationY;//0x28
+		float explosionLocationZ;//0x2C
 		float fProjectilePower;//0x30 (1.0f == Default)
 		BYTE bVatsAttack;//0x34
 		BYTE bVatsCritical;//0x35
 		BYTE bTargetWasDead;//0x36
-		BYTE Padding0037;//0x37 (0)
+		BYTE padding0037;//0x37 (0)
 	};
 
 	class CustomEntry
 	{
 	public:
-		DWORD64 EntityPtr;
-		DWORD64 ReferencePtr;
-		DWORD EntityFormid;
-		DWORD ReferenceFormid;
-		DWORD64 Flag;
-		char* Name;
+		DWORD64 entityPtr;
+		DWORD64 referencePtr;
+		DWORD entityFormId;
+		DWORD referenceFormId;
+		DWORD64 flag;
+		char* name;
 	};
 
 	class ExecutionList
@@ -651,10 +650,10 @@ namespace memoryClasses {
 			0xCC, 0xCC, 0xCC, 0xCC, //Padding
 			0xCC, 0xCC, 0xCC, 0xCC, //Padding
 		};
-		DWORD64 Function;           //0x40 (0x0)
-		DWORD64 IdArraySize;        //0x48 (0x8)
-		DWORD64 IdArray;            //0x50 (0x10)
-		DWORD64 PtrArray;           //0x58 (0x18)
+		DWORD64 function{};           //0x40 (0x0)
+		DWORD64 idArraySize{};        //0x48 (0x8)
+		DWORD64 idArray{};            //0x50 (0x10)
+		DWORD64 ptrArray{};           //0x58 (0x18)
 	};
 
 	class ExecutionPlan
@@ -688,7 +687,7 @@ namespace memoryClasses {
 			0xCC, 0xCC, 0xCC, 0xCC, //Padding
 			0xCC, 0xCC, 0xCC, 0xCC, //Padding
 		};
-		BYTE RBP[0xF0]
+		BYTE rbp[0xF0]
 		{
 			0x48, 0x89, 0x54, 0x24, 0x10, 0x55, 0x56, 0x57, 0x48, 0x81, 0xEC, 0x40, 0x01, 0x00, 0x00, 0x48,
 			0xC7, 0x44, 0x24, 0x20, 0xFE, 0xFF, 0xFF, 0xFF, 0x48, 0x89, 0x9C, 0x24, 0x60, 0x01, 0x00, 0x00,
@@ -706,11 +705,11 @@ namespace memoryClasses {
 			0x01, 0xEB, 0x02, 0x32, 0xC0, 0x48, 0x8B, 0x9C, 0x24, 0x60, 0x01, 0x00, 0x00, 0x48, 0x81, 0xC4,
 			0x40, 0x01, 0x00, 0x00, 0x5F, 0x5E, 0x5D, 0xC3, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC,
 		};
-		DWORD64 Function;           //0x130 (0x00)
-		DWORD64 LocalPlayerPtr;		//0x138 (0x08)
-		DWORD64 RecipeArraySize;	//0x140 (0x10)
-		DWORD64 RecipeArray;		//0x148 (0x18)
-		DWORD64 LearnedRecipeArray;	//0x150 (0x20)
+		DWORD64 function{};           //0x130 (0x00)
+		DWORD64 localPlayerPtr{};		//0x138 (0x08)
+		DWORD64 recipeArraySize{};	//0x140 (0x10)
+		DWORD64 recipeArray{};		//0x148 (0x18)
+		DWORD64 learnedRecipeArray{};	//0x150 (0x20)
 	};
 
 	class ExecutionProjectile
@@ -727,19 +726,19 @@ namespace memoryClasses {
 			0xCC, 0xCC, 0xCC, 0xCC, //Padding
 			0xCC, 0xCC, 0xCC, 0xCC, //Padding
 		};
-		DWORD64 Address;            //0x20 (0x0)
-		DWORD64 RCX;                //0x28 (0x8)
-		DWORD64 RDX;                //0x30 (0x10)
-		BYTE Padding0038[0x8];      //0x38
-		BYTE Message[0x90];         //0x40
-		float RotationX;            //0xD0
-		float RotationY;            //0xD4
-		float RotationZ;            //0xD8
-		BYTE Padding00CC[0x4];      //0xDC
-		WORD UnknownArrayValueA;    //0xE0
-		BYTE Padding00D2[0xE];      //0xE2
-		BYTE UnknownArrayValueB;    //0xF0
-		BYTE Padding00E2[0xF];      //0xF1
+		DWORD64 address{};            //0x20 (0x0)
+		DWORD64 rcx{};                //0x28 (0x8)
+		DWORD64 rdx{};                //0x30 (0x10)
+		BYTE padding0038[0x8]{};      //0x38
+		BYTE message[0x90]{};         //0x40
+		float rotationX{};            //0xD0
+		float rotationY{};            //0xD4
+		float rotationZ{};            //0xD8
+		BYTE padding00Cc[0x4]{};      //0xDC
+		WORD unknownArrayValueA{};    //0xE0
+		BYTE padding00D2[0xE]{};      //0xE2
+		BYTE unknownArrayValueB{};    //0xF0
+		BYTE padding00E2[0xF]{};      //0xF1
 	};
 
 	class ExternalFunction
@@ -757,17 +756,17 @@ namespace memoryClasses {
 			0xCC, 0xCC, 0xCC, 0xCC,	//Padding
 			0xCC, 0xCC, 0xCC, 0xCC,	//Padding
 		};
-		DWORD64 Address;			//0x20 (0x0)
-		DWORD64 RCX;				//0x28 (0x8)
-		DWORD64 RDX;				//0x30 (0x10)
-		DWORD64 R8;					//0x38 (0x18)
-		DWORD64 R9;					//0x40 (0x20)
+		DWORD64 address{};			//0x20 (0x0)
+		DWORD64 rcx{};				//0x28 (0x8)
+		DWORD64 rdx{};				//0x30 (0x10)
+		DWORD64 r8{};					//0x38 (0x18)
+		DWORD64 r9{};					//0x40 (0x20)
 	};
 
 	class ActorValueHook
 	{
 	public:
-		BYTE ActorValueASM[0x118]
+		BYTE actorValueAsm[0x118]
 		{
 			0x8B, 0x42, 0x20,								//mov eax, [rdx+20]
 			0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00,	//nop (multi)
@@ -837,29 +836,29 @@ namespace memoryClasses {
 			0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC,	//Padding
 			0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC,				//Padding
 		};
-		int ActionPointsEnabled;
-		float ActionPoints;
-		int StrengthEnabled;
-		float Strength;
-		int PerceptionEnabled;
-		float Perception;
-		int EnduranceEnabled;
-		float Endurance;
-		int CharismaEnabled;
-		float Charisma;
-		int IntelligenceEnabled;
-		float Intelligence;
-		int AgilityEnabled;
-		float Agility;
-		int LuckEnabled;
-		float Luck;
-		DWORD64 OriginalFunction;
+		int actionPointsEnabled{};
+		float actionPoints{};
+		int strengthEnabled{};
+		float strength{};
+		int perceptionEnabled{};
+		float perception{};
+		int enduranceEnabled{};
+		float endurance{};
+		int charismaEnabled{};
+		float charisma{};
+		int intelligenceEnabled{};
+		float intelligence{};
+		int agilityEnabled{};
+		float agility{};
+		int luckEnabled{};
+		float luck{};
+		DWORD64 originalFunction{};
 	};
 
 	class Opk
 	{
 	public:
-		BYTE OpkASM[0x70]
+		BYTE opkAsm[0x70]
 		{
 			0x31, 0xC0,                                     //xor eax, eax
 			0x3B, 0x05, 0x68, 0x00, 0x00, 0x00,             //cmp eax, [OpkPlayers]
@@ -888,17 +887,17 @@ namespace memoryClasses {
 			0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, //Padding
 			0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, //Padding
 		};
-		int OpkPlayers;
-		int OpkNpcs;
-		DWORD64 OriginalFunction;
-		float OpkPlayerPosition[4];
-		float OpkNpcPosition[4];
+		int opkPlayers{};
+		int opkNpcs{};
+		DWORD64 originalFunction{};
+		float opkPlayerPosition[4]{};
+		float opkNpcPosition[4]{};
 	};
 
 	class FreezeAp
 	{
 	public:
-		BYTE FreezeApASM[0x70]
+		BYTE freezeApAsm[0x70]
 		{
 			0x8B, 0xD6,                                 //mov edx, esi
 			0x48, 0x8B, 0xC8,                           //mov rcx, rax
@@ -932,13 +931,13 @@ namespace memoryClasses {
 			0xCC, 0xCC, 0xCC, 0xCC,                     //Padding
 			0xCC, 0xCC, 0xCC, 0xCC,                     //Padding
 		};
-		int FreezeApEnabled;
+		int freezeApEnabled{};
 	};
 
 	class TargetLocking
 	{
 	public:
-		BYTE RedirectionASM[0x40]
+		BYTE redirectionAsm[0x40]
 		{
 			0x48, 0xBB, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0F, 0x00,     //mov rbx, 0xF000000000000
 			0x48, 0x39, 0x1D, 0x2F, 0x00, 0x00, 0x00,                       //cmp [TargetLockingPtr], rbx
@@ -952,344 +951,344 @@ namespace memoryClasses {
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,                 //OriginalFunction
 			0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC,                 //Padding
 		};
-		DWORD64 TargetLockingPtr;
+		DWORD64 targetLockingPtr{};
 	};
 }
 
-namespace settingsClasses {
+namespace SettingsClasses {
 	class OverlaySettingsA
 	{
 	public:
-		bool Enabled;
-		int EnabledDistance;
-		bool DrawAlive;
-		float AliveColor[3];
-		bool DrawDowned;
-		float DownedColor[3];
-		bool DrawDead;
-		float DeadColor[3];
-		bool DrawUnknown;
-		float UnknownColor[3];
-		bool DrawEnabled;
-		float EnabledAlpha;
-		bool DrawDisabled;
-		float DisabledAlpha;
-		bool DrawNamed;
-		bool DrawUnnamed;
-		bool ShowName;
-		bool ShowDistance;
-		bool ShowHealth;
-		bool ShowDeadHealth;
-		bool TextCentered;
-		bool TextShadowed;
+		bool enabled;
+		int enabledDistance;
+		bool drawAlive;
+		float aliveColor[3];
+		bool drawDowned;
+		float downedColor[3];
+		bool drawDead;
+		float deadColor[3];
+		bool drawUnknown;
+		float unknownColor[3];
+		bool drawEnabled;
+		float enabledAlpha;
+		bool drawDisabled;
+		float disabledAlpha;
+		bool drawNamed;
+		bool drawUnnamed;
+		bool showName;
+		bool showDistance;
+		bool showHealth;
+		bool showDeadHealth;
+		bool textCentered;
+		bool textShadowed;
 	};
 
 	class OverlaySettingsB
 	{
 	public:
-		bool Enabled;
-		int EnabledDistance;
-		float Color[3];
-		bool DrawEnabled;
-		float EnabledAlpha;
-		bool DrawDisabled;
-		float DisabledAlpha;
-		bool DrawNamed;
-		bool DrawUnnamed;
-		bool ShowName;
-		bool ShowDistance;
-		bool TextCentered;
-		bool TextShadowed;
-		bool Whitelisted[32];
-		DWORD Whitelist[32];
+		bool enabled;
+		int enabledDistance;
+		float color[3];
+		bool drawEnabled;
+		float enabledAlpha;
+		bool drawDisabled;
+		float disabledAlpha;
+		bool drawNamed;
+		bool drawUnnamed;
+		bool showName;
+		bool showDistance;
+		bool textCentered;
+		bool textShadowed;
+		bool whitelisted[32];
+		DWORD whitelist[32];
 	};
 
 	class ScrapLooterSettings
 	{
 	public:
-		bool ScrapKeybindEnabled;
-		bool ScrapOverrideEnabled;
-		bool ScrapAutomaticLootingEnabled;
-		bool ScrapAutomaticStatus;
-		int ScrapAutomaticSpeedMin;
-		int ScrapAutomaticSpeedMax;
-		int ScrapLooterDistance;
-		bool ScrapEnabledList[40];
-		DWORD ScrapFormidList[40];
-		const char* ScrapNameList[40];
+		bool scrapKeybindEnabled;
+		bool scrapOverrideEnabled;
+		bool scrapAutomaticLootingEnabled;
+		bool scrapAutomaticStatus;
+		int scrapAutomaticSpeedMin;
+		int scrapAutomaticSpeedMax;
+		int scrapLooterDistance;
+		bool scrapEnabledList[40];
+		DWORD scrapFormIdList[40];
+		const char* scrapNameList[40];
 	};
 
 	class ItemLooterSettings
 	{
 	public:
-		bool ItemKeybindEnabled;
-		bool ItemAutomaticLootingEnabled;
-		bool ItemAutomaticStatus;
-		int ItemAutomaticSpeedMin;
-		int ItemAutomaticSpeedMax;
-		bool ItemLooterWeaponsEnabled;
-		int ItemLooterWeaponsDistance;
-		bool ItemLooterArmorEnabled;
-		int ItemLooterArmorDistance;
-		bool ItemLooterAmmoEnabled;
-		int ItemLooterAmmoDistance;
-		bool ItemLooterModsEnabled;
-		int ItemLooterModsDistance;
-		bool ItemLooterMagazinesEnabled;
-		int ItemLooterMagazinesDistance;
-		bool ItemLooterBobbleheadsEnabled;
-		int ItemLooterBobbleheadsDistance;
-		bool ItemLooterAidEnabled;
-		int ItemLooterAidDistance;
-		bool ItemLooterKnownPlansEnabled;
-		int ItemLooterKnownPlansDistance;
-		bool ItemLooterUnknownPlansEnabled;
-		int ItemLooterUnknownPlansDistance;
-		bool ItemLooterMiscEnabled;
-		int ItemLooterMiscDistance;
-		bool ItemLooterUnlistedEnabled;
-		int ItemLooterUnlistedDistance;
-		bool ItemLooterListEnabled;
-		int ItemLooterListDistance;
-		bool ItemLooterBlacklistToggle;
-		bool ItemLooterEnabledList[100];
-		DWORD ItemLooterFormidList[100];
-		bool ItemLooterBlacklistEnabled[64];
-		DWORD ItemLooterBlacklist[64];
+		bool itemKeybindEnabled;
+		bool itemAutomaticLootingEnabled;
+		bool itemAutomaticStatus;
+		int itemAutomaticSpeedMin;
+		int itemAutomaticSpeedMax;
+		bool itemLooterWeaponsEnabled;
+		int itemLooterWeaponsDistance;
+		bool itemLooterArmorEnabled;
+		int itemLooterArmorDistance;
+		bool itemLooterAmmoEnabled;
+		int itemLooterAmmoDistance;
+		bool itemLooterModsEnabled;
+		int itemLooterModsDistance;
+		bool itemLooterMagazinesEnabled;
+		int itemLooterMagazinesDistance;
+		bool itemLooterBobbleheadsEnabled;
+		int itemLooterBobbleheadsDistance;
+		bool itemLooterAidEnabled;
+		int itemLooterAidDistance;
+		bool itemLooterKnownPlansEnabled;
+		int itemLooterKnownPlansDistance;
+		bool itemLooterUnknownPlansEnabled;
+		int itemLooterUnknownPlansDistance;
+		bool itemLooterMiscEnabled;
+		int itemLooterMiscDistance;
+		bool itemLooterUnlistedEnabled;
+		int itemLooterUnlistedDistance;
+		bool itemLooterListEnabled;
+		int itemLooterListDistance;
+		bool itemLooterBlacklistToggle;
+		bool itemLooterEnabledList[100];
+		DWORD itemLooterFormIdList[100];
+		bool itemLooterBlacklistEnabled[64];
+		DWORD itemLooterBlacklist[64];
 	};
 
 	class WeaponSettings
 	{
 	public:
-		bool NoRecoil;
-		bool NoSpread;
-		bool NoSway;
-		bool InfiniteAmmo;
-		bool InstantReload;
-		bool Automaticflag;
-		bool CapacityEnabled;
-		int Capacity;
-		bool SpeedEnabled;
-		float Speed;
-		bool ReachEnabled;
-		float Reach;
+		bool noRecoil;
+		bool noSpread;
+		bool noSway;
+		bool infiniteAmmo;
+		bool instantReload;
+		bool automaticflag;
+		bool capacityEnabled;
+		int capacity;
+		bool speedEnabled;
+		float speed;
+		bool reachEnabled;
+		float reach;
 	};
 
 	class TargetSettings
 	{
 	public:
-		bool LockPlayers;
-		bool LockNPCs;
-		bool IndirectPlayers;
-		bool IndirectNPCs;
-		bool DirectPlayers;
-		bool DirectNPCs;
-		bool TargetLiving;
-		bool TargetDowned;
-		bool TargetDead;
-		bool TargetUnknown;
-		bool IgnoreRenderDistance;
-		float LockingFOV;
-		bool IgnoreEssentialNPCs;
-		float LockingColor[3];
-		bool Retargeting;
-		int Cooldown;
-		int SendDamageMin;
-		int SendDamageMax;
-		int FavoriteIndex;
+		bool lockPlayers;
+		bool lockNpCs;
+		bool indirectPlayers;
+		bool indirectNpCs;
+		bool directPlayers;
+		bool directNpCs;
+		bool targetLiving;
+		bool targetDowned;
+		bool targetDead;
+		bool targetUnknown;
+		bool ignoreRenderDistance;
+		float lockingFov;
+		bool ignoreEssentialNpCs;
+		float lockingColor[3];
+		bool retargeting;
+		int cooldown;
+		int sendDamageMin;
+		int sendDamageMax;
+		int favoriteIndex;
 	};
 
 	class LocalPlayerSettings
 	{
 	public:
-		bool PositionSpoofingEnabled;
-		bool DrawPositionSpoofingEnabled;
-		int PositionSpoofingHeight;
-		bool NoclipEnabled;
-		float NoclipSpeed;
-		bool ClientState;
-		bool AutomaticClientState;
-		bool FreezeApEnabled;
-		bool ActionPointsEnabled;
-		int ActionPoints;
-		bool StrengthEnabled;
-		int Strength;
-		bool PerceptionEnabled;
-		int Perception;
-		bool EnduranceEnabled;
-		int Endurance;
-		bool CharismaEnabled;
-		int Charisma;
-		bool IntelligenceEnabled;
-		int Intelligence;
-		bool AgilityEnabled;
-		int Agility;
-		bool LuckEnabled;
-		int Luck;
+		bool positionSpoofingEnabled;
+		bool drawPositionSpoofingEnabled;
+		int positionSpoofingHeight;
+		bool noclipEnabled;
+		float noclipSpeed;
+		bool clientState;
+		bool automaticClientState;
+		bool freezeApEnabled;
+		bool actionPointsEnabled;
+		int actionPoints;
+		bool strengthEnabled;
+		int strength;
+		bool perceptionEnabled;
+		int perception;
+		bool enduranceEnabled;
+		int endurance;
+		bool charismaEnabled;
+		int charisma;
+		bool intelligenceEnabled;
+		int intelligence;
+		bool agilityEnabled;
+		int agility;
+		bool luckEnabled;
+		int luck;
 	};
 
 	class OpkSettings
 	{
 	public:
-		bool PlayersEnabled;
-		bool NpcsEnabled;
+		bool playersEnabled;
+		bool npcsEnabled;
 	};
 
 	class UtilitySettings
 	{
 	public:
-		bool DebugPlayer;
-		bool DebugEsp;
-		DWORD PtrFormid;
-		DWORD AddressFormid;
+		bool debugPlayer;
+		bool debugEsp;
+		DWORD ptrFormId;
+		DWORD addressFormId;
 	};
 
 	class SwapperSettings
 	{
 	public:
-		DWORD SourceFormid;
-		DWORD DestinationFormid;
+		DWORD sourceFormId;
+		DWORD destinationFormId;
 	};
 
 	class TransferSettings
 	{
 	public:
-		DWORD SourceFormid;
-		DWORD DestinationFormid;
-		bool UseWhitelist;
-		bool UseBlacklist;
-		bool Whitelisted[32];
-		DWORD Whitelist[32];
-		bool Blacklisted[32];
-		DWORD Blacklist[32];
+		DWORD sourceFormId;
+		DWORD destinationFormId;
+		bool useWhitelist;
+		bool useBlacklist;
+		bool whitelisted[32];
+		DWORD whitelist[32];
+		bool blacklisted[32];
+		DWORD blacklist[32];
 	};
 
 	class TeleportEntry
 	{
 	public:
-		float Destination[4];
-		DWORD CellFormid;
-		bool DisableSaving;
+		float destination[4];
+		DWORD cellFormId;
+		bool disableSaving;
 	};
 
 	class TeleportSettings
 	{
 	public:
-		TeleportEntry TeleportEntryData[16];
+		TeleportEntry teleportEntryData[16];
 	};
 
 	class NukeCodeSettings
 	{
 	public:
-		bool AutomaticNukeCodes;
-		bool DrawCodeAlpha;
-		bool DrawCodeBravo;
-		bool DrawCodeCharlie;
+		bool automaticNukeCodes;
+		bool drawCodeAlpha;
+		bool drawCodeBravo;
+		bool drawCodeCharlie;
 	};
 
 	class LegendarySettings
 	{
 	public:
-		bool OverrideLivingOneStar;
-		float LivingOneStarColor[3];
-		bool OverrideDeadOneStar;
-		float DeadOneStarColor[3];
-		bool OverrideLivingTwoStar;
-		float LivingTwoStarColor[3];
-		bool OverrideDeadTwoStar;
-		float DeadTwoStarColor[3];
-		bool OverrideLivingThreeStar;
-		float LivingThreeStarColor[3];
-		bool OverrideDeadThreeStar;
-		float DeadThreeStarColor[3];
+		bool overrideLivingOneStar;
+		float livingOneStarColor[3];
+		bool overrideDeadOneStar;
+		float deadOneStarColor[3];
+		bool overrideLivingTwoStar;
+		float livingTwoStarColor[3];
+		bool overrideDeadTwoStar;
+		float deadTwoStarColor[3];
+		bool overrideLivingThreeStar;
+		float livingThreeStarColor[3];
+		bool overrideDeadThreeStar;
+		float deadThreeStarColor[3];
 	};
 
 	class FluxSettings
 	{
 	public:
-		bool CrimsonFluxEnabled;
-		bool CobaltFluxEnabled;
-		bool YellowcakeFluxEnabled;
-		bool FluorescentFluxEnabled;
-		bool VioletFluxEnabled;
+		bool crimsonFluxEnabled;
+		bool cobaltFluxEnabled;
+		bool yellowcakeFluxEnabled;
+		bool fluorescentFluxEnabled;
+		bool violetFluxEnabled;
 	};
 
 	class EntityLooterSettings
 	{
 	public:
-		bool EntityLooterEnabled;
-		bool EntityLooterStatusEnabled;
-		bool EntityLooterOneStarWeaponsEnabled;
-		bool EntityLooterOneStarArmorEnabled;
-		bool EntityLooterTwoStarWeaponsEnabled;
-		bool EntityLooterTwoStarArmorEnabled;
-		bool EntityLooterThreeStarWeaponsEnabled;
-		bool EntityLooterThreeStarArmorEnabled;
-		bool EntityLooterAllWeaponsEnabled;
-		bool EntityLooterAllArmorEnabled;
-		bool EntityLooterAmmoEnabled;
-		bool EntityLooterModsEnabled;
-		bool EntityLooterCapsEnabled;
-		bool EntityLooterJunkEnabled;
-		bool EntityLooterAidEnabled;
-		bool EntityLooterTreasureMapsEnabled;
-		bool EntityLooterKnownPlansEnabled;
-		bool EntityLooterUnknownPlansEnabled;
-		bool EntityLooterMiscEnabled;
-		bool EntityLooterUnlistedEnabled;
-		bool EntityLooterListEnabled;
-		bool EntityLooterBlacklistToggle;
-		bool EntityLooterEnabledList[100];
-		DWORD EntityLooterFormidList[100];
-		bool EntityLooterBlacklistEnabled[64];
-		DWORD EntityLooterBlacklist[64];
+		bool entityLooterEnabled;
+		bool entityLooterStatusEnabled;
+		bool entityLooterOneStarWeaponsEnabled;
+		bool entityLooterOneStarArmorEnabled;
+		bool entityLooterTwoStarWeaponsEnabled;
+		bool entityLooterTwoStarArmorEnabled;
+		bool entityLooterThreeStarWeaponsEnabled;
+		bool entityLooterThreeStarArmorEnabled;
+		bool entityLooterAllWeaponsEnabled;
+		bool entityLooterAllArmorEnabled;
+		bool entityLooterAmmoEnabled;
+		bool entityLooterModsEnabled;
+		bool entityLooterCapsEnabled;
+		bool entityLooterJunkEnabled;
+		bool entityLooterAidEnabled;
+		bool entityLooterTreasureMapsEnabled;
+		bool entityLooterKnownPlansEnabled;
+		bool entityLooterUnknownPlansEnabled;
+		bool entityLooterMiscEnabled;
+		bool entityLooterUnlistedEnabled;
+		bool entityLooterListEnabled;
+		bool entityLooterBlacklistToggle;
+		bool entityLooterEnabledList[100];
+		DWORD entityLooterFormIdList[100];
+		bool entityLooterBlacklistEnabled[64];
+		DWORD entityLooterBlacklist[64];
 	};
 
 	class HarvesterSettings
 	{
 	public:
-		bool HarvesterEnabled;
-		bool HarvesterStatusEnabled;
-		bool HarvesterOverrideEnabled;
-		bool HarvesterEnabledList[69];
-		DWORD HarvesterFormidList[69];
-		const char* HarvesterNameList[69];
+		bool harvesterEnabled;
+		bool harvesterStatusEnabled;
+		bool harvesterOverrideEnabled;
+		bool harvesterEnabledList[69];
+		DWORD harvesterFormIdList[69];
+		const char* harvesterNameList[69];
 	};
 
 	class KnownRecipeSettings
 	{
 	public:
-		bool KnownRecipesEnabled;
-		bool UnknownRecipesEnabled;
+		bool knownRecipesEnabled;
+		bool unknownRecipesEnabled;
 	};
 
 	class MeleeSettings
 	{
 	public:
-		bool MeleeEnabled;
-		int MeleeSpeedMin;
-		int MeleeSpeedMax;
+		bool meleeEnabled;
+		int meleeSpeedMin;
+		int meleeSpeedMax;
 	};
 
 	class ChargenSettings
 	{
 	public:
-		bool ChargenEditingEnabled;
-		float Thin;
-		float Muscular;
-		float Large;
+		bool chargenEditingEnabled;
+		float thin;
+		float muscular;
+		float large;
 	};
 
-	class ExtraNPCSettings
+	class ExtraNpcSettings
 	{
 	public:
-		bool HideSettlerFaction;
-		bool HideCraterRaiderFaction;
-		bool HideDieHardFaction;
-		bool HideSecretServiceFaction;
-		bool UseNPCBlacklist;
-		bool NPCBlacklistEnabled[64];
-		DWORD NPCBlacklist[64];
+		bool hideSettlerFaction;
+		bool hideCraterRaiderFaction;
+		bool hideDieHardFaction;
+		bool hideSecretServiceFaction;
+		bool useNpcBlacklist;
+		bool npcBlacklistEnabled[64];
+		DWORD npcBlacklist[64];
 	};
 
 }
@@ -1297,102 +1296,113 @@ namespace settingsClasses {
 
 class ErectusMain final {
 public:
-	static void Close();
+	static int CreateWnd(HINSTANCE hInstance);
+	static void CloseWnd();
+	static LRESULT CALLBACK WndCallback(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
-	static bool SetOverlayPosition(bool Topmost, bool Layered);
+	static bool SetOverlayPosition(bool topmost, bool layered);
 	static void SetOverlayMenu();
 
 	static bool KeybindHandler(WPARAM wParam, LPARAM lParam);
+
 	static void CancelKeybindInput();
 
-	inline static int WindowSize[2] = { 0, 0 };
-	inline static int WindowPosition[2] = { 0, 0 };
-	inline static bool OverlayMenuActive = false;
-	inline static bool OverlayActive = false;
-	inline static bool OverlayForeground = false;
-	inline static bool OverlayMenuPress = false;
-	inline static bool ExperimentalOverlayFix = false;
+	inline static int windowSize[2] = { 0, 0 };
+	inline static int windowPosition[2] = { 0, 0 };
+	inline static bool overlayMenuActive = false;
+	inline static bool overlayActive = false;
+	inline static bool overlayForeground = false;
+	inline static bool overlayMenuPress = false;
+	inline static bool experimentalOverlayFix = false;
 
-	inline static HWND WindowHwnd = NULL;
+	inline static HWND windowHwnd = nullptr;
 
 private:
-	static void KeybindInput(DWORD* KeybindKey, DWORD* KeybindBit);
-	static void ClearKeybind(DWORD* KeybindKey, DWORD* KeybindBit);
+	static void Render();
 
-	inline static DWORD* KeybindHandlerKey = nullptr;
-	inline static DWORD* KeybindHandlerBit = nullptr;
-	inline static DWORD OldKeybindHandlerKey = 0;
-	inline static DWORD OldKeybindHandlerBit = 0;
-	inline static int WindowTopmostCounter = 0;
+	static void RenderProcessMenu();
+	static void RenderOverlayMenu();
+	static void RenderOverlay();
+
+	static void KeybindInput(DWORD* keybindKey, DWORD* keybindBit);
+	static void ClearKeybind(DWORD* keybindKey, DWORD* keybindBit);
+
+	inline static HINSTANCE mHInstance = nullptr;
+	inline static DWORD* keybindHandlerKey = nullptr;
+	inline static DWORD* keybindHandlerBit = nullptr;
+	inline static DWORD oldKeybindHandlerKey = 0;
+	inline static DWORD oldKeybindHandlerBit = 0;
+	inline static int windowTopmostCounter = 0;
 
 	virtual void __dummy() = 0;
 };
-class Erectus final {
+class Utils final {
 public:
-	static void ValidateFloat(float* Value, float Min, float Max);
-	static void ValidateRGB(float* Value);
-	static void ValidateInt(int* Value, int Min, int Max);
-	static int GetRangedInt(int Min, int Max);
+	static void ValidateFloat(float* value, float min, float max);
+	static void ValidateRgb(float* value);
+	static void ValidateInt(int* value, int min, int max);
+	static int GetRangedInt(int min, int max);
 
-	static int GetTextLength(const char* Text);
-	static int GetTextSize(const char* Text);
+	static int GetTextLength(const char* text);
+	static int GetTextSize(const char* text);
 
 	static bool Valid(DWORD64 ptr);
-	static bool RPM(DWORD64 src, void* dst, size_t Size);
-	static bool WPM(DWORD64 dst, void* src, size_t Size);
-	static DWORD64 AllocEx(size_t Size);
+	static bool Rpm(DWORD64 src, void* dst, size_t size);
+	static bool Wpm(DWORD64 dst, void* src, size_t size);
+	static DWORD64 AllocEx(size_t size);
 	static bool FreeEx(DWORD64 src);
-	static bool vtableSwap(DWORD64 dst, DWORD64 src);
+	static bool VtableSwap(DWORD64 dst, DWORD64 src);
 
 	static float GetDistance(float* a1, float* a2);
-	static float GetDegrees(float* src, float* Forward, float* Origin);
-	static bool WTS(float* View, float* Position, float* Out);
-	static void ProjectView(float* dst, float* Forward, float* Origin, float Distance);
+	static float GetDegrees(float* src, float* forward, float* origin);
+	static bool Wts(const float* view, const float* position, float* screen);
+	static void ProjectView(float* dst, const float* forward, const float* origin, float distance);
 
-	static bool DoubleKeyPress(int KeyCodeA, int KeyCodeB, bool* KeyPress);
+	static bool DoubleKeyPress(int keyCodeA, int keyCodeB, bool* keyPress);
 
 private:
-	static void ValidateDWORD(DWORD* Value, DWORD Min, DWORD Max);
-	static void ValidateRGBA(float* Value);
+	static float RadiansToDegrees(float radians);
+	static void ValidateDword(DWORD* value, DWORD min, DWORD max);
+	static void ValidateRgba(float* value);
 
-	static bool SingleKeyPress(int KeyCode, bool* KeyPress);
+	static bool SingleKeyPress(int keyCode, bool* keyPress);
 
 	virtual void __dummy() = 0;
 };
 class ErectusProcess final {
 public:
 	static void SetProcessMenu();
-	static void ResetProcessData(bool ClearProcessError, int NewProcessListSize);
-	static bool ProcessValid(DWORD ProcessId);
+	static void ResetProcessData(bool clearProcessError, int newProcessListSize);
+	static bool ProcessValid(DWORD processId);
 	static bool UpdateProcessList();
-	static void SetProcessError(int ErrorId, const char* Error, size_t Length);
+	static void SetProcessError(int errorId, const char* error);
 
-	static bool HwndValid(DWORD ProcessId);
+	static bool HwndValid(DWORD processId);
 
-	inline static char* ProcessError = nullptr;
-
-
-	inline static int ProcessValidCounter = 0;
-	inline static bool ProcessMenuActive = false;
-	inline static bool ProcessSelected = false;
-	inline static bool ProcessListUpdated = false;
-
-	inline static char** ProcessList = nullptr;
-	inline static int ProcessListSize = 0;
-	inline static int ProcessIndex = 0;
-	inline static DWORD* ProcessIdList = nullptr;
-	inline static int ProcessErrorId = 0;
+	inline static std::string processError;
 
 
-	inline static HANDLE Handle = NULL;
-	inline static HWND Hwnd = NULL;
-	inline static DWORD64 Exe = 0;
-	inline static DWORD Pid = 0;
+	inline static int processValidCounter = 0;
+	inline static bool processMenuActive = false;
+	inline static bool processSelected = false;
+	inline static bool processListUpdated = false;
+
+	inline static char** processList = nullptr;
+	inline static int processListSize = 0;
+	inline static int processIndex = 0;
+	inline static DWORD* processIdList = nullptr;
+	inline static int processErrorId = 0;
+
+
+	inline static HANDLE handle = nullptr;
+	inline static HWND hWnd = nullptr;
+	inline static DWORD64 exe = 0;
+	inline static DWORD pid = 0;
 
 private:
 	static int GetProcessCount();
 	static BOOL HwndEnumFunc(HWND hwnd, LPARAM lParam);
-	static DWORD64 GetModuleBaseAddress(DWORD Pid, const char* Module);
+	static DWORD64 GetModuleBaseAddress(DWORD pid, const char* module);
 
 
 	virtual void __dummy() = 0;
@@ -1405,61 +1415,66 @@ public:
 	static bool ImGuiInitialize();
 	static void ImGuiCleanup();
 
-	inline static bool ImGuiInitialized = false;
+	inline static bool imGuiInitialized = false;
 
-	inline static int AlphaCode[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-	inline static int BravoCode[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-	inline static int CharlieCode[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+	inline static int alphaCode[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+	inline static int bravoCode[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+	inline static int charlieCode[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 private:
 	static bool DragMenu();
+	static void ButtonToggle(const char* label, bool* state);
+	static void LargeButtonToggle(const char* label, bool* state);
+	static void SmallButtonToggle(const char* label, bool* state);
+	inline static bool imGuiContextCreated = false;
+	inline static bool imGuiD3D9Initialized = false;
+	inline static bool imGuiWin32Initialized = false;
 
-	inline static bool ImGuiContextCreated = false;
-	inline static bool ImGuiD3D9Initialized = false;
-	inline static bool ImGuiWin32Initialized = false;
+	inline static POINT pointerPosition = { 0, 0 };
+	inline static ImVec2 pointerOrigin = { 0.0f, 0.0f };
+	inline static bool pointerDrag = false;
 
-	inline static POINT PointerPosition = { 0, 0 };
-	inline static ImVec2 PointerOrigin = { 0.0f, 0.0f };
-	inline static bool PointerDrag = false;
+	inline static bool swapperSourceToggle = false;
+	inline static bool swapperDestinationToggle = false;
+	inline static bool transferSourceToggle = false;
+	inline static bool transferDestinationToggle = false;
 
-	inline static bool SwapperSourceToggle = false;
-	inline static bool SwapperDestinationToggle = false;
-	inline static bool TransferSourceToggle = false;
-	inline static bool TransferDestinationToggle = false;
+	inline static DWORD64 getPtrResult = 0;
+	inline static DWORD64 getAddressResult = 0;
 
-	inline static DWORD64 GetPtrResult = 0;
-	inline static DWORD64 GetAddressResult = 0;
-
-	inline static char** FavoritedWeaponsArray = nullptr;
+	inline static char** favoritedWeaponsArray = nullptr;
 
 	virtual void __dummy() = 0;
 };
-class ErectusD3D9 final {
+class Renderer final {
 public:
-	static void D3D9Render();
-	static bool D3D9Initialize();
-	static void D3D9Cleanup();
-	static bool D3D9DrawText(const char* Text, bool Shadowed, bool Centered, float* Position, float* Color, float Alpha);
+	static int BeginScene();
+	static void EndScene();
 
-	inline static bool D3D9Initialized = false;
-	inline static LPDIRECT3DDEVICE9 D3D9Device = NULL;
-	inline static bool DeviceResetQueued = false;
+	static bool Init();
+	static void Cleanup();
+	static bool DrawText(const char* text, bool shadowed, bool centered, float* position, const float* color, float alpha);
+
+	inline static LPD3DXSPRITE d3DxSprite = nullptr;
+
+	inline static bool d3D9Initialized = false;
+	inline static LPDIRECT3DDEVICE9 d3D9Device = nullptr;
+	inline static bool deviceResetQueued = false;
 
 private:
-	static void D3D9Reset(HRESULT DeviceState);
+	static bool Reset(HRESULT deviceState);
 
-	inline static D3DPRESENT_PARAMETERS D3D9Parameters = { };
+	inline static D3DPRESENT_PARAMETERS d3D9Parameters = { };
 
-	inline static LPDIRECT3D9 D3D9Interface = NULL;
-	inline static LPD3DXSPRITE D3DXSprite = NULL;
-	inline static LPD3DXFONT D3DXFont = NULL;
+	inline static LPDIRECT3D9 d3D9Interface = nullptr;
+	inline static LPD3DXFONT d3DxFont = nullptr;
 
-	inline static bool D3D9InterfaceCreated = false;
-	inline static bool D3D9DeviceCreated = false;
-	inline static bool D3DXSpriteCreated = false;
-	inline static bool D3DXFontCreated = false;
+	inline static bool d3D9InterfaceCreated = false;
+	inline static bool d3D9DeviceCreated = false;
+	inline static bool d3DxSpriteCreated = false;
+	inline static bool d3DxFontCreated = false;
 
-	inline static bool DeviceResetState = false;
-	inline static int DeviceResetCounter = 0;
+	inline static bool deviceResetState = false;
+	inline static int deviceResetCounter = 0;
 
 	virtual void __dummy() = 0;
 };
@@ -1468,15 +1483,15 @@ public:
 	static bool CreateProcessThreads();
 	static bool ThreadDestruction();
 
-	inline static bool ThreadCreationState = false;
-	inline static bool ThreadDestructionQueued = false;
-	inline static int ThreadDestructionCounter = 0;
+	inline static bool threadCreationState = false;
+	inline static bool threadDestructionQueued = false;
+	inline static int threadDestructionCounter = 0;
 
-	inline static bool PositionSpoofingToggle = false;
+	inline static bool positionSpoofingToggle = false;
 
 private:
 	static DWORD __stdcall BufferEntityListThread(LPVOID lpParameter);
-	static DWORD __stdcall BufferNPCListThread(LPVOID lpParameter);
+	static DWORD __stdcall BufferNpcListThread(LPVOID lpParameter);
 	static DWORD __stdcall BufferPlayerListThread(LPVOID lpParameter);
 	static DWORD __stdcall WeaponEditorThread(LPVOID lpParameter);
 	static DWORD __stdcall LockingThread(LPVOID lpParameter);
@@ -1484,48 +1499,48 @@ private:
 	static DWORD __stdcall HarvesterThread(LPVOID lpParameter);
 	static DWORD __stdcall KnownRecipeThread(LPVOID lpParameter);
 
-	inline static bool BufferEntityListThreadActive = false;
-	inline static bool BufferNPCListThreadActive = false;
-	inline static bool BufferPlayerListThreadActive = false;
-	inline static bool WeaponEditorThreadActive = false;
-	inline static bool LockingThreadActive = false;
-	inline static bool MultihackThreadActive = false;
-	inline static bool HarvesterThreadActive = false;
-	inline static bool KnownRecipeThreadActive = false;
+	inline static bool bufferEntityListThreadActive = false;
+	inline static bool bufferNpcListThreadActive = false;
+	inline static bool bufferPlayerListThreadActive = false;
+	inline static bool weaponEditorThreadActive = false;
+	inline static bool lockingThreadActive = false;
+	inline static bool multihackThreadActive = false;
+	inline static bool harvesterThreadActive = false;
+	inline static bool knownRecipeThreadActive = false;
 
-	inline static bool ThreadDestructionState = false;
+	inline static bool threadDestructionState = false;
 
-	inline static bool NoclipToggle = false;
+	inline static bool noclipToggle = false;
 
-	virtual void __dummy() = 0;
+	virtual void __dummy();
 };
 class ErectusMemory final {
 public:
-	static DWORD64 GetAddress(DWORD Formid);
-	static DWORD64 GetPtr(DWORD Formid);
+	static DWORD64 GetAddress(DWORD formId);
+	static DWORD64 GetPtr(DWORD formId);
 
-	static bool RenderCustomNPCList();
+	static bool RenderCustomNpcList();
 	static bool RenderCustomEntityList();
 	static bool RenderCustomPlayerList();
 	static void RenderData();
 
 	static char** GetFavoritedWeapons();
-	static char* GetFavoritedWeaponText(BYTE Index);
-	static DWORD GetFavoritedWeaponId(BYTE Index);
-	static char GetFavoriteSlot(BYTE FavoriteIndex);
+	static char* GetFavoritedWeaponText(BYTE index);
+	static DWORD GetFavoritedWeaponId(BYTE index);
+	static char GetFavoriteSlot(BYTE favoriteIndex);
 
-	static DWORD GetLocalPlayerFormid();
-	static DWORD GetStashFormid();
+	static DWORD GetLocalPlayerFormId();
+	static DWORD GetStashFormId();
 
 	static bool UpdateBufferEntityList();
 	static void DeleteBufferEntityList();
-	static bool UpdateBufferNPCList();
-	static void DeleteBufferNPCList();
+	static bool UpdateBufferNpcList();
+	static void DeleteBufferNpcList();
 	static bool UpdateBufferPlayerList();
 	static void DeleteBufferPlayerList();
 
 	static void DeleteCustomEntityList();
-	static void DeleteCustomNPCList();
+	static void DeleteCustomNpcList();
 	static void DeleteCustomPlayerList();
 	static void DeleteOldWeaponList();
 
@@ -1539,178 +1554,178 @@ public:
 	static bool LootItems();
 
 	static bool CheckItemTransferList();
-	static bool TransferItems(DWORD SourceFormid, DWORD DestinationFormid);
+	static bool TransferItems(DWORD sourceFormId, DWORD destinationFormId);
 
-	static bool ReferenceSwap(DWORD* SourceFormid, DWORD* DestinationFormid);
+	static bool ReferenceSwap(DWORD* sourceFormId, DWORD* destinationFormId);
 
-	static bool GetNukeCode(DWORD Formid, int* NukeCode);
+	static bool GetNukeCode(DWORD formId, int* nukeCode);
 
-	static bool GetTeleportPosition(int Index);
-	static bool RequestTeleport(int Index);
+	static bool GetTeleportPosition(int index);
+	static bool RequestTeleport(int index);
 
 	static bool WeaponEditingEnabled();
-	static bool EditWeapon(int Index, bool RevertWeaponData);
+	static bool EditWeapon(int index, bool revertWeaponData);
 
-	static bool InfiniteAmmo(bool State);
+	static bool InfiniteAmmo(bool state);
 
-	static bool SetClientState(DWORD64 ClientState);
+	static bool SetClientState(DWORD64 clientState);
 
-	static bool DamageRedirection(DWORD64* TargetingPage, bool* TargetingPageValid, bool IsExiting, bool State);
+	static bool DamageRedirection(DWORD64* targetingPage, bool* targetingPageValid, bool isExiting, bool state);
 
-	static bool FreezeActionPoints(DWORD64* FreezeApPage, bool* FreezeApPageValid, bool State);
-	static void Noclip(bool State);
-	static bool PositionSpoofing(bool State);
-	static bool SendDamage(DWORD WeaponId, BYTE* ShotsHit, BYTE* ShotsFired, BYTE Count);
+	static bool FreezeActionPoints(DWORD64* freezeApPage, bool* freezeApPageValid, bool state);
+	static void Noclip(bool state);
+	static bool PositionSpoofing(bool state);
+	static bool SendDamage(DWORD weaponId, BYTE* shotsHit, BYTE* shotsFired, BYTE count);
 
-	static bool ActorValue(DWORD64* ActorValuePage, bool* ActorValuePageValid, bool State);
-	static bool SetActorValueMaximum(DWORD Formid, float DefaultValue, float CustomValue, bool State);
+	static bool ActorValue(DWORD64* actorValuePage, bool* actorValuePageValid, bool state);
+	static bool SetActorValueMaximum(DWORD formId, float defaultValue, float customValue, bool state);
 
-	static bool SetOpkData(DWORD64 OpkPage, bool Players, bool State);
-	static bool OnePositionKill(DWORD64* OpkPage, bool* OpkValid, bool State);
+	static bool SetOpkData(DWORD64 opkPage, bool players, bool state);
+	static bool OnePositionKill(DWORD64* opkPage, bool* opkPageValid, bool state);
 
 	static bool MeleeAttack();
 	static bool ChargenEditing();
 
 	static bool Harvester();
 
-	static bool MessagePatcher(bool State);
+	static bool MessagePatcher(bool state);
 
-	inline static bool CustomEntityListUpdated = false;
-	inline static bool CustomNPCListUpdated = false;
-	inline static bool CustomPlayerListUpdated = false;
+	inline static bool customEntityListUpdated = false;
+	inline static bool customNpcListUpdated = false;
+	inline static bool customPlayerListUpdated = false;
 
-	inline static bool BufferEntityListUpdated = false;
-	inline static bool BufferNPCListUpdated = false;
-	inline static bool BufferPlayerListUpdated = false;
-	inline static bool OldWeaponListUpdated = false;
+	inline static bool bufferEntityListUpdated = false;
+	inline static bool bufferNpcListUpdated = false;
+	inline static bool bufferPlayerListUpdated = false;
+	inline static bool oldWeaponListUpdated = false;
 
-	inline static bool CustomEntityListDestructionQueued = false;
-	inline static bool CustomNPCListDestructionQueued = false;
-	inline static bool CustomPlayerListDestructionQueued = false;
-	inline static bool BufferEntityListDestructionQueued = false;
-	inline static bool BufferPlayerListDestructionQueued = false;
-	inline static bool BufferNPCListDestructionQueued = false;
+	inline static bool customEntityListDestructionQueued = false;
+	inline static bool customNpcListDestructionQueued = false;
+	inline static bool customPlayerListDestructionQueued = false;
+	inline static bool bufferEntityListDestructionQueued = false;
+	inline static bool bufferPlayerListDestructionQueued = false;
+	inline static bool bufferNpcListDestructionQueued = false;
 
-	inline static int BufferEntityListCounter = 0;
-	inline static int BufferNPCListCounter = 0;
-	inline static int BufferPlayerListCounter = 0;
-	inline static int OldWeaponListCounter = 0;
+	inline static int bufferEntityListCounter = 0;
+	inline static int bufferNpcListCounter = 0;
+	inline static int bufferPlayerListCounter = 0;
+	inline static int oldWeaponListCounter = 0;
 
-	inline static int OldWeaponListSize = 0;
+	inline static int oldWeaponListSize = 0;
 
-	inline static bool TargetLockingValid = false;
-	inline static float TargetLockingClosestDegrees = 0.0f;
-	inline static DWORD64 TargetLockingClosestPtr = 0;
-	inline static int TargetLockingCooldown = 0;
-	inline static DWORD64 TargetLockingPtr = 0;
+	inline static bool targetLockingValid = false;
+	inline static float targetLockingClosestDegrees = 0.0f;
+	inline static DWORD64 targetLockingClosestPtr = 0;
+	inline static int targetLockingCooldown = 0;
+	inline static DWORD64 targetLockingPtr = 0;
 
-	inline static bool TargetLockingKeyPressed = false;
+	inline static bool targetLockingKeyPressed = false;
 
-	inline static bool AllowMessages = false;
+	inline static bool allowMessages = false;
 
 private:
-	static bool RenderCustomEntryA(memoryClasses::CustomEntry* CustomEntryData, settingsClasses::OverlaySettingsA CustomSettingsA);
-	static bool RenderCustomEntryB(memoryClasses::CustomEntry* CustomEntryData, settingsClasses::OverlaySettingsB CustomSettingsB);
+	static bool RenderCustomEntryA(MemoryClasses::CustomEntry* customEntryData, SettingsClasses::OverlaySettingsA customSettingsA);
+	static bool RenderCustomEntryB(MemoryClasses::CustomEntry* customEntryData, SettingsClasses::OverlaySettingsB customSettingsB);
 
-	static char* GetPlayerName(memoryClasses::ClientAccount* ClientAccountData);
-	static bool TargetValid(Entity EntityData, Reference ReferenceData);
-	static bool FloraHarvested(BYTE HarvestFlagA, BYTE HarvestFlagB);
+	static char* GetPlayerName(MemoryClasses::ClientAccount* clientAccountData);
+	static bool TargetValid(Entity entityData, Reference referenceData);
+	static bool FloraHarvested(BYTE harvestFlagA, BYTE harvestFlagB);
 
 	static bool CheckItemLooterList();
 	static bool CheckItemLooterBlacklist();
-	static bool CheckEntityLooterList(settingsClasses::EntityLooterSettings* CustomEntityLooterSettings);
-	static bool CheckEntityLooterBlacklist(settingsClasses::EntityLooterSettings* CustomEntityLooterSettings);
+	static bool CheckEntityLooterList(SettingsClasses::EntityLooterSettings* customEntityLooterSettings);
+	static bool CheckEntityLooterBlacklist(SettingsClasses::EntityLooterSettings* customEntityLooterSettings);
 	static bool CheckIngredientList();
 	static bool CheckJunkPileEnabled();
-	static bool CheckComponentArray(Reference ReferenceData);
-	static bool CheckReferenceKeywordBook(Reference ReferenceData, DWORD Formid);
-	static bool CheckReferenceKeywordMisc(Reference ReferenceData, DWORD Formid);
+	static bool CheckComponentArray(Reference referenceData);
+	static bool CheckReferenceKeywordBook(Reference referenceData, DWORD formId);
+	static bool CheckReferenceKeywordMisc(Reference referenceData, DWORD formId);
 	static bool CheckOnlyUseItemLooterList();
-	static bool CheckEnabledItem(DWORD Formid, DWORD64 EntityFlag, int NormalDistance);
-	static bool CheckFormidArray(DWORD Formid, bool* EnabledArray, DWORD* FormidArray, int Size);
-	static bool CheckReferenceJunk(Reference ReferenceData);
-	static bool CheckReferenceMod(Reference ReferenceData);
-	static bool CheckReferencePlan(Reference ReferenceData);
+	static bool CheckEnabledItem(DWORD formId, DWORD64 entityFlag, int normalDistance);
+	static bool CheckFormIdArray(DWORD formId, bool* enabledArray, const DWORD* formIdArray, int size);
+	static bool CheckReferenceJunk(Reference referenceData);
+	static bool CheckReferenceMod(Reference referenceData);
+	static bool CheckReferencePlan(Reference referenceData);
 
-	static int GetOldWeaponIndex(DWORD Formid);
+	static int GetOldWeaponIndex(DWORD formId);
 
-	static BYTE IsKnownRecipe(DWORD Formid);
+	static BYTE IsKnownRecipe(DWORD formId);
 
-	static bool LockedTargetValid(bool* IsPlayer);
+	static bool LockedTargetValid(bool* isPlayer);
 
 	static bool MovePlayer();
 
 
-	static bool CheckOpkDistance(DWORD64 OpkPage, bool Players);
+	static bool CheckOpkDistance(DWORD64 opkPage, bool players);
 	static bool InsideInteriorCell();
 	static int RenderLocalPlayerData();
 
 
-	static DWORD GetEntityId(Entity EntityData);
-	static bool SendHitsToServer(memoryClasses::Hits* HitsData, size_t HitsDataSize);
-	static DWORD64 GetNukeCodePtr(DWORD Formid);
-	static DWORD64 rttiGetNamePtr(DWORD64 vtable);
-	static char* GetInstancedItemName(DWORD64 DisplayPtr);
-	static bool EntityInventoryValid(Entity EntityData);
-	static bool AllowLegendaryWeapons(settingsClasses::EntityLooterSettings* CustomEntityLooterSettings);
-	static bool AllowLegendaryArmor(settingsClasses::EntityLooterSettings* CustomEntityLooterSettings);
-	static bool CheckEntityLooterItem(DWORD Formid, DWORD64 EntityFlag, settingsClasses::EntityLooterSettings* CustomEntityLooterSettings, bool LegendaryWeaponsEnabled, bool LegendaryArmorEnabled);
-	static bool IsLegendaryFormid(DWORD Formid);
-	static BYTE GetLegendaryRank(DWORD64 DisplayPtr);
-	static bool ValidLegendary(BYTE LegendaryRank, DWORD64 EntityFlag, settingsClasses::EntityLooterSettings* CustomEntityLooterSettings, bool LegendaryWeaponsEnabled, bool LegendaryArmorEnabled);
-	static bool TransferEntityItems(Entity EntityData, Reference ReferenceData, Entity LocalPlayer, bool OnlyUseEntityLooterList, bool UseEntityLooterBlacklist);
-	static bool ContainerValid(Reference ReferenceData);
-	static bool LootEntity(Entity EntityData, Reference ReferenceData, Entity LocalPlayer, bool OnlyUseEntityLooterList, bool UseEntityLooterBlacklist);
-	static bool CheckEntityLooterSettings(settingsClasses::EntityLooterSettings* CustomEntityLooterSettings);
-	static bool CheckOnlyUseEntityLooterList(settingsClasses::EntityLooterSettings* CustomEntityLooterSettings);
-	static bool HarvestFlora(Entity EntityData, Reference ReferenceData, Entity LocalPlayer);
+	static DWORD GetEntityId(Entity entityData);
+	static bool SendHitsToServer(MemoryClasses::Hits* hitsData, size_t hitsDataSize);
+	static DWORD64 GetNukeCodePtr(DWORD formId);
+	static DWORD64 RttiGetNamePtr(DWORD64 vtable);
+	static char* GetInstancedItemName(DWORD64 displayPtr);
+	static bool EntityInventoryValid(Entity entityData);
+	static bool AllowLegendaryWeapons(SettingsClasses::EntityLooterSettings* customEntityLooterSettings);
+	static bool AllowLegendaryArmor(SettingsClasses::EntityLooterSettings* customEntityLooterSettings);
+	static bool CheckEntityLooterItem(DWORD formId, DWORD64 entityFlag, SettingsClasses::EntityLooterSettings* customEntityLooterSettings, bool legendaryWeaponsEnabled, bool legendaryArmorEnabled);
+	static bool IsLegendaryFormId(DWORD formId);
+	static BYTE GetLegendaryRank(DWORD64 displayPtr);
+	static bool ValidLegendary(BYTE legendaryRank, DWORD64 entityFlag, SettingsClasses::EntityLooterSettings* customEntityLooterSettings, bool legendaryWeaponsEnabled, bool legendaryArmorEnabled);
+	static bool TransferEntityItems(Entity entityData, Reference referenceData, Entity localPlayer, bool onlyUseEntityLooterList, bool useEntityLooterBlacklist);
+	static bool ContainerValid(Reference referenceData);
+	static bool LootEntity(Entity entityData, Reference referenceData, Entity localPlayer, bool onlyUseEntityLooterList, bool useEntityLooterBlacklist);
+	static bool CheckEntityLooterSettings(SettingsClasses::EntityLooterSettings* customEntityLooterSettings);
+	static bool CheckOnlyUseEntityLooterList(SettingsClasses::EntityLooterSettings* customEntityLooterSettings);
+	static bool HarvestFlora(Entity entityData, Reference referenceData, Entity localPlayer);
 
-	static bool CreateProjectile(DWORD ItemId, float* Position, float* Rotation);
+	static bool CreateProjectile(DWORD itemId, const float* position, const float* rotation);
 
-	static bool SendMessageToServer(void* Message, size_t Size);
-	static bool CreateForwardProjectile(DWORD ItemId);
+	static bool SendMessageToServer(void* message, size_t size);
+	static bool CreateForwardProjectile(DWORD itemId);
 
 	static DWORD64 GetCameraPtr();
-	static BYTE CheckHealthFlag(BYTE HealthFlag);
-	static DWORD64 GetLocalPlayerPtr(bool CheckMainMenu);
-	static DWORD64* GetEntityList(int* Size);
-	static DWORD64* GetNPCList(int* Size);
-	static DWORD64* GetRecipeArray(int* Size);
-	static bool CheckWhitelistedFlux(Reference ReferenceData);
-	static bool FloraLeveledListValid(memoryClasses::LeveledList LeveledListData);
-	static bool FloraValid(Reference ReferenceData);
-	static bool IsTreasureMap(DWORD Formid);
-	static bool CheckFactionFormid(DWORD Formid);
-	static bool BlacklistedNPCFaction(Reference ReferenceData);
-	static bool CheckReferenceItem(Reference ReferenceData);
-	static void GetCustomEntityData(Reference ReferenceData, DWORD64* EntityFlag, DWORD64* EntityNamePtr, int* EnabledDistance, bool CheckScrap, bool CheckIngredient);
-	static bool GetActorSnapshotComponentData(Entity EntityData, memoryClasses::ActorSnapshotComponent* ActorSnapshotComponentData);
-	static char* GetEntityName(DWORD64 Ptr);
+	static BYTE CheckHealthFlag(BYTE healthFlag);
+	static DWORD64 GetLocalPlayerPtr(bool checkMainMenu);
+	static DWORD64* GetEntityList(int* size);
+	static DWORD64* GetNpcList(int* size);
+	static DWORD64* GetRecipeArray(int* size);
+	static bool CheckWhitelistedFlux(Reference referenceData);
+	static bool FloraLeveledListValid(MemoryClasses::LeveledList leveledListData);
+	static bool FloraValid(Reference referenceData);
+	static bool IsTreasureMap(DWORD formId);
+	static bool CheckFactionFormId(DWORD formId);
+	static bool BlacklistedNpcFaction(Reference referenceData);
+	static bool CheckReferenceItem(Reference referenceData);
+	static void GetCustomEntityData(Reference referenceData, DWORD64* entityFlag, DWORD64* entityNamePtr, int* enabledDistance, bool checkScrap, bool checkIngredient);
+	static bool GetActorSnapshotComponentData(Entity entityData, MemoryClasses::ActorSnapshotComponent* actorSnapshotComponentData);
+	static char* GetEntityName(DWORD64 ptr);
 
-	inline static memoryClasses::CustomEntry* CustomEntityList = nullptr;
-	inline static int CustomEntityListSize = 0;
-	inline static int CustomEntityListCounter = 0;
+	inline static MemoryClasses::CustomEntry* customEntityList = nullptr;
+	inline static int customEntityListSize = 0;
+	inline static int customEntityListCounter = 0;
 
-	inline static memoryClasses::CustomEntry* BufferEntityList = nullptr;
-	inline static int BufferEntityListSize = 0;
+	inline static MemoryClasses::CustomEntry* bufferEntityList = nullptr;
+	inline static int bufferEntityListSize = 0;
 
-	inline static memoryClasses::CustomEntry* CustomNPCList = nullptr;
-	inline static int CustomNPCListSize = 0;
-	inline static int CustomNPCListCounter = 0;
+	inline static MemoryClasses::CustomEntry* customNpcList = nullptr;
+	inline static int customNpcListSize = 0;
+	inline static int customNpcListCounter = 0;
 
-	inline static memoryClasses::CustomEntry* BufferNPCList = nullptr;
-	inline static int BufferNPCListSize = 0;
+	inline static MemoryClasses::CustomEntry* bufferNpcList = nullptr;
+	inline static int bufferNpcListSize = 0;
 
-	inline static memoryClasses::CustomEntry* CustomPlayerList = nullptr;
-	inline static int CustomPlayerListSize = 0;
-	inline static int CustomPlayerListCounter = 0;
+	inline static MemoryClasses::CustomEntry* customPlayerList = nullptr;
+	inline static int customPlayerListSize = 0;
+	inline static int customPlayerListCounter = 0;
 
-	inline static memoryClasses::CustomEntry* BufferPlayerList = nullptr;
-	inline static int BufferPlayerListSize = 0;
+	inline static MemoryClasses::CustomEntry* bufferPlayerList = nullptr;
+	inline static int bufferPlayerListSize = 0;
 
-	inline static memoryClasses::OldWeapon* OldWeaponList = nullptr;
+	inline static MemoryClasses::OldWeapon* oldWeaponList = nullptr;
 
-	inline static int KnownRecipeArraySize = 0;
+	inline static int knownRecipeArraySize = 0;
 
 	virtual void __dummy() = 0;
 };
@@ -1719,41 +1734,48 @@ public:
 	static void ReadIniSettings();
 	static void WriteIniSettings();
 
-	static settingsClasses::OverlaySettingsA PlayerSettings;
-	static settingsClasses::OverlaySettingsB JunkSettings;
-	static settingsClasses::OverlaySettingsA NpcSettings;
-	static settingsClasses::OverlaySettingsB ContainerSettings;
-	static settingsClasses::OverlaySettingsB PlanSettings;
-	static settingsClasses::OverlaySettingsB MagazineSettings;
-	static settingsClasses::OverlaySettingsB BobbleheadSettings;
-	static settingsClasses::OverlaySettingsB ItemSettings;
-	static settingsClasses::OverlaySettingsB FloraSettings;
-	static settingsClasses::OverlaySettingsB EntitySettings;
+	static SettingsClasses::OverlaySettingsA playerSettings;
+	static SettingsClasses::OverlaySettingsB junkSettings;
+	static SettingsClasses::OverlaySettingsA npcSettings;
+	static SettingsClasses::OverlaySettingsB containerSettings;
+	static SettingsClasses::OverlaySettingsB planSettings;
+	static SettingsClasses::OverlaySettingsB magazineSettings;
+	static SettingsClasses::OverlaySettingsB bobbleheadSettings;
+	static SettingsClasses::OverlaySettingsB itemSettings;
+	static SettingsClasses::OverlaySettingsB floraSettings;
+	static SettingsClasses::OverlaySettingsB entitySettings;
 
-	static settingsClasses::ScrapLooterSettings CustomScrapLooterSettings;
-	static settingsClasses::ItemLooterSettings CustomItemLooterSettings;
-	static settingsClasses::WeaponSettings CustomWeaponSettings;
-	static settingsClasses::TargetSettings CustomTargetSettings;
-	static settingsClasses::LocalPlayerSettings CustomLocalPlayerSettings;
-	static settingsClasses::OpkSettings CustomOpkSettings;
-	static settingsClasses::UtilitySettings CustomUtilitySettings;
-	static settingsClasses::SwapperSettings CustomSwapperSettings;
-	static settingsClasses::TransferSettings CustomTransferSettings;
-	static settingsClasses::TeleportSettings CustomTeleportSettings;
-	static settingsClasses::NukeCodeSettings CustomNukeCodeSettings;
-	static settingsClasses::LegendarySettings CustomLegendarySettings;
-	static settingsClasses::FluxSettings CustomFluxSettings;
-	static settingsClasses::EntityLooterSettings NPCLooterSettings;
-	static settingsClasses::EntityLooterSettings ContainerLooterSettings;
-	static settingsClasses::HarvesterSettings CustomHarvesterSettings;
-	static settingsClasses::KnownRecipeSettings CustomKnownRecipeSettings;
-	static settingsClasses::MeleeSettings CustomMeleeSettings;
-	static settingsClasses::ChargenSettings CustomChargenSettings;
-	static settingsClasses::ExtraNPCSettings CustomExtraNPCSettings;
+	static SettingsClasses::ScrapLooterSettings customScrapLooterSettings;
+	static SettingsClasses::ItemLooterSettings customItemLooterSettings;
+	static SettingsClasses::WeaponSettings customWeaponSettings;
+	static SettingsClasses::TargetSettings customTargetSettings;
+	static SettingsClasses::LocalPlayerSettings customLocalPlayerSettings;
+	static SettingsClasses::OpkSettings customOpkSettings;
+	static SettingsClasses::UtilitySettings customUtilitySettings;
+	static SettingsClasses::SwapperSettings customSwapperSettings;
+	static SettingsClasses::TransferSettings customTransferSettings;
+	static SettingsClasses::TeleportSettings customTeleportSettings;
+	static SettingsClasses::NukeCodeSettings customNukeCodeSettings;
+	static SettingsClasses::LegendarySettings customLegendarySettings;
+	static SettingsClasses::FluxSettings customFluxSettings;
+	static SettingsClasses::EntityLooterSettings npcLooterSettings;
+	static SettingsClasses::EntityLooterSettings containerLooterSettings;
+	static SettingsClasses::HarvesterSettings customHarvesterSettings;
+	static SettingsClasses::KnownRecipeSettings customKnownRecipeSettings;
+	static SettingsClasses::MeleeSettings customMeleeSettings;
+	static SettingsClasses::ChargenSettings customChargenSettings;
+	static SettingsClasses::ExtraNpcSettings customExtraNpcSettings;
+	
 
-	inline static settingsClasses::WeaponSettings DefaultWeaponSettings{ false,	false, false, false, false,	false, false, 250, false, 2.0f,	false, 500.0f };
+	inline static SettingsClasses::WeaponSettings defaultWeaponSettings{
+		false, false, false, false, false, false, false, 250, false, 2.0f, false, 500.0f
+	};
 
 private:
+	static void GetOverlaySettingsB(const char* section, SettingsClasses::OverlaySettingsB* value,
+	                         SettingsClasses::OverlaySettingsB* deflt);
+	static void SetOverlaySettingsB(const char* section, SettingsClasses::OverlaySettingsB* value,
+	                                SettingsClasses::OverlaySettingsB* deflt);
 	static void GetScrapSettings();
 	static void SetScrapSettings();
 	static void GetItemLooterSettings();
@@ -1780,8 +1802,8 @@ private:
 	static void SetLegendarySettings();
 	static void GetFluxSettings();
 	static void SetFluxSettings();
-	static void GetEntityLooterSettings(const char* Section, settingsClasses::EntityLooterSettings* Value, settingsClasses::EntityLooterSettings* Default);
-	static void SetEntityLooterSettings(const char* Section, settingsClasses::EntityLooterSettings* Value, settingsClasses::EntityLooterSettings* Default);
+	static void GetEntityLooterSettings(const char* section, SettingsClasses::EntityLooterSettings* value, SettingsClasses::EntityLooterSettings* deflt);
+	static void SetEntityLooterSettings(const char* section, SettingsClasses::EntityLooterSettings* value, SettingsClasses::EntityLooterSettings* deflt);
 	static void GetHarvesterSettings();
 	static void SetHarvesterSettings();
 	static void GetKnownRecipeSettings();
@@ -1790,12 +1812,32 @@ private:
 	static void SetMeleeSettings();
 	static void GetChargenSettings();
 	static void SetChargenSettings();
-	static void GetExtraNPCSettings();
-	static void SetExtraNPCSettings();
+	static void GetExtraNpcSettings();
+	static void SetExtraNpcSettings();
 	static void GetBitMsgWriterSettings();
 	static void SetBitMsgWriterSettings();
 	static void GetExperimentalSettings();
 	static void SetExperimentalSettings();
 
+	static void GetDword(const char* section, const char* key, DWORD* value, const DWORD* deflt);
+	static void SetDword(const char* section, const char* key, const DWORD* value, const DWORD* deflt);
+	static void GetInt(const char* section, const char* key, int* value, const int* deflt);
+	static void SetInt(const char* section, const char* key, const int* value, const int* deflt);
+	static void GetSliderInt(const char* section, const char* key, int* value, int* deflt, int min, int max);
+	static void SetSliderInt(const char* section, const char* key, int* value, int* deflt, int min, int max);
+	static void GetFloat(const char* section, const char* key, float* value, const float* deflt);
+	static void SetFloat(const char* section, const char* key, const float* value, const float* deflt);
+	static void GetSliderFloat(const char* section, const char* key, float* value, float* deflt, float min, float max);
+	static void SetSliderFloat(const char* section, const char* key, float* value, float* deflt, float min, float max);
+	static void GetRgb(const char* section, const char* key, float* value, float* deflt);
+	static void SetRgb(const char* section, const char* key, float* value, float* deflt);
+	static void GetQuadFloat(const char* section, const char* key, float* value, float* deflt);
+	static void SetQuadFloat(const char* section, const char* key, float* value, float* deflt);
+	static void GetBool(const char* section, const char* key, bool* value, const bool* deflt);
+	static void SetBool(const char* section, const char* key, const bool* value, const bool* deflt);
+	static void GetOverlaySettingsA(const char* section, SettingsClasses::OverlaySettingsA* value, SettingsClasses::OverlaySettingsA* deflt);
+	static void SetOverlaySettingsA(const char* section, SettingsClasses::OverlaySettingsA* value, SettingsClasses::OverlaySettingsA* deflt);
+
 	virtual void __dummy() = 0;
 };
+

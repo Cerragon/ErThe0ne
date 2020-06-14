@@ -2,7 +2,7 @@
 // Microsoft Visual C++ generated include file.
 // Used by Erectus.rc
 //
-#define IDI_ICON1                       101
+#define IDI_ICON1                       101  // NOLINT(cppcoreguidelines-macro-usage)
 
 // Next default values for new objects
 // 
