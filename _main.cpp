@@ -1,9 +1,8 @@
 #include "ErectusInclude.h"
 
 void onShutdown() {
-	ErectusProcess::ResetProcessData(true, 0);
-	ErectusMain::CancelKeybindInput();
-
+	ErectusProcess::ResetProcessData();
+	
 	Renderer::Cleanup();
 	ErectusImGui::ImGuiCleanup();
 
@@ -31,9 +30,9 @@ int onStartup(const HINSTANCE hInstance) {
 		return 4;
 	}
 
-	ErectusProcess::ResetProcessData(true, 1);
 	ErectusIni::ReadIniSettings();
 
+	ErectusProcess::SetProcessMenu();
 	return 0;
 }
 

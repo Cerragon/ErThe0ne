@@ -192,34 +192,19 @@ DWORD WINAPI ErectusThread::LockingThread([[maybe_unused]] LPVOID lpParameter)
 			}
 		}
 
+
 		if (ErectusMain::overlayForeground && GetAsyncKeyState('T'))
 		{
-			if (!ErectusMemory::targetLockingKeyPressed)
-			{
-				ErectusMemory::targetLockingKeyPressed = true;
-			}
+			ErectusMemory::targetLockingKeyPressed = true;
 
 			if (ErectusMemory::targetLockingCooldown > 0)
-			{
 				ErectusMemory::targetLockingCooldown--;
-			}
 		}
 		else
 		{
-			if (ErectusMemory::targetLockingKeyPressed)
-			{
-				ErectusMemory::targetLockingKeyPressed = false;
-			}
-
-			if (ErectusMemory::targetLockingCooldown)
-			{
-				ErectusMemory::targetLockingCooldown = 0;
-			}
-
-			if (ErectusMemory::targetLockingPtr)
-			{
-				ErectusMemory::targetLockingPtr = 0;
-			}
+			ErectusMemory::targetLockingKeyPressed = false;
+			ErectusMemory::targetLockingCooldown = 0;
+			ErectusMemory::targetLockingPtr = 0;
 		}
 
 		if (ErectusMemory::targetLockingPtr)
@@ -275,9 +260,6 @@ DWORD WINAPI ErectusThread::LockingThread([[maybe_unused]] LPVOID lpParameter)
 
 DWORD WINAPI ErectusThread::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 {
-	auto positionSpoofingPress = false;
-	auto noclipPress = false;
-
 	auto clientStateCounter = 0;
 
 	DWORD64 actorValuePage = 0;
@@ -285,10 +267,7 @@ DWORD WINAPI ErectusThread::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 
 	auto actorValueDefaultCounter = 0;
 
-	auto opkPlayersPress = false;
 	auto opkPlayersToggle = false;
-
-	auto opkNpcsPress = false;
 	auto opkNpcsToggle = false;
 
 	DWORD64 opkPage = 0;
@@ -296,9 +275,6 @@ DWORD WINAPI ErectusThread::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 
 	DWORD64 freezeApPage = 0;
 	auto freezeApPageValid = false;
-
-	auto lootScrapKeyPress = false;
-	auto lootItemsKeyPress = false;
 
 	auto lootScrapCounter = 0;
 	auto lootScrapThreshold = 0;
@@ -312,75 +288,39 @@ DWORD WINAPI ErectusThread::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 
 	while (!threadDestructionState)
 	{
-		if (Utils::DoubleKeyPress(VK_CONTROL, 'L', &positionSpoofingPress))
-		{
-			if (positionSpoofingToggle)
-			{
-				positionSpoofingToggle = false;
-			}
-			else
-			{
-				positionSpoofingToggle = true;
-				if (ErectusIni::customLocalPlayerSettings.positionSpoofingEnabled && ErectusIni::customLocalPlayerSettings.clientState)
-				{
-					ErectusMemory::SetClientState(2);
-				}
-			}
-		}
+		if (ErectusIni::customLocalPlayerSettings.positionSpoofingEnabled && Utils::DoubleKeyPress(VK_CONTROL, 'L'))
+			positionSpoofingToggle = !positionSpoofingToggle;
 
-		if (!ErectusIni::customLocalPlayerSettings.positionSpoofingEnabled)
-		{
-			positionSpoofingToggle = false;
-		}
+		if (ErectusIni::customLocalPlayerSettings.noclipEnabled && Utils::DoubleKeyPress(VK_CONTROL, 'Y'))
+			noclipToggle = !noclipToggle;
 
-		if (Utils::DoubleKeyPress(VK_CONTROL, 'Y', &noclipPress))
-		{
-			if (noclipToggle)
-			{
-				noclipToggle = false;
-			}
-			else
-			{
-				noclipToggle = true;
-				if (ErectusIni::customLocalPlayerSettings.noclipEnabled && ErectusIni::customLocalPlayerSettings.clientState)
-				{
-					ErectusMemory::SetClientState(2);
-				}
-
-			}
-		}
-
-		if (!ErectusIni::customLocalPlayerSettings.noclipEnabled)
-			noclipToggle = false;
-
-		if (Utils::DoubleKeyPress(VK_CONTROL, 'B', &opkPlayersPress))
+		if (!ErectusIni::customOpkSettings.playersEnabled && Utils::DoubleKeyPress(VK_CONTROL, 'B'))
 			opkPlayersToggle = !opkPlayersToggle;
 
-		if (Utils::DoubleKeyPress(VK_CONTROL, 'N', &opkNpcsPress))
+		if (ErectusIni::customOpkSettings.npcsEnabled && Utils::DoubleKeyPress(VK_CONTROL, 'N'))
 			opkNpcsToggle = !opkNpcsToggle;
 
-		if (Utils::DoubleKeyPress(VK_CONTROL, 'E', &lootScrapKeyPress))
-		{
-			if (ErectusIni::customScrapLooterSettings.scrapKeybindEnabled && ErectusMemory::CheckScrapList())
-				ErectusMemory::LootScrap();
-		}
 
-		if (Utils::DoubleKeyPress(VK_CONTROL, 'R', &lootItemsKeyPress))
-		{
-			if (ErectusIni::customItemLooterSettings.itemKeybindEnabled && ErectusMemory::CheckItemLooterSettings())
-				ErectusMemory::LootItems();
-		}
+		if (positionSpoofingToggle && ErectusIni::customLocalPlayerSettings.positionSpoofingEnabled && ErectusIni::customLocalPlayerSettings.clientState)
+			ErectusMemory::SetClientState(2);
 
-		if (positionSpoofingToggle || noclipToggle)
+		if (noclipToggle && ErectusIni::customLocalPlayerSettings.noclipEnabled && ErectusIni::customLocalPlayerSettings.clientState)
+			ErectusMemory::SetClientState(2);
+
+
+		if (ErectusIni::customScrapLooterSettings.scrapKeybindEnabled && Utils::DoubleKeyPress(VK_CONTROL, 'E') && ErectusMemory::CheckScrapList())
+			ErectusMemory::LootScrap();
+
+		if (ErectusIni::customItemLooterSettings.itemKeybindEnabled && Utils::DoubleKeyPress(VK_CONTROL, 'R') && ErectusMemory::CheckItemLooterSettings())
+			ErectusMemory::LootItems();
+
+		if ((positionSpoofingToggle || noclipToggle) && ErectusIni::customLocalPlayerSettings.automaticClientState)
 		{
-			if (ErectusIni::customLocalPlayerSettings.automaticClientState)
+			clientStateCounter++;
+			if (clientStateCounter > 60)
 			{
-				clientStateCounter++;
-				if (clientStateCounter > 60)
-				{
-					clientStateCounter = 0;
-					ErectusMemory::SetClientState(2);
-				}
+				clientStateCounter = 0;
+				ErectusMemory::SetClientState(2);
 			}
 		}
 
@@ -403,20 +343,14 @@ DWORD WINAPI ErectusThread::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 		}
 
 		ErectusMemory::FreezeActionPoints(&freezeApPage, &freezeApPageValid, true);
+		
 		ErectusMemory::OnePositionKill(&opkPage, &opkPageValid, true);
 
 		if (opkPageValid)
 		{
 			if (opkPlayersToggle)
 			{
-				if (!ErectusIni::customOpkSettings.playersEnabled)
-				{
-					opkPlayersToggle = false;
-				}
-				else
-				{
-					ErectusMemory::SetOpkData(opkPage, true, true);
-				}
+				ErectusMemory::SetOpkData(opkPage, true, true);
 			}
 			else
 			{
@@ -425,14 +359,7 @@ DWORD WINAPI ErectusThread::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 
 			if (opkNpcsToggle)
 			{
-				if (!ErectusIni::customOpkSettings.npcsEnabled)
-				{
-					opkNpcsToggle = false;
-				}
-				else
-				{
-					ErectusMemory::SetOpkData(opkPage, false, true);
-				}
+				ErectusMemory::SetOpkData(opkPage, false, true);
 			}
 			else
 			{

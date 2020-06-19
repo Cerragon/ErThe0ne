@@ -138,54 +138,46 @@ bool Renderer::Init()
 	d3D9Interface = Direct3DCreate9(D3D_SDK_VERSION);
 	if (d3D9Interface == nullptr)
 		return false;
-	d3D9InterfaceCreated = true;
 
 	const auto deviceResult = d3D9Interface->CreateDevice(
 		D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, nullptr, D3DCREATE_HARDWARE_VERTEXPROCESSING, &d3D9Parameters, &d3D9Device);
 	if (deviceResult != D3D_OK)
 		return false;
-	d3D9DeviceCreated = true;
 
 	const auto spriteResult = D3DXCreateSprite(d3D9Device, &d3DxSprite);
 	if (spriteResult != D3D_OK)
 		return false;
-	d3DxSpriteCreated = true;
 
 	const auto fontResult = D3DXCreateFont(d3D9Device, 0, 0, 0, 0, FALSE, DEFAULT_CHARSET, OUT_CHARACTER_PRECIS,
 	                                       DEFAULT_QUALITY, DEFAULT_PITCH, "System", &d3DxFont);
 	if (fontResult != D3D_OK)
 		return false;
-	d3DxFontCreated = true;
 
 	return true;
 }
 
 void Renderer::Cleanup()
 {
-	if (d3D9InterfaceCreated)
+	if(d3D9Interface != nullptr)
 	{
-		d3D9InterfaceCreated = false;
 		d3D9Interface->Release();
 		d3D9Interface = nullptr;
 	}
 
-	if (d3D9DeviceCreated)
+	if (d3D9Device != nullptr)
 	{
-		d3D9DeviceCreated = false;
 		d3D9Device->Release();
 		d3D9Device = nullptr;
 	}
 
-	if (d3DxSpriteCreated)
+	if (d3DxSprite != nullptr)
 	{
-		d3DxSpriteCreated = false;
 		d3DxSprite->Release();
 		d3DxSprite = nullptr;
 	}
 
-	if (d3DxFontCreated)
+	if (d3DxFont != nullptr)
 	{
-		d3DxFontCreated = false;
 		d3DxFont->Release();
 		d3DxFont = nullptr;
 	}

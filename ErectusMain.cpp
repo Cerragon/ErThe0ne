@@ -17,7 +17,6 @@ LRESULT CALLBACK ErectusMain::WndCallback(HWND hwnd, UINT uMsg, WPARAM wParam, L
 	switch (uMsg)
 	{
 	case WM_KEYDOWN:
-		KeybindHandler(wParam, lParam);
 		return 0;
 	case WM_PAINT:
 		Render();
@@ -59,7 +58,7 @@ void ErectusMain::Render() {
 			ErectusProcess::processValidCounter = 0;
 			if (WaitForSingleObject(ErectusProcess::handle, 0) != WAIT_TIMEOUT)
 			{
-				ErectusProcess::ResetProcessData(true, 1);
+				ErectusProcess::ResetProcessData();
 			}
 
 			if (overlayActive)
@@ -88,7 +87,7 @@ void ErectusMain::Render() {
 			ErectusThread::threadCreationState = ErectusThread::CreateProcessThreads();
 		}
 
-		if (Utils::DoubleKeyPress(VK_CONTROL, VK_RETURN, &ErectusMain::overlayMenuPress))
+		if (Utils::DoubleKeyPress(VK_CONTROL, VK_RETURN))
 		{
 			if (overlayMenuActive)
 			{
@@ -114,44 +113,14 @@ void ErectusMain::Render() {
 		}
 	}
 
-	auto npcKeyPress = false;
-	auto containerKeyPress = false;
-	auto floraKeyPress = false;
-	if (Utils::DoubleKeyPress(VK_CONTROL, VK_OEM_COMMA, &npcKeyPress))
-	{
-		if (ErectusIni::npcLooterSettings.entityLooterEnabled)
-		{
-			ErectusIni::npcLooterSettings.entityLooterEnabled = false;
-		}
-		else
-		{
-			ErectusIni::npcLooterSettings.entityLooterEnabled = true;
-		}
-	}
+	if (Utils::DoubleKeyPress(VK_CONTROL, VK_OEM_COMMA))
+		ErectusIni::npcLooterSettings.entityLooterEnabled = !ErectusIni::npcLooterSettings.entityLooterEnabled;
 
-	if (Utils::DoubleKeyPress(VK_CONTROL, VK_OEM_PERIOD, &containerKeyPress))
-	{
-		if (ErectusIni::containerLooterSettings.entityLooterEnabled)
-		{
-			ErectusIni::containerLooterSettings.entityLooterEnabled = false;
-		}
-		else
-		{
-			ErectusIni::containerLooterSettings.entityLooterEnabled = true;
-		}
-	}
+	if (Utils::DoubleKeyPress(VK_CONTROL, VK_OEM_PERIOD))
+		ErectusIni::containerLooterSettings.entityLooterEnabled = !ErectusIni::containerLooterSettings.entityLooterEnabled;
 
-	if (Utils::DoubleKeyPress(VK_CONTROL, 'P', &floraKeyPress))
-	{
-		if (ErectusIni::customHarvesterSettings.harvesterEnabled)
-		{
-			ErectusIni::customHarvesterSettings.harvesterEnabled = false;
-		}
-		else
-		{
-			ErectusIni::customHarvesterSettings.harvesterEnabled = true;
-		}
-	}
+	if (Utils::DoubleKeyPress(VK_CONTROL, 'P'))
+		ErectusIni::customHarvesterSettings.harvesterEnabled = !ErectusIni::customHarvesterSettings.harvesterEnabled;
 
 	//ghetto run once per frame
 	std::this_thread::sleep_for(std::chrono::milliseconds(16));
@@ -263,20 +232,21 @@ void ErectusMain::SetOverlayMenu()
 int ErectusMain::CreateWnd(const HINSTANCE hInstance)
 {
 	mHInstance = hInstance;
-	WNDCLASSEX wndClass;
-
-	wndClass.cbSize = sizeof(WNDCLASSEX);
-	wndClass.style = CS_VREDRAW | CS_HREDRAW;
-	wndClass.lpfnWndProc = WndCallback;
-	wndClass.cbClsExtra = 0;
-	wndClass.cbWndExtra = 0;
-	wndClass.hInstance = mHInstance;
-	wndClass.hIcon = LoadIcon(wndClass.hInstance, MAKEINTRESOURCE(IDI_ICON1));
-	wndClass.hCursor = nullptr;
-	wndClass.hbrBackground = CreateSolidBrush(RGB(0x00, 0x00, 0x00));
-	wndClass.lpszMenuName = nullptr;
-	wndClass.lpszClassName = OVERLAY_WINDOW_CLASS;
-	wndClass.hIconSm = nullptr;
+	
+	WNDCLASSEX wndClass{
+		.cbSize = sizeof(WNDCLASSEX),
+		.style = CS_VREDRAW | CS_HREDRAW,
+		.lpfnWndProc = WndCallback,
+		.cbClsExtra = 0,
+		.cbWndExtra = 0,
+		.hInstance = mHInstance,
+		.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON1)),
+		.hCursor = nullptr,
+		.hbrBackground = CreateSolidBrush(RGB(0x00, 0x00, 0x00)),
+		.lpszMenuName = nullptr,
+		.lpszClassName = OVERLAY_WINDOW_CLASS,
+		.hIconSm = nullptr
+	};
 
 	if (!RegisterClassEx(&wndClass))
 	{
@@ -306,7 +276,7 @@ int ErectusMain::CreateWnd(const HINSTANCE hInstance)
 void ErectusMain::CloseWnd() {
 	if (windowHwnd != nullptr)
 	{
-		SendMessage(windowHwnd, WM_CLOSE, NULL, NULL);
+		SendMessage(windowHwnd, WM_CLOSE, 0, 0);
 	}
 	UnregisterClass(OVERLAY_WINDOW_CLASS, mHInstance);
 }
@@ -348,7 +318,7 @@ bool ErectusMain::SetOverlayPosition(const bool topmost, const bool layered)
 	{
 		windowPosition[0] = position[0];
 		windowPosition[1] = position[1];
-		MoveWindow(windowHwnd, windowPosition[0], windowPosition[1], windowSize[0], windowSize[1], FALSE);
+		MoveWindow(windowHwnd, windowPosition[0], windowPosition[1], windowSize[0], windowSize[1], 0);
 	}
 
 	if (size[0] != windowSize[0] || size[1] != windowSize[1])
@@ -408,70 +378,3 @@ bool ErectusMain::SetOverlayPosition(const bool topmost, const bool layered)
 	overlayActive = true;
 	return true;
 }
-
-void ErectusMain::KeybindInput(DWORD* keybindKey, DWORD* keybindBit)
-{
-	if (keybindHandlerKey != nullptr && keybindHandlerBit != nullptr)
-	{
-		*keybindHandlerKey = oldKeybindHandlerKey;
-		*keybindHandlerBit = oldKeybindHandlerBit;
-	}
-	keybindHandlerKey = keybindKey;
-	keybindHandlerBit = keybindBit;
-	oldKeybindHandlerKey = *keybindHandlerKey;
-	oldKeybindHandlerBit = *keybindHandlerBit;
-	*keybindHandlerKey = 0;
-	*keybindHandlerBit = 0;
-}
-
-void ErectusMain::CancelKeybindInput()
-{
-	if (keybindHandlerKey != nullptr && keybindHandlerBit != nullptr)
-	{
-		*keybindHandlerKey = oldKeybindHandlerKey;
-		*keybindHandlerBit = oldKeybindHandlerBit;
-		keybindHandlerKey = nullptr;
-		keybindHandlerBit = nullptr;
-		oldKeybindHandlerKey = 0;
-		oldKeybindHandlerBit = 0;
-	}
-}
-
-void ErectusMain::ClearKeybind(DWORD* keybindKey, DWORD* keybindBit)
-{
-	if (keybindHandlerKey == keybindKey && keybindHandlerBit == keybindBit)
-	{
-		keybindHandlerKey = nullptr;
-		keybindHandlerBit = nullptr;
-		oldKeybindHandlerKey = 0;
-		oldKeybindHandlerBit = 0;
-	}
-	*keybindKey = 0;
-	*keybindBit = 0;
-}
-
-bool ErectusMain::KeybindHandler(const WPARAM wParam, const LPARAM lParam)
-{
-	if (keybindHandlerKey == nullptr)
-	{
-		return false;
-	}
-
-	if (keybindHandlerBit == nullptr)
-	{
-		return false;
-	}
-
-	*keybindHandlerKey = DWORD(wParam);
-	*keybindHandlerBit = DWORD(lParam);
-	keybindHandlerKey = nullptr;
-	keybindHandlerBit = nullptr;
-	oldKeybindHandlerKey = 0;
-	oldKeybindHandlerBit = 0;
-
-	return true;
-}
-
-
-
-

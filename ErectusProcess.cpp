@@ -62,59 +62,17 @@ void ErectusProcess::SetProcessError(const int errorId, const char* error)
 	processError = error;
 }
 
-void ErectusProcess::ResetProcessData(const bool clearProcessError, const int newProcessListSize)
+void ErectusProcess::ResetProcessData()
 {
-	if (processList != nullptr)
-	{
-		if (processListSize)
-		{
-			for (auto i = 0; i < processListSize; i++)
-			{
-				if (processList[i] != nullptr)
-				{
-					delete[]processList[i];
-					processList[i] = nullptr;
-				}
-			}
-		}
-
-		delete[]processList;
-		processList = nullptr;
-	}
-
-	if (processIdList != nullptr)
-	{
-		delete[]processIdList;
-		processIdList = nullptr;
-	}
-
 	processSelected = false;
-	processIndex = 0;
 
-	if (newProcessListSize)
+
+	if (!processMenuActive)
 	{
-		processListSize = newProcessListSize;
-		processList = new char* [processListSize];
-		processList[processIndex] = new char[sizeof("No process selected")];
-		sprintf_s(processList[processIndex], sizeof("No process selected"), "No process selected");
-		processIdList = new DWORD[processListSize];
-		processIdList[processIndex] = 0;
-
-		if (!processMenuActive)
-		{
-			SetProcessMenu();
-		}
-
-		if (clearProcessError)
-		{
-			SetProcessError(0, "Process State: No process selected");
-		}
+		SetProcessMenu();
 	}
-	else
-	{
-		processListSize = 0;
-		SetProcessError(-1, "");
-	}
+
+	SetProcessError(0, "Process State: No process selected");
 
 	if (ErectusThread::threadCreationState)
 	{
@@ -123,19 +81,14 @@ void ErectusProcess::ResetProcessData(const bool clearProcessError, const int ne
 		while (!ErectusThread::ThreadDestruction())
 		{
 			ErectusThread::threadDestructionCounter++;
-			if (ErectusThread::threadDestructionCounter > 14400)
+			if (ErectusThread::threadDestructionCounter > 1440)
 			{
 				areThreadsActive = true;
-
-				if (newProcessListSize)
-				{
-					ErectusMain::CloseWnd();
-				}
-
+				ErectusMain::CloseWnd();
 				break;
 			}
 
-			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+			std::this_thread::sleep_for(std::chrono::milliseconds(10));
 		}
 
 		if (!areThreadsActive)
@@ -170,58 +123,28 @@ void ErectusProcess::ResetProcessData(const bool clearProcessError, const int ne
 	}
 }
 
-int ErectusProcess::GetProcessCount()
+std::vector<DWORD> ErectusProcess::GetProcesses()
 {
-	auto* hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-	if (hSnapshot == INVALID_HANDLE_VALUE) return 1;
+	std::vector<DWORD> result{ 0 };
 
-	PROCESSENTRY32 lppe;
-	lppe.dwSize = sizeof(lppe);
-
-	auto processCount = 1;
-	while (Process32Next(hSnapshot, &lppe))
-	{
-		if (!strcmp(lppe.szExeFile, "Fallout76.exe"))
-		{
-			processCount++;
-		}
-	}
-
-	CloseHandle(hSnapshot);
-	return processCount;
-}
-
-bool ErectusProcess::UpdateProcessList()
-{
 	auto* const hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-	if (hSnapshot == INVALID_HANDLE_VALUE) return false;
+	if (hSnapshot == INVALID_HANDLE_VALUE)
+		return result;
 
 	PROCESSENTRY32 lppe;
 	lppe.dwSize = sizeof(lppe);
 
-	const auto processCount = GetProcessCount();
-	if (processCount == 1)
-	{
-		CloseHandle(hSnapshot);
-		return false;
-	}
-	
-	ResetProcessData(true, processCount);
-
-	auto currentProcess = 0;
 	while (Process32Next(hSnapshot, &lppe))
 	{
 		if (!strcmp(lppe.szExeFile, "Fallout76.exe"))
 		{
-			currentProcess++;
-			processList[currentProcess] = new char[sizeof("Fallout76.exe - 4294967295")];
-			sprintf_s(processList[currentProcess], sizeof("Fallout76.exe - 4294967295"), "Fallout76.exe - %lu", lppe.th32ProcessID);
-			processIdList[currentProcess] = lppe.th32ProcessID;
+			result.push_back(lppe.th32ProcessID);
 		}
 	}
 
 	CloseHandle(hSnapshot);
-	return true;
+
+	return result;
 }
 
 BOOL ErectusProcess::HwndEnumFunc(const HWND hwnd, const LPARAM lParam)
@@ -300,14 +223,19 @@ DWORD64 ErectusProcess::GetModuleBaseAddress(const DWORD pid, const char* module
 	return 0;
 }
 
-bool ErectusProcess::ProcessValid(const DWORD processId)
+bool ErectusProcess::AttachToProcess(const DWORD processId)
 {
-	pid = processId;
-	if (!pid)
+	if(pid == processId)
 	{
-		SetProcessError(2, "Process State: PID (Process Id) invalid");
-		return false;
+		return  true;
 	}
+
+	ResetProcessData();
+
+	if (processId == 0)
+		return false;
+	
+	pid = processId;
 
 	exe = GetModuleBaseAddress(pid, "Fallout76.exe");
 	if (!exe)
@@ -324,5 +252,8 @@ bool ErectusProcess::ProcessValid(const DWORD processId)
 	}
 
 	SetProcessError(1, "Process State: Process selected");
+
+	processSelected = true;
+	
 	return true;
 }

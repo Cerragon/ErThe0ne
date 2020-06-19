@@ -162,39 +162,12 @@ int Utils::GetRangedInt(const int min, const int max)
 	return min;
 }
 
-bool Utils::SingleKeyPress(const int keyCode, bool *keyPress)
+bool Utils::SingleKeyPress(const int keyCode)
 {
-	if (GetAsyncKeyState(keyCode))
-	{
-		if (!*keyPress)
-		{
-			*keyPress = true;
-			return true;
-		}
-	}
-	else
-	{
-		if (*keyPress)
-		{
-			*keyPress = false;
-			return false;
-		}
-	}
-
-	return false;
+	return GetAsyncKeyState(keyCode);
 }
 
-bool Utils::DoubleKeyPress(const int keyCodeA, const int keyCodeB, bool *keyPress)
+bool Utils::DoubleKeyPress(const int keyCodeA, const int keyCodeB)
 {
-	if (GetAsyncKeyState(keyCodeA))
-	{
-		return SingleKeyPress(keyCodeB, keyPress);
-	}
-
-	if (GetAsyncKeyState(keyCodeB))
-	{
-		return SingleKeyPress(keyCodeA, keyPress);
-	}
-
-	return false;
+	return SingleKeyPress(keyCodeA) && SingleKeyPress(keyCodeB);
 }

@@ -111,7 +111,7 @@ constexpr auto CUSTOM_ENTRY_WHITELISTED = 0x4000000000000000ULL;
 constexpr auto CUSTOM_ENTRY_INVALID = 0x8000000000000000ULL;
 
 //Game Classes
-class Entity
+class TesObjectRefr
 {
 public:
 	DWORD64 vtable;//0x0
@@ -121,7 +121,9 @@ public:
 	BYTE harvestFlagB;//0x19
 	BYTE padding001A[0x6];
 	DWORD formId;//0x20
-	BYTE padding0024[0x14];
+	BYTE padding0024[0x2];//0x24
+	BYTE formType;//0x26
+	BYTE padding0027[0x11];//0x27
 	BYTE idValue[4];//0x38
 	BYTE padding003C[0x14];
 	DWORD64 vtable0050;//0x50
@@ -138,7 +140,7 @@ public:
 	BYTE padding0098[0x10];
 	DWORD64 cellPtr;//0xA8
 	DWORD64 skeletonPtr;//0xB0
-	DWORD64 referencePtr;//0xB8
+	DWORD64 referencedItemPtr;//0xB8
 	BYTE padding00C0[0xE];
 	BYTE spawnFlag;//0xCE
 	BYTE padding00Cf[0xC9];
@@ -148,7 +150,7 @@ public:
 	BYTE padding019B[0xA89];
 	DWORD formId0C24;//0xC24
 };
-class Reference
+class TesItem
 {
 public:
 	DWORD64 vtable;//0x0
@@ -156,7 +158,9 @@ public:
 	BYTE recordFlagA;//0x18
 	BYTE padding0019[0x7];
 	DWORD formId;//0x20
-	BYTE padding0024[0x74];
+	BYTE padding0024[0x2];//0x24
+	BYTE formType;//0x26
+	BYTE padding0027[0x71];//0x27
 	DWORD64 namePtr0098;//0x98
 	BYTE padding00A0[0x10];
 	DWORD64 namePtr00B0;//0xB0
@@ -1303,16 +1307,11 @@ public:
 	static bool SetOverlayPosition(bool topmost, bool layered);
 	static void SetOverlayMenu();
 
-	static bool KeybindHandler(WPARAM wParam, LPARAM lParam);
-
-	static void CancelKeybindInput();
-
 	inline static int windowSize[2] = { 0, 0 };
 	inline static int windowPosition[2] = { 0, 0 };
 	inline static bool overlayMenuActive = false;
 	inline static bool overlayActive = false;
 	inline static bool overlayForeground = false;
-	inline static bool overlayMenuPress = false;
 	inline static bool experimentalOverlayFix = false;
 
 	inline static HWND windowHwnd = nullptr;
@@ -1323,9 +1322,6 @@ private:
 	static void RenderProcessMenu();
 	static void RenderOverlayMenu();
 	static void RenderOverlay();
-
-	static void KeybindInput(DWORD* keybindKey, DWORD* keybindBit);
-	static void ClearKeybind(DWORD* keybindKey, DWORD* keybindBit);
 
 	inline static HINSTANCE mHInstance = nullptr;
 	inline static DWORD* keybindHandlerKey = nullptr;
@@ -1358,41 +1354,35 @@ public:
 	static bool Wts(const float* view, const float* position, float* screen);
 	static void ProjectView(float* dst, const float* forward, const float* origin, float distance);
 
-	static bool DoubleKeyPress(int keyCodeA, int keyCodeB, bool* keyPress);
+	static bool DoubleKeyPress(int keyCodeA, int keyCodeB);
 
 private:
 	static float RadiansToDegrees(float radians);
 	static void ValidateDword(DWORD* value, DWORD min, DWORD max);
 	static void ValidateRgba(float* value);
 
-	static bool SingleKeyPress(int keyCode, bool* keyPress);
+	static bool SingleKeyPress(int keyCode);
 
 	virtual void __dummy() = 0;
 };
 class ErectusProcess final {
 public:
 	static void SetProcessMenu();
-	static void ResetProcessData(bool clearProcessError, int newProcessListSize);
-	static bool ProcessValid(DWORD processId);
-	static bool UpdateProcessList();
+	static void ResetProcessData();
+	static bool AttachToProcess(DWORD processId);
 	static void SetProcessError(int errorId, const char* error);
 
+	static std::vector<DWORD> GetProcesses();
+	
 	static bool HwndValid(DWORD processId);
 
 	inline static std::string processError;
 
-
 	inline static int processValidCounter = 0;
 	inline static bool processMenuActive = false;
 	inline static bool processSelected = false;
-	inline static bool processListUpdated = false;
 
-	inline static char** processList = nullptr;
-	inline static int processListSize = 0;
-	inline static int processIndex = 0;
-	inline static DWORD* processIdList = nullptr;
 	inline static int processErrorId = 0;
-
 
 	inline static HANDLE handle = nullptr;
 	inline static HWND hWnd = nullptr;
@@ -1400,7 +1390,6 @@ public:
 	inline static DWORD pid = 0;
 
 private:
-	static int GetProcessCount();
 	static BOOL HwndEnumFunc(HWND hwnd, LPARAM lParam);
 	static DWORD64 GetModuleBaseAddress(DWORD pid, const char* module);
 
@@ -1467,11 +1456,6 @@ private:
 
 	inline static LPDIRECT3D9 d3D9Interface = nullptr;
 	inline static LPD3DXFONT d3DxFont = nullptr;
-
-	inline static bool d3D9InterfaceCreated = false;
-	inline static bool d3D9DeviceCreated = false;
-	inline static bool d3DxSpriteCreated = false;
-	inline static bool d3DxFontCreated = false;
 
 	inline static bool deviceResetState = false;
 	inline static int deviceResetCounter = 0;
@@ -1626,9 +1610,10 @@ public:
 private:
 	static bool RenderCustomEntryA(MemoryClasses::CustomEntry* customEntryData, SettingsClasses::OverlaySettingsA customSettingsA);
 	static bool RenderCustomEntryB(MemoryClasses::CustomEntry* customEntryData, SettingsClasses::OverlaySettingsB customSettingsB);
+	bool RenderCustomEntityList2();
 
 	static char* GetPlayerName(MemoryClasses::ClientAccount* clientAccountData);
-	static bool TargetValid(Entity entityData, Reference referenceData);
+	static bool TargetValid(TesObjectRefr entityData, TesItem referenceData);
 	static bool FloraHarvested(BYTE harvestFlagA, BYTE harvestFlagB);
 
 	static bool CheckItemLooterList();
@@ -1637,15 +1622,15 @@ private:
 	static bool CheckEntityLooterBlacklist(SettingsClasses::EntityLooterSettings* customEntityLooterSettings);
 	static bool CheckIngredientList();
 	static bool CheckJunkPileEnabled();
-	static bool CheckComponentArray(Reference referenceData);
-	static bool CheckReferenceKeywordBook(Reference referenceData, DWORD formId);
-	static bool CheckReferenceKeywordMisc(Reference referenceData, DWORD formId);
+	static bool CheckComponentArray(TesItem referenceData);
+	static bool CheckReferenceKeywordBook(TesItem referenceData, DWORD formId);
+	static bool CheckReferenceKeywordMisc(TesItem referenceData, DWORD formId);
 	static bool CheckOnlyUseItemLooterList();
 	static bool CheckEnabledItem(DWORD formId, DWORD64 entityFlag, int normalDistance);
 	static bool CheckFormIdArray(DWORD formId, bool* enabledArray, const DWORD* formIdArray, int size);
-	static bool CheckReferenceJunk(Reference referenceData);
-	static bool CheckReferenceMod(Reference referenceData);
-	static bool CheckReferencePlan(Reference referenceData);
+	static bool CheckReferenceJunk(TesItem referenceData);
+	static bool CheckReferenceMod(TesItem referenceData);
+	static bool CheckReferencePlan(TesItem referenceData);
 
 	static int GetOldWeaponIndex(DWORD formId);
 
@@ -1661,24 +1646,24 @@ private:
 	static int RenderLocalPlayerData();
 
 
-	static DWORD GetEntityId(Entity entityData);
+	static DWORD GetEntityId(TesObjectRefr entityData);
 	static bool SendHitsToServer(MemoryClasses::Hits* hitsData, size_t hitsDataSize);
 	static DWORD64 GetNukeCodePtr(DWORD formId);
 	static DWORD64 RttiGetNamePtr(DWORD64 vtable);
 	static char* GetInstancedItemName(DWORD64 displayPtr);
-	static bool EntityInventoryValid(Entity entityData);
+	static bool EntityInventoryValid(TesObjectRefr entityData);
 	static bool AllowLegendaryWeapons(SettingsClasses::EntityLooterSettings* customEntityLooterSettings);
 	static bool AllowLegendaryArmor(SettingsClasses::EntityLooterSettings* customEntityLooterSettings);
 	static bool CheckEntityLooterItem(DWORD formId, DWORD64 entityFlag, SettingsClasses::EntityLooterSettings* customEntityLooterSettings, bool legendaryWeaponsEnabled, bool legendaryArmorEnabled);
 	static bool IsLegendaryFormId(DWORD formId);
 	static BYTE GetLegendaryRank(DWORD64 displayPtr);
 	static bool ValidLegendary(BYTE legendaryRank, DWORD64 entityFlag, SettingsClasses::EntityLooterSettings* customEntityLooterSettings, bool legendaryWeaponsEnabled, bool legendaryArmorEnabled);
-	static bool TransferEntityItems(Entity entityData, Reference referenceData, Entity localPlayer, bool onlyUseEntityLooterList, bool useEntityLooterBlacklist);
-	static bool ContainerValid(Reference referenceData);
-	static bool LootEntity(Entity entityData, Reference referenceData, Entity localPlayer, bool onlyUseEntityLooterList, bool useEntityLooterBlacklist);
+	static bool TransferEntityItems(TesObjectRefr entityData, TesItem referenceData, TesObjectRefr localPlayer, bool onlyUseEntityLooterList, bool useEntityLooterBlacklist);
+	static bool ContainerValid(TesItem referenceData);
+	static bool LootEntity(TesObjectRefr entityData, TesItem referenceData, TesObjectRefr localPlayer, bool onlyUseEntityLooterList, bool useEntityLooterBlacklist);
 	static bool CheckEntityLooterSettings(SettingsClasses::EntityLooterSettings* customEntityLooterSettings);
 	static bool CheckOnlyUseEntityLooterList(SettingsClasses::EntityLooterSettings* customEntityLooterSettings);
-	static bool HarvestFlora(Entity entityData, Reference referenceData, Entity localPlayer);
+	static bool HarvestFlora(TesObjectRefr entityData, TesItem referenceData, TesObjectRefr localPlayer);
 
 	static bool CreateProjectile(DWORD itemId, const float* position, const float* rotation);
 
@@ -1691,15 +1676,15 @@ private:
 	static DWORD64* GetEntityList(int* size);
 	static DWORD64* GetNpcList(int* size);
 	static DWORD64* GetRecipeArray(int* size);
-	static bool CheckWhitelistedFlux(Reference referenceData);
+	static bool CheckWhitelistedFlux(TesItem referenceData);
 	static bool FloraLeveledListValid(MemoryClasses::LeveledList leveledListData);
-	static bool FloraValid(Reference referenceData);
+	static bool FloraValid(TesItem referenceData);
 	static bool IsTreasureMap(DWORD formId);
 	static bool CheckFactionFormId(DWORD formId);
-	static bool BlacklistedNpcFaction(Reference referenceData);
-	static bool CheckReferenceItem(Reference referenceData);
-	static void GetCustomEntityData(Reference referenceData, DWORD64* entityFlag, DWORD64* entityNamePtr, int* enabledDistance, bool checkScrap, bool checkIngredient);
-	static bool GetActorSnapshotComponentData(Entity entityData, MemoryClasses::ActorSnapshotComponent* actorSnapshotComponentData);
+	static bool BlacklistedNpcFaction(TesItem referenceData);
+	static bool CheckReferenceItem(TesItem referenceData);
+	static void GetCustomEntityData(TesItem referenceData, DWORD64* entityFlag, DWORD64* entityNamePtr, int* enabledDistance, bool checkScrap, bool checkIngredient);
+	static bool GetActorSnapshotComponentData(TesObjectRefr entityData, MemoryClasses::ActorSnapshotComponent* actorSnapshotComponentData);
 	static char* GetEntityName(DWORD64 ptr);
 
 	inline static MemoryClasses::CustomEntry* customEntityList = nullptr;
