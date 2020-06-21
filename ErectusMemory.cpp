@@ -143,109 +143,60 @@ DWORD64 ErectusMemory::GetLocalPlayerPtr(const bool checkMainMenu)
 	return localPlayerPtr;
 }
 
-DWORD64* ErectusMemory::GetEntityList(int* size)
+std::vector<DWORD64> ErectusMemory::GetEntityList()
 {
+	std::vector<DWORD64> result;
+		
 	DWORD64 entityListTypePtr;
-	if (!Utils::Rpm(ErectusProcess::exe + OFFSET_ENTITY_LIST, &entityListTypePtr, sizeof entityListTypePtr)) return
-		nullptr;
-	if (!Utils::Valid(entityListTypePtr)) return nullptr;
+	if (!Utils::Rpm(ErectusProcess::exe + OFFSET_ENTITY_LIST, &entityListTypePtr, sizeof entityListTypePtr)) return result;
+	if (!Utils::Valid(entityListTypePtr)) return result;
 
-	EntityListType entityListTypeData{};
-	if (!Utils::Rpm(entityListTypePtr, &entityListTypeData, sizeof entityListTypeData)) return nullptr;
-	if (!Utils::Valid(entityListTypeData.interiorListPtr)) return nullptr;
-	if (!Utils::Valid(entityListTypeData.interiorListCheck)) return nullptr;
-	if (!Utils::Valid(entityListTypeData.exteriorListPtr)) return nullptr;
-	if (!Utils::Valid(entityListTypeData.exteriorListCheck)) return nullptr;
+	//1) Get LoadedAreaManager
+	LoadedAreaManager manager{};
+	if (!Utils::Rpm(entityListTypePtr, &manager, sizeof manager))
+		return result;
+	if (!Utils::Valid(manager.interiorCellArrayPtr) || !Utils::Valid(manager.interiorCellArrayPtr2) || !Utils::Valid(manager.exteriorCellArrayPtr) ||!Utils::Valid(manager.exteriorCellArrayPtr2))
+		return result;
 
-	DWORD64 entityListArrayPtr = 0;
-	auto entityListArraySize = 0;
-
-	auto useInteriorList = false;
-	if (entityListTypeData.interiorListPtr != entityListTypeData.interiorListCheck)
+	DWORD64 cellPtrArrayPtr;
+	int cellPtrArraySize;
+	
+	//2) Select  interior or exterior objectlist
+	if (manager.interiorCellArrayPtr != manager.interiorCellArrayPtr2)
 	{
-		useInteriorList = true;
-		entityListArrayPtr = entityListTypeData.interiorListPtr;
-		entityListArraySize = 1;
+		cellPtrArrayPtr = manager.interiorCellArrayPtr;
+		cellPtrArraySize = 2;
 	}
-
-	auto useExteriorList = false;
-	if (entityListTypeData.exteriorListPtr != entityListTypeData.exteriorListCheck)
+	else if (manager.exteriorCellArrayPtr != manager.exteriorCellArrayPtr2)
 	{
-		useExteriorList = true;
-		entityListArrayPtr = entityListTypeData.exteriorListPtr;
-		entityListArraySize = 25;
+		cellPtrArrayPtr = manager.exteriorCellArrayPtr;
+		cellPtrArraySize = 50;
 	}
+	else return result; // sthg went wrong
 
-	if (useInteriorList && useExteriorList) return nullptr;
-	if (!useInteriorList && !useExteriorList) return nullptr;
 
-	auto* entityListPtr = new DWORD64[entityListArraySize * 2];
-	if (!Utils::Rpm(entityListArrayPtr, &*entityListPtr, entityListArraySize * sizeof(DWORD64) * 2))
+	//3) Read the array of pointers to cells
+	auto cellPtrArray = std::make_unique<DWORD64[]>(cellPtrArraySize);
+	if (!Utils::Rpm(cellPtrArrayPtr, cellPtrArray.get(), cellPtrArraySize * sizeof DWORD64))
+		return result;
+
+	//4) Read each cell and push object  pointers into objectPtrs
+	for (auto i = 0; i < cellPtrArraySize; i++)
 	{
-		delete[]entityListPtr;
-		entityListPtr = nullptr;
-		return nullptr;
-	}
-
-	auto** entityPtr = new DWORD64 * [entityListArraySize];
-	auto combinedListSize = 0;
-
-	auto* entityListData = new EntityList[entityListArraySize];
-	for (auto i = 0; i < entityListArraySize; i++)
-	{
-		entityPtr[i] = nullptr;
-		if (!Utils::Valid(entityListPtr[i * 2])) continue;
-
-		if (!Utils::Rpm(entityListPtr[i * 2], &entityListData[i], sizeof entityListData[i])) continue;
-		if (!Utils::Valid(entityListData[i].listPtr) || !entityListData[i].listSize) continue;
-
-		entityPtr[i] = new DWORD64[entityListData[i].listSize];
-		if (!Utils::Rpm(entityListData[i].listPtr, &*entityPtr[i], entityListData[i].listSize * sizeof(DWORD64)))
-		{
-			delete[]entityPtr[i];
-			entityPtr[i] = nullptr;
+		if (i % 2 == 0)
 			continue;
-		}
 
-		combinedListSize += entityListData[i].listSize;
+		TesObjectCell cell;
+		if (!Utils::Rpm(cellPtrArray[i], &cell, sizeof TesObjectCell)) continue;
+		if (!Utils::Valid(cell.listPtr) || !cell.listSize) continue;
+
+		auto objectPtrArray = std::make_unique<DWORD64[]>(cell.listSize);
+		if (!Utils::Rpm(cell.listPtr, objectPtrArray.get(), cell.listSize * sizeof DWORD64)) continue;
+		
+		result.insert(result.end(), objectPtrArray.get(), objectPtrArray.get() + cell.listSize);
 	}
 
-	DWORD64* list = nullptr;
-	*size = 0;
-
-	if (combinedListSize)
-	{
-		list = new DWORD64[combinedListSize];
-		*size = combinedListSize;
-
-		auto offset = 0;
-		for (auto i = 0; i < entityListArraySize; i++)
-		{
-			if (entityPtr[i] == nullptr) continue;
-			memcpy(&list[offset], &*entityPtr[i], entityListData[i].listSize * sizeof(DWORD64));
-			offset += entityListData[i].listSize;
-		}
-	}
-
-	for (auto i = 0; i < entityListArraySize; i++)
-	{
-		if (entityPtr[i] != nullptr)
-		{
-			delete[]entityPtr[i];
-			entityPtr[i] = nullptr;
-		}
-	}
-
-	delete[]entityPtr;
-	entityPtr = nullptr;
-
-	delete[]entityListData;
-	entityListData = nullptr;
-
-	delete[]entityListPtr;
-	entityListPtr = nullptr;
-
-	return list;
+	return  result;
 }
 
 DWORD64* ErectusMemory::GetNpcList(int* size)
@@ -1373,21 +1324,16 @@ bool ErectusMemory::UpdateBufferEntityList()
 	TesObjectRefr localPlayer{};
 	if (!Utils::Rpm(localPlayerPtr, &localPlayer, sizeof localPlayer)) return false;
 
-	auto bufferSize = 0;
-	auto* bufferList = GetEntityList(&bufferSize);
-	if (bufferList == nullptr) return false;
+	auto bufferList = GetEntityList();
+	if (bufferList.empty()) return false;
 
-	auto customListSize = 0;
-	auto* customList = new CustomEntry[bufferSize];
-	auto customListIndex = 0;
-
-	for (auto i = 0; i < bufferSize; i++)
+	for(auto entityPtr : bufferList)
 	{
-		if (!Utils::Valid(bufferList[i])) continue;
-		if (bufferList[i] == localPlayerPtr) continue;
+		if (!Utils::Valid(entityPtr)) continue;
+		if(entityPtr == localPlayerPtr) continue;
 
 		TesObjectRefr entityData{};
-		if (!Utils::Rpm(bufferList[i], &entityData, sizeof entityData)) continue;
+		if (!Utils::Rpm(entityPtr, &entityData, sizeof entityData)) continue;
 		if (!Utils::Valid(entityData.referencedItemPtr)) continue;
 
 		TesItem referenceData{};
@@ -1398,40 +1344,26 @@ bool ErectusMemory::UpdateBufferEntityList()
 		DWORD64 entityNamePtr = 0;
 		auto enabledDistance = 0;
 
-		GetCustomEntityData(referenceData, &entityFlag, &entityNamePtr, &enabledDistance,  ErectusIni::customScrapLooterSettings.scrapOverrideEnabled,	ErectusIni::customHarvesterSettings.harvesterOverrideEnabled);
+		GetCustomEntityData(referenceData, &entityFlag, &entityNamePtr, &enabledDistance, ErectusIni::customScrapLooterSettings.scrapOverrideEnabled, ErectusIni::customHarvesterSettings.harvesterOverrideEnabled);
 		if (entityFlag & CUSTOM_ENTRY_INVALID) continue;
 
 		auto distance = Utils::GetDistance(entityData.position, localPlayer.position);
 		auto normalDistance = static_cast<int>(distance * 0.01f);
 		if (normalDistance > enabledDistance) continue;
 
-		customListSize++;
-		customList[customListIndex].entityPtr = bufferList[i];
-		customList[customListIndex].referencePtr = entityData.referencedItemPtr;
-		customList[customListIndex].entityFormId = entityData.formId;
-		customList[customListIndex].referenceFormId = referenceData.formId;
-		customList[customListIndex].flag = entityFlag;
-		customList[customListIndex].name = GetEntityName(entityNamePtr);
-		customListIndex++;
+		CustomEntry entry{
+			.entityPtr = entityPtr,
+			.referencePtr = entityData.referencedItemPtr,
+			.entityFormId = entityData.formId,
+			.referenceFormId = referenceData.formId,
+			.flag = entityFlag,
+			.name = GetEntityName(entityNamePtr)
+		};
+
+		bufferEntityList.push_back(entry);
 	}
 
-	auto returnValue = false;
-
-	if (customListSize)
-	{
-		bufferEntityList = new CustomEntry[customListSize];
-		memcpy(&*bufferEntityList, &*customList, customListSize * sizeof(CustomEntry));
-		bufferEntityListSize = customListSize;
-		returnValue = true;
-	}
-
-	delete[]customList;
-	customList = nullptr;
-
-	delete[]bufferList;
-	bufferList = nullptr;
-
-	return returnValue;
+	return bufferEntityList.empty() ? false : true;
 }
 
 bool ErectusMemory::UpdateBufferNpcList()
@@ -1687,25 +1619,7 @@ void ErectusMemory::DeleteCustomEntityList()
 
 void ErectusMemory::DeleteBufferEntityList()
 {
-	if (bufferEntityList != nullptr)
-	{
-		if (bufferEntityListSize)
-		{
-			for (auto i = 0; i < bufferEntityListSize; i++)
-			{
-				if (bufferEntityList[i].name != nullptr)
-				{
-					delete[]bufferEntityList[i].name;
-					bufferEntityList[i].name = nullptr;
-				}
-			}
-		}
-
-		delete[]bufferEntityList;
-		bufferEntityList = nullptr;
-	}
-
-	bufferEntityListSize = 0;
+	bufferEntityList.clear();
 	bufferEntityListUpdated = false;
 }
 
@@ -2347,26 +2261,26 @@ bool ErectusMemory::RenderCustomEntityList()
 	if (customEntityListCounter > 60)
 	{
 		customEntityListCounter = 0;
+
+		
 		if (bufferEntityListUpdated)
 		{
 			if (!bufferEntityListDestructionQueued)
 			{
 				DeleteCustomEntityList();
-				customEntityList = new CustomEntry[bufferEntityListSize];
-				memcpy(&*customEntityList, &*bufferEntityList, bufferEntityListSize * sizeof(CustomEntry));
-				for (auto i = 0; i < bufferEntityListSize; i++) bufferEntityList[i].name = nullptr;
-				customEntityListSize = bufferEntityListSize;
+
+				
+				customEntityList = new CustomEntry[bufferEntityList.size()];
+				
+				memcpy(&*customEntityList, bufferEntityList.data(), bufferEntityList.size() * sizeof(CustomEntry));
+				
+				customEntityListSize = bufferEntityList.size();
 				customEntityListUpdated = true;
 				bufferEntityListDestructionQueued = true;
 			}
 		}
 	}
 
-	if (customEntityListDestructionQueued)
-	{
-		customEntityListDestructionQueued = false;
-		DeleteCustomEntityList();
-	}
 
 	if (!customEntityListUpdated)
 	{
@@ -2612,17 +2526,16 @@ bool ErectusMemory::LootScrap()
 	TesObjectRefr localPlayer{};
 	if (!Utils::Rpm(localPlayerPtr, &localPlayer, sizeof localPlayer)) return false;
 
-	auto bufferSize = 0;
-	auto* bufferList = GetEntityList(&bufferSize);
-	if (bufferList == nullptr) return false;
+	auto bufferList = GetEntityList();
+	if (bufferList.empty()) return false;
 
-	for (auto i = 0; i < bufferSize; i++)
+	for(auto item : bufferList)
 	{
-		if (!Utils::Valid(bufferList[i])) continue;
-		if (bufferList[i] == localPlayerPtr) continue;
+		if (!Utils::Valid(item)) continue;
+		if (item == localPlayerPtr) continue;
 
 		TesObjectRefr entityData{};
-		if (!Utils::Rpm(bufferList[i], &entityData, sizeof entityData)) continue;
+		if (!Utils::Rpm(item, &entityData, sizeof entityData)) continue;
 		if (!Utils::Valid(entityData.referencedItemPtr)) continue;
 
 		if (entityData.spawnFlag != 0x02)
@@ -2657,8 +2570,6 @@ bool ErectusMemory::LootScrap()
 		SendMessageToServer(&requestActivateRefMessageData, sizeof requestActivateRefMessageData);
 	}
 
-	delete[]bufferList;
-	bufferList = nullptr;
 	return true;
 }
 
@@ -2846,20 +2757,20 @@ bool ErectusMemory::LootItems()
 	TesObjectRefr localPlayer{};
 	if (!Utils::Rpm(localPlayerPtr, &localPlayer, sizeof localPlayer)) return false;
 
-	auto bufferSize = 0;
-	auto* bufferList = GetEntityList(&bufferSize);
-	if (bufferList == nullptr) return false;
+
+	auto bufferList = GetEntityList();
+	if (bufferList.empty()) return false;
 
 	auto onlyUseItemLooterList = CheckOnlyUseItemLooterList();
 	auto useItemLooterBlacklist = CheckItemLooterBlacklist();
 
-	for (auto i = 0; i < bufferSize; i++)
+	for (auto item : bufferList)
 	{
-		if (!Utils::Valid(bufferList[i])) continue;
-		if (bufferList[i] == localPlayerPtr) continue;
+		if (!Utils::Valid(item)) continue;
+		if (item == localPlayerPtr) continue;
 
 		TesObjectRefr entityData{};
-		if (!Utils::Rpm(bufferList[i], &entityData, sizeof entityData)) continue;
+		if (!Utils::Rpm(item, &entityData, sizeof entityData)) continue;
 		if (!Utils::Valid(entityData.referencedItemPtr)) continue;
 
 		if (entityData.spawnFlag != 0x02)
@@ -2922,8 +2833,6 @@ bool ErectusMemory::LootItems()
 		SendMessageToServer(&requestActivateRefMessageData, sizeof requestActivateRefMessageData);
 	}
 
-	delete[]bufferList;
-	bufferList = nullptr;
 	return true;
 }
 
@@ -3824,14 +3733,14 @@ bool ErectusMemory::InsideInteriorCell()
 		false;
 	if (!Utils::Valid(entityListTypePtr)) return false;
 
-	EntityListType entityListTypeData{};
+	LoadedAreaManager entityListTypeData{};
 	if (!Utils::Rpm(entityListTypePtr, &entityListTypeData, sizeof entityListTypeData)) return false;
-	if (!Utils::Valid(entityListTypeData.interiorListPtr)) return false;
-	if (!Utils::Valid(entityListTypeData.interiorListCheck)) return false;
-	if (!Utils::Valid(entityListTypeData.exteriorListPtr)) return false;
-	if (!Utils::Valid(entityListTypeData.exteriorListCheck)) return false;
+	if (!Utils::Valid(entityListTypeData.interiorCellArrayPtr)) return false;
+	if (!Utils::Valid(entityListTypeData.interiorCellArrayPtr2)) return false;
+	if (!Utils::Valid(entityListTypeData.exteriorCellArrayPtr)) return false;
+	if (!Utils::Valid(entityListTypeData.exteriorCellArrayPtr2)) return false;
 
-	if (entityListTypeData.interiorListPtr != entityListTypeData.interiorListCheck)
+	if (entityListTypeData.interiorCellArrayPtr != entityListTypeData.interiorCellArrayPtr2)
 	{
 		return true;
 	}
@@ -5657,17 +5566,17 @@ bool ErectusMemory::Harvester()
 
 	if (useContainerLooter || useFloraHarvester)
 	{
-		auto temporaryEntitySize = 0;
-		auto* temporaryEntityList = GetEntityList(&temporaryEntitySize);
-		if (temporaryEntityList == nullptr) return false;
 
-		for (auto i = 0; i < temporaryEntitySize; i++)
+		auto temporaryEntityList = GetEntityList();
+		if (temporaryEntityList.empty()) return false;
+
+		for (auto item : temporaryEntityList)
 		{
-			if (!Utils::Valid(temporaryEntityList[i])) continue;
-			if (temporaryEntityList[i] == localPlayerPtr) continue;
+			if (!Utils::Valid(item)) continue;
+			if (item == localPlayerPtr) continue;
 
 			TesObjectRefr entityData{};
-			if (!Utils::Rpm(temporaryEntityList[i], &entityData, sizeof entityData)) continue;
+			if (!Utils::Rpm(item, &entityData, sizeof entityData)) continue;
 			if (!Utils::Valid(entityData.referencedItemPtr)) continue;
 
 			if (entityData.spawnFlag != 0x02)
@@ -5694,9 +5603,6 @@ bool ErectusMemory::Harvester()
 				}
 			}
 		}
-
-		delete[]temporaryEntityList;
-		temporaryEntityList = nullptr;
 	}
 
 	return true;

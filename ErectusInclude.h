@@ -303,18 +303,18 @@ namespace MemoryClasses {
 		DWORD formId;//0x7C
 	};
 
-	class EntityListType
+	class LoadedAreaManager
 	{
 	public:
 		BYTE padding0000[0x80];
-		DWORD64 interiorListPtr;//0x80
-		DWORD64 interiorListCheck;//0x88
+		DWORD64 interiorCellArrayPtr;//0x80
+		DWORD64 interiorCellArrayPtr2;//0x88
 		BYTE padding0090[0x18];
-		DWORD64 exteriorListPtr;//0xA8
-		DWORD64 exteriorListCheck;//0xB0
+		DWORD64 exteriorCellArrayPtr;//0xA8
+		DWORD64 exteriorCellArrayPtr2;//0xB0
 	};
 
-	class EntityList
+	class TesObjectCell
 	{
 	public:
 		BYTE padding0000[0x88];
@@ -1673,7 +1673,7 @@ private:
 	static DWORD64 GetCameraPtr();
 	static BYTE CheckHealthFlag(BYTE healthFlag);
 	static DWORD64 GetLocalPlayerPtr(bool checkMainMenu);
-	static DWORD64* GetEntityList(int* size);
+	static std::vector<DWORD64> GetEntityList();
 	static DWORD64* GetNpcList(int* size);
 	static DWORD64* GetRecipeArray(int* size);
 	static bool CheckWhitelistedFlux(TesItem referenceData);
@@ -1691,8 +1691,7 @@ private:
 	inline static int customEntityListSize = 0;
 	inline static int customEntityListCounter = 0;
 
-	inline static MemoryClasses::CustomEntry* bufferEntityList = nullptr;
-	inline static int bufferEntityListSize = 0;
+	inline static std::vector<MemoryClasses::CustomEntry> bufferEntityList;
 
 	inline static MemoryClasses::CustomEntry* customNpcList = nullptr;
 	inline static int customNpcListSize = 0;

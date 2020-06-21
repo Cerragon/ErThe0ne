@@ -142,7 +142,8 @@ void ErectusMain::RenderOverlayMenu() {
 
 void ErectusMain::RenderOverlay()
 {
-	if (!overlayActive || !overlayForeground)
+	//if (!overlayActive || !overlayForeground)
+	if(!overlayActive)
 		return;
 
 	Renderer::d3DxSprite->Begin(D3DXSPRITE_ALPHABLEND);
