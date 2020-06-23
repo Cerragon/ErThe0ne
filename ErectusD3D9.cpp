@@ -119,7 +119,7 @@ void Renderer::EndScene()
 
 bool Renderer::Init()
 {
-	ZeroMemory(&d3D9Parameters, sizeof(d3D9Parameters));
+	ZeroMemory(&d3D9Parameters, sizeof d3D9Parameters);
 	d3D9Parameters.BackBufferWidth = ErectusMain::windowSize[0];
 	d3D9Parameters.BackBufferHeight = ErectusMain::windowSize[1];
 	d3D9Parameters.BackBufferFormat = D3DFMT_A8R8G8B8;

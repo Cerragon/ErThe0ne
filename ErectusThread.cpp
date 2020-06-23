@@ -6,30 +6,11 @@ DWORD WINAPI ErectusThread::BufferEntityListThread(LPVOID lpParameter)
 
 	while (!threadDestructionState)
 	{
-		ErectusMemory::bufferEntityListCounter++;
-		if (ErectusMemory::bufferEntityListCounter > 60)
-		{
-			ErectusMemory::bufferEntityListCounter = 0;
-			if (!ErectusMemory::bufferEntityListUpdated)
-			{
-				ErectusMemory::bufferEntityListUpdated = ErectusMemory::UpdateBufferEntityList();
-				if (!ErectusMemory::bufferEntityListUpdated)
-				{
-					ErectusMemory::customEntityListDestructionQueued = true;
-				}
-			}
-		}
-
-		if (ErectusMemory::bufferEntityListDestructionQueued)
-		{
-			ErectusMemory::bufferEntityListDestructionQueued = false;
-			ErectusMemory::DeleteBufferEntityList();
-		}
-
-		std::this_thread::sleep_for(std::chrono::milliseconds(16));
+		ErectusMemory::UpdateBufferEntityList();
+		std::this_thread::sleep_for(std::chrono::milliseconds(60 * 16));
 	}
 
-	ErectusMemory::DeleteBufferEntityList();
+	ErectusMemory::entityDataBuffer.clear();
 
 	bufferEntityListThreadActive = false;
 
@@ -42,30 +23,11 @@ DWORD WINAPI ErectusThread::BufferNpcListThread(LPVOID lpParameter)
 
 	while (!threadDestructionState)
 	{
-		ErectusMemory::bufferNpcListCounter++;
-		if (ErectusMemory::bufferNpcListCounter > 60)
-		{
-			ErectusMemory::bufferNpcListCounter = 0;
-			if (!ErectusMemory::bufferNpcListUpdated)
-			{
-				ErectusMemory::bufferNpcListUpdated = ErectusMemory::UpdateBufferNpcList();
-				if (!ErectusMemory::bufferNpcListUpdated)
-				{
-					ErectusMemory::customNpcListDestructionQueued = true;
-				}
-			}
-		}
-
-		if (ErectusMemory::bufferNpcListDestructionQueued)
-		{
-			ErectusMemory::bufferNpcListDestructionQueued = false;
-			ErectusMemory::DeleteBufferNpcList();
-		}
-
-		std::this_thread::sleep_for(std::chrono::milliseconds(16));
+		ErectusMemory::UpdateBufferNpcList();
+		std::this_thread::sleep_for(std::chrono::milliseconds(60 * 16));
 	}
 
-	ErectusMemory::DeleteBufferNpcList();
+	ErectusMemory::npcDataBuffer.clear();
 
 	bufferNpcListThreadActive = false;
 
@@ -76,31 +38,12 @@ DWORD WINAPI ErectusThread::BufferPlayerListThread([[maybe_unused]] LPVOID lpPar
 {
 	while (!threadDestructionState)
 	{
-		ErectusMemory::bufferPlayerListCounter++;
-		if (ErectusMemory::bufferPlayerListCounter > 60)
-		{
-			ErectusMemory::bufferPlayerListCounter = 0;
-			if (!ErectusMemory::bufferPlayerListUpdated)
-			{
-				ErectusMemory::bufferPlayerListUpdated = ErectusMemory::UpdateBufferPlayerList();
-				if (!ErectusMemory::bufferPlayerListUpdated)
-				{
-					ErectusMemory::customPlayerListDestructionQueued = true;
-				}
-			}
-		}
-
-		if (ErectusMemory::bufferPlayerListDestructionQueued)
-		{
-			ErectusMemory::bufferPlayerListDestructionQueued = false;
-			ErectusMemory::DeleteBufferPlayerList();
-		}
-
-		std::this_thread::sleep_for(std::chrono::milliseconds(16));
+		ErectusMemory::UpdateBufferPlayerList();
+		std::this_thread::sleep_for(std::chrono::milliseconds(60 * 16));
 	}
 
-	ErectusMemory::DeleteBufferPlayerList();
-
+	ErectusMemory::playerDataBuffer.clear();
+	
 	bufferPlayerListThreadActive = false;
 
 	return 0xFEED;
@@ -115,17 +58,13 @@ DWORD WINAPI ErectusThread::WeaponEditorThread([[maybe_unused]] LPVOID lpParamet
 		{
 			ErectusMemory::oldWeaponListCounter = 0;
 			if (!ErectusMemory::oldWeaponListUpdated)
-			{
 				ErectusMemory::oldWeaponListUpdated = ErectusMemory::UpdateOldWeaponData();
-			}
 
 			if (ErectusMemory::oldWeaponListUpdated)
 			{
 				auto revertWeapons = true;
 				if (ErectusMemory::WeaponEditingEnabled())
-				{
 					revertWeapons = false;
-				}
 
 				for (auto i = 0; i < ErectusMemory::oldWeaponListSize; i++)
 				{
@@ -183,20 +122,15 @@ DWORD WINAPI ErectusThread::LockingThread([[maybe_unused]] LPVOID lpParameter)
 		{
 			favoritedWeaponCounter = 0;
 			if (ErectusIni::customTargetSettings.favoriteIndex < 12)
-			{
 				weaponId = ErectusMemory::GetFavoritedWeaponId(BYTE(ErectusIni::customTargetSettings.favoriteIndex));
-			}
 			else
-			{
 				weaponId = 0;
-			}
 		}
 
 
 		if (ErectusMain::overlayForeground && GetAsyncKeyState('T'))
 		{
 			ErectusMemory::targetLockingKeyPressed = true;
-
 			if (ErectusMemory::targetLockingCooldown > 0)
 				ErectusMemory::targetLockingCooldown--;
 		}
@@ -238,9 +172,7 @@ DWORD WINAPI ErectusThread::LockingThread([[maybe_unused]] LPVOID lpParameter)
 				}
 			}
 			else
-			{
 				meleeThreshold = 0;
-			}
 		}
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(16));
@@ -249,9 +181,7 @@ DWORD WINAPI ErectusThread::LockingThread([[maybe_unused]] LPVOID lpParameter)
 	ErectusMemory::DamageRedirection(&targetingPage, &targetingPageValid, true, false);
 
 	if (targetingPage)
-	{
 		Utils::FreeEx(targetingPage);
-	}
 
 	lockingThreadActive = false;
 
@@ -349,22 +279,14 @@ DWORD WINAPI ErectusThread::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 		if (opkPageValid)
 		{
 			if (opkPlayersToggle)
-			{
 				ErectusMemory::SetOpkData(opkPage, true, true);
-			}
 			else
-			{
 				ErectusMemory::SetOpkData(opkPage, true, false);
-			}
 
 			if (opkNpcsToggle)
-			{
 				ErectusMemory::SetOpkData(opkPage, false, true);
-			}
 			else
-			{
 				ErectusMemory::SetOpkData(opkPage, false, false);
-			}
 		}
 
 		if (ErectusIni::customNukeCodeSettings.automaticNukeCodes)
@@ -393,9 +315,7 @@ DWORD WINAPI ErectusThread::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 			}
 		}
 		else
-		{
 			lootScrapThreshold = 0;
-		}
 
 		if (ErectusIni::customItemLooterSettings.itemAutomaticLootingEnabled)
 		{
@@ -405,15 +325,11 @@ DWORD WINAPI ErectusThread::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 				lootItemsCounter = 0;
 				lootItemsThreshold = Utils::GetRangedInt(ErectusIni::customItemLooterSettings.itemAutomaticSpeedMin, ErectusIni::customItemLooterSettings.itemAutomaticSpeedMax);
 				if (ErectusMemory::CheckItemLooterSettings())
-				{
 					ErectusMemory::LootItems();
-				}
 			}
 		}
 		else
-		{
 			lootItemsThreshold = 0;
-		}
 
 		if (ErectusIni::customChargenSettings.chargenEditingEnabled)
 		{
@@ -433,9 +349,7 @@ DWORD WINAPI ErectusThread::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 	ErectusMemory::ActorValue(&actorValuePage, &actorValuePageValid, false);
 
 	if (actorValuePage)
-	{
 		Utils::FreeEx(actorValuePage);
-	}
 
 	ErectusMemory::SetActorValueMaximum(0x000002C2, 100.0f, static_cast<float>(ErectusIni::customLocalPlayerSettings.strength), false);
 	ErectusMemory::SetActorValueMaximum(0x000002C3, 100.0f, static_cast<float>(ErectusIni::customLocalPlayerSettings.perception), false);
@@ -448,16 +362,12 @@ DWORD WINAPI ErectusThread::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 	ErectusMemory::OnePositionKill(&opkPage, &opkPageValid, false);
 
 	if (opkPage)
-	{
 		Utils::FreeEx(opkPage);
-	}
 
 	ErectusMemory::FreezeActionPoints(&freezeApPage, &freezeApPageValid, false);
 
 	if (freezeApPage)
-	{
 		Utils::FreeEx(freezeApPage);
-	}
 
 	multihackThreadActive = false;
 

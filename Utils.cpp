@@ -1,36 +1,14 @@
 #include "ErectusInclude.h"
 
-int Utils::GetTextSize(const char *text)
-{
-	if (text == nullptr)
-	{
-		return 0;
-	}
-
-	for (auto i = 0; i < 0x7FFF; i++)
-	{
-		if (text[i] == '\0')
-		{
-			return i + 1;
-		}
-	}
-
-	return 0;
-}
-
 int Utils::GetTextLength(const char *text)
 {
 	if (text == nullptr)
-	{
 		return 0;
-	}
 
 	for (auto i = 0; i < 0x7FFF; i++)
 	{
 		if (text[i] == '\0')
-		{
 			return i;
-		}
 	}
 
 	return 0;
@@ -38,20 +16,26 @@ int Utils::GetTextLength(const char *text)
 
 void Utils::ValidateDword(DWORD *value, const DWORD min, const DWORD max)
 {
-	if (*value < min) *value = min;
-	else if (*value > max) *value = max;
+	if (*value < min)
+		*value = min;
+	else if (*value > max)
+		*value = max;
 }
 
 void Utils::ValidateInt(int *value, const int min, const int max)
 {
-	if (*value < min) *value = min;
-	else if (*value > max) *value = max;
+	if (*value < min)
+		*value = min;
+	else if (*value > max)
+		*value = max;
 }
 
 void Utils::ValidateFloat(float *value, const float min, const float max)
 {
-	if (*value < min) *value = min;
-	else if (*value > max) *value = max;
+	if (*value < min)
+		*value = min;
+	else if (*value > max)
+		*value = max;
 }
 
 void Utils::ValidateRgb(float *value)
@@ -72,7 +56,7 @@ void Utils::ValidateRgba(float *value)
 
 bool Utils::Valid(const DWORD64 ptr)
 {
-	if (ptr < 0x10000UL || ptr > 0xF000000000000ULL || (ptr & 1))
+	if (ptr < 0x10000UL || ptr > 0xF000000000000ULL || ptr & 1)
 		return false;
 	
 	return true;
@@ -101,26 +85,28 @@ bool Utils::FreeEx(const DWORD64 src)
 bool Utils::VtableSwap(const DWORD64 dst, DWORD64 src)
 {
 	DWORD oldProtect;
-	if (!VirtualProtectEx(ErectusProcess::handle, reinterpret_cast<void*>(dst), sizeof(DWORD64), PAGE_READWRITE, &oldProtect)) return false;
+	if (!VirtualProtectEx(ErectusProcess::handle, reinterpret_cast<void*>(dst), sizeof(DWORD64), PAGE_READWRITE, &oldProtect))
+		return false;
 
-	const auto result = Wpm(dst, &src, sizeof(src));
+	const auto result = Wpm(dst, &src, sizeof src);
 
 	DWORD buffer;
-	if (!VirtualProtectEx(ErectusProcess::handle, reinterpret_cast<void*>(dst), sizeof(DWORD64), oldProtect, &buffer)) return false;
+	if (!VirtualProtectEx(ErectusProcess::handle, reinterpret_cast<void*>(dst), sizeof(DWORD64), oldProtect, &buffer))
+		return false;
 
 	return result;
 }
 
 float Utils::GetDistance(float *a1, float *a2)
 {
-	return sqrtf(powf((a1[0] - a2[0]), 2.0f) + powf((a1[1] - a2[1]), 2.0f) + powf((a1[2] - a2[2]), 2.0f));
+	return sqrtf(powf(a1[0] - a2[0], 2.0f) + powf(a1[1] - a2[1], 2.0f) + powf(a1[2] - a2[2], 2.0f));
 }
 
 void Utils::ProjectView(float *dst, const float *forward, const float *origin, const float distance)
 {
-	dst[0] = origin[0] + (forward[0] * distance);
-	dst[1] = origin[1] + (forward[1] * distance);
-	dst[2] = origin[2] + (forward[2] * distance);
+	dst[0] = origin[0] + forward[0] * distance;
+	dst[1] = origin[1] + forward[1] * distance;
+	dst[2] = origin[2] + forward[2] * distance;
 }
 
 float Utils::RadiansToDegrees(const float radians)
@@ -135,7 +121,7 @@ float Utils::GetDegrees(float *src, float *forward, float *origin)
 	return RadiansToDegrees(sinf(GetDistance(src, buffer) / GetDistance(origin, buffer)));
 }
 
-bool Utils::Wts(const float *view, const float *position, float *screen)
+bool Utils::WorldToScreen(const float *view, const float *position, float *screen)
 {
 	float buffer[4];
 	buffer[0] = view[0] * position[0] + -view[1] * -position[1] + view[2] * position[2] + view[3];
@@ -156,9 +142,8 @@ bool Utils::Wts(const float *view, const float *position, float *screen)
 int Utils::GetRangedInt(const int min, const int max)
 {
 	if (min < max)
-	{
 		return rand() % (1 + (max - min)) + (max - (max - min));
-	}
+	
 	return min;
 }
 

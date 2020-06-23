@@ -1,8 +1,12 @@
+#include <unordered_set>
+
 #include "ErectusInclude.h"
+#include "fmt/format.h"
+
 using namespace MemoryClasses;
 using namespace SettingsClasses;
 
-DWORD knownRecipeArray[0x1000];
+
 
 DWORD legendaryFormIdArray[]
 {
@@ -55,7 +59,7 @@ DWORD64 ErectusMemory::GetAddress(DWORD formId)
 		crc = crc >> 0x8 ^ v5;
 	}
 
-	auto v6 = crc & (v2 - 1); // our formId's array index;
+	auto v6 = crc & v2 - 1; // our formId's array index;
 
 	DWORD64 v7; //array of refs to items in the world(?), each item of the array is: { formid (dword64!!!), ptr to object (dword64), item index/key in the array (dword64) }
 
@@ -207,7 +211,7 @@ std::vector<DWORD64> ErectusMemory::GetEntityList()
 		if (i % 2 == 0)
 			continue;
 
-		TesObjectCell cell;
+		TesObjectCell cell{};
 		if (!Utils::Rpm(cellPtrArray[i], &cell, sizeof TesObjectCell))
 			continue;
 		if (!Utils::Valid(cell.listPtr) || !cell.listSize)
@@ -223,17 +227,19 @@ std::vector<DWORD64> ErectusMemory::GetEntityList()
 	return  result;
 }
 
-DWORD64* ErectusMemory::GetNpcList(int* size)
+std::vector<DWORD64> ErectusMemory::GetNpcPtrList()
 {
+	std::vector<DWORD64> result;
+
 	DWORD64 processListsPtr;
 	if (!Utils::Rpm(ErectusProcess::exe + OFFSET_NPC_LIST, &processListsPtr, sizeof processListsPtr))
-		return nullptr;
+		return result;
 	if (!Utils::Valid(processListsPtr))
-		return nullptr;
+		return result;
 
 	ProcessLists processListsData{};
 	if (!Utils::Rpm(processListsPtr, &processListsData, sizeof processListsData))
-		return nullptr;
+		return result;
 
 	auto idArraySize = 0;
 
@@ -252,14 +258,12 @@ DWORD64* ErectusMemory::GetNpcList(int* size)
 	}
 
 	if (!idArraySize)
-	{
-		return nullptr;
-	}
+		return result;
 
 	const auto allocSize = sizeof(ExecutionList) + idArraySize * sizeof(DWORD64) * 2;
 	const auto allocAddress = Utils::AllocEx(allocSize);
 	if (allocAddress == 0)
-		return nullptr;
+		return result;
 
 	ExecutionList executionListData;
 	executionListData.function = ErectusProcess::exe + OFFSET_NPC_PTR_FUNCTION;
@@ -301,7 +305,7 @@ DWORD64* ErectusMemory::GetNpcList(int* size)
 	if (!written)
 	{
 		Utils::FreeEx(allocAddress);
-		return nullptr;
+		return result;
 	}
 
 	const auto paramAddress = allocAddress + sizeof ExecutionList::ASM;
@@ -311,7 +315,7 @@ DWORD64* ErectusMemory::GetNpcList(int* size)
 	if (thread == nullptr)
 	{
 		Utils::FreeEx(allocAddress);
-		return nullptr;
+		return result;
 	}
 
 	const auto threadResult = WaitForSingleObject(thread, 3000);
@@ -319,56 +323,51 @@ DWORD64* ErectusMemory::GetNpcList(int* size)
 
 	if (threadResult == WAIT_TIMEOUT)
 	{
-		return nullptr;
+		return result;
 	}
 
 	auto* executedList = new DWORD64[idArraySize];
-	if (!Utils::Rpm(allocAddress + sizeof(ExecutionList) + idArraySize * sizeof(DWORD64), &*executedList,
-		idArraySize * sizeof(DWORD64)))
+	if (!Utils::Rpm(allocAddress + sizeof(ExecutionList) + idArraySize * sizeof(DWORD64), &*executedList, idArraySize * sizeof(DWORD64)))
 	{
 		delete[]executedList;
 		executedList = nullptr;
 
 		Utils::FreeEx(allocAddress);
-		return nullptr;
+		return result;
 	}
 
-	Utils::FreeEx(allocAddress);
+	result.assign(executedList, executedList + idArraySize);
 
-	*size = idArraySize;
-	return executedList;
+	Utils::FreeEx(allocAddress);
+	delete[] executedList;
+	return result;
 }
 
-DWORD64* ErectusMemory::GetRecipeArray(int* size)
+std::vector<DWORD64> ErectusMemory::GetRecipeArray()
 {
+	std::vector<DWORD64> result;
+
 	DWORD64 dataHandlerPtr;
 	if (!Utils::Rpm(ErectusProcess::exe + OFFSET_DATA_HANDLER, &dataHandlerPtr, sizeof dataHandlerPtr))
-		return nullptr;
+		return result;
 	if (!Utils::Valid(dataHandlerPtr))
-		return nullptr;
+		return result;
 
 	ReferenceList omodList{};
 	if (!Utils::Rpm(dataHandlerPtr + 0xF70, &omodList, sizeof omodList))
-		return nullptr;
+		return result;
 	if (!Utils::Valid(omodList.arrayPtr) || !omodList.arraySize || omodList.arraySize > 0x7FFF)
-		return nullptr;
+		return result;
 
 	auto* omodPtrArray = new DWORD64[omodList.arraySize];
 	if (!Utils::Rpm(omodList.arrayPtr, &*omodPtrArray, omodList.arraySize * sizeof(DWORD64)))
 	{
 		delete[]omodPtrArray;
 		omodPtrArray = nullptr;
-		return nullptr;
+		return result;
 	}
 
-	auto bufferIndex = 0;
-	auto* bufferArray = new DWORD64[omodList.arraySize];
-	memset(bufferArray, 0x00, omodList.arraySize * sizeof(DWORD64));
-
-	auto uniqueArrayIndex = 0;
-	auto* uniqueArray = new DWORD64[omodList.arraySize];
-	memset(uniqueArray, 0x00, omodList.arraySize * sizeof(DWORD64));
-
+	std::unordered_set<DWORD64> uniqueNamePtrs;
 	for (auto i = 0; i < omodList.arraySize; i++)
 	{
 		if (!Utils::Valid(omodPtrArray[i]))
@@ -380,55 +379,19 @@ DWORD64* ErectusMemory::GetRecipeArray(int* size)
 		if (referenceData.omodFlag != 0x4)
 			continue;
 
-		const auto recipePtr = referenceData.namePtr00B0;
-		if (!Utils::Valid(recipePtr))
+
+		if (!Utils::Valid(referenceData.namePtr00B0))
 			continue;
 
-		auto uniquePtr = true;
-		for (auto c = 0; c < uniqueArrayIndex; c++)
-		{
-			if (uniqueArray[c] == recipePtr)
-			{
-				uniquePtr = false;
-				break;
-			}
-		}
-
-		if (!uniquePtr)
-			continue;
-
-		uniqueArray[uniqueArrayIndex] = recipePtr;
-		uniqueArrayIndex++;
-
-		bufferArray[bufferIndex] = omodPtrArray[i];
-		bufferIndex++;
+		auto r = uniqueNamePtrs.insert(referenceData.namePtr00B0);
+		if (r.second) //not inserted -> not unique
+			result.push_back(omodPtrArray[i]);
 	}
-
-	delete[]uniqueArray;
-	uniqueArray = nullptr;
 
 	delete[]omodPtrArray;
 	omodPtrArray = nullptr;
 
-	auto recipeArraySize = 0;
-	DWORD64* recipeArray = nullptr;
-
-	if (bufferIndex)
-	{
-		recipeArraySize = bufferIndex;
-		recipeArray = new DWORD64[recipeArraySize];
-		memset(recipeArray, 0x00, recipeArraySize * sizeof(DWORD64));
-		for (auto i = 0; i < recipeArraySize; i++)
-		{
-			recipeArray[i] = bufferArray[i];
-		}
-	}
-
-	delete[]bufferArray;
-	bufferArray = nullptr;
-
-	*size = recipeArraySize;
-	return recipeArray;
+	return result;
 }
 
 bool ErectusMemory::UpdateKnownRecipes()
@@ -437,34 +400,31 @@ bool ErectusMemory::UpdateKnownRecipes()
 	if (!Utils::Valid(localPlayerPtr))
 		return false;
 
-	auto recipeArraySize = 0;
-	auto* recipeArray = GetRecipeArray(&recipeArraySize);
-	if (recipeArray == nullptr)
+	auto recipes = GetRecipeArray();
+	if (recipes.empty())
 		return false;
 
-	const auto allocSize = sizeof(ExecutionPlan) + (recipeArraySize * sizeof(DWORD64) + recipeArraySize * sizeof(bool));
+	const auto allocSize = sizeof(ExecutionPlan) + (recipes.size() * sizeof(DWORD64) + recipes.size() * sizeof(bool));
 	const auto allocAddress = Utils::AllocEx(allocSize);
 	if (allocAddress == 0)
 	{
-		delete[]recipeArray;
-		recipeArray = nullptr;
 		return false;
 	}
 
 	ExecutionPlan executionPlanData;
 	executionPlanData.function = allocAddress + sizeof ExecutionPlan::ASM;
 	executionPlanData.localPlayerPtr = localPlayerPtr;
-	executionPlanData.recipeArraySize = recipeArraySize;
+	executionPlanData.recipeArraySize = recipes.size();
 	executionPlanData.recipeArray = allocAddress + sizeof(ExecutionPlan);
-	executionPlanData.learnedRecipeArray = allocAddress + sizeof(ExecutionPlan) + recipeArraySize * sizeof(DWORD64);
+	executionPlanData.learnedRecipeArray = allocAddress + sizeof(ExecutionPlan) + recipes.size() * sizeof(DWORD64);
 
 	auto* pageData = new BYTE[allocSize];
 	memset(pageData, 0x00, allocSize);
 	memcpy(pageData, &executionPlanData, sizeof executionPlanData);
 
-	for (auto i = 0; i < recipeArraySize; i++)
+	for (auto i = 0; i < recipes.size(); i++)
 	{
-		memcpy(&pageData[sizeof(ExecutionPlan) + i * sizeof(DWORD64)], &recipeArray[i], sizeof(DWORD64));
+		memcpy(&pageData[sizeof(ExecutionPlan) + i * sizeof(DWORD64)], &recipes[i], sizeof(DWORD64));
 	}
 
 	const auto written = Utils::Wpm(allocAddress, &*pageData, allocSize);
@@ -474,9 +434,6 @@ bool ErectusMemory::UpdateKnownRecipes()
 
 	if (!written)
 	{
-		delete[]recipeArray;
-		recipeArray = nullptr;
-
 		Utils::FreeEx(allocAddress);
 		return false;
 	}
@@ -487,9 +444,6 @@ bool ErectusMemory::UpdateKnownRecipes()
 
 	if (thread == nullptr)
 	{
-		delete[]recipeArray;
-		recipeArray = nullptr;
-
 		Utils::FreeEx(allocAddress);
 		return false;
 	}
@@ -499,18 +453,12 @@ bool ErectusMemory::UpdateKnownRecipes()
 
 	if (threadResult == WAIT_TIMEOUT)
 	{
-		delete[]recipeArray;
-		recipeArray = nullptr;
 		return false;
 	}
 
-	auto* executedPlan = new bool[recipeArraySize];
-	if (!Utils::Rpm(allocAddress + sizeof(ExecutionPlan) + recipeArraySize * sizeof(DWORD64), &*executedPlan,
-		recipeArraySize * sizeof(bool)))
+	auto* executedPlan = new bool[recipes.size()];
+	if (!Utils::Rpm(allocAddress + sizeof(ExecutionPlan) + recipes.size() * sizeof(DWORD64), &*executedPlan, recipes.size() * sizeof(bool)))
 	{
-		delete[]recipeArray;
-		recipeArray = nullptr;
-
 		delete[]executedPlan;
 		executedPlan = nullptr;
 
@@ -518,50 +466,38 @@ bool ErectusMemory::UpdateKnownRecipes()
 		return false;
 	}
 
-	auto knownRecipeIndex = 0;
-
-	for (auto i = 0; i < recipeArraySize; i++)
+	for (auto i = 0; i < recipes.size(); i++)
 	{
 		if (executedPlan[i])
 		{
 			DWORD64 buffer;
-			if (Utils::Rpm(recipeArray[i] + 0xB0, &buffer, sizeof buffer))
+			if (Utils::Rpm(recipes.at(i) + 0xB0, &buffer, sizeof buffer))
 			{
 				if (Utils::Valid(buffer))
 				{
 					DWORD formId;
 					if (Utils::Rpm(buffer + 0x20, &formId, sizeof formId))
 					{
-						knownRecipeArray[knownRecipeIndex] = formId;
-						knownRecipeIndex++;
+						knownRecipes.insert(formId);
 					}
 				}
 			}
 		}
 	}
-
-	knownRecipeArraySize = knownRecipeIndex;
-
-	delete[]recipeArray;
-	recipeArray = nullptr;
-
 	delete[]executedPlan;
 	executedPlan = nullptr;
-
 	Utils::FreeEx(allocAddress);
+
 	return true;
 }
 
 BYTE ErectusMemory::IsKnownRecipe(const DWORD formId)
 {
-	if (!knownRecipeArraySize || knownRecipeArraySize >= 0x1000)
+	if (knownRecipes.empty())
 		return 0x00;
 
-	for (auto i = 0; i < knownRecipeArraySize; i++)
-	{
-		if (formId == knownRecipeArray[i])
-			return 0x01;
-	}
+	if (knownRecipes.count(formId))
+		return 0x01;
 
 	return 0x02;
 }
@@ -701,8 +637,7 @@ bool ErectusMemory::CheckComponentArray(const TesItem referenceData)
 		return false;
 
 	auto* componentArray = new Component[referenceData.componentArraySize];
-	if (!Utils::Rpm(referenceData.componentArrayPtr, &*componentArray,
-		referenceData.componentArraySize * sizeof(Component)))
+	if (!Utils::Rpm(referenceData.componentArrayPtr, &*componentArray, referenceData.componentArraySize * sizeof(Component)))
 	{
 		delete[]componentArray;
 		componentArray = nullptr;
@@ -719,8 +654,7 @@ bool ErectusMemory::CheckComponentArray(const TesItem referenceData)
 		TesItem componentData{};
 		if (!Utils::Rpm(componentArray[i].componentReferencePtr, &componentData, sizeof componentData))
 			continue;
-		if (CheckFormIdArray(componentData.formId, ErectusIni::customScrapLooterSettings.scrapEnabledList,
-			ErectusIni::customScrapLooterSettings.scrapFormIdList, 40))
+		if (CheckFormIdArray(componentData.formId, ErectusIni::customScrapLooterSettings.scrapEnabledList, ErectusIni::customScrapLooterSettings.scrapFormIdList, 40))
 		{
 			delete[]componentArray;
 			componentArray = nullptr;
@@ -838,8 +772,7 @@ bool ErectusMemory::FloraLeveledListValid(const LeveledList leveledListData)
 		return false;
 
 	auto* listEntryData = new ListEntry[leveledListData.listEntryArraySize];
-	if (!Utils::Rpm(leveledListData.listEntryArrayPtr, &*listEntryData,
-		leveledListData.listEntryArraySize * sizeof(ListEntry)))
+	if (!Utils::Rpm(leveledListData.listEntryArrayPtr, &*listEntryData, leveledListData.listEntryArraySize * sizeof(ListEntry)))
 	{
 		delete[]listEntryData;
 		listEntryData = nullptr;
@@ -854,7 +787,7 @@ bool ErectusMemory::FloraLeveledListValid(const LeveledList leveledListData)
 		TesItem referenceData{};
 		if (!Utils::Rpm(listEntryData[i].referencePtr, &referenceData, sizeof referenceData))
 			continue;
-		if (referenceData.formType == static_cast<BYTE>(FormTypes::TESLevItem))
+		if (referenceData.formType == static_cast<BYTE>(FormTypes::TesLevItem))
 		{
 			LeveledList recursiveLeveledListData{};
 			memcpy(&recursiveLeveledListData, &referenceData, sizeof recursiveLeveledListData);
@@ -889,7 +822,7 @@ bool ErectusMemory::FloraValid(const TesItem referenceData)
 	TesItem harvestedData{};
 	if (!Utils::Rpm(referenceData.harvestedPtr, &harvestedData, sizeof harvestedData))
 		return false;
-	if (referenceData.formType == static_cast<BYTE>(FormTypes::TESLevItem))
+	if (referenceData.formType == static_cast<BYTE>(FormTypes::TesLevItem))
 	{
 		LeveledList leveledListData{};
 		memcpy(&leveledListData, &harvestedData, sizeof leveledListData);
@@ -998,13 +931,13 @@ bool ErectusMemory::CheckReferenceItem(const TesItem referenceData)
 {
 	switch (referenceData.formType)
 	{
-	case (static_cast<BYTE>(FormTypes::TESUtilityItem)):
-	case (static_cast<BYTE>(FormTypes::BGSNote)):
-	case (static_cast<BYTE>(FormTypes::TESKey)):
-	case (static_cast<BYTE>(FormTypes::CurrencyObject)):
-		return true;
-	default:
-		return false;
+		case static_cast<BYTE>(FormTypes::TesUtilityItem) :
+			case static_cast<BYTE>(FormTypes::BgsNote) :
+			case static_cast<BYTE>(FormTypes::TesKey) :
+			case static_cast<BYTE>(FormTypes::CurrencyObject) :
+			return true;
+			default:
+				return false;
 	}
 }
 
@@ -1013,203 +946,203 @@ void ErectusMemory::GetCustomEntityData(const TesItem referenceData, DWORD64* en
 {
 	switch (referenceData.formType)
 	{
-	case (static_cast<byte>(FormTypes::TESNPC)):
-		*entityFlag |= CUSTOM_ENTRY_NPC;
-		*entityNamePtr = referenceData.namePtr0160;
-		*enabledDistance = ErectusIni::npcSettings.enabledDistance;
-		break;
-	case (static_cast<byte>(FormTypes::TesObjectCONT)):
-		*entityFlag |= CUSTOM_ENTRY_CONTAINER;
-		*entityNamePtr = referenceData.namePtr00B0;
-		*enabledDistance = ErectusIni::containerSettings.enabledDistance;
-		if (CheckFormIdArray(referenceData.formId, ErectusIni::containerSettings.whitelisted, ErectusIni::containerSettings.whitelist, 32))
-			*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-		else if (!ErectusIni::containerSettings.enabled)
-			*entityFlag |= CUSTOM_ENTRY_INVALID;
-		break;
-	case (static_cast<byte>(FormTypes::TesObjectMISC)):
-		*entityFlag |= CUSTOM_ENTRY_VALID_ITEM;
-		*entityNamePtr = referenceData.namePtr0098;
-		if (CheckReferenceJunk(referenceData))
-		{
-			*entityFlag |= CUSTOM_ENTRY_JUNK;
-			*enabledDistance = ErectusIni::junkSettings.enabledDistance;
-			if (checkScrap)
-			{
-				if (CheckComponentArray(referenceData))
-					*entityFlag |= CUSTOM_ENTRY_VALID_SCRAP;
-				else
-					*entityFlag |= CUSTOM_ENTRY_INVALID;
-			}
-			else
-			{
-				if (CheckFormIdArray(referenceData.formId, ErectusIni::junkSettings.whitelisted, ErectusIni::junkSettings.whitelist, 32))
+		case static_cast<byte>(FormTypes::TesNpc) :
+			*entityFlag |= CUSTOM_ENTRY_NPC;
+			*entityNamePtr = referenceData.namePtr0160;
+			*enabledDistance = ErectusIni::npcSettings.enabledDistance;
+			break;
+			case static_cast<byte>(FormTypes::TesObjectCont) :
+				*entityFlag |= CUSTOM_ENTRY_CONTAINER;
+				*entityNamePtr = referenceData.namePtr00B0;
+				*enabledDistance = ErectusIni::containerSettings.enabledDistance;
+				if (CheckFormIdArray(referenceData.formId, ErectusIni::containerSettings.whitelisted, ErectusIni::containerSettings.whitelist, 32))
 					*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-				else if (!ErectusIni::junkSettings.enabled)
+				else if (!ErectusIni::containerSettings.enabled)
 					*entityFlag |= CUSTOM_ENTRY_INVALID;
-			}
-		}
-		else if (CheckReferenceMod(referenceData))
-		{
-			*entityFlag |= CUSTOM_ENTRY_MOD;
-			*entityFlag |= CUSTOM_ENTRY_ITEM;
-			*enabledDistance = ErectusIni::itemSettings.enabledDistance;
-			if (CheckFormIdArray(referenceData.formId, ErectusIni::itemSettings.whitelisted, ErectusIni::itemSettings.whitelist, 32))
-				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-			else if (!ErectusIni::itemSettings.enabled)
-				*entityFlag |= CUSTOM_ENTRY_INVALID;
-		}
-		else if (CheckReferenceKeywordMisc(referenceData, 0x00135E6C))
-		{
-			*entityFlag |= CUSTOM_ENTRY_BOBBLEHEAD;
-			*enabledDistance = ErectusIni::bobbleheadSettings.enabledDistance;
-			if (CheckFormIdArray(referenceData.formId, ErectusIni::bobbleheadSettings.whitelisted, ErectusIni::bobbleheadSettings.whitelist, 32))
-				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-			else if (!ErectusIni::bobbleheadSettings.enabled)
-				*entityFlag |= CUSTOM_ENTRY_INVALID;
-		}
-		else
-		{
-			*entityFlag |= CUSTOM_ENTRY_MISC;
-			*entityFlag |= CUSTOM_ENTRY_ITEM;
-			*enabledDistance = ErectusIni::itemSettings.enabledDistance;
-			if (CheckFormIdArray(referenceData.formId, ErectusIni::itemSettings.whitelisted, ErectusIni::itemSettings.whitelist, 32))
-				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-			else if (!ErectusIni::itemSettings.enabled)
-				*entityFlag |= CUSTOM_ENTRY_INVALID;
-		}
-		break;
-	case (static_cast<byte>(FormTypes::TesObjectBOOK)):
-		*entityFlag |= CUSTOM_ENTRY_VALID_ITEM;
-		*entityNamePtr = referenceData.namePtr0098;
-		if (CheckReferencePlan(referenceData))
-		{
-			*entityFlag |= CUSTOM_ENTRY_PLAN;
-			*enabledDistance = ErectusIni::planSettings.enabledDistance;
-			switch (IsKnownRecipe(referenceData.formId))
-			{
-			case 0x01:
-				*entityFlag |= CUSTOM_ENTRY_KNOWN_RECIPE;
 				break;
-			case 0x02:
-				*entityFlag |= CUSTOM_ENTRY_UNKNOWN_RECIPE;
-				break;
-			default:
-				*entityFlag |= CUSTOM_ENTRY_FAILED_RECIPE;
-				break;
-			}
-			if (CheckFormIdArray(referenceData.formId, ErectusIni::planSettings.whitelisted, ErectusIni::planSettings.whitelist, 32))
-				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-			else if (!ErectusIni::planSettings.enabled)
-				*entityFlag |= CUSTOM_ENTRY_INVALID;
-		}
-		else if (CheckReferenceKeywordBook(referenceData, 0x001D4A70))
-		{
-			*entityFlag |= CUSTOM_ENTRY_MAGAZINE;
-			*enabledDistance = ErectusIni::magazineSettings.enabledDistance;
-			if (CheckFormIdArray(referenceData.formId, ErectusIni::magazineSettings.whitelisted, ErectusIni::magazineSettings.whitelist, 32))
-				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-			else if (!ErectusIni::magazineSettings.enabled)
-				*entityFlag |= CUSTOM_ENTRY_INVALID;
-		}
-		else
-		{
-			*entityFlag |= CUSTOM_ENTRY_ITEM;
-			*enabledDistance = ErectusIni::itemSettings.enabledDistance;
-			if (IsTreasureMap(referenceData.formId))
-				*entityFlag |= CUSTOM_ENTRY_TREASURE_MAP;
-			if (CheckFormIdArray(referenceData.formId, ErectusIni::itemSettings.whitelisted, ErectusIni::itemSettings.whitelist, 32))
-				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-			else if (!ErectusIni::itemSettings.enabled)
-				*entityFlag |= CUSTOM_ENTRY_INVALID;
-		}
-		break;
-	case (static_cast<byte>(FormTypes::TesFlora)):
-		*entityFlag |= CUSTOM_ENTRY_FLORA;
-		*entityNamePtr = referenceData.namePtr0098;
-		*enabledDistance = ErectusIni::floraSettings.enabledDistance;
-		if (checkIngredient)
-		{
-			if (FloraValid(referenceData))
-				*entityFlag |= CUSTOM_ENTRY_VALID_INGREDIENT;
-			else
-				*entityFlag |= CUSTOM_ENTRY_INVALID;
-		}
-		else
-		{
-			if (CheckWhitelistedFlux(referenceData) || CheckFormIdArray(referenceData.formId, ErectusIni::floraSettings.whitelisted, ErectusIni::floraSettings.whitelist, 32))
-				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-			else if (!ErectusIni::floraSettings.enabled)
-				*entityFlag |= CUSTOM_ENTRY_INVALID;
-		}
-		break;
-	case (static_cast<byte>(FormTypes::TesObjectWEAP)):
-		*entityFlag |= CUSTOM_ENTRY_WEAPON;
-		*entityFlag |= CUSTOM_ENTRY_ITEM;
-		*entityFlag |= CUSTOM_ENTRY_VALID_ITEM;
-		*entityNamePtr = referenceData.namePtr0098;
-		*enabledDistance = ErectusIni::itemSettings.enabledDistance;
-		if (CheckFormIdArray(referenceData.formId, ErectusIni::itemSettings.whitelisted, ErectusIni::itemSettings.whitelist, 32))
-			*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-		else if (!ErectusIni::itemSettings.enabled)
-			*entityFlag |= CUSTOM_ENTRY_INVALID;
-		break;
-	case (static_cast<byte>(FormTypes::TesObjectARMO)):
-		*entityFlag |= CUSTOM_ENTRY_ARMOR;
-		*entityFlag |= CUSTOM_ENTRY_ITEM;
-		*entityFlag |= CUSTOM_ENTRY_VALID_ITEM;
-		*entityNamePtr = referenceData.namePtr0098;
-		*enabledDistance = ErectusIni::itemSettings.enabledDistance;
-		if (CheckFormIdArray(referenceData.formId, ErectusIni::itemSettings.whitelisted, ErectusIni::itemSettings.whitelist, 32))
-			*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-		else if (!ErectusIni::itemSettings.enabled)
-			*entityFlag |= CUSTOM_ENTRY_INVALID;
-		break;
-	case (static_cast<byte>(FormTypes::TesAmmo)):
-		*entityFlag |= CUSTOM_ENTRY_AMMO;
-		*entityFlag |= CUSTOM_ENTRY_ITEM;
-		*entityFlag |= CUSTOM_ENTRY_VALID_ITEM;
-		*entityNamePtr = referenceData.namePtr0098;
-		*enabledDistance = ErectusIni::itemSettings.enabledDistance;
-		if (CheckFormIdArray(referenceData.formId, ErectusIni::itemSettings.whitelisted, ErectusIni::itemSettings.whitelist, 32))
-			*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-		else if (!ErectusIni::itemSettings.enabled)
-			*entityFlag |= CUSTOM_ENTRY_INVALID;
-		break;
-	case (static_cast<byte>(FormTypes::AlchemyItem)):
-		*entityFlag |= CUSTOM_ENTRY_AID;
-		*entityFlag |= CUSTOM_ENTRY_ITEM;
-		*entityFlag |= CUSTOM_ENTRY_VALID_ITEM;
-		*entityNamePtr = referenceData.namePtr0098;
-		*enabledDistance = ErectusIni::itemSettings.enabledDistance;
-		if (CheckFormIdArray(referenceData.formId, ErectusIni::itemSettings.whitelisted, ErectusIni::itemSettings.whitelist, 32))
-			*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-		else if (!ErectusIni::itemSettings.enabled)
-			*entityFlag |= CUSTOM_ENTRY_INVALID;
-		break;
-	default:
-		if (CheckReferenceItem(referenceData))
-		{
-			*entityFlag |= CUSTOM_ENTRY_ITEM;
-			*entityFlag |= CUSTOM_ENTRY_VALID_ITEM;
-			*entityNamePtr = referenceData.namePtr0098;
-			*enabledDistance = ErectusIni::itemSettings.enabledDistance;
-			if (CheckFormIdArray(referenceData.formId, ErectusIni::itemSettings.whitelisted, ErectusIni::itemSettings.whitelist, 32))
-				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-			else if (!ErectusIni::itemSettings.enabled)
-				*entityFlag |= CUSTOM_ENTRY_INVALID;
-		}
-		else
-		{
-			*entityFlag |= CUSTOM_ENTRY_ENTITY;
-			*entityNamePtr = 0;
-			*enabledDistance = ErectusIni::entitySettings.enabledDistance;
-			if (CheckFormIdArray(referenceData.formId, ErectusIni::entitySettings.whitelisted, ErectusIni::entitySettings.whitelist, 32))
-				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-			else if (!ErectusIni::entitySettings.enabled || !ErectusIni::entitySettings.drawUnnamed)
-				*entityFlag |= CUSTOM_ENTRY_INVALID;
-		}
-		break;
+				case static_cast<byte>(FormTypes::TesObjectMisc) :
+					*entityFlag |= CUSTOM_ENTRY_VALID_ITEM;
+					*entityNamePtr = referenceData.namePtr0098;
+					if (CheckReferenceJunk(referenceData))
+					{
+						*entityFlag |= CUSTOM_ENTRY_JUNK;
+						*enabledDistance = ErectusIni::junkSettings.enabledDistance;
+						if (checkScrap)
+						{
+							if (CheckComponentArray(referenceData))
+								*entityFlag |= CUSTOM_ENTRY_VALID_SCRAP;
+							else
+								*entityFlag |= CUSTOM_ENTRY_INVALID;
+						}
+						else
+						{
+							if (CheckFormIdArray(referenceData.formId, ErectusIni::junkSettings.whitelisted, ErectusIni::junkSettings.whitelist, 32))
+								*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
+							else if (!ErectusIni::junkSettings.enabled)
+								*entityFlag |= CUSTOM_ENTRY_INVALID;
+						}
+					}
+					else if (CheckReferenceMod(referenceData))
+					{
+						*entityFlag |= CUSTOM_ENTRY_MOD;
+						*entityFlag |= CUSTOM_ENTRY_ITEM;
+						*enabledDistance = ErectusIni::itemSettings.enabledDistance;
+						if (CheckFormIdArray(referenceData.formId, ErectusIni::itemSettings.whitelisted, ErectusIni::itemSettings.whitelist, 32))
+							*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
+						else if (!ErectusIni::itemSettings.enabled)
+							*entityFlag |= CUSTOM_ENTRY_INVALID;
+					}
+					else if (CheckReferenceKeywordMisc(referenceData, 0x00135E6C))
+					{
+						*entityFlag |= CUSTOM_ENTRY_BOBBLEHEAD;
+						*enabledDistance = ErectusIni::bobbleheadSettings.enabledDistance;
+						if (CheckFormIdArray(referenceData.formId, ErectusIni::bobbleheadSettings.whitelisted, ErectusIni::bobbleheadSettings.whitelist, 32))
+							*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
+						else if (!ErectusIni::bobbleheadSettings.enabled)
+							*entityFlag |= CUSTOM_ENTRY_INVALID;
+					}
+					else
+					{
+						*entityFlag |= CUSTOM_ENTRY_MISC;
+						*entityFlag |= CUSTOM_ENTRY_ITEM;
+						*enabledDistance = ErectusIni::itemSettings.enabledDistance;
+						if (CheckFormIdArray(referenceData.formId, ErectusIni::itemSettings.whitelisted, ErectusIni::itemSettings.whitelist, 32))
+							*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
+						else if (!ErectusIni::itemSettings.enabled)
+							*entityFlag |= CUSTOM_ENTRY_INVALID;
+					}
+					break;
+					case static_cast<byte>(FormTypes::TesObjectBook) :
+						*entityFlag |= CUSTOM_ENTRY_VALID_ITEM;
+						*entityNamePtr = referenceData.namePtr0098;
+						if (CheckReferencePlan(referenceData))
+						{
+							*entityFlag |= CUSTOM_ENTRY_PLAN;
+							*enabledDistance = ErectusIni::planSettings.enabledDistance;
+							switch (IsKnownRecipe(referenceData.formId))
+							{
+							case 0x01:
+								*entityFlag |= CUSTOM_ENTRY_KNOWN_RECIPE;
+								break;
+							case 0x02:
+								*entityFlag |= CUSTOM_ENTRY_UNKNOWN_RECIPE;
+								break;
+							default:
+								*entityFlag |= CUSTOM_ENTRY_FAILED_RECIPE;
+								break;
+							}
+							if (CheckFormIdArray(referenceData.formId, ErectusIni::planSettings.whitelisted, ErectusIni::planSettings.whitelist, 32))
+								*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
+							else if (!ErectusIni::planSettings.enabled)
+								*entityFlag |= CUSTOM_ENTRY_INVALID;
+						}
+						else if (CheckReferenceKeywordBook(referenceData, 0x001D4A70))
+						{
+							*entityFlag |= CUSTOM_ENTRY_MAGAZINE;
+							*enabledDistance = ErectusIni::magazineSettings.enabledDistance;
+							if (CheckFormIdArray(referenceData.formId, ErectusIni::magazineSettings.whitelisted, ErectusIni::magazineSettings.whitelist, 32))
+								*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
+							else if (!ErectusIni::magazineSettings.enabled)
+								*entityFlag |= CUSTOM_ENTRY_INVALID;
+						}
+						else
+						{
+							*entityFlag |= CUSTOM_ENTRY_ITEM;
+							*enabledDistance = ErectusIni::itemSettings.enabledDistance;
+							if (IsTreasureMap(referenceData.formId))
+								*entityFlag |= CUSTOM_ENTRY_TREASURE_MAP;
+							if (CheckFormIdArray(referenceData.formId, ErectusIni::itemSettings.whitelisted, ErectusIni::itemSettings.whitelist, 32))
+								*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
+							else if (!ErectusIni::itemSettings.enabled)
+								*entityFlag |= CUSTOM_ENTRY_INVALID;
+						}
+						break;
+						case static_cast<byte>(FormTypes::TesFlora) :
+							*entityFlag |= CUSTOM_ENTRY_FLORA;
+							*entityNamePtr = referenceData.namePtr0098;
+							*enabledDistance = ErectusIni::floraSettings.enabledDistance;
+							if (checkIngredient)
+							{
+								if (FloraValid(referenceData))
+									*entityFlag |= CUSTOM_ENTRY_VALID_INGREDIENT;
+								else
+									*entityFlag |= CUSTOM_ENTRY_INVALID;
+							}
+							else
+							{
+								if (CheckWhitelistedFlux(referenceData) || CheckFormIdArray(referenceData.formId, ErectusIni::floraSettings.whitelisted, ErectusIni::floraSettings.whitelist, 32))
+									*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
+								else if (!ErectusIni::floraSettings.enabled)
+									*entityFlag |= CUSTOM_ENTRY_INVALID;
+							}
+							break;
+							case static_cast<byte>(FormTypes::TesObjectWeap) :
+								*entityFlag |= CUSTOM_ENTRY_WEAPON;
+								*entityFlag |= CUSTOM_ENTRY_ITEM;
+								*entityFlag |= CUSTOM_ENTRY_VALID_ITEM;
+								*entityNamePtr = referenceData.namePtr0098;
+								*enabledDistance = ErectusIni::itemSettings.enabledDistance;
+								if (CheckFormIdArray(referenceData.formId, ErectusIni::itemSettings.whitelisted, ErectusIni::itemSettings.whitelist, 32))
+									*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
+								else if (!ErectusIni::itemSettings.enabled)
+									*entityFlag |= CUSTOM_ENTRY_INVALID;
+								break;
+								case static_cast<byte>(FormTypes::TesObjectArmo) :
+									*entityFlag |= CUSTOM_ENTRY_ARMOR;
+									*entityFlag |= CUSTOM_ENTRY_ITEM;
+									*entityFlag |= CUSTOM_ENTRY_VALID_ITEM;
+									*entityNamePtr = referenceData.namePtr0098;
+									*enabledDistance = ErectusIni::itemSettings.enabledDistance;
+									if (CheckFormIdArray(referenceData.formId, ErectusIni::itemSettings.whitelisted, ErectusIni::itemSettings.whitelist, 32))
+										*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
+									else if (!ErectusIni::itemSettings.enabled)
+										*entityFlag |= CUSTOM_ENTRY_INVALID;
+									break;
+									case static_cast<byte>(FormTypes::TesAmmo) :
+										*entityFlag |= CUSTOM_ENTRY_AMMO;
+										*entityFlag |= CUSTOM_ENTRY_ITEM;
+										*entityFlag |= CUSTOM_ENTRY_VALID_ITEM;
+										*entityNamePtr = referenceData.namePtr0098;
+										*enabledDistance = ErectusIni::itemSettings.enabledDistance;
+										if (CheckFormIdArray(referenceData.formId, ErectusIni::itemSettings.whitelisted, ErectusIni::itemSettings.whitelist, 32))
+											*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
+										else if (!ErectusIni::itemSettings.enabled)
+											*entityFlag |= CUSTOM_ENTRY_INVALID;
+										break;
+										case static_cast<byte>(FormTypes::AlchemyItem) :
+											*entityFlag |= CUSTOM_ENTRY_AID;
+											*entityFlag |= CUSTOM_ENTRY_ITEM;
+											*entityFlag |= CUSTOM_ENTRY_VALID_ITEM;
+											*entityNamePtr = referenceData.namePtr0098;
+											*enabledDistance = ErectusIni::itemSettings.enabledDistance;
+											if (CheckFormIdArray(referenceData.formId, ErectusIni::itemSettings.whitelisted, ErectusIni::itemSettings.whitelist, 32))
+												*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
+											else if (!ErectusIni::itemSettings.enabled)
+												*entityFlag |= CUSTOM_ENTRY_INVALID;
+											break;
+										default:
+											if (CheckReferenceItem(referenceData))
+											{
+												*entityFlag |= CUSTOM_ENTRY_ITEM;
+												*entityFlag |= CUSTOM_ENTRY_VALID_ITEM;
+												*entityNamePtr = referenceData.namePtr0098;
+												*enabledDistance = ErectusIni::itemSettings.enabledDistance;
+												if (CheckFormIdArray(referenceData.formId, ErectusIni::itemSettings.whitelisted, ErectusIni::itemSettings.whitelist, 32))
+													*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
+												else if (!ErectusIni::itemSettings.enabled)
+													*entityFlag |= CUSTOM_ENTRY_INVALID;
+											}
+											else
+											{
+												*entityFlag |= CUSTOM_ENTRY_ENTITY;
+												*entityNamePtr = 0;
+												*enabledDistance = ErectusIni::entitySettings.enabledDistance;
+												if (CheckFormIdArray(referenceData.formId, ErectusIni::entitySettings.whitelisted, ErectusIni::entitySettings.whitelist, 32))
+													*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
+												else if (!ErectusIni::entitySettings.enabled || !ErectusIni::entitySettings.drawUnnamed)
+													*entityFlag |= CUSTOM_ENTRY_INVALID;
+											}
+											break;
 	}
 }
 
@@ -1233,8 +1166,10 @@ bool ErectusMemory::GetActorSnapshotComponentData(const TesObjectRefr entityData
 	return Utils::Rpm(actorCoreBufferB, &*actorSnapshotComponentData, sizeof(ActorSnapshotComponent));
 }
 
-char* ErectusMemory::GetEntityName(const DWORD64 ptr)
+std::string ErectusMemory::GetEntityName(const DWORD64 ptr)
 {
+	std::string result{};
+
 	if (!Utils::Valid(ptr))
 		return nullptr;
 
@@ -1242,43 +1177,37 @@ char* ErectusMemory::GetEntityName(const DWORD64 ptr)
 	auto namePtr = ptr;
 
 	if (!Utils::Rpm(namePtr + 0x10, &nameLength, sizeof nameLength))
-		return nullptr;
+		return result;
 	if (nameLength <= 0 || nameLength > 0x7FFF)
 	{
 		DWORD64 buffer;
 		if (!Utils::Rpm(namePtr + 0x10, &buffer, sizeof buffer))
-			return nullptr;
+			return result;
 		if (!Utils::Valid(buffer))
-			return nullptr;
+			return result;
 		if (!Utils::Rpm(buffer + 0x10, &nameLength, sizeof nameLength))
-			return nullptr;
+			return result;
 		if (nameLength <= 0 || nameLength > 0x7FFF)
-			return nullptr;
+			return result;
 		namePtr = buffer;
 	}
 
 	const auto nameSize = nameLength + 1;
-	auto* name = new char[nameSize];
+	auto name = std::make_unique<char[]>(nameSize);
 
-	if (!Utils::Rpm(namePtr + 0x18, &*name, nameSize))
+	if (!Utils::Rpm(namePtr + 0x18, name.get(), nameSize))
 	{
-		delete[]name;
-		name = nullptr;
-		return nullptr;
+		return result;
 	}
+	result = name.get();
 
-	if (Utils::GetTextLength(name) != nameLength)
-	{
-		delete[]name;
-		name = nullptr;
-		return nullptr;
-	}
-
-	return name;
+	return result;
 }
 
 bool ErectusMemory::UpdateBufferEntityList()
 {
+	std::vector<CustomEntry> entities{};
+
 	auto localPlayerPtr = GetLocalPlayerPtr(true);
 	if (!Utils::Valid(localPlayerPtr))
 		return false;
@@ -1307,7 +1236,7 @@ bool ErectusMemory::UpdateBufferEntityList()
 		TesItem referenceData{};
 		if (!Utils::Rpm(entityData.referencedItemPtr, &referenceData, sizeof referenceData))
 			continue;
-		if (referenceData.formType == static_cast<byte>(FormTypes::TESNPC))
+		if (referenceData.formType == static_cast<byte>(FormTypes::TesNpc))
 			continue;
 
 		auto entityFlag = CUSTOM_ENTRY_DEFAULT;
@@ -1332,14 +1261,17 @@ bool ErectusMemory::UpdateBufferEntityList()
 			.name = GetEntityName(entityNamePtr)
 		};
 
-		bufferEntityList.push_back(entry);
+		entities.push_back(entry);
 	}
+	entityDataBuffer = entities;
 
-	return bufferEntityList.empty() ? false : true;
+	return entityDataBuffer.empty() ? false : true;
 }
 
 bool ErectusMemory::UpdateBufferNpcList()
 {
+	std::vector<CustomEntry> npcs{};
+
 	auto localPlayerPtr = GetLocalPlayerPtr(true);
 	if (!Utils::Valid(localPlayerPtr))
 		return false;
@@ -1348,24 +1280,19 @@ bool ErectusMemory::UpdateBufferNpcList()
 	if (!Utils::Rpm(localPlayerPtr, &localPlayer, sizeof localPlayer))
 		return false;
 
-	auto bufferSize = 0;
-	auto* bufferList = GetNpcList(&bufferSize);
-	if (bufferList == nullptr)
+	auto npcPtrs = GetNpcPtrList();
+	if (npcPtrs.empty())
 		return false;
 
-	auto customListSize = 0;
-	auto* customList = new CustomEntry[bufferSize];
-	auto customListIndex = 0;
-
-	for (auto i = 0; i < bufferSize; i++)
+	for (auto npcPtr : npcPtrs)
 	{
-		if (!Utils::Valid(bufferList[i]))
+		if (!Utils::Valid(npcPtr))
 			continue;
-		if (bufferList[i] == localPlayerPtr)
+		if (npcPtr == localPlayerPtr)
 			continue;
 
 		TesObjectRefr entityData{};
-		if (!Utils::Rpm(bufferList[i], &entityData, sizeof entityData))
+		if (!Utils::Rpm(npcPtr, &entityData, sizeof entityData))
 			continue;
 		if (!Utils::Valid(entityData.referencedItemPtr))
 			continue;
@@ -1373,7 +1300,7 @@ bool ErectusMemory::UpdateBufferNpcList()
 		TesItem referenceData{};
 		if (!Utils::Rpm(entityData.referencedItemPtr, &referenceData, sizeof referenceData))
 			continue;
-		if (referenceData.formType != static_cast<BYTE>(FormTypes::TESNPC))
+		if (referenceData.formType != static_cast<BYTE>(FormTypes::TesNpc))
 			continue;
 		if (referenceData.formId == 0x00000007)
 			continue;
@@ -1402,33 +1329,20 @@ bool ErectusMemory::UpdateBufferNpcList()
 		if (normalDistance > enabledDistance)
 			continue;
 
-		customListSize++;
-		customList[customListIndex].entityPtr = bufferList[i];
-		customList[customListIndex].referencePtr = entityData.referencedItemPtr;
-		customList[customListIndex].entityFormId = entityData.formId;
-		customList[customListIndex].referenceFormId = referenceData.formId;
-		customList[customListIndex].flag = entityFlag;
-		customList[customListIndex].name = GetEntityName(entityNamePtr);
-		customListIndex++;
+		CustomEntry entry{
+			.entityPtr = npcPtr,
+			.referencePtr = entityData.referencedItemPtr,
+			.entityFormId = entityData.formId,
+			.referenceFormId = referenceData.formId,
+			.flag = entityFlag,
+			.name = GetEntityName(entityNamePtr)
+		};
+		npcs.push_back(entry);
 	}
 
-	auto returnValue = false;
+	npcDataBuffer = npcs;
 
-	if (customListSize)
-	{
-		bufferNpcList = new CustomEntry[customListSize];
-		memcpy(&*bufferNpcList, &*customList, customListSize * sizeof(CustomEntry));
-		bufferNpcListSize = customListSize;
-		returnValue = true;
-	}
-
-	delete[]customList;
-	customList = nullptr;
-
-	delete[]bufferList;
-	bufferList = nullptr;
-
-	return returnValue;
+	return npcDataBuffer.empty() ? false : true;
 }
 
 char* ErectusMemory::GetPlayerName(ClientAccount* clientAccountData)
@@ -1472,6 +1386,8 @@ char* ErectusMemory::GetPlayerName(ClientAccount* clientAccountData)
 
 bool ErectusMemory::UpdateBufferPlayerList()
 {
+	std::vector<CustomEntry> players{};
+
 	auto localPlayerPtr = GetLocalPlayerPtr(true);
 	if (!Utils::Valid(localPlayerPtr))
 		return false;
@@ -1514,13 +1430,6 @@ bool ErectusMemory::UpdateBufferPlayerList()
 		return false;
 	}
 
-	auto customListSize = 0;
-	auto* customList = new CustomEntry[clientAccountArraySize];
-	auto customListIndex = 0;
-
-	customListSize = 0;
-	customListIndex = 0;
-
 	for (auto i = 0; i < clientAccountArraySize; i++)
 	{
 		if (!Utils::Valid(clientAccountArray[i]))
@@ -1556,164 +1465,28 @@ bool ErectusMemory::UpdateBufferPlayerList()
 		if (referenceData.formId != 0x00000007)
 			continue;
 
-		customListSize++;
-		customList[customListIndex].entityPtr = entityPtr;
-		customList[customListIndex].referencePtr = entityData.referencedItemPtr;
-		customList[customListIndex].entityFormId = entityData.formId;
-		customList[customListIndex].referenceFormId = referenceData.formId;
-		customList[customListIndex].flag = CUSTOM_ENTRY_PLAYER;
-		customList[customListIndex].name = GetPlayerName(&clientAccountData);
-		customListIndex++;
+		CustomEntry entry{
+			.entityPtr = entityPtr,
+			.referencePtr = entityData.referencedItemPtr,
+			.entityFormId = entityData.formId,
+			.referenceFormId = referenceData.formId,
+			.flag = CUSTOM_ENTRY_PLAYER,
+			.name = GetPlayerName(&clientAccountData),
+		};
+		players.push_back(entry);
 	}
-
-	auto returnValue = false;
-
-	if (customListSize)
-	{
-		bufferPlayerList = new CustomEntry[customListSize];
-		memcpy(&*bufferPlayerList, &*customList, customListSize * sizeof(CustomEntry));
-		bufferPlayerListSize = customListSize;
-		returnValue = true;
-	}
-
-	delete[]customList;
-	customList = nullptr;
 
 	delete[]clientAccountArray;
 	clientAccountArray = nullptr;
 
-	return returnValue;
-}
+	playerDataBuffer = players;
 
-void ErectusMemory::DeleteCustomEntityList()
-{
-	if (customEntityList != nullptr)
-	{
-		if (customEntityListSize)
-		{
-			for (auto i = 0; i < customEntityListSize; i++)
-			{
-				if (customEntityList[i].name != nullptr)
-				{
-					delete[]customEntityList[i].name;
-					customEntityList[i].name = nullptr;
-				}
-			}
-		}
-
-		delete[]customEntityList;
-		customEntityList = nullptr;
-	}
-
-	customEntityListSize = 0;
-	customEntityListUpdated = false;
-}
-
-void ErectusMemory::DeleteBufferEntityList()
-{
-	bufferEntityList.clear();
-	bufferEntityListUpdated = false;
-}
-
-void ErectusMemory::DeleteCustomNpcList()
-{
-	if (customNpcList != nullptr)
-	{
-		if (customNpcListSize)
-		{
-			for (auto i = 0; i < customNpcListSize; i++)
-			{
-				if (customNpcList[i].name != nullptr)
-				{
-					delete[]customNpcList[i].name;
-					customNpcList[i].name = nullptr;
-				}
-			}
-		}
-
-		delete[]customNpcList;
-		customNpcList = nullptr;
-	}
-
-	customNpcListSize = 0;
-	customNpcListUpdated = false;
-}
-
-void ErectusMemory::DeleteBufferNpcList()
-{
-	if (bufferNpcList != nullptr)
-	{
-		if (bufferNpcListSize)
-		{
-			for (auto i = 0; i < bufferNpcListSize; i++)
-			{
-				if (bufferNpcList[i].name != nullptr)
-				{
-					delete[]bufferNpcList[i].name;
-					bufferNpcList[i].name = nullptr;
-				}
-			}
-		}
-
-		delete[]bufferNpcList;
-		bufferNpcList = nullptr;
-	}
-
-	bufferNpcListSize = 0;
-	bufferNpcListUpdated = false;
-}
-
-void ErectusMemory::DeleteCustomPlayerList()
-{
-	if (customPlayerList != nullptr)
-	{
-		if (customPlayerListSize)
-		{
-			for (auto i = 0; i < customPlayerListSize; i++)
-			{
-				if (customPlayerList[i].name != nullptr)
-				{
-					delete[]customPlayerList[i].name;
-					customPlayerList[i].name = nullptr;
-				}
-			}
-		}
-
-		delete[]customPlayerList;
-		customPlayerList = nullptr;
-	}
-
-	customPlayerListSize = 0;
-	customPlayerListUpdated = false;
-}
-
-void ErectusMemory::DeleteBufferPlayerList()
-{
-	if (bufferPlayerList != nullptr)
-	{
-		if (bufferPlayerListSize)
-		{
-			for (auto i = 0; i < bufferPlayerListSize; i++)
-			{
-				if (bufferPlayerList[i].name != nullptr)
-				{
-					delete[]bufferPlayerList[i].name;
-					bufferPlayerList[i].name = nullptr;
-				}
-			}
-		}
-
-		delete[]bufferPlayerList;
-		bufferPlayerList = nullptr;
-	}
-
-	bufferPlayerListSize = 0;
-	bufferPlayerListUpdated = false;
+	return playerDataBuffer.empty() ? false : true;
 }
 
 bool ErectusMemory::TargetValid(const TesObjectRefr entityData, const TesItem referenceData)
 {
-	if (referenceData.formType != static_cast<BYTE>(FormTypes::TESNPC))
+	if (referenceData.formType != static_cast<BYTE>(FormTypes::TesNpc))
 	{
 		return false;
 	}
@@ -1746,15 +1519,15 @@ bool ErectusMemory::FloraHarvested(const BYTE harvestFlagA, const BYTE harvestFl
 	return harvestFlagA >> 5 & 1 || harvestFlagB >> 5 & 1;
 }
 
-bool ErectusMemory::RenderCustomEntryA(CustomEntry* customEntryData, OverlaySettingsA customSettingsA)
+bool ErectusMemory::RenderCustomEntryA(CustomEntry& entry, OverlaySettingsA settings)
 {
 	auto health = -1;
 	BYTE epicRank = 0;
 	auto allowNpc = false;
-	if (customEntryData->flag & CUSTOM_ENTRY_NPC)
+	if (entry.flag & CUSTOM_ENTRY_NPC)
 	{
 		TesObjectRefr npcData{};
-		if (!Utils::Rpm(customEntryData->entityPtr, &npcData, sizeof npcData))
+		if (!Utils::Rpm(entry.entityPtr, &npcData, sizeof npcData))
 			return false;
 
 		ActorSnapshotComponent actorSnapshotComponentData{};
@@ -1790,44 +1563,43 @@ bool ErectusMemory::RenderCustomEntryA(CustomEntry* customEntryData, OverlaySett
 		}
 	}
 
-	if (!customSettingsA.enabled && !allowNpc)
+	if (!settings.enabled && !allowNpc)
 		return false;
 
-	if (!customSettingsA.drawEnabled && !customSettingsA.drawDisabled)
+	if (!settings.drawEnabled && !settings.drawDisabled)
 		return false;
 
-	if (customSettingsA.enabledAlpha == 0.0f && customSettingsA.disabledAlpha == 0.0f)
+	if (settings.enabledAlpha == 0.0f && settings.disabledAlpha == 0.0f)
 		return false;
 
-	if (!customSettingsA.drawNamed && !customSettingsA.drawUnnamed)
+	if (!settings.drawNamed && !settings.drawUnnamed)
 		return false;
 
 	TesObjectRefr entityData{};
-	if (!Utils::Rpm(customEntryData->entityPtr, &entityData, sizeof entityData))
+	if (!Utils::Rpm(entry.entityPtr, &entityData, sizeof entityData))
 		return false;
 
-	if (customEntryData->flag & CUSTOM_ENTRY_PLAYER)
+	if (entry.flag & CUSTOM_ENTRY_PLAYER)
 	{
 		ActorSnapshotComponent actorSnapshotComponentData{};
 		if (GetActorSnapshotComponentData(entityData, &actorSnapshotComponentData))
 			health = static_cast<int>(actorSnapshotComponentData.maxHealth + actorSnapshotComponentData.modifiedHealth + actorSnapshotComponentData.lostHealth);
 	}
 
-	if (customEntryData->name == nullptr)
+	if (entry.name.empty())
 	{
-		customEntryData->flag |= CUSTOM_ENTRY_UNNAMED;
-		customEntryData->name = new char[sizeof"00000000"];
-		sprintf_s(customEntryData->name, sizeof"00000000", "%08lX", entityData.formId);
+		entry.flag |= CUSTOM_ENTRY_UNNAMED;
+		entry.name = fmt::format("{0:x}", entityData.formId);
 	}
 
-	if (customEntryData->flag & CUSTOM_ENTRY_UNNAMED)
+	if (entry.flag & CUSTOM_ENTRY_UNNAMED)
 	{
-		if (!customSettingsA.drawUnnamed)
+		if (!settings.drawUnnamed)
 			return false;
 	}
 	else
 	{
-		if (!customSettingsA.drawNamed)
+		if (!settings.drawNamed)
 			return false;
 	}
 
@@ -1835,13 +1607,13 @@ bool ErectusMemory::RenderCustomEntryA(CustomEntry* customEntryData, OverlaySett
 
 	if (entityData.spawnFlag == 0x02)
 	{
-		if (customSettingsA.drawEnabled)
-			alpha = &customSettingsA.enabledAlpha;
+		if (settings.drawEnabled)
+			alpha = &settings.enabledAlpha;
 	}
 	else
 	{
-		if (customSettingsA.drawDisabled)
-			alpha = &customSettingsA.disabledAlpha;
+		if (settings.drawDisabled)
+			alpha = &settings.disabledAlpha;
 	}
 
 	if (alpha == nullptr)
@@ -1856,7 +1628,7 @@ bool ErectusMemory::RenderCustomEntryA(CustomEntry* customEntryData, OverlaySett
 	switch (CheckHealthFlag(entityData.healthFlag))
 	{
 	case 0x01: //Alive
-		showHealthText = customSettingsA.showHealth;
+		showHealthText = settings.showHealth;
 		if (allowNpc)
 		{
 			switch (epicRank)
@@ -1880,11 +1652,11 @@ bool ErectusMemory::RenderCustomEntryA(CustomEntry* customEntryData, OverlaySett
 				break;
 			}
 		}
-		else if (customSettingsA.drawAlive)
-			color = customSettingsA.aliveColor;
+		else if (settings.drawAlive)
+			color = settings.aliveColor;
 		break;
 	case 0x02: //Downed
-		showHealthText = customSettingsA.showHealth;
+		showHealthText = settings.showHealth;
 		if (allowNpc)
 		{
 			switch (epicRank)
@@ -1908,11 +1680,11 @@ bool ErectusMemory::RenderCustomEntryA(CustomEntry* customEntryData, OverlaySett
 				break;
 			}
 		}
-		else if (customSettingsA.drawDowned)
-			color = customSettingsA.downedColor;
+		else if (settings.drawDowned)
+			color = settings.downedColor;
 		break;
 	case 0x03: //Dead
-		showHealthText = customSettingsA.showDeadHealth;
+		showHealthText = settings.showDeadHealth;
 		if (allowNpc)
 		{
 			switch (epicRank)
@@ -1936,13 +1708,13 @@ bool ErectusMemory::RenderCustomEntryA(CustomEntry* customEntryData, OverlaySett
 				break;
 			}
 		}
-		else if (customSettingsA.drawDead)
-			color = customSettingsA.deadColor;
+		else if (settings.drawDead)
+			color = settings.deadColor;
 		break;
 	default: //Unknown
-		showHealthText = customSettingsA.showHealth;
-		if (customSettingsA.drawUnknown)
-			color = customSettingsA.unknownColor;
+		showHealthText = settings.showHealth;
+		if (settings.drawUnknown)
+			color = settings.unknownColor;
 		break;
 	}
 
@@ -1959,17 +1731,17 @@ bool ErectusMemory::RenderCustomEntryA(CustomEntry* customEntryData, OverlaySett
 
 	auto distance = Utils::GetDistance(entityData.position, cameraData.origin);
 	auto normalDistance = static_cast<int>(distance * 0.01f);
-	if (normalDistance > customSettingsA.enabledDistance)
+	if (normalDistance > settings.enabledDistance)
 		return false;
 
-	if ((customEntryData->flag & CUSTOM_ENTRY_PLAYER && ErectusIni::customTargetSettings.lockPlayers) || (customEntryData->flag & CUSTOM_ENTRY_NPC && ErectusIni::customTargetSettings.lockNpCs))
+	if (entry.flag & CUSTOM_ENTRY_PLAYER && ErectusIni::customTargetSettings.lockPlayers || entry.flag & CUSTOM_ENTRY_NPC && ErectusIni::customTargetSettings.lockNpCs)
 	{
 		TesItem referenceData{};
 		if (Utils::Rpm(entityData.referencedItemPtr, &referenceData, sizeof referenceData))
 		{
 			if (TargetValid(entityData, referenceData))
 			{
-				if (customEntryData->entityPtr == targetLockingPtr)
+				if (entry.entityPtr == targetLockingPtr)
 				{
 					targetLockingValid = true;
 					color = ErectusIni::customTargetSettings.lockingColor;
@@ -1980,7 +1752,7 @@ bool ErectusMemory::RenderCustomEntryA(CustomEntry* customEntryData, OverlaySett
 					if (degrees < targetLockingClosestDegrees)
 					{
 						targetLockingClosestDegrees = degrees;
-						targetLockingClosestPtr = customEntryData->entityPtr;
+						targetLockingClosestPtr = entry.entityPtr;
 					}
 				}
 			}
@@ -1988,122 +1760,79 @@ bool ErectusMemory::RenderCustomEntryA(CustomEntry* customEntryData, OverlaySett
 	}
 
 	float screen[2] = { 0.0f, 0.0f };
-	if (!Utils::Wts(cameraData.view, entityData.position, screen))
+	if (!Utils::WorldToScreen(cameraData.view, entityData.position, screen))
 		return false;
 
-	char* nameText = nullptr;
-	if (customSettingsA.showName && showHealthText && customSettingsA.showDistance) //Name, Health, Distance
-	{
-		auto textSize = static_cast<int>(Utils::GetTextLength(customEntryData->name) + sizeof"\n-2147483648 hp [-2147483648 m]");
-		nameText = new char[textSize];
-		sprintf_s(nameText, textSize, "%s\n%d hp [%d m]", customEntryData->name, health, normalDistance);
-	}
-	else if (customSettingsA.showName && showHealthText && !customSettingsA.showDistance) //Name, Health
-	{
-		auto textSize = static_cast<int>(Utils::GetTextLength(customEntryData->name) + sizeof"\n-2147483648 hp");
-		nameText = new char[textSize];
-		sprintf_s(nameText, textSize, "%s\n%d hp", customEntryData->name, health);
-	}
-	else if (customSettingsA.showName && !showHealthText && customSettingsA.showDistance) //Name, Distance
-	{
-		auto textSize = static_cast<int>(Utils::GetTextLength(customEntryData->name) + sizeof"\n[-2147483648 m]");
-		nameText = new char[textSize];
-		sprintf_s(nameText, textSize, "%s\n[%d m]", customEntryData->name, normalDistance);
-	}
-	else if (!customSettingsA.showName && showHealthText && customSettingsA.showDistance) //Health, Distance
-	{
-		int textSize = sizeof"-2147483648 hp [-2147483648 m]";
-		nameText = new char[textSize];
-		sprintf_s(nameText, textSize, "%d hp [%d m]", health, normalDistance);
-	}
-	else if (customSettingsA.showName && !showHealthText && !customSettingsA.showDistance) //Name
-	{
-		auto textSize = Utils::GetTextSize(customEntryData->name);
-		nameText = new char[textSize];
-		sprintf_s(nameText, textSize, "%s", customEntryData->name);
-	}
-	else if (!customSettingsA.showName && showHealthText && !customSettingsA.showDistance) //Health
-	{
-		int textSize = sizeof"-2147483648 hp";
-		nameText = new char[textSize];
-		sprintf_s(nameText, textSize, "%d hp", health);
-	}
-	else if (!customSettingsA.showName && !showHealthText && customSettingsA.showDistance) //Distance
-	{
-		int textSize = sizeof"[-2147483648 m]";
-		nameText = new char[textSize];
-		sprintf_s(nameText, textSize, "[%d m]", normalDistance);
-	}
+	std::string itemText;
+	if (settings.showName && showHealthText && settings.showDistance) //Name, Health, Distance
+		itemText = fmt::format("{0}\n{1:d} hp [{2:d} m]", entry.name, health, normalDistance);
+	else if (settings.showName && showHealthText && !settings.showDistance) //Name, Health
+		itemText = fmt::format("{0}\n{1:d} hp", entry.name, health);
+	else if (settings.showName && !showHealthText && settings.showDistance) //Name, Distance
+		itemText = fmt::format("{0}\n[{1:d} m]", entry.name, normalDistance);
+	else if (!settings.showName && showHealthText && settings.showDistance) //Health, Distance
+		itemText = fmt::format("{0:d} hp [{1:d} m]", health, normalDistance);
+	else if (settings.showName && !showHealthText && !settings.showDistance) //Name
+		itemText = entry.name;
+	else if (!settings.showName && showHealthText && !settings.showDistance) //Health
+		itemText = fmt::format("{0:d} hp", health);
+	else if (!settings.showName && !showHealthText && settings.showDistance) //Distance
+		itemText = fmt::format("[{0:d} m]", normalDistance);
 
-	if (nameText != nullptr)
+	if (!itemText.empty())
 	{
 		if (ErectusIni::customUtilitySettings.debugEsp)
-		{
-			char debugText[sizeof"0000000000000000\n00000000\n0000000000000000\n00000000"];
-			sprintf_s(debugText, "%llX\n%08lX\n%llX\n%08lX", customEntryData->entityPtr, customEntryData->entityFormId,
-				customEntryData->referencePtr, customEntryData->referenceFormId);
-			Renderer::DrawText(debugText, customSettingsA.textShadowed, customSettingsA.textCentered, screen, color, *alpha);
-		}
-		else
-		{
-			Renderer::DrawText(nameText, customSettingsA.textShadowed, customSettingsA.textCentered, screen, color, *alpha);
-		}
+			itemText = fmt::format("{0:16x}\n{1:08x}\n{2:16x}\n{3:08x}", entry.entityPtr, entry.entityFormId, entry.referencePtr, entry.referenceFormId);
 
-		delete[]nameText;
-		nameText = nullptr;
+		Renderer::DrawText(itemText.c_str(), settings.textShadowed, settings.textCentered, screen, color, *alpha);
 	}
 
 	return true;
 }
 
-bool ErectusMemory::RenderCustomEntryB(CustomEntry* customEntryData, OverlaySettingsB customSettingsB)
+bool ErectusMemory::RenderCustomEntryB(CustomEntry& entry, OverlaySettingsB settings)
 {
-	if (!(customEntryData->flag & CUSTOM_ENTRY_WHITELISTED) && !customSettingsB.enabled)
+	if (!(entry.flag & CUSTOM_ENTRY_WHITELISTED) && !settings.enabled)
 		return false;
 
-	if (!customSettingsB.drawEnabled && !customSettingsB.drawDisabled)
+	if (!settings.drawEnabled && !settings.drawDisabled)
 		return false;
 
-	if (customSettingsB.enabledAlpha == 0.0f && customSettingsB.disabledAlpha == 0.0f)
+	if (settings.enabledAlpha == 0.0f && settings.disabledAlpha == 0.0f)
 		return false;
 
-	if (!customSettingsB.drawNamed && !customSettingsB.drawUnnamed)
+	if (!settings.drawNamed && !settings.drawUnnamed)
 		return false;
 
 	TesObjectRefr entityData{};
-	if (!Utils::Rpm(customEntryData->entityPtr, &entityData, sizeof entityData))
+	if (!Utils::Rpm(entry.entityPtr, &entityData, sizeof entityData))
 		return false;
 
-	if (customEntryData->name == nullptr)
+	if (entry.name.empty())
 	{
-		customEntryData->flag |= CUSTOM_ENTRY_UNNAMED;
-		customEntryData->name = new char[sizeof"00000000"];
-		sprintf_s(customEntryData->name, sizeof"00000000", "%08lX", entityData.formId);
+		entry.flag |= CUSTOM_ENTRY_UNNAMED;
+		entry.name = fmt::format("{0:x}", entityData.formId);
 	}
 
-	if (customEntryData->flag & CUSTOM_ENTRY_UNNAMED)
+	if (entry.flag & CUSTOM_ENTRY_UNNAMED)
 	{
-		if (!customSettingsB.drawUnnamed)
+		if (!settings.drawUnnamed)
 			return false;
 	}
-	else if (!customSettingsB.drawNamed)
+	else if (!settings.drawNamed)
 		return false;
 
-	if (customEntryData->flag & CUSTOM_ENTRY_PLAN)
+	if (entry.flag & CUSTOM_ENTRY_PLAN)
 	{
 		if (!ErectusIni::customKnownRecipeSettings.knownRecipesEnabled && !ErectusIni::customKnownRecipeSettings.unknownRecipesEnabled)
 			return false;
 
-		if (!(customEntryData->flag & CUSTOM_ENTRY_FAILED_RECIPE))
+		if (!(entry.flag & CUSTOM_ENTRY_FAILED_RECIPE))
 		{
-			if (!ErectusIni::customKnownRecipeSettings.knownRecipesEnabled && customEntryData->flag & CUSTOM_ENTRY_KNOWN_RECIPE)
-			{
+			if (!ErectusIni::customKnownRecipeSettings.knownRecipesEnabled && entry.flag & CUSTOM_ENTRY_KNOWN_RECIPE)
 				return false;
-			}
-			if (!ErectusIni::customKnownRecipeSettings.unknownRecipesEnabled && customEntryData->flag & CUSTOM_ENTRY_UNKNOWN_RECIPE)
-			{
+			if (!ErectusIni::customKnownRecipeSettings.unknownRecipesEnabled && entry.flag & CUSTOM_ENTRY_UNKNOWN_RECIPE)
 				return false;
-			}
 		}
 	}
 
@@ -2111,25 +1840,23 @@ bool ErectusMemory::RenderCustomEntryB(CustomEntry* customEntryData, OverlaySett
 
 	if (entityData.spawnFlag == 0x02)
 	{
-		if (customSettingsB.drawEnabled)
+		if (settings.drawEnabled)
 		{
-			if (customEntryData->flag & CUSTOM_ENTRY_FLORA)
+			if (entry.flag & CUSTOM_ENTRY_FLORA)
 			{
 				if (!FloraHarvested(entityData.harvestFlagA, entityData.harvestFlagB))
-					alpha = &customSettingsB.enabledAlpha;
-				else if (customSettingsB.drawDisabled)
-					alpha = &customSettingsB.disabledAlpha;
+					alpha = &settings.enabledAlpha;
+				else if (settings.drawDisabled)
+					alpha = &settings.disabledAlpha;
 			}
 			else
-			{
-				alpha = &customSettingsB.enabledAlpha;
-			}
+				alpha = &settings.enabledAlpha;
 		}
 	}
 	else
 	{
-		if (customSettingsB.drawDisabled)
-			alpha = &customSettingsB.disabledAlpha;
+		if (settings.drawDisabled)
+			alpha = &settings.disabledAlpha;
 	}
 
 	if (alpha == nullptr)
@@ -2145,48 +1872,27 @@ bool ErectusMemory::RenderCustomEntryB(CustomEntry* customEntryData, OverlaySett
 
 	const auto distance = Utils::GetDistance(entityData.position, cameraData.origin);
 	const auto normalDistance = static_cast<int>(distance * 0.01f);
-	if (normalDistance > customSettingsB.enabledDistance)
+	if (normalDistance > settings.enabledDistance)
 		return false;
 
 	float screen[2] = { 0.0f, 0.0f };
-	if (!Utils::Wts(cameraData.view, entityData.position, screen))
+	if (!Utils::WorldToScreen(cameraData.view, entityData.position, screen))
 		return false;
 
-	char* nameText = nullptr;
-	if (customSettingsB.showName && customSettingsB.showDistance)
-	{
-		const auto distanceTextSize = static_cast<int>(Utils::GetTextLength(customEntryData->name) + sizeof"\n[-2147483648 m]");
-		nameText = new char[distanceTextSize];
-		sprintf_s(nameText, distanceTextSize, "%s\n[%d m]", customEntryData->name, normalDistance);
-	}
-	else if (customSettingsB.showName && !customSettingsB.showDistance)
-	{
-		const auto textSize = Utils::GetTextSize(customEntryData->name);
-		nameText = new char[textSize];
-		sprintf_s(nameText, textSize, "%s", customEntryData->name);
-	}
-	else if (!customSettingsB.showName && customSettingsB.showDistance)
-	{
-		const int distanceTextSize = sizeof"[-2147483648 m]";
-		nameText = new char[distanceTextSize];
-		sprintf_s(nameText, distanceTextSize, "[%d m]", normalDistance);
-	}
+	std::string itemText{};
+	if (settings.showName && settings.showDistance)
+		itemText = fmt::format("{0}\n[{1:d} m]", entry.name, normalDistance);
+	else if (settings.showName && !settings.showDistance)
+		itemText = entry.name;
+	else if (!settings.showName && settings.showDistance)
+		itemText = fmt::format("[{0:d} m]", normalDistance);
 
-	if (nameText != nullptr)
+	if (!itemText.empty())
 	{
 		if (ErectusIni::customUtilitySettings.debugEsp)
-		{
-			char debugText[sizeof"0000000000000000\n00000000\n0000000000000000\n00000000"];
-			sprintf_s(debugText, "%llX\n%08lX\n%llX\n%08lX", customEntryData->entityPtr, customEntryData->entityFormId, customEntryData->referencePtr, customEntryData->referenceFormId);
-			Renderer::DrawText(debugText, customSettingsB.textShadowed, customSettingsB.textCentered, screen, customSettingsB.color, *alpha);
-		}
-		else
-		{
-			Renderer::DrawText(nameText, customSettingsB.textShadowed, customSettingsB.textCentered, screen, customSettingsB.color, *alpha);
-		}
-
-		delete[]nameText;
-		nameText = nullptr;
+			itemText = fmt::format("{0:16x}\n{1:08x}\n{2:16x}\n{3:08x}", entry.entityPtr, entry.entityFormId, entry.referencePtr, entry.referenceFormId);
+		
+		Renderer::DrawText(itemText.c_str(), settings.textShadowed, settings.textCentered, screen, settings.color, *alpha);
 	}
 
 	return true;
@@ -2194,130 +1900,47 @@ bool ErectusMemory::RenderCustomEntryB(CustomEntry* customEntryData, OverlaySett
 
 bool ErectusMemory::RenderCustomEntityList()
 {
-	customEntityListCounter++;
-	if (customEntityListCounter > 60)
+	auto entities = entityDataBuffer;
+	for (auto entity : entities)
 	{
-		customEntityListCounter = 0;
-
-
-		if (bufferEntityListUpdated)
-		{
-			if (!bufferEntityListDestructionQueued)
-			{
-				DeleteCustomEntityList();
-
-				customEntityList = new CustomEntry[bufferEntityList.size()];
-
-				memcpy(&*customEntityList, bufferEntityList.data(), bufferEntityList.size() * sizeof(CustomEntry));
-
-				customEntityListSize = bufferEntityList.size();
-				customEntityListUpdated = true;
-				bufferEntityListDestructionQueued = true;
-			}
-		}
+		if (entity.flag & CUSTOM_ENTRY_ENTITY)
+			RenderCustomEntryB(entity, ErectusIni::entitySettings);
+		else if (entity.flag & CUSTOM_ENTRY_JUNK)
+			RenderCustomEntryB(entity, ErectusIni::junkSettings);
+		else if (entity.flag & CUSTOM_ENTRY_ITEM)
+			RenderCustomEntryB(entity, ErectusIni::itemSettings);
+		else if (entity.flag & CUSTOM_ENTRY_CONTAINER)
+			RenderCustomEntryB(entity, ErectusIni::containerSettings);
+		else if (entity.flag & CUSTOM_ENTRY_PLAN)
+			RenderCustomEntryB(entity, ErectusIni::planSettings);
+		else if (entity.flag & CUSTOM_ENTRY_MAGAZINE)
+			RenderCustomEntryB(entity, ErectusIni::magazineSettings);
+		else if (entity.flag & CUSTOM_ENTRY_BOBBLEHEAD)
+			RenderCustomEntryB(entity, ErectusIni::bobbleheadSettings);
+		else if (entity.flag & CUSTOM_ENTRY_FLORA)
+			RenderCustomEntryB(entity, ErectusIni::floraSettings);
 	}
-
-	if (!customEntityListUpdated)
-		return false;
-
-	for (auto i = 0; i < customEntityListSize; i++)
-	{
-		if (customEntityList[i].flag & CUSTOM_ENTRY_ENTITY)
-			RenderCustomEntryB(&customEntityList[i], ErectusIni::entitySettings);
-		else if (customEntityList[i].flag & CUSTOM_ENTRY_JUNK)
-			RenderCustomEntryB(&customEntityList[i], ErectusIni::junkSettings);
-		else if (customEntityList[i].flag & CUSTOM_ENTRY_ITEM)
-			RenderCustomEntryB(&customEntityList[i], ErectusIni::itemSettings);
-		else if (customEntityList[i].flag & CUSTOM_ENTRY_CONTAINER)
-			RenderCustomEntryB(&customEntityList[i], ErectusIni::containerSettings);
-		else if (customEntityList[i].flag & CUSTOM_ENTRY_PLAN)
-			RenderCustomEntryB(&customEntityList[i], ErectusIni::planSettings);
-		else if (customEntityList[i].flag & CUSTOM_ENTRY_MAGAZINE)
-			RenderCustomEntryB(&customEntityList[i], ErectusIni::magazineSettings);
-		else if (customEntityList[i].flag & CUSTOM_ENTRY_BOBBLEHEAD)
-			RenderCustomEntryB(&customEntityList[i], ErectusIni::bobbleheadSettings);
-		else if (customEntityList[i].flag & CUSTOM_ENTRY_FLORA)
-			RenderCustomEntryB(&customEntityList[i], ErectusIni::floraSettings);
-	}
-
 	return true;
 }
 
 bool ErectusMemory::RenderCustomNpcList()
 {
-	customNpcListCounter++;
-	if (customNpcListCounter > 60)
+	auto npcs = npcDataBuffer;
+	for (auto npc : npcs)
 	{
-		customNpcListCounter = 0;
-		if (bufferNpcListUpdated)
-		{
-			if (!bufferNpcListDestructionQueued)
-			{
-				DeleteCustomNpcList();
-				customNpcList = new CustomEntry[bufferNpcListSize];
-				memcpy(&*customNpcList, &*bufferNpcList, bufferNpcListSize * sizeof(CustomEntry));
-				for (auto i = 0; i < bufferNpcListSize; i++) bufferNpcList[i].name = nullptr;
-				customNpcListSize = bufferNpcListSize;
-				customNpcListUpdated = true;
-				bufferNpcListDestructionQueued = true;
-			}
-		}
+		if (npc.flag & CUSTOM_ENTRY_NPC)
+			RenderCustomEntryA(npc, ErectusIni::npcSettings);
 	}
-
-	if (customNpcListDestructionQueued)
-	{
-		customNpcListDestructionQueued = false;
-		DeleteCustomNpcList();
-	}
-
-	if (!customNpcListUpdated)
-		return false;
-
-	for (auto i = 0; i < customNpcListSize; i++)
-	{
-		if (customNpcList[i].flag & CUSTOM_ENTRY_NPC)
-			RenderCustomEntryA(&customNpcList[i], ErectusIni::npcSettings);
-	}
-
 	return true;
 }
 
 bool ErectusMemory::RenderCustomPlayerList()
 {
-	customPlayerListCounter++;
-	if (customPlayerListCounter > 60)
-	{
-		customPlayerListCounter = 0;
-		if (bufferPlayerListUpdated)
-		{
-			if (!bufferPlayerListDestructionQueued)
-			{
-				DeleteCustomPlayerList();
-				customPlayerList = new CustomEntry[bufferPlayerListSize];
-				memcpy(&*customPlayerList, &*bufferPlayerList, bufferPlayerListSize * sizeof(CustomEntry));
-				for (auto i = 0; i < bufferPlayerListSize; i++) bufferPlayerList[i].name = nullptr;
-				customPlayerListSize = bufferPlayerListSize;
-				customPlayerListUpdated = true;
-				bufferPlayerListDestructionQueued = true;
-			}
-		}
+	auto players = playerDataBuffer;
+	for (auto player : players) {
+		if (player.flag & CUSTOM_ENTRY_PLAYER)
+			RenderCustomEntryA(player, ErectusIni::playerSettings);
 	}
-
-	if (customPlayerListDestructionQueued)
-	{
-		customPlayerListDestructionQueued = false;
-		DeleteCustomPlayerList();
-	}
-
-	if (!customPlayerListUpdated)
-		return false;
-
-	for (auto i = 0; i < customPlayerListSize; i++)
-	{
-		if (customPlayerList[i].flag & CUSTOM_ENTRY_PLAYER)
-			RenderCustomEntryA(&customPlayerList[i], ErectusIni::playerSettings);
-	}
-
 	return true;
 }
 
@@ -2325,7 +1948,7 @@ bool ErectusMemory::MessagePatcher(const bool state)
 {
 	BYTE fakeMessagesCheck[2];
 	if (!Utils::Rpm(ErectusProcess::exe + OFFSET_FAKE_MESSAGE, &fakeMessagesCheck, sizeof fakeMessagesCheck))
-		return		false;
+		return false;
 
 	BYTE fakeMessagesEnabled[] = { 0xB0, 0x01 };
 	BYTE fakeMessagesDisabled[] = { 0x32, 0xC0 };
@@ -2755,7 +2378,7 @@ int ErectusMemory::GetOldWeaponIndex(const DWORD formId)
 {
 	for (auto i = 0; i < oldWeaponListSize; i++)
 	{
-		if ((oldWeaponList[i].weaponData != nullptr) && (oldWeaponList[i].weaponData->formId == formId))
+		if (oldWeaponList[i].weaponData != nullptr && oldWeaponList[i].weaponData->formId == formId)
 			return i;
 	}
 
@@ -2785,7 +2408,7 @@ bool ErectusMemory::EditWeapon(const int index, const bool revertWeaponData)
 	ReferenceList weaponList{};
 	if (!Utils::Rpm(dataHandlerPtr + 0x580, &weaponList, sizeof weaponList))
 		return false;
-	if (!Utils::Valid(weaponList.arrayPtr) || !weaponList.arraySize || weaponList.arraySize > 0x7FFF) 
+	if (!Utils::Valid(weaponList.arrayPtr) || !weaponList.arraySize || weaponList.arraySize > 0x7FFF)
 		return false;
 
 	DWORD64 weaponPtr;
@@ -2925,9 +2548,9 @@ bool ErectusMemory::EditWeapon(const int index, const bool revertWeaponData)
 	}
 	else
 	{
-		if (memcmp(aimModelData.recoilData, oldWeaponList[currentWeaponIndex].aimModelData->recoilData,			sizeof AimModel::recoilData) != 0)
+		if (memcmp(aimModelData.recoilData, oldWeaponList[currentWeaponIndex].aimModelData->recoilData, sizeof AimModel::recoilData) != 0)
 		{
-			memcpy(aimModelData.recoilData, oldWeaponList[currentWeaponIndex].aimModelData->recoilData,				sizeof AimModel::recoilData);
+			memcpy(aimModelData.recoilData, oldWeaponList[currentWeaponIndex].aimModelData->recoilData, sizeof AimModel::recoilData);
 			writeAimModelData = true;
 		}
 	}
@@ -3002,7 +2625,7 @@ bool ErectusMemory::LockedTargetValid(bool* isPlayer)
 	TesItem referenceData{};
 	if (!Utils::Rpm(entityData.referencedItemPtr, &referenceData, sizeof referenceData))
 		return false;
-	const auto result = ErectusMemory::TargetValid(entityData, referenceData);
+	const auto result = TargetValid(entityData, referenceData);
 
 	if (referenceData.formId == 0x00000007)
 		*isPlayer = true;
@@ -3022,7 +2645,7 @@ bool ErectusMemory::DamageRedirection(DWORD64* targetingPage, bool* targetingPag
 	BYTE redirectionOff[] = { 0x48, 0x8B, 0x5C, 0x24, 0x50 };
 	BYTE redirectionCheck[sizeof redirectionOff];
 
-	if (!Utils::Rpm(ErectusProcess::exe + OFFSET_REDIRECTION_JMP, &pageJmpCheck, sizeof pageJmpCheck)) 
+	if (!Utils::Rpm(ErectusProcess::exe + OFFSET_REDIRECTION_JMP, &pageJmpCheck, sizeof pageJmpCheck))
 		return false;
 
 	DWORD64 pageCheck;
@@ -3082,7 +2705,7 @@ bool ErectusMemory::DamageRedirection(DWORD64* targetingPage, bool* targetingPag
 
 	auto isPlayer = false;
 	auto targetValid = LockedTargetValid(&isPlayer);
-	if ((!ErectusIni::customTargetSettings.indirectPlayers && isPlayer) || (!ErectusIni::customTargetSettings.indirectNpCs && !isPlayer))
+	if (!ErectusIni::customTargetSettings.indirectPlayers && isPlayer || !ErectusIni::customTargetSettings.indirectNpCs && !isPlayer)
 		targetValid = false;
 
 	const auto redirection = Utils::Rpm(ErectusProcess::exe + OFFSET_REDIRECTION, &redirectionCheck,
@@ -3109,7 +2732,7 @@ bool ErectusMemory::DamageRedirection(DWORD64* targetingPage, bool* targetingPag
 bool ErectusMemory::MovePlayer()
 {
 	const auto cameraPtr = GetCameraPtr();
-	if (!Utils::Valid(cameraPtr)) 
+	if (!Utils::Valid(cameraPtr))
 		return false;
 
 	DWORD64 bhkCharProxyControllerPtr;
@@ -3257,13 +2880,13 @@ bool ErectusMemory::ActorValue(DWORD64* actorValuePage, bool* actorValuePageVali
 	}
 
 	const auto localPlayerPtr = GetLocalPlayerPtr(false);
-	if (!Utils::Valid(localPlayerPtr)) 
+	if (!Utils::Valid(localPlayerPtr))
 		return false;
 
 	TesObjectRefr localPlayer{};
 	if (!Utils::Rpm(localPlayerPtr, &localPlayer, sizeof localPlayer))
 		return false;
-	if (!Utils::Valid(localPlayer.vtable0050)) 
+	if (!Utils::Valid(localPlayer.vtable0050))
 		return false;
 
 	DWORD64 actorValueFunction;
@@ -3425,7 +3048,7 @@ bool ErectusMemory::OnePositionKill(DWORD64* opkPage, bool* opkPageValid, const 
 		if (pageCheck == *opkPage)
 			Utils::Wpm(ErectusProcess::exe + OFFSET_OPK, &opkOff, sizeof opkOff);
 
-		if ((*opkPage) && (Utils::FreeEx(*opkPage)))
+		if (*opkPage && Utils::FreeEx(*opkPage))
 		{
 			*opkPage = 0;
 			*opkPageValid = false;
@@ -4225,7 +3848,7 @@ bool ErectusMemory::SendDamage(const DWORD weaponId, BYTE* shotsHit, BYTE* shots
 
 	auto isPlayer = false;
 	LockedTargetValid(&isPlayer);
-	if ((!ErectusIni::customTargetSettings.directPlayers && isPlayer) || (!ErectusIni::customTargetSettings.directNpCs && !isPlayer))
+	if (!ErectusIni::customTargetSettings.directPlayers && isPlayer || !ErectusIni::customTargetSettings.directNpCs && !isPlayer)
 		return false;
 
 	const auto localPlayerPtr = GetLocalPlayerPtr(true);
@@ -4419,7 +4042,7 @@ DWORD ErectusMemory::GetFavoritedWeaponId(const BYTE index)
 		TesItem referenceData{};
 		if (!Utils::Rpm(itemData[i].referencePtr, &referenceData, sizeof referenceData))
 			break;
-		if (referenceData.formType != static_cast<BYTE>(FormTypes::TesObjectWEAP))
+		if (referenceData.formType != static_cast<BYTE>(FormTypes::TesObjectWeap))
 			break;
 
 		const auto weaponId = itemData[i].itemId;
@@ -4483,33 +4106,35 @@ DWORD64 ErectusMemory::RttiGetNamePtr(const DWORD64 vtable)
 	return ErectusProcess::exe + offset + 0x10;
 }
 
-char* ErectusMemory::GetInstancedItemName(const DWORD64 displayPtr)
+std::string ErectusMemory::GetInstancedItemName(const DWORD64 displayPtr)
 {
+	std::string result{};
+
 	if (!Utils::Valid(displayPtr))
-		return nullptr;
+		return result;
 
 	DWORD64 instancedArrayPtr;
 	if (!Utils::Rpm(displayPtr, &instancedArrayPtr, sizeof instancedArrayPtr))
-		return nullptr;
+		return result;
 	if (!Utils::Valid(instancedArrayPtr))
-		return nullptr;
+		return result;
 
 	ItemInstancedArray itemInstancedArrayData{};
 	if (!Utils::Rpm(instancedArrayPtr, &itemInstancedArrayData, sizeof itemInstancedArrayData))
-		return nullptr;
+		return result;
 	if (!Utils::Valid(itemInstancedArrayData.arrayPtr) || itemInstancedArrayData.arrayEnd < itemInstancedArrayData.arrayPtr)
-		return nullptr;
+		return result;
 
 	const auto instancedArraySize = (itemInstancedArrayData.arrayEnd - itemInstancedArrayData.arrayPtr) / sizeof(DWORD64);
 	if (!instancedArraySize || instancedArraySize > 0x7FFF)
-		return nullptr;
+		return result;
 
 	auto* instancedArray = new DWORD64[instancedArraySize];
 	if (!Utils::Rpm(itemInstancedArrayData.arrayPtr, &*instancedArray, instancedArraySize * sizeof(DWORD64)))
 	{
 		delete[]instancedArray;
 		instancedArray = nullptr;
-		return nullptr;
+		return result;
 	}
 
 	for (DWORD64 i = 0; i < instancedArraySize; i++)
@@ -4538,7 +4163,7 @@ char* ErectusMemory::GetInstancedItemName(const DWORD64 displayPtr)
 
 	delete[]instancedArray;
 	instancedArray = nullptr;
-	return nullptr;
+	return result;
 }
 
 char** ErectusMemory::GetFavoritedWeapons()
@@ -4590,24 +4215,22 @@ char** ErectusMemory::GetFavoritedWeapons()
 		TesItem referenceData{};
 		if (!Utils::Rpm(itemData[i].referencePtr, &referenceData, sizeof referenceData))
 			continue;
-		if (referenceData.formType != static_cast<BYTE>(FormTypes::TESNPC))
+		if (referenceData.formType != static_cast<BYTE>(FormTypes::TesNpc))
 			continue;
 
-		auto* tempWeaponName = ErectusMemory::GetInstancedItemName(itemData[i].displayPtr);
-		if (tempWeaponName == nullptr)
+		auto tempWeaponName = GetInstancedItemName(itemData[i].displayPtr);
+		if (tempWeaponName.empty())
 		{
 			tempWeaponName = GetEntityName(referenceData.namePtr0098);
-			if (tempWeaponName == nullptr)
+			if (tempWeaponName.empty())
 				continue;
 		}
 
-		const auto arrayTextSize = static_cast <int>(sizeof"[?] " + Utils::GetTextLength(tempWeaponName));
+		const auto arrayTextSize = static_cast <int>(sizeof"[?] " + tempWeaponName.size());
 		auto* arrayText = new char[arrayTextSize];
-		sprintf_s(arrayText, arrayTextSize, "[%c] %s", GetFavoriteSlot(itemData[i].favoriteIndex), tempWeaponName);
+		sprintf_s(arrayText, arrayTextSize, "[%c] %s", GetFavoriteSlot(itemData[i].favoriteIndex), tempWeaponName.c_str());
 
 		array[itemData[i].favoriteIndex + 1] = arrayText;
-		delete[]tempWeaponName;
-		tempWeaponName = nullptr;
 	}
 
 	for (auto i = 1; i < 13; i++)
@@ -4665,23 +4288,20 @@ char* ErectusMemory::GetFavoritedWeaponText(const BYTE index)
 		TesItem referenceData{};
 		if (!Utils::Rpm(itemData[i].referencePtr, &referenceData, sizeof referenceData))
 			break;
-		if (referenceData.formType != static_cast<BYTE>(FormTypes::TESNPC))
+		if (referenceData.formType != static_cast<BYTE>(FormTypes::TesNpc))
 			break;
 
-		auto* tempWeaponName = ErectusMemory::GetInstancedItemName(itemData[i].displayPtr);
-		if (tempWeaponName == nullptr)
+		auto tempWeaponName = GetInstancedItemName(itemData[i].displayPtr);
+		if (tempWeaponName.empty())
 		{
 			tempWeaponName = GetEntityName(referenceData.namePtr0098);
-			if (tempWeaponName == nullptr)
+			if (tempWeaponName.empty())
 				continue;
 		}
 
-		const auto weaponTextSize = static_cast <int>(sizeof"[?] " + Utils::GetTextLength(tempWeaponName));
+		const auto weaponTextSize = static_cast <int>(sizeof"[?] " + tempWeaponName.size());
 		auto* weaponText = new char[weaponTextSize];
-		sprintf_s(weaponText, weaponTextSize, "[%c] %s", GetFavoriteSlot(itemData[i].favoriteIndex), tempWeaponName);
-
-		delete[]tempWeaponName;
-		tempWeaponName = nullptr;
+		sprintf_s(weaponText, weaponTextSize, "[%c] %s", GetFavoriteSlot(itemData[i].favoriteIndex), tempWeaponName.c_str());
 
 		delete[]itemData;
 		itemData = nullptr;
@@ -4966,14 +4586,14 @@ bool ErectusMemory::TransferEntityItems(TesObjectRefr entityData, TesItem refere
 	EntityLooterSettings* currentEntityLooterSettings = nullptr;
 	switch (referenceData.formType)
 	{
-	case (static_cast<BYTE>(FormTypes::TESNPC)):
-		currentEntityLooterSettings = &ErectusIni::npcLooterSettings;
-		break;
-	case (static_cast<BYTE>(FormTypes::TesObjectCONT)):
-		currentEntityLooterSettings = &ErectusIni::containerLooterSettings;
-		break;
-	default:
-		return false;
+		case static_cast<BYTE>(FormTypes::TesNpc) :
+			currentEntityLooterSettings = &ErectusIni::npcLooterSettings;
+			break;
+			case static_cast<BYTE>(FormTypes::TesObjectCont) :
+				currentEntityLooterSettings = &ErectusIni::containerLooterSettings;
+				break;
+			default:
+				return false;
 	}
 
 	if (!Utils::Valid(entityData.inventoryPtr))
@@ -5151,16 +4771,16 @@ bool ErectusMemory::LootEntity(TesObjectRefr entityData, TesItem referenceData, 
 	auto maxDistance = 0;
 	switch (referenceData.formType)
 	{
-	case (static_cast<BYTE>(FormTypes::TESNPC)):
-		isEntityNpc = true;
-		maxDistance = 76;
-		break;
-	case (static_cast<BYTE>(FormTypes::TesObjectCONT)):
-		isEntityContainer = true;
-		maxDistance = 6;
-		break;
-	default:
-		return false;
+		case static_cast<BYTE>(FormTypes::TesNpc) :
+			isEntityNpc = true;
+			maxDistance = 76;
+			break;
+			case static_cast<BYTE>(FormTypes::TesObjectCont) :
+				isEntityContainer = true;
+				maxDistance = 6;
+				break;
+			default:
+				return false;
 	}
 
 	if (isEntityNpc && (referenceData.formId == 0x00000007 || CheckHealthFlag(entityData.healthFlag) != 0x3))
@@ -5332,20 +4952,19 @@ bool ErectusMemory::Harvester()
 
 	if (useNpcLooter)
 	{
-		auto temporaryNpcSize = 0;
-		auto* temporaryNpcList = GetNpcList(&temporaryNpcSize);
-		if (temporaryNpcList == nullptr)
+		auto temporaryNpcList = GetNpcPtrList();
+		if (temporaryNpcList.empty())
 			return false;
 
-		for (auto i = 0; i < temporaryNpcSize; i++)
+		for (auto npcPtr : temporaryNpcList)
 		{
-			if (!Utils::Valid(temporaryNpcList[i]))
+			if (!Utils::Valid(npcPtr))
 				continue;
-			if (temporaryNpcList[i] == localPlayerPtr)
+			if (npcPtr == localPlayerPtr)
 				continue;
 
 			TesObjectRefr entityData{};
-			if (!Utils::Rpm(temporaryNpcList[i], &entityData, sizeof entityData))
+			if (!Utils::Rpm(npcPtr, &entityData, sizeof entityData))
 				continue;
 			if (!Utils::Valid(entityData.referencedItemPtr))
 				continue;
@@ -5356,34 +4975,30 @@ bool ErectusMemory::Harvester()
 			TesItem referenceData{};
 			if (!Utils::Rpm(entityData.referencedItemPtr, &referenceData, sizeof referenceData))
 				continue;
-			if (referenceData.formType != static_cast<BYTE>(FormTypes::TESNPC))
+			if (referenceData.formType != static_cast<BYTE>(FormTypes::TesNpc))
 				continue;
 			if (referenceData.formId == 0x00000007)
 				continue;
 
 			LootEntity(entityData, referenceData, localPlayer, onlyUseNpcLooterList, useNpcLooterBlacklist);
 		}
-
-		delete[]temporaryNpcList;
-		temporaryNpcList = nullptr;
 	}
 
 	if (useContainerLooter || useFloraHarvester)
 	{
-
 		auto temporaryEntityList = GetEntityList();
 		if (temporaryEntityList.empty())
 			return false;
 
-		for (auto item : temporaryEntityList)
+		for (auto entityPtr : temporaryEntityList)
 		{
-			if (!Utils::Valid(item))
+			if (!Utils::Valid(entityPtr))
 				continue;
-			if (item == localPlayerPtr)
+			if (entityPtr == localPlayerPtr)
 				continue;
 
 			TesObjectRefr entityData{};
-			if (!Utils::Rpm(item, &entityData, sizeof entityData))
+			if (!Utils::Rpm(entityPtr, &entityData, sizeof entityData))
 				continue;
 			if (!Utils::Valid(entityData.referencedItemPtr))
 				continue;
@@ -5395,7 +5010,7 @@ bool ErectusMemory::Harvester()
 			if (!Utils::Rpm(entityData.referencedItemPtr, &referenceData, sizeof referenceData))
 				continue;
 
-			if (referenceData.formType == static_cast<byte>(FormTypes::TesObjectCONT))
+			if (referenceData.formType == static_cast<byte>(FormTypes::TesObjectCont))
 			{
 				if (useContainerLooter)
 					LootEntity(entityData, referenceData, localPlayer, onlyUseContainerLooterList, useContainerLooterBlacklist);

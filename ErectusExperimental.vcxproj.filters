@@ -13,6 +13,21 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Source Files\imgui">
+      <UniqueIdentifier>{16fdff7c-cf2b-49f0-851c-7451610ca639}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\imgui">
+      <UniqueIdentifier>{b0df7e73-4b9b-4ff8-999d-bb308600c86e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\mINI">
+      <UniqueIdentifier>{92f3b9f7-703a-48f2-954c-0445fd68fde5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\fmt">
+      <UniqueIdentifier>{fae19c0b-47d5-43e9-9e3d-6d032f069ca9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\fmt">
+      <UniqueIdentifier>{58337b08-2b09-4774-a0e5-9bc162881b1d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ErectusD3D9.cpp">
@@ -36,26 +51,29 @@
     <ClCompile Include="ErectusThread.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="imgui.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="imgui_draw.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="imgui_impl_dx9.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="imgui_impl_win32.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="imgui_widgets.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="_main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Utils.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui.cpp">
+      <Filter>Source Files\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui_draw.cpp">
+      <Filter>Source Files\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui_impl_dx9.cpp">
+      <Filter>Source Files\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui_impl_win32.cpp">
+      <Filter>Source Files\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui_widgets.cpp">
+      <Filter>Source Files\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="format.cc">
+      <Filter>Source Files\fmt</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -72,35 +90,44 @@
     <ClInclude Include="ErectusInclude.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="imgui.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="imgui_impl_dx9.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="imgui_impl_win32.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="imgui_internal.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="imstb_rectpack.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="imstb_textedit.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="imstb_truetype.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ini.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="imgui_impl_dx9.h">
+      <Filter>Header Files\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui_impl_win32.h">
+      <Filter>Header Files\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui_internal.h">
+      <Filter>Header Files\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="imstb_rectpack.h">
+      <Filter>Header Files\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="imstb_textedit.h">
+      <Filter>Header Files\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="imstb_truetype.h">
+      <Filter>Header Files\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui.h">
+      <Filter>Header Files\imgui</Filter>
+    </ClInclude>
     <ClInclude Include="imconfig.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="ini.h">
+      <Filter>Header Files\mINI</Filter>
+    </ClInclude>
+    <ClInclude Include="fmt\format.h">
+      <Filter>Header Files\fmt</Filter>
+    </ClInclude>
+    <ClInclude Include="fmt\format-inl.h">
+      <Filter>Header Files\fmt</Filter>
+    </ClInclude>
+    <ClInclude Include="fmt\core.h">
+      <Filter>Header Files\fmt</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

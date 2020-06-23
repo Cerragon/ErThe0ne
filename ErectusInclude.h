@@ -5,8 +5,7 @@
 #include <Windows.h>
 #include <TlHelp32.h>
 
-
-//Icon
+#include <unordered_set>
 
 //Overlay
 #include <dwmapi.h>
@@ -67,23 +66,24 @@ constexpr auto VTABLE_CLIENTSTATEMSG = 0x03B23940UL;//1.3.1.26;
 constexpr auto VTABLE_REQUESTHITSONACTORS = 0x03B1B700UL;//1.3.1.26;
 constexpr auto VTABLE_CREATEPROJECTILEMESSAGECLIENT = 0x03AE8A38UL;//1.3.1.26;
 
-enum class FormTypes :  BYTE
+enum class FormTypes : BYTE
 {
-	TesObjectARMO = 0x25,
-	TesObjectBOOK = 0x26,
-	TesObjectCONT = 0x27,
-	TesObjectMISC = 0x2B,
+	TesObjectArmo = 0x25,
+	TesObjectBook = 0x26,
+	TesObjectCont = 0x27,
+	TesObjectMisc = 0x2B,
 	CurrencyObject = 0x2E,
 	TesFlora = 0x34,
-	TesObjectWEAP = 0x36,
+	TesObjectWeap = 0x36,
 	TesAmmo = 0x37,
-	TESNPC = 0x38,
-	TESKey = 0x3B,
+	TesNpc = 0x38,
+	TesKey = 0x3B,
 	AlchemyItem = 0x3C,
-	TESUtilityItem = 0x3D,
-	BGSNote = 0x3F,
-	TESLevItem = 0x47,
+	TesUtilityItem = 0x3D,
+	BgsNote = 0x3F,
+	TesLevItem = 0x47,
 };
+
 //CustomEntry Flags
 constexpr auto CUSTOM_ENTRY_DEFAULT = 0x0000000000000000ULL;
 constexpr auto CUSTOM_ENTRY_UNNAMED = 0x0000000000000001ULL;
@@ -153,6 +153,7 @@ public:
 	BYTE padding019B[0xA89];
 	DWORD formId0C24;//0xC24
 };
+
 class TesItem
 {
 public:
@@ -623,7 +624,7 @@ namespace MemoryClasses {
 		DWORD entityFormId;
 		DWORD referenceFormId;
 		DWORD64 flag;
-		char* name;
+		std::string name;
 	};
 
 	class ExecutionList
@@ -1343,7 +1344,6 @@ public:
 	static int GetRangedInt(int min, int max);
 
 	static int GetTextLength(const char* text);
-	static int GetTextSize(const char* text);
 
 	static bool Valid(DWORD64 ptr);
 	static bool Rpm(DWORD64 src, void* dst, size_t size);
@@ -1354,7 +1354,7 @@ public:
 
 	static float GetDistance(float* a1, float* a2);
 	static float GetDegrees(float* src, float* forward, float* origin);
-	static bool Wts(const float* view, const float* position, float* screen);
+	static bool WorldToScreen(const float* view, const float* position, float* screen);
 	static void ProjectView(float* dst, const float* forward, const float* origin, float distance);
 
 	static bool DoubleKeyPress(int keyCodeA, int keyCodeB);
@@ -1376,7 +1376,7 @@ public:
 	static void SetProcessError(int errorId, const char* error);
 
 	static std::vector<DWORD> GetProcesses();
-	
+
 	static bool HwndValid(DWORD processId);
 
 	inline static std::string processError;
@@ -1520,15 +1520,9 @@ public:
 	static DWORD GetStashFormId();
 
 	static bool UpdateBufferEntityList();
-	static void DeleteBufferEntityList();
 	static bool UpdateBufferNpcList();
-	static void DeleteBufferNpcList();
 	static bool UpdateBufferPlayerList();
-	static void DeleteBufferPlayerList();
-
-	static void DeleteCustomEntityList();
-	static void DeleteCustomNpcList();
-	static void DeleteCustomPlayerList();
+		
 	static void DeleteOldWeaponList();
 
 	static bool UpdateOldWeaponData();
@@ -1577,27 +1571,8 @@ public:
 
 	static bool MessagePatcher(bool state);
 
-	inline static bool customEntityListUpdated = false;
-	inline static bool customNpcListUpdated = false;
-	inline static bool customPlayerListUpdated = false;
-
-	inline static bool bufferEntityListUpdated = false;
-	inline static bool bufferNpcListUpdated = false;
-	inline static bool bufferPlayerListUpdated = false;
 	inline static bool oldWeaponListUpdated = false;
-
-	inline static bool customEntityListDestructionQueued = false;
-	inline static bool customNpcListDestructionQueued = false;
-	inline static bool customPlayerListDestructionQueued = false;
-	inline static bool bufferEntityListDestructionQueued = false;
-	inline static bool bufferPlayerListDestructionQueued = false;
-	inline static bool bufferNpcListDestructionQueued = false;
-
-	inline static int bufferEntityListCounter = 0;
-	inline static int bufferNpcListCounter = 0;
-	inline static int bufferPlayerListCounter = 0;
 	inline static int oldWeaponListCounter = 0;
-
 	inline static int oldWeaponListSize = 0;
 
 	inline static bool targetLockingValid = false;
@@ -1610,10 +1585,13 @@ public:
 
 	inline static bool allowMessages = false;
 
+	inline static std::vector<MemoryClasses::CustomEntry> entityDataBuffer{};
+	inline static std::vector<MemoryClasses::CustomEntry> npcDataBuffer{};
+	inline static std::vector<MemoryClasses::CustomEntry> playerDataBuffer{};
+	
 private:
-	static bool RenderCustomEntryA(MemoryClasses::CustomEntry* customEntryData, SettingsClasses::OverlaySettingsA customSettingsA);
-	static bool RenderCustomEntryB(MemoryClasses::CustomEntry* customEntryData, SettingsClasses::OverlaySettingsB customSettingsB);
-	bool RenderCustomEntityList2();
+	static bool RenderCustomEntryA(MemoryClasses::CustomEntry& entry, SettingsClasses::OverlaySettingsA settings);
+	static bool RenderCustomEntryB(MemoryClasses::CustomEntry& entry, SettingsClasses::OverlaySettingsB settings);
 
 	static char* GetPlayerName(MemoryClasses::ClientAccount* clientAccountData);
 	static bool TargetValid(TesObjectRefr entityData, TesItem referenceData);
@@ -1643,17 +1621,15 @@ private:
 
 	static bool MovePlayer();
 
-
 	static bool CheckOpkDistance(DWORD64 opkPage, bool players);
 	static bool InsideInteriorCell();
 	static int RenderLocalPlayerData();
-
 
 	static DWORD GetEntityId(TesObjectRefr entityData);
 	static bool SendHitsToServer(MemoryClasses::Hits* hitsData, size_t hitsDataSize);
 	static DWORD64 GetNukeCodePtr(DWORD formId);
 	static DWORD64 RttiGetNamePtr(DWORD64 vtable);
-	static char* GetInstancedItemName(DWORD64 displayPtr);
+	static std::string GetInstancedItemName(DWORD64 displayPtr);
 	static bool EntityInventoryValid(TesObjectRefr entityData);
 	static bool AllowLegendaryWeapons(SettingsClasses::EntityLooterSettings* customEntityLooterSettings);
 	static bool AllowLegendaryArmor(SettingsClasses::EntityLooterSettings* customEntityLooterSettings);
@@ -1677,8 +1653,8 @@ private:
 	static BYTE CheckHealthFlag(BYTE healthFlag);
 	static DWORD64 GetLocalPlayerPtr(bool checkMainMenu);
 	static std::vector<DWORD64> GetEntityList();
-	static DWORD64* GetNpcList(int* size);
-	static DWORD64* GetRecipeArray(int* size);
+	static std::vector<DWORD64> GetNpcPtrList();
+	static std::vector<DWORD64> GetRecipeArray();
 	static bool CheckWhitelistedFlux(TesItem referenceData);
 	static bool FloraLeveledListValid(MemoryClasses::LeveledList leveledListData);
 	static bool FloraValid(TesItem referenceData);
@@ -1688,31 +1664,11 @@ private:
 	static bool CheckReferenceItem(TesItem referenceData);
 	static void GetCustomEntityData(TesItem referenceData, DWORD64* entityFlag, DWORD64* entityNamePtr, int* enabledDistance, bool checkScrap, bool checkIngredient);
 	static bool GetActorSnapshotComponentData(TesObjectRefr entityData, MemoryClasses::ActorSnapshotComponent* actorSnapshotComponentData);
-	static char* GetEntityName(DWORD64 ptr);
-
-	inline static MemoryClasses::CustomEntry* customEntityList = nullptr;
-	inline static int customEntityListSize = 0;
-	inline static int customEntityListCounter = 0;
-
-	inline static std::vector<MemoryClasses::CustomEntry> bufferEntityList;
-
-	inline static MemoryClasses::CustomEntry* customNpcList = nullptr;
-	inline static int customNpcListSize = 0;
-	inline static int customNpcListCounter = 0;
-
-	inline static MemoryClasses::CustomEntry* bufferNpcList = nullptr;
-	inline static int bufferNpcListSize = 0;
-
-	inline static MemoryClasses::CustomEntry* customPlayerList = nullptr;
-	inline static int customPlayerListSize = 0;
-	inline static int customPlayerListCounter = 0;
-
-	inline static MemoryClasses::CustomEntry* bufferPlayerList = nullptr;
-	inline static int bufferPlayerListSize = 0;
+	static std::string GetEntityName(DWORD64 ptr);
 
 	inline static MemoryClasses::OldWeapon* oldWeaponList = nullptr;
 
-	inline static int knownRecipeArraySize = 0;
+	inline static std::unordered_set<DWORD> knownRecipes{};
 
 	virtual void __dummy() = 0;
 };
@@ -1752,17 +1708,14 @@ public:
 	static SettingsClasses::MeleeSettings customMeleeSettings;
 	static SettingsClasses::ChargenSettings customChargenSettings;
 	static SettingsClasses::ExtraNpcSettings customExtraNpcSettings;
-	
 
 	inline static SettingsClasses::WeaponSettings defaultWeaponSettings{
 		false, false, false, false, false, false, false, 250, false, 2.0f, false, 500.0f
 	};
 
 private:
-	static void GetOverlaySettingsB(const char* section, SettingsClasses::OverlaySettingsB* value,
-	                         SettingsClasses::OverlaySettingsB* deflt);
-	static void SetOverlaySettingsB(const char* section, SettingsClasses::OverlaySettingsB* value,
-	                                SettingsClasses::OverlaySettingsB* deflt);
+	static void GetOverlaySettingsB(const char* section, SettingsClasses::OverlaySettingsB* value, SettingsClasses::OverlaySettingsB* deflt);
+	static void SetOverlaySettingsB(const char* section, SettingsClasses::OverlaySettingsB* value, SettingsClasses::OverlaySettingsB* deflt);
 	static void GetScrapSettings();
 	static void SetScrapSettings();
 	static void GetItemLooterSettings();

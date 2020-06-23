@@ -7,7 +7,7 @@ extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT uMsg, WPARAM wPara
 
 // ReSharper disable once CppParameterMayBeConst
 // ReSharper disable once CppParameterMayBeConst
-LRESULT CALLBACK ErectusMain::WndCallback(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK ErectusMain::WndCallback(HWND hwnd, const UINT uMsg, const WPARAM wParam, const LPARAM lParam)
 {
 	if (ImGui_ImplWin32_WndProcHandler(hwnd, uMsg, wParam, lParam))
 	{
@@ -67,36 +67,26 @@ void ErectusMain::Render() {
 				{
 					overlayForeground = true;
 					if (!SetOverlayPosition(true, true))
-					{
 						ErectusProcess::SetProcessMenu();
-					}
 				}
 				else
 				{
 					overlayForeground = false;
 					if (!SetOverlayPosition(false, false))
-					{
 						ErectusProcess::SetProcessMenu();
-					}
 				}
 			}
 		}
 
 		if (!ErectusThread::threadCreationState)
-		{
 			ErectusThread::threadCreationState = ErectusThread::CreateProcessThreads();
-		}
 
 		if (Utils::DoubleKeyPress(VK_CONTROL, VK_RETURN))
 		{
 			if (overlayMenuActive)
-			{
 				SetOverlayPosition(false, true);
-			}
 			else
-			{
 				SetOverlayMenu();
-			}
 		}
 	}
 
@@ -134,7 +124,7 @@ void ErectusMain::RenderProcessMenu() {
 }
 
 void ErectusMain::RenderOverlayMenu() {
-	if (!ErectusMain::overlayMenuActive)
+	if (!overlayMenuActive)
 		return;
 
 	ErectusImGui::OverlayMenu();
@@ -160,7 +150,6 @@ void ErectusMain::RenderOverlay()
 	{
 		if (ErectusMemory::targetLockingPtr)
 		{
-
 			ErectusMemory::targetLockingCooldown = ErectusIni::customTargetSettings.retargeting ? ErectusIni::customTargetSettings.cooldown : -1;
 			ErectusMemory::targetLockingPtr = 0;
 		}
@@ -170,9 +159,8 @@ void ErectusMain::RenderOverlay()
 			ErectusMemory::targetLockingPtr = ErectusMemory::targetLockingClosestPtr;
 		}
 	}
-
 	ErectusMemory::RenderData();
-
+	
 	Renderer::d3DxSprite->End();
 }
 
@@ -191,8 +179,8 @@ void ErectusMain::SetOverlayMenu()
 	}
 
 	int bufferPosition[2];
-	bufferPosition[0] = (GetSystemMetrics(SM_CXSCREEN) / 2) - (windowSize[0] / 2);
-	bufferPosition[1] = (GetSystemMetrics(SM_CYSCREEN) / 2) - (windowSize[1] / 2);
+	bufferPosition[0] = GetSystemMetrics(SM_CXSCREEN) / 2 - windowSize[0] / 2;
+	bufferPosition[1] = GetSystemMetrics(SM_CYSCREEN) / 2 - windowSize[1] / 2;
 
 	if (windowPosition[0] != bufferPosition[0] || windowPosition[1] != bufferPosition[1])
 	{
@@ -220,9 +208,7 @@ void ErectusMain::SetOverlayMenu()
 		}
 
 		if (style & WS_EX_TOPMOST)
-		{
 			SetWindowPos(windowHwnd, HWND_NOTOPMOST, windowPosition[0], windowPosition[1], windowSize[0], windowSize[1], 0);
-		}
 	}
 
 	ErectusProcess::processMenuActive = false;
@@ -256,8 +242,8 @@ int ErectusMain::CreateWnd(const HINSTANCE hInstance)
 
 	windowSize[0] = 384;
 	windowSize[1] = 224;
-	windowPosition[0] = (GetSystemMetrics(SM_CXSCREEN) / 2) - windowSize[0] / 2;
-	windowPosition[1] = (GetSystemMetrics(SM_CYSCREEN) / 2) - windowSize[1] / 2;
+	windowPosition[0] = GetSystemMetrics(SM_CXSCREEN) / 2 - windowSize[0] / 2;
+	windowPosition[1] = GetSystemMetrics(SM_CYSCREEN) / 2 - windowSize[1] / 2;
 	windowHwnd = CreateWindowEx(WS_EX_TRANSPARENT | WS_EX_LAYERED, wndClass.lpszClassName, OVERLAY_WINDOW_NAME, WS_POPUP, windowPosition[0], windowPosition[1], windowSize[0], windowSize[1], nullptr, nullptr, wndClass.hInstance, nullptr);
 
 	if (windowHwnd == nullptr)
@@ -298,20 +284,20 @@ bool ErectusMain::SetOverlayPosition(const bool topmost, const bool layered)
 	size[1] = clientRect.bottom;
 
 	int position[2];
-	position[0] = windowRect.left - (((clientRect.right + windowRect.left) - windowRect.right) / 2);
-	position[1] = windowRect.top - (((clientRect.bottom + windowRect.top) - windowRect.bottom) / 2);
+	position[0] = windowRect.left - (clientRect.right + windowRect.left - windowRect.right) / 2;
+	position[1] = windowRect.top - (clientRect.bottom + windowRect.top - windowRect.bottom) / 2;
 
 	if (GetWindowLongPtr(ErectusProcess::hWnd, GWL_STYLE) & WS_BORDER)
 	{
 		auto buffer = GetSystemMetrics(SM_CYCAPTION) / 2;
-		buffer += (buffer & 1);
+		buffer += buffer & 1;
 		position[1] += buffer;
 	}
 
 	if (GetMenu(ErectusProcess::hWnd) != nullptr)
 	{
 		auto buffer = GetSystemMetrics(SM_CYMENU) / 2;
-		buffer += (buffer & 1);
+		buffer += buffer & 1;
 		position[1] += buffer;
 	}
 
@@ -345,29 +331,21 @@ bool ErectusMain::SetOverlayPosition(const bool topmost, const bool layered)
 				return false;
 			}
 		}
-		else if (!topmost && (style & WS_EX_TOPMOST))
-		{
+		else if (!topmost && style & WS_EX_TOPMOST)
 			SetWindowPos(windowHwnd, HWND_NOTOPMOST, windowPosition[0], windowPosition[1], windowSize[0], windowSize[1], 0);
-		}
 		else
-		{
 			windowTopmostCounter = 0;
-		}
 
 		if (layered && !(style & WS_EX_LAYERED))
 		{
 			style |= WS_EX_LAYERED;
 			SetWindowLongPtr(windowHwnd, GWL_EXSTYLE, style);
 			if (experimentalOverlayFix)
-			{
 				SetLayeredWindowAttributes(windowHwnd, RGB(0x00, 0x00, 0x00), 0xFF, LWA_ALPHA | LWA_COLORKEY);
-			}
 			else
-			{
 				SetLayeredWindowAttributes(windowHwnd, RGB(0x00, 0x00, 0x00), 0xFF, LWA_ALPHA);
-			}
 		}
-		else if (!layered && (style & WS_EX_LAYERED))
+		else if (!layered && style & WS_EX_LAYERED)
 		{
 			style &= ~WS_EX_LAYERED;
 			SetWindowLongPtr(windowHwnd, GWL_EXSTYLE, style);

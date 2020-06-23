@@ -15,8 +15,8 @@ void ErectusProcess::SetProcessMenu()
 	}
 
 	int bufferPosition[2];
-	bufferPosition[0] = (GetSystemMetrics(SM_CXSCREEN) / 2) - (ErectusMain::windowSize[0] / 2);
-	bufferPosition[1] = (GetSystemMetrics(SM_CYSCREEN) / 2) - (ErectusMain::windowSize[1] / 2);
+	bufferPosition[0] = GetSystemMetrics(SM_CXSCREEN) / 2 - ErectusMain::windowSize[0] / 2;
+	bufferPosition[1] = GetSystemMetrics(SM_CYSCREEN) / 2 - ErectusMain::windowSize[1] / 2;
 
 	if (ErectusMain::windowPosition[0] != bufferPosition[0] || ErectusMain::windowPosition[1] != bufferPosition[1])
 	{
@@ -68,9 +68,7 @@ void ErectusProcess::ResetProcessData()
 
 
 	if (!processMenuActive)
-	{
 		SetProcessMenu();
-	}
 
 	SetProcessError(0, "Process State: No process selected");
 
@@ -87,29 +85,11 @@ void ErectusProcess::ResetProcessData()
 				ErectusMain::CloseWnd();
 				break;
 			}
-
 			std::this_thread::sleep_for(std::chrono::milliseconds(10));
 		}
 
 		if (!areThreadsActive)
-		{
 			ErectusMemory::MessagePatcher(false);
-		}
-	}
-
-	if (ErectusMemory::customEntityListUpdated)
-	{
-		ErectusMemory::DeleteCustomEntityList();
-	}
-
-	if (ErectusMemory::customNpcListUpdated)
-	{
-		ErectusMemory::DeleteCustomNpcList();
-	}
-
-	if (ErectusMemory::customPlayerListUpdated)
-	{
-		ErectusMemory::DeleteCustomPlayerList();
 	}
 
 	pid = 0;
@@ -132,14 +112,12 @@ std::vector<DWORD> ErectusProcess::GetProcesses()
 		return result;
 
 	PROCESSENTRY32 lppe;
-	lppe.dwSize = sizeof(lppe);
+	lppe.dwSize = sizeof lppe;
 
 	while (Process32Next(hSnapshot, &lppe))
 	{
 		if (!strcmp(lppe.szExeFile, "Fallout76.exe"))
-		{
 			result.push_back(lppe.th32ProcessID);
-		}
 	}
 
 	CloseHandle(hSnapshot);
@@ -154,8 +132,8 @@ BOOL ErectusProcess::HwndEnumFunc(const HWND hwnd, const LPARAM lParam)
 
 	if (lpdwProcessId == lParam)
 	{
-		char buffer[sizeof("Fallout76")] = { '\0' };
-		if (GetClassName(hwnd, buffer, sizeof(buffer)))
+		char buffer[sizeof"Fallout76"] = { '\0' };
+		if (GetClassName(hwnd, buffer, sizeof buffer))
 		{
 			if (!strcmp(buffer, "Fallout76"))
 			{
@@ -205,10 +183,11 @@ bool ErectusProcess::HwndValid(const DWORD processId)
 DWORD64 ErectusProcess::GetModuleBaseAddress(const DWORD pid, const char* module)
 {
 	auto* const hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, pid);
-	if (hSnapshot == INVALID_HANDLE_VALUE) return 0;
+	if (hSnapshot == INVALID_HANDLE_VALUE)
+		return 0;
 
 	MODULEENTRY32 lpme;
-	lpme.dwSize = sizeof(lpme);
+	lpme.dwSize = sizeof lpme;
 
 	while (Module32Next(hSnapshot, &lpme))
 	{
@@ -226,9 +205,7 @@ DWORD64 ErectusProcess::GetModuleBaseAddress(const DWORD pid, const char* module
 bool ErectusProcess::AttachToProcess(const DWORD processId)
 {
 	if(pid == processId)
-	{
 		return  true;
-	}
 
 	ResetProcessData();
 

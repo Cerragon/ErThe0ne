@@ -4,7 +4,6 @@ using namespace SettingsClasses;
 mINI::INIFile file("Erectus.ini");
 mINI::INIStructure ini;
 
-
 OverlaySettingsA defltPlayerSettings
 {
 	true,					//Enabled
@@ -745,13 +744,11 @@ ExtraNpcSettings ErectusIni::customExtraNpcSettings = defltExtraNpcSettings;
 void ErectusIni::GetDword(const char *section, const char *key, DWORD *value, const DWORD *deflt)
 {
 	if (!ini.has(section))
-	{
 		ini[section];
-	}
 
 	if (!ini[section].has(key))
 	{
-		char defltText[sizeof("00000000")];
+		char defltText[sizeof"00000000"];
 		sprintf_s(defltText, "%08lX", *deflt);
 		ini[section][key] = defltText;
 	}
@@ -769,18 +766,16 @@ void ErectusIni::GetDword(const char *section, const char *key, DWORD *value, co
 void ErectusIni::SetDword(const char *section, const char *key, const DWORD *value, const DWORD *deflt)
 {
 	if (!ini.has(section))
-	{
 		ini[section];
-	}
 
 	if (!ini[section].has(key))
 	{
-		char defltText[sizeof("00000000")];
+		char defltText[sizeof"00000000"];
 		sprintf_s(defltText, "%08lX", *deflt);
 		ini[section][key] = defltText;
 	}
 
-	char valueText[sizeof("00000000")];
+	char valueText[sizeof"00000000"];
 	sprintf_s(valueText, "%08lX", *value);
 	ini[section][key] = valueText;
 }
@@ -788,14 +783,10 @@ void ErectusIni::SetDword(const char *section, const char *key, const DWORD *val
 void ErectusIni::GetInt(const char *section, const char *key, int *value, const int *deflt)
 {
 	if (!ini.has(section))
-	{
 		ini[section];
-	}
 
 	if (!ini[section].has(key))
-	{
 		ini[section][key] = std::to_string(*deflt);
-	}
 
 	try
 	{
@@ -810,14 +801,10 @@ void ErectusIni::GetInt(const char *section, const char *key, int *value, const 
 void ErectusIni::SetInt(const char *section, const char *key, const int *value, const int *deflt)
 {
 	if (!ini.has(section))
-	{
 		ini[section];
-	}
 
 	if (!ini[section].has(key))
-	{
 		ini[section][key] = std::to_string(*deflt);
-	}
 
 	ini[section][key] = std::to_string(*value);
 }
@@ -840,14 +827,10 @@ void ErectusIni::SetSliderInt(const char *section, const char *key, int *value, 
 void ErectusIni::GetFloat(const char *section, const char *key, float *value, const float *deflt)
 {
 	if (!ini.has(section))
-	{
 		ini[section];
-	}
 
 	if (!ini[section].has(key))
-	{
 		ini[section][key] = std::to_string(*deflt);
-	}
 
 	try
 	{
@@ -862,14 +845,10 @@ void ErectusIni::GetFloat(const char *section, const char *key, float *value, co
 void ErectusIni::SetFloat(const char *section, const char *key, const float *value, const float *deflt)
 {
 	if (!ini.has(section))
-	{
 		ini[section];
-	}
 
 	if (!ini[section].has(key))
-	{
 		ini[section][key] = std::to_string(*deflt);
-	}
 
 	ini[section][key] = std::to_string(*value);
 }
@@ -882,7 +861,7 @@ void ErectusIni::GetSliderFloat(const char *section, const char *key, float *val
 	SetFloat(section, key, value, deflt);
 }
 
-void ErectusIni::ErectusIni::SetSliderFloat(const char *section, const char *key, float *value, float *deflt, const float min, const float max)
+void ErectusIni::SetSliderFloat(const char *section, const char *key, float *value, float *deflt, const float min, const float max)
 {
 	Utils::ValidateFloat(value, min, max);
 	Utils::ValidateFloat(deflt, min, max);
@@ -1103,8 +1082,8 @@ void ErectusIni::GetOverlaySettingsB(const char *section, OverlaySettingsB* valu
 	GetBool(section, "TextCentered", &value->textCentered, &deflt->textCentered);
 	for (auto i = 0; i < 32; i++)
 	{
-		char whitelistedText[sizeof("Whitelisted31")];
-		char whitelistText[sizeof("Whitelist31")];
+		char whitelistedText[sizeof"Whitelisted31"];
+		char whitelistText[sizeof"Whitelist31"];
 		sprintf_s(whitelistedText, "Whitelisted%d", i);
 		sprintf_s(whitelistText, "Whitelist%d", i);
 		GetBool(section, whitelistedText, &value->whitelisted[i], &deflt->whitelisted[i]);
@@ -1129,8 +1108,8 @@ void ErectusIni::SetOverlaySettingsB(const char *section, OverlaySettingsB* valu
 	SetBool(section, "TextCentered", &value->textCentered, &deflt->textCentered);
 	for (auto i = 0; i < 32; i++)
 	{
-		char whitelistedText[sizeof("Whitelisted31")];
-		char whitelistText[sizeof("Whitelist31")];
+		char whitelistedText[sizeof"Whitelisted31"];
+		char whitelistText[sizeof"Whitelist31"];
 		sprintf_s(whitelistedText, "Whitelisted%d", i);
 		sprintf_s(whitelistText, "Whitelist%d", i);
 		SetBool(section, whitelistedText, &value->whitelisted[i], &deflt->whitelisted[i]);
@@ -1149,22 +1128,18 @@ void ErectusIni::GetScrapSettings()
 	GetSliderInt("ScrapSettings", "ScrapLooterDistance", &customScrapLooterSettings.scrapLooterDistance, &defltScrapLooterSettings.scrapLooterDistance, 0, 3000);
 	for (auto i = 0; i < 40; i++)
 	{
-		char scrapEnabledText[sizeof("ScrapEnabled39")];
+		char scrapEnabledText[sizeof"ScrapEnabled39"];
 		sprintf_s(scrapEnabledText, "ScrapEnabled%d", i);
 		GetBool("ScrapSettings", scrapEnabledText, &customScrapLooterSettings.scrapEnabledList[i], &defltScrapLooterSettings.scrapEnabledList[i]);
 	}
 	if (customScrapLooterSettings.scrapAutomaticSpeedMax < customScrapLooterSettings.scrapAutomaticSpeedMin)
-	{
 		customScrapLooterSettings.scrapAutomaticSpeedMax = customScrapLooterSettings.scrapAutomaticSpeedMin;
-	}
 }
 
 void ErectusIni::SetScrapSettings()
 {
 	if (customScrapLooterSettings.scrapAutomaticSpeedMax < customScrapLooterSettings.scrapAutomaticSpeedMin)
-	{
 		customScrapLooterSettings.scrapAutomaticSpeedMax = customScrapLooterSettings.scrapAutomaticSpeedMin;
-	}
 	SetBool("ScrapSettings", "ScrapKeybindEnabled", &customScrapLooterSettings.scrapKeybindEnabled, &defltScrapLooterSettings.scrapKeybindEnabled);
 	SetBool("ScrapSettings", "ScrapOverrideEnabled", &customScrapLooterSettings.scrapOverrideEnabled, &defltScrapLooterSettings.scrapOverrideEnabled);
 	SetBool("ScrapSettings", "ScrapAutomaticLootingEnabled", &customScrapLooterSettings.scrapAutomaticLootingEnabled, &defltScrapLooterSettings.scrapAutomaticLootingEnabled);
@@ -1174,7 +1149,7 @@ void ErectusIni::SetScrapSettings()
 	SetSliderInt("ScrapSettings", "ScrapLooterDistance", &customScrapLooterSettings.scrapLooterDistance, &defltScrapLooterSettings.scrapLooterDistance, 0, 3000);
 	for (auto i = 0; i < 40; i++)
 	{
-		char scrapEnabledText[sizeof("ScrapEnabled39")];
+		char scrapEnabledText[sizeof"ScrapEnabled39"];
 		sprintf_s(scrapEnabledText, "ScrapEnabled%d", i);
 		SetBool("ScrapSettings", scrapEnabledText, &customScrapLooterSettings.scrapEnabledList[i], &defltScrapLooterSettings.scrapEnabledList[i]);
 	}
@@ -1214,8 +1189,8 @@ void ErectusIni::GetItemLooterSettings()
 	GetBool("ItemLooterSettings", "ItemLooterBlacklistToggle", &customItemLooterSettings.itemLooterBlacklistToggle, &defltItemLooterSettings.itemLooterBlacklistToggle);
 	for (auto i = 0; i < 100; i++)
 	{
-		char itemEnabledText[sizeof("ItemLooterEnabled99")];
-		char itemFormIdText[sizeof("ItemLooterList99")];
+		char itemEnabledText[sizeof"ItemLooterEnabled99"];
+		char itemFormIdText[sizeof"ItemLooterList99"];
 		sprintf_s(itemEnabledText, "ItemLooterEnabled%d", i);
 		sprintf_s(itemFormIdText, "ItemLooterList%d", i);
 		GetBool("ItemLooterSettings", itemEnabledText, &customItemLooterSettings.itemLooterEnabledList[i], &defltItemLooterSettings.itemLooterEnabledList[i]);
@@ -1223,25 +1198,21 @@ void ErectusIni::GetItemLooterSettings()
 	}
 	for (auto i = 0; i < 64; i++)
 	{
-		char itemBlacklistEnabledText[sizeof("ItemLooterBlacklistEnabled63")];
-		char itemBlacklistFormIdText[sizeof("ItemLooterBlacklist63")];
+		char itemBlacklistEnabledText[sizeof"ItemLooterBlacklistEnabled63"];
+		char itemBlacklistFormIdText[sizeof"ItemLooterBlacklist63"];
 		sprintf_s(itemBlacklistEnabledText, "ItemLooterBlacklistEnabled%d", i);
 		sprintf_s(itemBlacklistFormIdText, "ItemLooterBlacklist%d", i);
 		GetBool("ItemLooterSettings", itemBlacklistEnabledText, &customItemLooterSettings.itemLooterBlacklistEnabled[i], &defltItemLooterSettings.itemLooterBlacklistEnabled[i]);
 		GetDword("ItemLooterSettings", itemBlacklistFormIdText, &customItemLooterSettings.itemLooterBlacklist[i], &defltItemLooterSettings.itemLooterBlacklist[i]);
 	}
 	if (customItemLooterSettings.itemAutomaticSpeedMax < customItemLooterSettings.itemAutomaticSpeedMin)
-	{
 		customItemLooterSettings.itemAutomaticSpeedMax = customItemLooterSettings.itemAutomaticSpeedMin;
-	}
 }
 
 void ErectusIni::SetItemLooterSettings()
 {
 	if (customItemLooterSettings.itemAutomaticSpeedMax < customItemLooterSettings.itemAutomaticSpeedMin)
-	{
 		customItemLooterSettings.itemAutomaticSpeedMax = customItemLooterSettings.itemAutomaticSpeedMin;
-	}
 	SetBool("ItemLooterSettings", "ItemKeybindEnabled", &customItemLooterSettings.itemKeybindEnabled, &defltItemLooterSettings.itemKeybindEnabled);
 	SetBool("ItemLooterSettings", "ItemAutomaticLootingEnabled", &customItemLooterSettings.itemAutomaticLootingEnabled, &defltItemLooterSettings.itemAutomaticLootingEnabled);
 	SetBool("ItemLooterSettings", "ItemAutomaticStatus", &customItemLooterSettings.itemAutomaticStatus, &defltItemLooterSettings.itemAutomaticStatus);
@@ -1274,8 +1245,8 @@ void ErectusIni::SetItemLooterSettings()
 	SetBool("ItemLooterSettings", "ItemLooterBlacklistToggle", &customItemLooterSettings.itemLooterBlacklistToggle, &defltItemLooterSettings.itemLooterBlacklistToggle);
 	for (auto i = 0; i < 100; i++)
 	{
-		char itemEnabledText[sizeof("ItemLooterEnabled99")];
-		char itemFormIdText[sizeof("ItemLooterList99")];
+		char itemEnabledText[sizeof"ItemLooterEnabled99"];
+		char itemFormIdText[sizeof"ItemLooterList99"];
 		sprintf_s(itemEnabledText, "ItemLooterEnabled%d", i);
 		sprintf_s(itemFormIdText, "ItemLooterList%d", i);
 		SetBool("ItemLooterSettings", itemEnabledText, &customItemLooterSettings.itemLooterEnabledList[i], &defltItemLooterSettings.itemLooterEnabledList[i]);
@@ -1283,8 +1254,8 @@ void ErectusIni::SetItemLooterSettings()
 	}
 	for (auto i = 0; i < 64; i++)
 	{
-		char itemBlacklistEnabledText[sizeof("ItemLooterBlacklistEnabled63")];
-		char itemBlacklistFormIdText[sizeof("ItemLooterBlacklist63")];
+		char itemBlacklistEnabledText[sizeof"ItemLooterBlacklistEnabled63"];
+		char itemBlacklistFormIdText[sizeof"ItemLooterBlacklist63"];
 		sprintf_s(itemBlacklistEnabledText, "ItemLooterBlacklistEnabled%d", i);
 		sprintf_s(itemBlacklistFormIdText, "ItemLooterBlacklist%d", i);
 		SetBool("ItemLooterSettings", itemBlacklistEnabledText, &customItemLooterSettings.itemLooterBlacklistEnabled[i], &defltItemLooterSettings.itemLooterBlacklistEnabled[i]);
@@ -1346,17 +1317,13 @@ void ErectusIni::GetTargetSettings()
 	GetSliderInt("TargetSettings", "SendDamageMax", &customTargetSettings.sendDamageMax, &defltTargetSettings.sendDamageMax, 1, 60);
 	GetSliderInt("TargetSettings", "FavoriteIndex", &customTargetSettings.favoriteIndex, &defltTargetSettings.favoriteIndex, 0, 12);
 	if (customTargetSettings.sendDamageMax < customTargetSettings.sendDamageMin)
-	{
 		customTargetSettings.sendDamageMax = customTargetSettings.sendDamageMin;
-	}
 }
 
 void ErectusIni::SetTargetSettings()
 {
 	if (customTargetSettings.sendDamageMax < customTargetSettings.sendDamageMin)
-	{
 		customTargetSettings.sendDamageMax = customTargetSettings.sendDamageMin;
-	}
 	SetBool("TargetSettings", "LockPlayers", &customTargetSettings.lockPlayers, &defltTargetSettings.lockPlayers);
 	SetBool("TargetSettings", "LockNPCs", &customTargetSettings.lockNpCs, &defltTargetSettings.lockNpCs);
 	SetBool("TargetSettings", "IndirectPlayers", &customTargetSettings.indirectPlayers, &defltTargetSettings.indirectPlayers);
@@ -1482,8 +1449,8 @@ void ErectusIni::GetTransferSettings()
 	GetBool("TransferSettings", "UseBlacklist", &customTransferSettings.useBlacklist, &defltTransferSettings.useBlacklist);
 	for (auto i = 0; i < 32; i++)
 	{
-		char whitelistedText[sizeof("Whitelisted31")];
-		char whitelistText[sizeof("Whitelist31")];
+		char whitelistedText[sizeof"Whitelisted31"];
+		char whitelistText[sizeof"Whitelist31"];
 		sprintf_s(whitelistedText, "Whitelisted%d", i);
 		sprintf_s(whitelistText, "Whitelist%d", i);
 		GetBool("TransferSettings", whitelistedText, &customTransferSettings.whitelisted[i], &defltTransferSettings.whitelisted[i]);
@@ -1491,8 +1458,8 @@ void ErectusIni::GetTransferSettings()
 	}
 	for (auto i = 0; i < 32; i++)
 	{
-		char blacklistedText[sizeof("Blacklisted31")];
-		char blacklistText[sizeof("Blacklist31")];
+		char blacklistedText[sizeof"Blacklisted31"];
+		char blacklistText[sizeof"Blacklist31"];
 		sprintf_s(blacklistedText, "Blacklisted%d", i);
 		sprintf_s(blacklistText, "Blacklist%d", i);
 		GetBool("TransferSettings", blacklistedText, &customTransferSettings.blacklisted[i], &defltTransferSettings.blacklisted[i]);
@@ -1508,8 +1475,8 @@ void ErectusIni::SetTransferSettings()
 	SetBool("TransferSettings", "UseBlacklist", &customTransferSettings.useBlacklist, &defltTransferSettings.useBlacklist);
 	for (auto i = 0; i < 32; i++)
 	{
-		char whitelistedText[sizeof("Whitelisted31")];
-		char whitelistText[sizeof("Whitelist31")];
+		char whitelistedText[sizeof"Whitelisted31"];
+		char whitelistText[sizeof"Whitelist31"];
 		sprintf_s(whitelistedText, "Whitelisted%d", i);
 		sprintf_s(whitelistText, "Whitelist%d", i);
 		SetBool("TransferSettings", whitelistedText, &customTransferSettings.whitelisted[i], &defltTransferSettings.whitelisted[i]);
@@ -1517,8 +1484,8 @@ void ErectusIni::SetTransferSettings()
 	}
 	for (auto i = 0; i < 32; i++)
 	{
-		char blacklistedText[sizeof("Blacklisted31")];
-		char blacklistText[sizeof("Blacklist31")];
+		char blacklistedText[sizeof"Blacklisted31"];
+		char blacklistText[sizeof"Blacklist31"];
 		sprintf_s(blacklistedText, "Blacklisted%d", i);
 		sprintf_s(blacklistText, "Blacklist%d", i);
 		SetBool("TransferSettings", blacklistedText, &customTransferSettings.blacklisted[i], &defltTransferSettings.blacklisted[i]);
@@ -1530,9 +1497,9 @@ void ErectusIni::GetTeleportSettings()
 {
 	for (auto i = 0; i < 16; i++)
 	{
-		char destinationText[sizeof("Destination15")];
-		char cellFormIdText[sizeof("CellFormId15")];
-		char disableSavingText[sizeof("DisableSaving15")];
+		char destinationText[sizeof"Destination15"];
+		char cellFormIdText[sizeof"CellFormId15"];
+		char disableSavingText[sizeof"DisableSaving15"];
 		sprintf_s(destinationText, "Destination%d", i);
 		sprintf_s(cellFormIdText, "CellFormId%d", i);
 		sprintf_s(disableSavingText, "DisableSaving%d", i);
@@ -1546,9 +1513,9 @@ void ErectusIni::SetTeleportSettings()
 {
 	for (auto i = 0; i < 16; i++)
 	{
-		char destinationText[sizeof("Destination15")];
-		char cellFormIdText[sizeof("CellFormId15")];
-		char disableSavingText[sizeof("DisableSaving15")];
+		char destinationText[sizeof"Destination15"];
+		char cellFormIdText[sizeof"CellFormId15"];
+		char disableSavingText[sizeof"DisableSaving15"];
 		sprintf_s(destinationText, "Destination%d", i);
 		sprintf_s(cellFormIdText, "CellFormId%d", i);
 		sprintf_s(disableSavingText, "DisableSaving%d", i);
@@ -1650,8 +1617,8 @@ void ErectusIni::GetEntityLooterSettings(const char *section, EntityLooterSettin
 	GetBool(section, "EntityLooterBlacklistToggle", &value->entityLooterBlacklistToggle, &deflt->entityLooterBlacklistToggle);
 	for (auto i = 0; i < 100; i++)
 	{
-		char entityEnabledText[sizeof("EntityLooterEnabled99")];
-		char entityFormIdText[sizeof("EntityLooterList99")];
+		char entityEnabledText[sizeof"EntityLooterEnabled99"];
+		char entityFormIdText[sizeof"EntityLooterList99"];
 		sprintf_s(entityEnabledText, "EntityLooterEnabled%d", i);
 		sprintf_s(entityFormIdText, "EntityLooterList%d", i);
 		GetBool(section, entityEnabledText, &value->entityLooterEnabledList[i], &deflt->entityLooterEnabledList[i]);
@@ -1659,8 +1626,8 @@ void ErectusIni::GetEntityLooterSettings(const char *section, EntityLooterSettin
 	}
 	for (auto i = 0; i < 64; i++)
 	{
-		char entityBlacklistEnabledText[sizeof("EntityLooterBlacklistEnabled63")];
-		char entityBlacklistFormIdText[sizeof("EntityLooterBlacklist63")];
+		char entityBlacklistEnabledText[sizeof"EntityLooterBlacklistEnabled63"];
+		char entityBlacklistFormIdText[sizeof"EntityLooterBlacklist63"];
 		sprintf_s(entityBlacklistEnabledText, "EntityLooterBlacklistEnabled%d", i);
 		sprintf_s(entityBlacklistFormIdText, "EntityLooterBlacklist%d", i);
 		GetBool(section, entityBlacklistEnabledText, &value->entityLooterBlacklistEnabled[i], &deflt->entityLooterBlacklistEnabled[i]);
@@ -1694,8 +1661,8 @@ void ErectusIni::SetEntityLooterSettings(const char *section, EntityLooterSettin
 	SetBool(section, "EntityLooterBlacklistToggle", &value->entityLooterBlacklistToggle, &deflt->entityLooterBlacklistToggle);
 	for (auto i = 0; i < 100; i++)
 	{
-		char entityEnabledText[sizeof("EntityLooterEnabled99")];
-		char entityFormIdText[sizeof("EntityLooterList99")];
+		char entityEnabledText[sizeof"EntityLooterEnabled99"];
+		char entityFormIdText[sizeof"EntityLooterList99"];
 		sprintf_s(entityEnabledText, "EntityLooterEnabled%d", i);
 		sprintf_s(entityFormIdText, "EntityLooterList%d", i);
 		SetBool(section, entityEnabledText, &value->entityLooterEnabledList[i], &deflt->entityLooterEnabledList[i]);
@@ -1703,8 +1670,8 @@ void ErectusIni::SetEntityLooterSettings(const char *section, EntityLooterSettin
 	}
 	for (auto i = 0; i < 64; i++)
 	{
-		char entityBlacklistEnabledText[sizeof("EntityLooterBlacklistEnabled63")];
-		char entityBlacklistFormIdText[sizeof("EntityLooterBlacklist63")];
+		char entityBlacklistEnabledText[sizeof"EntityLooterBlacklistEnabled63"];
+		char entityBlacklistFormIdText[sizeof"EntityLooterBlacklist63"];
 		sprintf_s(entityBlacklistEnabledText, "EntityLooterBlacklistEnabled%d", i);
 		sprintf_s(entityBlacklistFormIdText, "EntityLooterBlacklist%d", i);
 		SetBool(section, entityBlacklistEnabledText, &value->entityLooterBlacklistEnabled[i], &deflt->entityLooterBlacklistEnabled[i]);
@@ -1719,7 +1686,7 @@ void ErectusIni::GetHarvesterSettings()
 	GetBool("HarvesterSettings", "HarvesterOverrideEnabled", &customHarvesterSettings.harvesterOverrideEnabled, &defltHarvesterSettings.harvesterOverrideEnabled);
 	for (auto i = 0; i < 69; i++)
 	{
-		char harvesterEnabledText[sizeof("HarvesterEnabled68")];
+		char harvesterEnabledText[sizeof"HarvesterEnabled68"];
 		sprintf_s(harvesterEnabledText, "HarvesterEnabled%d", i);
 		GetBool("HarvesterSettings", harvesterEnabledText, &customHarvesterSettings.harvesterEnabledList[i], &defltHarvesterSettings.harvesterEnabledList[i]);
 	}
@@ -1732,7 +1699,7 @@ void ErectusIni::SetHarvesterSettings()
 	SetBool("HarvesterSettings", "HarvesterOverrideEnabled", &customHarvesterSettings.harvesterOverrideEnabled, &defltHarvesterSettings.harvesterOverrideEnabled);
 	for (auto i = 0; i < 69; i++)
 	{
-		char harvesterEnabledText[sizeof("HarvesterEnabled68")];
+		char harvesterEnabledText[sizeof"HarvesterEnabled68"];
 		sprintf_s(harvesterEnabledText, "HarvesterEnabled%d", i);
 		SetBool("HarvesterSettings", harvesterEnabledText, &customHarvesterSettings.harvesterEnabledList[i], &defltHarvesterSettings.harvesterEnabledList[i]);
 	}
@@ -1757,17 +1724,13 @@ void ErectusIni::GetMeleeSettings()
 	GetSliderInt("MeleeSettings", "MeleeSpeedMax", &customMeleeSettings.meleeSpeedMax, &defltMeleeSettings.meleeSpeedMax, 1, 60);
 
 	if (customMeleeSettings.meleeSpeedMax < customMeleeSettings.meleeSpeedMin)
-	{
 		customMeleeSettings.meleeSpeedMax = customMeleeSettings.meleeSpeedMin;
-	}
 }
 
 void ErectusIni::SetMeleeSettings()
 {
 	if (customMeleeSettings.meleeSpeedMax < customMeleeSettings.meleeSpeedMin)
-	{
 		customMeleeSettings.meleeSpeedMax = customMeleeSettings.meleeSpeedMin;
-	}
 
 	SetBool("MeleeSettings", "MeleeEnabled", &customMeleeSettings.meleeEnabled, &defltMeleeSettings.meleeEnabled);
 	SetSliderInt("MeleeSettings", "MeleeSpeedMin", &customMeleeSettings.meleeSpeedMin, &defltMeleeSettings.meleeSpeedMin, 1, 60);
@@ -1799,8 +1762,8 @@ void ErectusIni::GetExtraNpcSettings()
 	GetBool("ExtraNPCSettings", "UseNPCBlacklist", &customExtraNpcSettings.useNpcBlacklist, &defltExtraNpcSettings.useNpcBlacklist);
 	for (auto i = 0; i < 64; i++)
 	{
-		char npcBlacklistEnabledText[sizeof("NPCBlacklistEnabled63")];
-		char npcBlacklistFormIdText[sizeof("NPCBlacklist63")];
+		char npcBlacklistEnabledText[sizeof"NPCBlacklistEnabled63"];
+		char npcBlacklistFormIdText[sizeof"NPCBlacklist63"];
 		sprintf_s(npcBlacklistEnabledText, "NPCBlacklistEnabled%d", i);
 		sprintf_s(npcBlacklistFormIdText, "NPCBlacklist%d", i);
 		GetBool("ExtraNPCSettings", npcBlacklistEnabledText, &customExtraNpcSettings.npcBlacklistEnabled[i], &defltExtraNpcSettings.npcBlacklistEnabled[i]);
@@ -1817,8 +1780,8 @@ void ErectusIni::SetExtraNpcSettings()
 	SetBool("ExtraNPCSettings", "UseNPCBlacklist", &customExtraNpcSettings.useNpcBlacklist, &defltExtraNpcSettings.useNpcBlacklist);
 	for (auto i = 0; i < 64; i++)
 	{
-		char npcBlacklistEnabledText[sizeof("NPCBlacklistEnabled63")];
-		char npcBlacklistFormIdText[sizeof("NPCBlacklist63")];
+		char npcBlacklistEnabledText[sizeof"NPCBlacklistEnabled63"];
+		char npcBlacklistFormIdText[sizeof"NPCBlacklist63"];
 		sprintf_s(npcBlacklistEnabledText, "NPCBlacklistEnabled%d", i);
 		sprintf_s(npcBlacklistFormIdText, "NPCBlacklist%d", i);
 		SetBool("ExtraNPCSettings", npcBlacklistEnabledText, &customExtraNpcSettings.npcBlacklistEnabled[i], &defltExtraNpcSettings.npcBlacklistEnabled[i]);

@@ -125,6 +125,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="format.cc" />
     <ClCompile Include="Utils.cpp" />
     <ClCompile Include="ErectusD3D9.cpp" />
     <ClCompile Include="ErectusImGui.cpp" />
@@ -148,6 +149,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ErectusInclude.h" />
+    <ClInclude Include="fmt\core.h" />
+    <ClInclude Include="fmt\format-inl.h" />
+    <ClInclude Include="fmt\format.h" />
     <ClInclude Include="imconfig.h" />
     <ClInclude Include="imgui.h" />
     <ClInclude Include="imgui_impl_dx9.h" />
