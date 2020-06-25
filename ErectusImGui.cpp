@@ -26,7 +26,7 @@ bool ErectusImGui::DragMenu()
 	if (ErectusMain::windowPosition[1] > screenY - ErectusMain::windowSize[1])
 		ErectusMain::windowPosition[1] = screenY - ErectusMain::windowSize[1];
 
-	return MoveWindow(ErectusMain::windowHwnd, ErectusMain::windowPosition[0], ErectusMain::windowPosition[1],
+	return MoveWindow(ErectusMain::appHwnd, ErectusMain::windowPosition[0], ErectusMain::windowPosition[1],
 		ErectusMain::windowSize[0], ErectusMain::windowSize[1], FALSE);
 }
 
@@ -1937,7 +1937,7 @@ void ErectusImGui::OverlayMenu()
 						ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 1.0f, 0.0f, 0.5f));
 						if (ImGui::Button("Edit Reference (Overwrite Destination)###EditReferenceEnabled", ImVec2(451.0f, 0.0f)))
 						{
-							if (ErectusMemory::ReferenceSwap(&ErectusIni::customSwapperSettings.sourceFormId, &ErectusIni::customSwapperSettings.destinationFormId))
+							if (ErectusMemory::ReferenceSwap(ErectusIni::customSwapperSettings.sourceFormId, ErectusIni::customSwapperSettings.destinationFormId))
 							{
 								ErectusIni::customSwapperSettings.destinationFormId = ErectusIni::customSwapperSettings.sourceFormId;
 								swapperSourceToggle = false;
@@ -2042,7 +2042,7 @@ void ErectusImGui::OverlayMenu()
 							ButtonToggle(toggleLabel.c_str(), &ErectusIni::customTransferSettings.whitelisted[i]);
 
 							ImGui::SameLine(235.0f);
-							
+
 							char whitelistText[sizeof"###ItemTransferWhitelist31"];
 							sprintf_s(whitelistText, "###ItemTransferWhitelist%d", i);
 							char formIdText[sizeof"00000000"];
@@ -2152,7 +2152,7 @@ void ErectusImGui::OverlayMenu()
 						char formIdLabelText[sizeof"###TeleportCellFormId15"];
 						sprintf_s(formIdLabelText, "###TeleportCellFormId%d", i);
 						char formIdText[sizeof"00000000"];
-						sprintf_s(formIdText, "%08lX",	ErectusIni::customTeleportSettings.teleportEntryData[i].cellFormId);
+						sprintf_s(formIdText, "%08lX", ErectusIni::customTeleportSettings.teleportEntryData[i].cellFormId);
 						ImGui::SetNextItemWidth(110.0f);
 						ImGui::InputText(formIdLabelText, formIdText, sizeof formIdText, ImGuiInputTextFlags_CharsHexadecimal);
 						if (ImGui::IsItemActive())
@@ -2218,7 +2218,7 @@ void ErectusImGui::OverlayMenu()
 			if (ImGui::BeginTabItem("BitMsgWriter###BitMsgWriterTab"))
 			{
 				LargeButtonToggle("Message Sender Enabled", &ErectusMemory::allowMessages);
-				
+
 				ImGui::EndTabItem();
 			}
 			ImGui::EndTabBar();
@@ -2256,36 +2256,18 @@ void ErectusImGui::OverlayMenu()
 bool ErectusImGui::ImGuiInitialize()
 {
 	ImGui::CreateContext();
-	imGuiContextCreated = true;
-
-	if (!ImGui_ImplWin32_Init(ErectusMain::windowHwnd))
+	if (!ImGui_ImplWin32_Init(ErectusMain::appHwnd))
 		return false;
-	imGuiWin32Initialized = true;
 
 	if (!ImGui_ImplDX9_Init(Renderer::d3D9Device))
 		return false;
-	imGuiD3D9Initialized = true;
 
 	return true;
 }
 
 void ErectusImGui::ImGuiCleanup()
 {
-	if (imGuiD3D9Initialized)
-	{
-		ImGui_ImplDX9_Shutdown();
-		imGuiD3D9Initialized = false;
-	}
-
-	if (imGuiWin32Initialized)
-	{
-		ImGui_ImplWin32_Shutdown();
-		imGuiWin32Initialized = false;
-	}
-
-	if (imGuiContextCreated)
-	{
-		ImGui::DestroyContext();
-		imGuiContextCreated = false;
-	}
+	ImGui_ImplDX9_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	ImGui::DestroyContext();
 }

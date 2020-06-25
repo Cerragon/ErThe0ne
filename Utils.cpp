@@ -97,7 +97,7 @@ bool Utils::VtableSwap(const DWORD64 dst, DWORD64 src)
 	return result;
 }
 
-float Utils::GetDistance(float *a1, float *a2)
+float Utils::GetDistance(const float *a1, const float *a2)
 {
 	return sqrtf(powf(a1[0] - a2[0], 2.0f) + powf(a1[1] - a2[1], 2.0f) + powf(a1[2] - a2[2], 2.0f));
 }
@@ -145,14 +145,4 @@ int Utils::GetRangedInt(const int min, const int max)
 		return rand() % (1 + (max - min)) + (max - (max - min));
 	
 	return min;
-}
-
-bool Utils::SingleKeyPress(const int keyCode)
-{
-	return GetAsyncKeyState(keyCode);
-}
-
-bool Utils::DoubleKeyPress(const int keyCodeA, const int keyCodeB)
-{
-	return SingleKeyPress(keyCodeA) && SingleKeyPress(keyCodeB);
 }

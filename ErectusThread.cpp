@@ -1,9 +1,17 @@
 #include "ErectusInclude.h"
 
-DWORD WINAPI ErectusThread::BufferEntityListThread(LPVOID lpParameter)
+void ErectusThread::RequestLootItems()
 {
-	UNREFERENCED_PARAMETER(lpParameter);
+	lootItemsRequested = true;
+}
 
+void ErectusThread::RequestLootScrap()
+{
+	lootScrapRequested = true;
+}
+
+DWORD WINAPI ErectusThread::BufferEntityListThread([[maybe_unused]] LPVOID lpParameter)
+{
 	while (!threadDestructionState)
 	{
 		ErectusMemory::UpdateBufferEntityList();
@@ -17,10 +25,8 @@ DWORD WINAPI ErectusThread::BufferEntityListThread(LPVOID lpParameter)
 	return 0xBEEF;
 }
 
-DWORD WINAPI ErectusThread::BufferNpcListThread(LPVOID lpParameter)
+DWORD WINAPI ErectusThread::BufferNpcListThread([[maybe_unused]] LPVOID lpParameter)
 {
-	UNREFERENCED_PARAMETER(lpParameter);
-
 	while (!threadDestructionState)
 	{
 		ErectusMemory::UpdateBufferNpcList();
@@ -43,7 +49,7 @@ DWORD WINAPI ErectusThread::BufferPlayerListThread([[maybe_unused]] LPVOID lpPar
 	}
 
 	ErectusMemory::playerDataBuffer.clear();
-	
+
 	bufferPlayerListThreadActive = false;
 
 	return 0xFEED;
@@ -127,7 +133,6 @@ DWORD WINAPI ErectusThread::LockingThread([[maybe_unused]] LPVOID lpParameter)
 				weaponId = 0;
 		}
 
-
 		if (ErectusMain::overlayForeground && GetAsyncKeyState('T'))
 		{
 			ErectusMemory::targetLockingKeyPressed = true;
@@ -190,15 +195,8 @@ DWORD WINAPI ErectusThread::LockingThread([[maybe_unused]] LPVOID lpParameter)
 
 DWORD WINAPI ErectusThread::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 {
-	auto clientStateCounter = 0;
-
 	DWORD64 actorValuePage = 0;
 	auto actorValuePageValid = false;
-
-	auto actorValueDefaultCounter = 0;
-
-	auto opkPlayersToggle = false;
-	auto opkNpcsToggle = false;
 
 	DWORD64 opkPage = 0;
 	auto opkPageValid = false;
@@ -212,24 +210,10 @@ DWORD WINAPI ErectusThread::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 	auto lootItemsCounter = 0;
 	auto lootItemsThreshold = 0;
 
-	auto nukeCodeCounter = 0;
-
-	auto chargenCounter = 0;
-
+	auto loopCount = -1;
 	while (!threadDestructionState)
 	{
-		if (ErectusIni::customLocalPlayerSettings.positionSpoofingEnabled && Utils::DoubleKeyPress(VK_CONTROL, 'L'))
-			positionSpoofingToggle = !positionSpoofingToggle;
-
-		if (ErectusIni::customLocalPlayerSettings.noclipEnabled && Utils::DoubleKeyPress(VK_CONTROL, 'Y'))
-			noclipToggle = !noclipToggle;
-
-		if (!ErectusIni::customOpkSettings.playersEnabled && Utils::DoubleKeyPress(VK_CONTROL, 'B'))
-			opkPlayersToggle = !opkPlayersToggle;
-
-		if (ErectusIni::customOpkSettings.npcsEnabled && Utils::DoubleKeyPress(VK_CONTROL, 'N'))
-			opkNpcsToggle = !opkNpcsToggle;
-
+		loopCount = (loopCount + 1) % 30000;
 
 		if (positionSpoofingToggle && ErectusIni::customLocalPlayerSettings.positionSpoofingEnabled && ErectusIni::customLocalPlayerSettings.clientState)
 			ErectusMemory::SetClientState(2);
@@ -237,32 +221,27 @@ DWORD WINAPI ErectusThread::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 		if (noclipToggle && ErectusIni::customLocalPlayerSettings.noclipEnabled && ErectusIni::customLocalPlayerSettings.clientState)
 			ErectusMemory::SetClientState(2);
 
-
-		if (ErectusIni::customScrapLooterSettings.scrapKeybindEnabled && Utils::DoubleKeyPress(VK_CONTROL, 'E') && ErectusMemory::CheckScrapList())
+		if (lootScrapRequested) {
 			ErectusMemory::LootScrap();
+			lootScrapRequested = false;
+		}
 
-		if (ErectusIni::customItemLooterSettings.itemKeybindEnabled && Utils::DoubleKeyPress(VK_CONTROL, 'R') && ErectusMemory::CheckItemLooterSettings())
+		if (lootItemsRequested) {
 			ErectusMemory::LootItems();
+			lootItemsRequested = false;
+		}
 
 		if ((positionSpoofingToggle || noclipToggle) && ErectusIni::customLocalPlayerSettings.automaticClientState)
 		{
-			clientStateCounter++;
-			if (clientStateCounter > 60)
-			{
-				clientStateCounter = 0;
+			if (loopCount % 60 == 0) //every 60 loops
 				ErectusMemory::SetClientState(2);
-			}
 		}
 
 		ErectusMemory::PositionSpoofing(positionSpoofingToggle);
 		ErectusMemory::Noclip(noclipToggle);
 
 		ErectusMemory::ActorValue(&actorValuePage, &actorValuePageValid, true);
-
-		actorValueDefaultCounter++;
-		if (actorValueDefaultCounter > 60)
-		{
-			actorValueDefaultCounter = 0;
+		if (loopCount % 60 == 0) { //every 60 loops
 			ErectusMemory::SetActorValueMaximum(0x000002C2, 100.0f, static_cast<float>(ErectusIni::customLocalPlayerSettings.strength), ErectusIni::customLocalPlayerSettings.strengthEnabled);
 			ErectusMemory::SetActorValueMaximum(0x000002C3, 100.0f, static_cast<float>(ErectusIni::customLocalPlayerSettings.perception), ErectusIni::customLocalPlayerSettings.perceptionEnabled);
 			ErectusMemory::SetActorValueMaximum(0x000002C4, 100.0f, static_cast<float>(ErectusIni::customLocalPlayerSettings.endurance), ErectusIni::customLocalPlayerSettings.enduranceEnabled);
@@ -273,7 +252,6 @@ DWORD WINAPI ErectusThread::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 		}
 
 		ErectusMemory::FreezeActionPoints(&freezeApPage, &freezeApPageValid, true);
-		
 		ErectusMemory::OnePositionKill(&opkPage, &opkPageValid, true);
 
 		if (opkPageValid)
@@ -291,10 +269,7 @@ DWORD WINAPI ErectusThread::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 
 		if (ErectusIni::customNukeCodeSettings.automaticNukeCodes)
 		{
-			nukeCodeCounter++;
-			if (nukeCodeCounter > 300)
-			{
-				nukeCodeCounter = 0;
+			if (loopCount % 300 == 0) { //every 300 loops
 				ErectusMemory::GetNukeCode(0x000921AE, ErectusImGui::alphaCode);
 				ErectusMemory::GetNukeCode(0x00092213, ErectusImGui::bravoCode);
 				ErectusMemory::GetNukeCode(0x00092214, ErectusImGui::charlieCode);
@@ -331,15 +306,9 @@ DWORD WINAPI ErectusThread::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 		else
 			lootItemsThreshold = 0;
 
-		if (ErectusIni::customChargenSettings.chargenEditingEnabled)
-		{
-			chargenCounter++;
-			if (chargenCounter > 10)
-			{
-				chargenCounter = 0;
-				ErectusMemory::ChargenEditing();
-			}
-		}
+
+		if (loopCount % 10 == 0) //every 10 loops
+			ErectusMemory::ChargenEditing();
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(16));
 	}

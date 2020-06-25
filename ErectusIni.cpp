@@ -87,56 +87,10 @@ OverlaySettingsB defltOverlaySettingsB
 
 ScrapLooterSettings defltScrapLooterSettings
 {
-	false,
-	false,
-	false,
-	false,
-	30,
-	60,
-	3000,
-	{
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-	},
-	{
+	.scrapAutomaticSpeedMin = 30,
+	.scrapAutomaticSpeedMax = 60,
+	.scrapLooterDistance = 3000,
+	.scrapFormIdList = {
 		0x00017DE8,//Black Titanium
 		0x00017DE9,//Ultracite
 		0x0001FA8C,//Acid
@@ -178,7 +132,7 @@ ScrapLooterSettings defltScrapLooterSettings
 		0x0031C09A,//Coal
 		0x0054E4FA,//Vault 94 Steel
 	},
-	{
+	.scrapNameList = {
 		"Black Titanium",//0x00017DE8
 		"Ultracite",//0x00017DE9
 		"Acid",//0x0001FA8C
@@ -224,103 +178,29 @@ ScrapLooterSettings defltScrapLooterSettings
 
 ItemLooterSettings defltItemLooterSettings
 {
-	false,
-	false,
-	false,
-	30,
-	60,
-	false,
-	3000,
-	false,
-	3000,
-	false,
-	3000,
-	false,
-	3000,
-	false,
-	3000,
-	false,
-	3000,
-	false,
-	3000,
-	false,
-	3000,
-	false,
-	3000,
-	false,
-	3000,
-	false,
-	3000,
-	false,
-	3000,
-	false,
-	{
-		false, false, false, false, false, false, false, false, false, false,
-		false, false, false, false, false, false, false, false, false, false,
-		false, false, false, false, false, false, false, false, false, false,
-		false, false, false, false, false, false, false, false, false, false,
-		false, false, false, false, false, false, false, false, false, false,
-		false, false, false, false, false, false, false, false, false, false,
-		false, false, false, false, false, false, false, false, false, false,
-		false, false, false, false, false, false, false, false, false, false,
-		false, false, false, false, false, false, false, false, false, false,
-		false, false, false, false, false, false, false, false, false, false,
-	},
-	{
-		0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
-		0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
-		0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
-		0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
-		0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
-		0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
-		0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
-		0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
-		0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
-		0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
-	},
-	{
-		false, false, false, false, false, false, false, false,
-		false, false, false, false, false, false, false, false,
-		false, false, false, false, false, false, false, false,
-		false, false, false, false, false, false, false, false,
-		false, false, false, false, false, false, false, false,
-		false, false, false, false, false, false, false, false,
-		false, false, false, false, false, false, false, false,
-		false, false, false, false, false, false, false, false,
-	},
-	{
-		0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
-		0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
-		0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
-		0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
-		0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
-		0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
-		0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
-		0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
-	},
+	.itemAutomaticSpeedMin = 30,
+	.itemAutomaticSpeedMax = 60,
+	.itemLooterWeaponsDistance = 3000,
+	.itemLooterArmorDistance = 3000,
+	.itemLooterAmmoDistance = 3000,
+	.itemLooterModsDistance = 3000,
+	.itemLooterMagazinesDistance = 3000,
+	.itemLooterBobbleheadsDistance = 3000,
+	.itemLooterAidDistance = 3000,
+	.itemLooterKnownPlansDistance = 3000,
+	.itemLooterUnknownPlansDistance = 3000,
+	.itemLooterMiscDistance = 3000,
+	.itemLooterUnlistedDistance = 3000,
+	.itemLooterListDistance = 3000,
 };
 
 TargetSettings defltTargetSettings
 {
-	false,
-	false,
-	false,
-	false,
-	false,
-	false,
-	false,
-	false,
-	false,
-	false,
-	false,
-	20.0f,
-	false,
-	{ 1.0f, 0.0f, 1.0f },
-	false,
-	0,
-	1,
-	1,
-	12,
+	.lockingFov = 20.0f,
+	.lockingColor = { 1.0f, 0.0f, 1.0f },
+	.sendDamageMin = 1,
+	.sendDamageMax = 1,
+	.favoriteIndex = 12,
 };
 
 LocalPlayerSettings defltLocalPlayerSettings
@@ -351,26 +231,9 @@ LocalPlayerSettings defltLocalPlayerSettings
 	9001,
 };
 
-OpkSettings defltOpkSettings
-{
-	false,
-	false,
-};
-
-UtilitySettings defltUtilitySettings
-{
-	false,
-	false,
-	0x00000000,
-	0x00000000,
-};
-
-SwapperSettings defltSwapperSettings
-{
-	0x00000000,
-	0x00000000,
-};
-
+OpkSettings defltOpkSettings = {};
+UtilitySettings defltUtilitySettings = {};
+SwapperSettings defltSwapperSettings = {};
 TransferSettings defltTransferSettings
 {
 	0x00000000,
@@ -403,15 +266,9 @@ TransferSettings defltTransferSettings
 	},
 };
 
-TeleportSettings defltTeleportSettings{};
+TeleportSettings defltTeleportSettings = {};
 
-NukeCodeSettings defltNukeCodeSettings
-{
-	false,
-	false,
-	false,
-	false,
-};
+NukeCodeSettings defltNukeCodeSettings = {};
 
 LegendarySettings defltLegendarySettings
 {
@@ -429,94 +286,12 @@ LegendarySettings defltLegendarySettings
 	{ 1.0f, 0.5f, 0.5f },
 };
 
-FluxSettings defltFluxSettings
-{
-	false,
-	false,
-	false,
-	false,
-	false,
-};
-
-EntityLooterSettings defltEntityLooterSettings{};
+FluxSettings defltFluxSettings = {};
+EntityLooterSettings defltEntityLooterSettings = {};
 
 HarvesterSettings defltHarvesterSettings
 {
-	false,
-	false,
-	false,
-	{
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-		false,
-	},
-	{
+	.harvesterFormIdList = {
 		0x002DDD45,//Raw Crimson Flux
 		0x002DDD46,//Raw Cobalt Flux
 		0x002DDD49,//Raw Yellowcake Flux
@@ -587,7 +362,7 @@ HarvesterSettings defltHarvesterSettings
 		0x000933EA,//Glowing Resin
 		0x0008E922,//Mothman Egg
 	},
-	{
+	.harvesterNameList = {
 		"Raw Crimson Flux",
 		"Raw Cobalt Flux",
 		"Raw Yellowcake Flux",
@@ -681,34 +456,7 @@ ChargenSettings defltChargenSettings
 	0.33f,
 };
 
-ExtraNpcSettings defltExtraNpcSettings
-{
-	false,
-	false,
-	false,
-	false,
-	false,
-	{
-		false, false, false, false, false, false, false, false,
-		false, false, false, false, false, false, false, false,
-		false, false, false, false, false, false, false, false,
-		false, false, false, false, false, false, false, false,
-		false, false, false, false, false, false, false, false,
-		false, false, false, false, false, false, false, false,
-		false, false, false, false, false, false, false, false,
-		false, false, false, false, false, false, false, false,
-	},
-	{
-		0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
-		0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
-		0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
-		0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
-		0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
-		0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
-		0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
-		0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
-	},
-};
+ExtraNpcSettings defltExtraNpcSettings = {};
 
 OverlaySettingsA ErectusIni::playerSettings = defltPlayerSettings;
 OverlaySettingsA ErectusIni::npcSettings = defltNpcSettings;
@@ -741,7 +489,7 @@ MeleeSettings ErectusIni::customMeleeSettings = defltMeleeSettings;
 ChargenSettings ErectusIni::customChargenSettings = defltChargenSettings;
 ExtraNpcSettings ErectusIni::customExtraNpcSettings = defltExtraNpcSettings;
 
-void ErectusIni::GetDword(const char *section, const char *key, DWORD *value, const DWORD *deflt)
+void ErectusIni::GetDword(const char* section, const char* key, DWORD* value, const DWORD* deflt)
 {
 	if (!ini.has(section))
 		ini[section];
@@ -763,7 +511,7 @@ void ErectusIni::GetDword(const char *section, const char *key, DWORD *value, co
 	}
 }
 
-void ErectusIni::SetDword(const char *section, const char *key, const DWORD *value, const DWORD *deflt)
+void ErectusIni::SetDword(const char* section, const char* key, const DWORD* value, const DWORD* deflt)
 {
 	if (!ini.has(section))
 		ini[section];
@@ -780,7 +528,7 @@ void ErectusIni::SetDword(const char *section, const char *key, const DWORD *val
 	ini[section][key] = valueText;
 }
 
-void ErectusIni::GetInt(const char *section, const char *key, int *value, const int *deflt)
+void ErectusIni::GetInt(const char* section, const char* key, int* value, const int* deflt)
 {
 	if (!ini.has(section))
 		ini[section];
@@ -798,7 +546,7 @@ void ErectusIni::GetInt(const char *section, const char *key, int *value, const 
 	}
 }
 
-void ErectusIni::SetInt(const char *section, const char *key, const int *value, const int *deflt)
+void ErectusIni::SetInt(const char* section, const char* key, const int* value, const int* deflt)
 {
 	if (!ini.has(section))
 		ini[section];
@@ -809,7 +557,7 @@ void ErectusIni::SetInt(const char *section, const char *key, const int *value, 
 	ini[section][key] = std::to_string(*value);
 }
 
-void ErectusIni::GetSliderInt(const char *section, const char *key, int *value, int *deflt, const int min, const int max)
+void ErectusIni::GetSliderInt(const char* section, const char* key, int* value, int* deflt, const int min, const int max)
 {
 	Utils::ValidateInt(deflt, min, max);
 	GetInt(section, key, value, deflt);
@@ -817,14 +565,14 @@ void ErectusIni::GetSliderInt(const char *section, const char *key, int *value, 
 	SetInt(section, key, value, deflt);
 }
 
-void ErectusIni::SetSliderInt(const char *section, const char *key, int *value, int *deflt, const int min, const int max)
+void ErectusIni::SetSliderInt(const char* section, const char* key, int* value, int* deflt, const int min, const int max)
 {
 	Utils::ValidateInt(value, min, max);
 	Utils::ValidateInt(deflt, min, max);
 	SetInt(section, key, value, deflt);
 }
 
-void ErectusIni::GetFloat(const char *section, const char *key, float *value, const float *deflt)
+void ErectusIni::GetFloat(const char* section, const char* key, float* value, const float* deflt)
 {
 	if (!ini.has(section))
 		ini[section];
@@ -842,7 +590,7 @@ void ErectusIni::GetFloat(const char *section, const char *key, float *value, co
 	}
 }
 
-void ErectusIni::SetFloat(const char *section, const char *key, const float *value, const float *deflt)
+void ErectusIni::SetFloat(const char* section, const char* key, const float* value, const float* deflt)
 {
 	if (!ini.has(section))
 		ini[section];
@@ -853,7 +601,7 @@ void ErectusIni::SetFloat(const char *section, const char *key, const float *val
 	ini[section][key] = std::to_string(*value);
 }
 
-void ErectusIni::GetSliderFloat(const char *section, const char *key, float *value, float *deflt, const float min, const float max)
+void ErectusIni::GetSliderFloat(const char* section, const char* key, float* value, float* deflt, const float min, const float max)
 {
 	Utils::ValidateFloat(deflt, min, max);
 	GetFloat(section, key, value, deflt);
@@ -861,14 +609,14 @@ void ErectusIni::GetSliderFloat(const char *section, const char *key, float *val
 	SetFloat(section, key, value, deflt);
 }
 
-void ErectusIni::SetSliderFloat(const char *section, const char *key, float *value, float *deflt, const float min, const float max)
+void ErectusIni::SetSliderFloat(const char* section, const char* key, float* value, float* deflt, const float min, const float max)
 {
 	Utils::ValidateFloat(value, min, max);
 	Utils::ValidateFloat(deflt, min, max);
 	SetFloat(section, key, value, deflt);
 }
 
-void ErectusIni::GetRgb(const char *section, const char *key, float *value, float *deflt)
+void ErectusIni::GetRgb(const char* section, const char* key, float* value, float* deflt)
 {
 	const auto keyLength = Utils::GetTextLength(key);
 	const auto keySize = static_cast<int>(keyLength + sizeof"x");
@@ -898,7 +646,7 @@ void ErectusIni::GetRgb(const char *section, const char *key, float *value, floa
 	keyB = nullptr;
 }
 
-void ErectusIni::SetRgb(const char *section, const char *key, float *value, float *deflt)
+void ErectusIni::SetRgb(const char* section, const char* key, float* value, float* deflt)
 {
 	const auto keyLength = Utils::GetTextLength(key);
 	const auto keySize = static_cast<int>(keyLength + sizeof"x");
@@ -928,7 +676,7 @@ void ErectusIni::SetRgb(const char *section, const char *key, float *value, floa
 	keyB = nullptr;
 }
 
-void ErectusIni::GetQuadFloat(const char *section, const char *key, float *value, float *deflt)
+void ErectusIni::GetQuadFloat(const char* section, const char* key, float* value, float* deflt)
 {
 	const auto keyLength = Utils::GetTextLength(key);
 	const auto keySize = static_cast<int>(keyLength + sizeof"x");
@@ -963,7 +711,7 @@ void ErectusIni::GetQuadFloat(const char *section, const char *key, float *value
 	keyW = nullptr;
 }
 
-void ErectusIni::SetQuadFloat(const char *section, const char *key, float *value, float *deflt)
+void ErectusIni::SetQuadFloat(const char* section, const char* key, float* value, float* deflt)
 {
 	const auto keyLength = Utils::GetTextLength(key);
 	const auto keySize = static_cast<int>(keyLength + sizeof"x");
@@ -998,7 +746,7 @@ void ErectusIni::SetQuadFloat(const char *section, const char *key, float *value
 	keyW = nullptr;
 }
 
-void ErectusIni::GetBool(const char *section, const char *key, bool *value, const bool *deflt)
+void ErectusIni::GetBool(const char* section, const char* key, bool* value, const bool* deflt)
 {
 	auto bufferValue = static_cast<int>(*value);
 	auto bufferdeflt = static_cast<int>(*deflt);
@@ -1006,14 +754,14 @@ void ErectusIni::GetBool(const char *section, const char *key, bool *value, cons
 	*value = static_cast<bool>(bufferValue);
 }
 
-void ErectusIni::SetBool(const char *section, const char *key, const bool *value, const bool *deflt)
+void ErectusIni::SetBool(const char* section, const char* key, const bool* value, const bool* deflt)
 {
 	auto bufferValue = static_cast<int>(*value);
 	auto bufferdeflt = static_cast<int>(*deflt);
 	SetSliderInt(section, key, &bufferValue, &bufferdeflt, 0, 1);
 }
 
-void ErectusIni::GetOverlaySettingsA(const char *section, OverlaySettingsA* value, OverlaySettingsA* deflt)
+void ErectusIni::GetOverlaySettingsA(const char* section, OverlaySettingsA* value, OverlaySettingsA* deflt)
 {
 	GetBool(section, "Enabled", &value->enabled, &deflt->enabled);
 	GetSliderInt(section, "EnabledDistance", &value->enabledDistance, &deflt->enabledDistance, 0, 3000);
@@ -1039,7 +787,7 @@ void ErectusIni::GetOverlaySettingsA(const char *section, OverlaySettingsA* valu
 	GetBool(section, "TextCentered", &value->textCentered, &deflt->textCentered);
 }
 
-void ErectusIni::SetOverlaySettingsA(const char *section, OverlaySettingsA* value, OverlaySettingsA* deflt)
+void ErectusIni::SetOverlaySettingsA(const char* section, OverlaySettingsA* value, OverlaySettingsA* deflt)
 {
 	SetBool(section, "Enabled", &value->enabled, &deflt->enabled);
 	SetSliderInt(section, "EnabledDistance", &value->enabledDistance, &deflt->enabledDistance, 0, 3000);
@@ -1065,7 +813,7 @@ void ErectusIni::SetOverlaySettingsA(const char *section, OverlaySettingsA* valu
 	SetBool(section, "TextCentered", &value->textCentered, &deflt->textCentered);
 }
 
-void ErectusIni::GetOverlaySettingsB(const char *section, OverlaySettingsB* value, OverlaySettingsB* deflt)
+void ErectusIni::GetOverlaySettingsB(const char* section, OverlaySettingsB* value, OverlaySettingsB* deflt)
 {
 	GetBool(section, "Enabled", &value->enabled, &deflt->enabled);
 	GetSliderInt(section, "EnabledDistance", &value->enabledDistance, &deflt->enabledDistance, 0, 3000);
@@ -1091,7 +839,7 @@ void ErectusIni::GetOverlaySettingsB(const char *section, OverlaySettingsB* valu
 	}
 }
 
-void ErectusIni::SetOverlaySettingsB(const char *section, OverlaySettingsB* value, OverlaySettingsB* deflt)
+void ErectusIni::SetOverlaySettingsB(const char* section, OverlaySettingsB* value, OverlaySettingsB* deflt)
 {
 	SetBool(section, "Enabled", &value->enabled, &deflt->enabled);
 	SetSliderInt(section, "EnabledDistance", &value->enabledDistance, &deflt->enabledDistance, 0, 3000);
@@ -1213,6 +961,7 @@ void ErectusIni::SetItemLooterSettings()
 {
 	if (customItemLooterSettings.itemAutomaticSpeedMax < customItemLooterSettings.itemAutomaticSpeedMin)
 		customItemLooterSettings.itemAutomaticSpeedMax = customItemLooterSettings.itemAutomaticSpeedMin;
+	
 	SetBool("ItemLooterSettings", "ItemKeybindEnabled", &customItemLooterSettings.itemKeybindEnabled, &defltItemLooterSettings.itemKeybindEnabled);
 	SetBool("ItemLooterSettings", "ItemAutomaticLootingEnabled", &customItemLooterSettings.itemAutomaticLootingEnabled, &defltItemLooterSettings.itemAutomaticLootingEnabled);
 	SetBool("ItemLooterSettings", "ItemAutomaticStatus", &customItemLooterSettings.itemAutomaticStatus, &defltItemLooterSettings.itemAutomaticStatus);
@@ -1324,6 +1073,7 @@ void ErectusIni::SetTargetSettings()
 {
 	if (customTargetSettings.sendDamageMax < customTargetSettings.sendDamageMin)
 		customTargetSettings.sendDamageMax = customTargetSettings.sendDamageMin;
+	
 	SetBool("TargetSettings", "LockPlayers", &customTargetSettings.lockPlayers, &defltTargetSettings.lockPlayers);
 	SetBool("TargetSettings", "LockNPCs", &customTargetSettings.lockNpCs, &defltTargetSettings.lockNpCs);
 	SetBool("TargetSettings", "IndirectPlayers", &customTargetSettings.indirectPlayers, &defltTargetSettings.indirectPlayers);
@@ -1591,7 +1341,7 @@ void ErectusIni::SetFluxSettings()
 	SetBool("FluxSettings", "VioletFluxEnabled", &customFluxSettings.violetFluxEnabled, &defltFluxSettings.violetFluxEnabled);
 }
 
-void ErectusIni::GetEntityLooterSettings(const char *section, EntityLooterSettings* value, EntityLooterSettings* deflt)
+void ErectusIni::GetEntityLooterSettings(const char* section, EntityLooterSettings* value, EntityLooterSettings* deflt)
 {
 	GetBool(section, "EntityLooterEnabled", &value->entityLooterEnabled, &deflt->entityLooterEnabled);
 	GetBool(section, "EntityLooterStatusEnabled", &value->entityLooterStatusEnabled, &deflt->entityLooterStatusEnabled);
@@ -1635,7 +1385,7 @@ void ErectusIni::GetEntityLooterSettings(const char *section, EntityLooterSettin
 	}
 }
 
-void ErectusIni::SetEntityLooterSettings(const char *section, EntityLooterSettings* value, EntityLooterSettings* deflt)
+void ErectusIni::SetEntityLooterSettings(const char* section, EntityLooterSettings* value, EntityLooterSettings* deflt)
 {
 	SetBool(section, "EntityLooterEnabled", &value->entityLooterEnabled, &deflt->entityLooterEnabled);
 	SetBool(section, "EntityLooterStatusEnabled", &value->entityLooterStatusEnabled, &deflt->entityLooterStatusEnabled);

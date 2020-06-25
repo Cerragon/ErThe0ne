@@ -14,7 +14,7 @@ void onShutdown() {
 int onStartup(const HINSTANCE hInstance) {
 	ErectusMain::CreateWnd(hInstance);
 
-	ShowWindow(ErectusMain::windowHwnd, SW_SHOW);
+	ShowWindow(ErectusMain::appHwnd, SW_SHOW);
 
 	Renderer::d3D9Initialized = Renderer::Init();
 	if (!Renderer::d3D9Initialized)
@@ -46,6 +46,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, [[maybe_unused]] HINSTANCE hPrevInstanc
 	if (((result = onStartup(hInstance))) && result != 0)
 		return result;
 
+	ErectusMain::RegisterHotkeys();
+	
 	MSG overlayMsg;
 	while (GetMessage(&overlayMsg, nullptr, 0, 0))
 	{

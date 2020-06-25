@@ -2,15 +2,18 @@
 
 void ErectusProcess::SetProcessMenu()
 {
+	if (processMenuActive)
+		return;
+	
 	if (ErectusMain::windowSize[0] != 384 || ErectusMain::windowSize[1] != 224)
 	{
 		ErectusMain::windowSize[0] = 384;
 		ErectusMain::windowSize[1] = 224;
 
-		if (ErectusMain::windowHwnd != nullptr)
+		if (ErectusMain::appHwnd != nullptr)
 		{
 			Renderer::deviceResetQueued = true;
-			SetWindowPos(ErectusMain::windowHwnd, HWND_NOTOPMOST, ErectusMain::windowPosition[0], ErectusMain::windowPosition[1], ErectusMain::windowSize[0], ErectusMain::windowSize[1], 0);
+			SetWindowPos(ErectusMain::appHwnd, HWND_NOTOPMOST, ErectusMain::windowPosition[0], ErectusMain::windowPosition[1], ErectusMain::windowSize[0], ErectusMain::windowSize[1], 0);
 		}
 	}
 
@@ -23,29 +26,29 @@ void ErectusProcess::SetProcessMenu()
 		ErectusMain::windowPosition[0] = bufferPosition[0];
 		ErectusMain::windowPosition[1] = bufferPosition[1];
 
-		if (ErectusMain::windowHwnd != nullptr)
+		if (ErectusMain::appHwnd != nullptr)
 		{
-			MoveWindow(ErectusMain::windowHwnd, ErectusMain::windowPosition[0], ErectusMain::windowPosition[1], ErectusMain::windowSize[0], ErectusMain::windowSize[1], FALSE);
+			MoveWindow(ErectusMain::appHwnd, ErectusMain::windowPosition[0], ErectusMain::windowPosition[1], ErectusMain::windowSize[0], ErectusMain::windowSize[1], FALSE);
 			if (!Renderer::deviceResetQueued)
 			{
-				SetWindowPos(ErectusMain::windowHwnd, HWND_NOTOPMOST, ErectusMain::windowPosition[0], ErectusMain::windowPosition[1], ErectusMain::windowSize[0], ErectusMain::windowSize[1], 0);
+				SetWindowPos(ErectusMain::appHwnd, HWND_NOTOPMOST, ErectusMain::windowPosition[0], ErectusMain::windowPosition[1], ErectusMain::windowSize[0], ErectusMain::windowSize[1], 0);
 			}
 		}
 	}
 
-	if (ErectusMain::windowHwnd != nullptr)
+	if (ErectusMain::appHwnd != nullptr)
 	{
-		auto style = GetWindowLongPtr(ErectusMain::windowHwnd, GWL_EXSTYLE);
+		auto style = GetWindowLongPtr(ErectusMain::appHwnd, GWL_EXSTYLE);
 
 		if (style & WS_EX_LAYERED)
 		{
 			style &= ~WS_EX_LAYERED;
-			SetWindowLongPtr(ErectusMain::windowHwnd, GWL_EXSTYLE, style);
+			SetWindowLongPtr(ErectusMain::appHwnd, GWL_EXSTYLE, style);
 		}
 
 		if (style & WS_EX_TOPMOST)
 		{
-			SetWindowPos(ErectusMain::windowHwnd, HWND_NOTOPMOST, ErectusMain::windowPosition[0], ErectusMain::windowPosition[1], ErectusMain::windowSize[0], ErectusMain::windowSize[1], 0);
+			SetWindowPos(ErectusMain::appHwnd, HWND_NOTOPMOST, ErectusMain::windowPosition[0], ErectusMain::windowPosition[1], ErectusMain::windowSize[0], ErectusMain::windowSize[1], 0);
 		}
 	}
 
@@ -66,10 +69,7 @@ void ErectusProcess::ResetProcessData()
 {
 	processSelected = false;
 
-
-	if (!processMenuActive)
-		SetProcessMenu();
-
+	SetProcessMenu();
 	SetProcessError(0, "Process State: No process selected");
 
 	if (ErectusThread::threadCreationState)

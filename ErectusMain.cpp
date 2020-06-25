@@ -10,12 +10,12 @@ extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT uMsg, WPARAM wPara
 LRESULT CALLBACK ErectusMain::WndCallback(HWND hwnd, const UINT uMsg, const WPARAM wParam, const LPARAM lParam)
 {
 	if (ImGui_ImplWin32_WndProcHandler(hwnd, uMsg, wParam, lParam))
-	{
 		return 1;
-	}
 
 	switch (uMsg)
 	{
+	case WM_HOTKEY:
+		OnHotkey(wParam);
 	case WM_KEYDOWN:
 		return 0;
 	case WM_PAINT:
@@ -32,6 +32,69 @@ LRESULT CALLBACK ErectusMain::WndCallback(HWND hwnd, const UINT uMsg, const WPAR
 	}
 }
 
+void ErectusMain::OnHotkey(const WPARAM hotkeyId)
+{
+	switch (hotkeyId)
+	{
+	case (static_cast<int>(HotKeys::ContainerLooterToggle)):
+		ErectusIni::containerLooterSettings.entityLooterEnabled = !ErectusIni::containerLooterSettings.entityLooterEnabled;
+		break;
+	case (static_cast<int>(HotKeys::NpcLooterToggle)):
+		ErectusIni::npcLooterSettings.entityLooterEnabled = !ErectusIni::npcLooterSettings.entityLooterEnabled;
+		break;
+	case (static_cast<int>(HotKeys::HarvesterToggle)):
+		ErectusIni::customHarvesterSettings.harvesterEnabled = !ErectusIni::customHarvesterSettings.harvesterEnabled;
+		break;
+	case (static_cast<int>(HotKeys::PositionSpoofingToggle)):
+		if (ErectusIni::customLocalPlayerSettings.positionSpoofingEnabled)
+			ErectusThread::positionSpoofingToggle = !ErectusThread::positionSpoofingToggle;
+		break;
+	case (static_cast<int>(HotKeys::NoclipToggle)):
+		if (ErectusIni::customLocalPlayerSettings.noclipEnabled)
+			ErectusThread::noclipToggle = !ErectusThread::noclipToggle;
+		break;
+	case (static_cast<int>(HotKeys::OpkPlayersToggle)):
+		if (ErectusIni::customOpkSettings.playersEnabled)
+			ErectusThread::opkPlayersToggle = !ErectusThread::opkPlayersToggle;
+		break;
+	case (static_cast<int>(HotKeys::OpkNpcsToggle)):
+		if (ErectusIni::customOpkSettings.npcsEnabled)
+			ErectusThread::opkNpcsToggle = !ErectusThread::opkNpcsToggle;
+		break;
+	case (static_cast<int>(HotKeys::LootItems)):
+		if (ErectusIni::customItemLooterSettings.itemKeybindEnabled)
+			ErectusThread::RequestLootItems();
+		break;
+	case (static_cast<int>(HotKeys::LootScrap)):
+		if (ErectusIni::customScrapLooterSettings.scrapKeybindEnabled)
+			ErectusThread::RequestLootScrap();
+		break;
+	case (static_cast<int>(HotKeys::ToggleOverlay)):
+		ToggleOverlay();
+		break;
+	default:
+		break;
+	}
+}
+
+void ErectusMain::RegisterHotkeys()
+{
+	for (auto item : HOTKEYS)
+	{
+		::RegisterHotKey(appHwnd, static_cast<int>(item.first), item.second.modifiers, item.second.vk);
+	}
+}
+
+void ErectusMain::ToggleOverlay()
+{
+	if (!ErectusProcess::processSelected)
+		return;
+
+	if (overlayMenuActive)
+		SetOverlayPosition(false, true);
+	else
+		SetOverlayMenu();
+}
 void ErectusMain::Render() {
 	switch (Renderer::BeginScene()) {
 	case 0: //OK
@@ -80,14 +143,6 @@ void ErectusMain::Render() {
 
 		if (!ErectusThread::threadCreationState)
 			ErectusThread::threadCreationState = ErectusThread::CreateProcessThreads();
-
-		if (Utils::DoubleKeyPress(VK_CONTROL, VK_RETURN))
-		{
-			if (overlayMenuActive)
-				SetOverlayPosition(false, true);
-			else
-				SetOverlayMenu();
-		}
 	}
 
 	if (ErectusThread::threadDestructionQueued)
@@ -102,15 +157,6 @@ void ErectusMain::Render() {
 			}
 		}
 	}
-
-	if (Utils::DoubleKeyPress(VK_CONTROL, VK_OEM_COMMA))
-		ErectusIni::npcLooterSettings.entityLooterEnabled = !ErectusIni::npcLooterSettings.entityLooterEnabled;
-
-	if (Utils::DoubleKeyPress(VK_CONTROL, VK_OEM_PERIOD))
-		ErectusIni::containerLooterSettings.entityLooterEnabled = !ErectusIni::containerLooterSettings.entityLooterEnabled;
-
-	if (Utils::DoubleKeyPress(VK_CONTROL, 'P'))
-		ErectusIni::customHarvesterSettings.harvesterEnabled = !ErectusIni::customHarvesterSettings.harvesterEnabled;
 
 	//ghetto run once per frame
 	std::this_thread::sleep_for(std::chrono::milliseconds(16));
@@ -132,8 +178,7 @@ void ErectusMain::RenderOverlayMenu() {
 
 void ErectusMain::RenderOverlay()
 {
-	//if (!overlayActive || !overlayForeground)
-	if(!overlayActive)
+	if (!overlayActive)
 		return;
 
 	Renderer::d3DxSprite->Begin(D3DXSPRITE_ALPHABLEND);
@@ -160,7 +205,7 @@ void ErectusMain::RenderOverlay()
 		}
 	}
 	ErectusMemory::RenderData();
-	
+
 	Renderer::d3DxSprite->End();
 }
 
@@ -171,11 +216,8 @@ void ErectusMain::SetOverlayMenu()
 		windowSize[0] = 480;
 		windowSize[1] = 720;
 
-		if (windowHwnd != nullptr)
-		{
-			Renderer::deviceResetQueued = true;
-			SetWindowPos(windowHwnd, HWND_NOTOPMOST, windowPosition[0], windowPosition[1], windowSize[0], windowSize[1], 0);
-		}
+		Renderer::deviceResetQueued = true;
+		SetWindowPos(appHwnd, HWND_NOTOPMOST, windowPosition[0], windowPosition[1], windowSize[0], windowSize[1], 0);
 	}
 
 	int bufferPosition[2];
@@ -187,29 +229,21 @@ void ErectusMain::SetOverlayMenu()
 		windowPosition[0] = bufferPosition[0];
 		windowPosition[1] = bufferPosition[1];
 
-		if (windowHwnd != nullptr)
-		{
-			MoveWindow(windowHwnd, windowPosition[0], windowPosition[1], windowSize[0], windowSize[1], FALSE);
-			if (!Renderer::deviceResetQueued)
-			{
-				SetWindowPos(windowHwnd, HWND_NOTOPMOST, windowPosition[0], windowPosition[1], windowSize[0], windowSize[1], 0);
-			}
-		}
+		MoveWindow(appHwnd, windowPosition[0], windowPosition[1], windowSize[0], windowSize[1], FALSE);
+		if (!Renderer::deviceResetQueued)
+			SetWindowPos(appHwnd, HWND_NOTOPMOST, windowPosition[0], windowPosition[1], windowSize[0], windowSize[1], 0);
 	}
 
-	if (windowHwnd != nullptr)
+	auto style = GetWindowLongPtr(appHwnd, GWL_EXSTYLE);
+
+	if (style & WS_EX_LAYERED)
 	{
-		auto style = GetWindowLongPtr(windowHwnd, GWL_EXSTYLE);
-
-		if (style & WS_EX_LAYERED)
-		{
-			style &= ~WS_EX_LAYERED;
-			SetWindowLongPtr(windowHwnd, GWL_EXSTYLE, style);
-		}
-
-		if (style & WS_EX_TOPMOST)
-			SetWindowPos(windowHwnd, HWND_NOTOPMOST, windowPosition[0], windowPosition[1], windowSize[0], windowSize[1], 0);
+		style &= ~WS_EX_LAYERED;
+		SetWindowLongPtr(appHwnd, GWL_EXSTYLE, style);
 	}
+
+	if (style & WS_EX_TOPMOST)
+		SetWindowPos(appHwnd, HWND_NOTOPMOST, windowPosition[0], windowPosition[1], windowSize[0], windowSize[1], 0);
 
 	ErectusProcess::processMenuActive = false;
 	overlayMenuActive = true;
@@ -219,7 +253,7 @@ void ErectusMain::SetOverlayMenu()
 int ErectusMain::CreateWnd(const HINSTANCE hInstance)
 {
 	mHInstance = hInstance;
-	
+
 	WNDCLASSEX wndClass{
 		.cbSize = sizeof(WNDCLASSEX),
 		.style = CS_VREDRAW | CS_HREDRAW,
@@ -244,26 +278,26 @@ int ErectusMain::CreateWnd(const HINSTANCE hInstance)
 	windowSize[1] = 224;
 	windowPosition[0] = GetSystemMetrics(SM_CXSCREEN) / 2 - windowSize[0] / 2;
 	windowPosition[1] = GetSystemMetrics(SM_CYSCREEN) / 2 - windowSize[1] / 2;
-	windowHwnd = CreateWindowEx(WS_EX_TRANSPARENT | WS_EX_LAYERED, wndClass.lpszClassName, OVERLAY_WINDOW_NAME, WS_POPUP, windowPosition[0], windowPosition[1], windowSize[0], windowSize[1], nullptr, nullptr, wndClass.hInstance, nullptr);
+	appHwnd = CreateWindowEx(WS_EX_TRANSPARENT | WS_EX_LAYERED, wndClass.lpszClassName, OVERLAY_WINDOW_NAME, WS_POPUP, windowPosition[0], windowPosition[1], windowSize[0], windowSize[1], nullptr, nullptr, wndClass.hInstance, nullptr);
 
-	if (windowHwnd == nullptr)
+	if (appHwnd == nullptr)
 	{
 		UnregisterClass(wndClass.lpszClassName, wndClass.hInstance);
 		return 2;
 	}
 
 	MARGINS overlayMargins = { -1, -1, -1, -1 };
-	DwmExtendFrameIntoClientArea(windowHwnd, &overlayMargins);
-	SetLayeredWindowAttributes(windowHwnd, RGB(0x00, 0x00, 0x00), 0xFF, LWA_ALPHA);
-	SetWindowLongPtr(windowHwnd, GWL_EXSTYLE, WS_EX_TRANSPARENT);
+	DwmExtendFrameIntoClientArea(appHwnd, &overlayMargins);
+	SetLayeredWindowAttributes(appHwnd, RGB(0x00, 0x00, 0x00), 0xFF, LWA_ALPHA);
+	SetWindowLongPtr(appHwnd, GWL_EXSTYLE, WS_EX_TRANSPARENT);
 
 	return 0;
 }
 
 void ErectusMain::CloseWnd() {
-	if (windowHwnd != nullptr)
+	if (appHwnd != nullptr)
 	{
-		SendMessage(windowHwnd, WM_CLOSE, 0, 0);
+		SendMessage(appHwnd, WM_CLOSE, 0, 0);
 	}
 	UnregisterClass(OVERLAY_WINDOW_CLASS, mHInstance);
 }
@@ -279,7 +313,7 @@ bool ErectusMain::SetOverlayPosition(const bool topmost, const bool layered)
 		return false;
 	}
 
-	int size[2];
+	unsigned int size[2];
 	size[0] = clientRect.right;
 	size[1] = clientRect.bottom;
 
@@ -305,7 +339,7 @@ bool ErectusMain::SetOverlayPosition(const bool topmost, const bool layered)
 	{
 		windowPosition[0] = position[0];
 		windowPosition[1] = position[1];
-		MoveWindow(windowHwnd, windowPosition[0], windowPosition[1], windowSize[0], windowSize[1], 0);
+		MoveWindow(appHwnd, windowPosition[0], windowPosition[1], windowSize[0], windowSize[1], 0);
 	}
 
 	if (size[0] != windowSize[0] || size[1] != windowSize[1])
@@ -317,11 +351,11 @@ bool ErectusMain::SetOverlayPosition(const bool topmost, const bool layered)
 
 	if (topmost || layered)
 	{
-		auto style = GetWindowLongPtr(windowHwnd, GWL_EXSTYLE);
+		auto style = GetWindowLongPtr(appHwnd, GWL_EXSTYLE);
 
 		if (topmost && !(style & WS_EX_TOPMOST))
 		{
-			SetWindowPos(windowHwnd, HWND_TOPMOST, windowPosition[0], windowPosition[1], windowSize[0], windowSize[1], 0);
+			SetWindowPos(appHwnd, HWND_TOPMOST, windowPosition[0], windowPosition[1], windowSize[0], windowSize[1], 0);
 			windowTopmostCounter++;
 			if (windowTopmostCounter > 3)
 			{
@@ -332,23 +366,23 @@ bool ErectusMain::SetOverlayPosition(const bool topmost, const bool layered)
 			}
 		}
 		else if (!topmost && style & WS_EX_TOPMOST)
-			SetWindowPos(windowHwnd, HWND_NOTOPMOST, windowPosition[0], windowPosition[1], windowSize[0], windowSize[1], 0);
+			SetWindowPos(appHwnd, HWND_NOTOPMOST, windowPosition[0], windowPosition[1], windowSize[0], windowSize[1], 0);
 		else
 			windowTopmostCounter = 0;
 
 		if (layered && !(style & WS_EX_LAYERED))
 		{
 			style |= WS_EX_LAYERED;
-			SetWindowLongPtr(windowHwnd, GWL_EXSTYLE, style);
+			SetWindowLongPtr(appHwnd, GWL_EXSTYLE, style);
 			if (experimentalOverlayFix)
-				SetLayeredWindowAttributes(windowHwnd, RGB(0x00, 0x00, 0x00), 0xFF, LWA_ALPHA | LWA_COLORKEY);
+				SetLayeredWindowAttributes(appHwnd, RGB(0x00, 0x00, 0x00), 0xFF, LWA_ALPHA | LWA_COLORKEY);
 			else
-				SetLayeredWindowAttributes(windowHwnd, RGB(0x00, 0x00, 0x00), 0xFF, LWA_ALPHA);
+				SetLayeredWindowAttributes(appHwnd, RGB(0x00, 0x00, 0x00), 0xFF, LWA_ALPHA);
 		}
 		else if (!layered && style & WS_EX_LAYERED)
 		{
 			style &= ~WS_EX_LAYERED;
-			SetWindowLongPtr(windowHwnd, GWL_EXSTYLE, style);
+			SetWindowLongPtr(appHwnd, GWL_EXSTYLE, style);
 		}
 	}
 

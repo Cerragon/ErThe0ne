@@ -84,6 +84,39 @@ enum class FormTypes : BYTE
 	TesLevItem = 0x47,
 };
 
+enum class HotKeys : int
+{
+	NpcLooterToggle = 1,
+	ContainerLooterToggle,
+	HarvesterToggle,
+	PositionSpoofingToggle,
+	NoclipToggle,
+	OpkPlayersToggle,
+	OpkNpcsToggle,
+	LootItems,
+	LootScrap,
+	ToggleOverlay,
+};
+
+struct HotkeyCombination
+{
+	UINT modifiers;
+	UINT vk;
+};
+
+const std::unordered_map <HotKeys, HotkeyCombination> HOTKEYS{
+	{ HotKeys::NpcLooterToggle, HotkeyCombination{MOD_CONTROL | MOD_NOREPEAT, VK_OEM_COMMA } },
+	{ HotKeys::ContainerLooterToggle, HotkeyCombination{MOD_CONTROL | MOD_NOREPEAT, VK_OEM_PERIOD } },
+	{ HotKeys::HarvesterToggle, HotkeyCombination{MOD_CONTROL | MOD_NOREPEAT, 'P' } },
+	{ HotKeys::PositionSpoofingToggle, HotkeyCombination{MOD_CONTROL | MOD_NOREPEAT, 'L' } },
+	{ HotKeys::NoclipToggle, HotkeyCombination{ MOD_CONTROL | MOD_NOREPEAT, 'Y' } },
+	{ HotKeys::OpkPlayersToggle, HotkeyCombination{ MOD_CONTROL | MOD_NOREPEAT, 'B' } },
+	{ HotKeys::OpkNpcsToggle, HotkeyCombination{ MOD_CONTROL | MOD_NOREPEAT, 'N' } },
+	{ HotKeys::LootItems, HotkeyCombination{ MOD_CONTROL | MOD_NOREPEAT, 'R' } },
+	{ HotKeys::LootScrap, HotkeyCombination{ MOD_CONTROL | MOD_NOREPEAT, 'E' } },
+	{ HotKeys::ToggleOverlay, HotkeyCombination{ MOD_CONTROL | MOD_NOREPEAT, VK_RETURN } }
+};
+
 //CustomEntry Flags
 constexpr auto CUSTOM_ENTRY_DEFAULT = 0x0000000000000000ULL;
 constexpr auto CUSTOM_ENTRY_UNNAMED = 0x0000000000000001ULL;
@@ -1306,21 +1339,26 @@ class ErectusMain final {
 public:
 	static int CreateWnd(HINSTANCE hInstance);
 	static void CloseWnd();
+
 	static LRESULT CALLBACK WndCallback(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	static bool SetOverlayPosition(bool topmost, bool layered);
 	static void SetOverlayMenu();
 
-	inline static int windowSize[2] = { 0, 0 };
+	static void RegisterHotkeys();
+
+	inline static unsigned int windowSize[2] = { 0, 0 };
 	inline static int windowPosition[2] = { 0, 0 };
 	inline static bool overlayMenuActive = false;
 	inline static bool overlayActive = false;
 	inline static bool overlayForeground = false;
 	inline static bool experimentalOverlayFix = false;
 
-	inline static HWND windowHwnd = nullptr;
+	inline static HWND appHwnd = nullptr;
 
 private:
+	static void OnHotkey(WPARAM hotkeyId);
+	static void ToggleOverlay();
 	static void Render();
 
 	static void RenderProcessMenu();
@@ -1352,19 +1390,15 @@ public:
 	static bool FreeEx(DWORD64 src);
 	static bool VtableSwap(DWORD64 dst, DWORD64 src);
 
-	static float GetDistance(float* a1, float* a2);
+	static float GetDistance(const float* a1, const float* a2);
 	static float GetDegrees(float* src, float* forward, float* origin);
 	static bool WorldToScreen(const float* view, const float* position, float* screen);
 	static void ProjectView(float* dst, const float* forward, const float* origin, float distance);
-
-	static bool DoubleKeyPress(int keyCodeA, int keyCodeB);
 
 private:
 	static float RadiansToDegrees(float radians);
 	static void ValidateDword(DWORD* value, DWORD min, DWORD max);
 	static void ValidateRgba(float* value);
-
-	static bool SingleKeyPress(int keyCode);
 
 	virtual void __dummy() = 0;
 };
@@ -1396,7 +1430,6 @@ private:
 	static BOOL HwndEnumFunc(HWND hwnd, LPARAM lParam);
 	static DWORD64 GetModuleBaseAddress(DWORD pid, const char* module);
 
-
 	virtual void __dummy() = 0;
 };
 class ErectusImGui final {
@@ -1417,9 +1450,6 @@ private:
 	static void ButtonToggle(const char* label, bool* state);
 	static void LargeButtonToggle(const char* label, bool* state);
 	static void SmallButtonToggle(const char* label, bool* state);
-	inline static bool imGuiContextCreated = false;
-	inline static bool imGuiD3D9Initialized = false;
-	inline static bool imGuiWin32Initialized = false;
 
 	inline static POINT pointerPosition = { 0, 0 };
 	inline static ImVec2 pointerOrigin = { 0.0f, 0.0f };
@@ -1470,11 +1500,17 @@ public:
 	static bool CreateProcessThreads();
 	static bool ThreadDestruction();
 
+	static void RequestLootItems();
+	static void RequestLootScrap();
+	
 	inline static bool threadCreationState = false;
 	inline static bool threadDestructionQueued = false;
 	inline static int threadDestructionCounter = 0;
 
 	inline static bool positionSpoofingToggle = false;
+	inline static bool noclipToggle = false;
+	inline static bool opkPlayersToggle = false;
+	inline static bool opkNpcsToggle = false;
 
 private:
 	static DWORD __stdcall BufferEntityListThread(LPVOID lpParameter);
@@ -1497,8 +1533,9 @@ private:
 
 	inline static bool threadDestructionState = false;
 
-	inline static bool noclipToggle = false;
-
+	inline static bool lootItemsRequested = false;
+	inline static bool lootScrapRequested = false;
+	
 	virtual void __dummy();
 };
 class ErectusMemory final {
@@ -1522,7 +1559,7 @@ public:
 	static bool UpdateBufferEntityList();
 	static bool UpdateBufferNpcList();
 	static bool UpdateBufferPlayerList();
-		
+
 	static void DeleteOldWeaponList();
 
 	static bool UpdateOldWeaponData();
@@ -1537,7 +1574,7 @@ public:
 	static bool CheckItemTransferList();
 	static bool TransferItems(DWORD sourceFormId, DWORD destinationFormId);
 
-	static bool ReferenceSwap(DWORD* sourceFormId, DWORD* destinationFormId);
+	static bool ReferenceSwap(DWORD& sourceFormId, DWORD& destinationFormId);
 
 	static bool GetNukeCode(DWORD formId, int* nukeCode);
 
@@ -1588,30 +1625,30 @@ public:
 	inline static std::vector<MemoryClasses::CustomEntry> entityDataBuffer{};
 	inline static std::vector<MemoryClasses::CustomEntry> npcDataBuffer{};
 	inline static std::vector<MemoryClasses::CustomEntry> playerDataBuffer{};
-	
-private:
-	static bool RenderCustomEntryA(MemoryClasses::CustomEntry& entry, SettingsClasses::OverlaySettingsA settings);
-	static bool RenderCustomEntryB(MemoryClasses::CustomEntry& entry, SettingsClasses::OverlaySettingsB settings);
 
-	static char* GetPlayerName(MemoryClasses::ClientAccount* clientAccountData);
-	static bool TargetValid(TesObjectRefr entityData, TesItem referenceData);
+private:
+	static bool RenderCustomEntryA(const MemoryClasses::CustomEntry& entry, const SettingsClasses::OverlaySettingsA& settings);
+	static bool RenderCustomEntryB(const MemoryClasses::CustomEntry& entry, const SettingsClasses::OverlaySettingsB& settings);
+
+	static std::string GetPlayerName(const MemoryClasses::ClientAccount& clientAccountData);
+	static bool TargetValid(const TesObjectRefr& entityData, const TesItem& referenceData);
 	static bool FloraHarvested(BYTE harvestFlagA, BYTE harvestFlagB);
 
 	static bool CheckItemLooterList();
 	static bool CheckItemLooterBlacklist();
-	static bool CheckEntityLooterList(SettingsClasses::EntityLooterSettings* customEntityLooterSettings);
-	static bool CheckEntityLooterBlacklist(SettingsClasses::EntityLooterSettings* customEntityLooterSettings);
+	static bool CheckEntityLooterList(const SettingsClasses::EntityLooterSettings& settings);
+	static bool CheckEntityLooterBlacklist(const SettingsClasses::EntityLooterSettings& settings);
 	static bool CheckIngredientList();
 	static bool CheckJunkPileEnabled();
-	static bool CheckComponentArray(TesItem referenceData);
-	static bool CheckReferenceKeywordBook(TesItem referenceData, DWORD formId);
-	static bool CheckReferenceKeywordMisc(TesItem referenceData, DWORD formId);
+	static bool CheckComponentArray(const TesItem& referenceData);
+	static bool CheckReferenceKeywordBook(const TesItem& referenceData, DWORD formId);
+	static bool CheckReferenceKeywordMisc(const TesItem& referenceData, DWORD formId);
 	static bool CheckOnlyUseItemLooterList();
 	static bool CheckEnabledItem(DWORD formId, DWORD64 entityFlag, int normalDistance);
-	static bool CheckFormIdArray(DWORD formId, bool* enabledArray, const DWORD* formIdArray, int size);
-	static bool CheckReferenceJunk(TesItem referenceData);
-	static bool CheckReferenceMod(TesItem referenceData);
-	static bool CheckReferencePlan(TesItem referenceData);
+	static bool CheckFormIdArray(DWORD formId, const bool* enabledArray, const DWORD* formIdArray, int size);
+	static bool CheckReferenceJunk(const TesItem& referenceData);
+	static bool CheckReferenceMod(const TesItem& referenceData);
+	static bool CheckReferencePlan(const TesItem& referenceData);
 
 	static int GetOldWeaponIndex(DWORD formId);
 
@@ -1625,24 +1662,24 @@ private:
 	static bool InsideInteriorCell();
 	static int RenderLocalPlayerData();
 
-	static DWORD GetEntityId(TesObjectRefr entityData);
+	static DWORD GetEntityId(const TesObjectRefr& entityData);
 	static bool SendHitsToServer(MemoryClasses::Hits* hitsData, size_t hitsDataSize);
 	static DWORD64 GetNukeCodePtr(DWORD formId);
 	static DWORD64 RttiGetNamePtr(DWORD64 vtable);
 	static std::string GetInstancedItemName(DWORD64 displayPtr);
-	static bool EntityInventoryValid(TesObjectRefr entityData);
-	static bool AllowLegendaryWeapons(SettingsClasses::EntityLooterSettings* customEntityLooterSettings);
-	static bool AllowLegendaryArmor(SettingsClasses::EntityLooterSettings* customEntityLooterSettings);
-	static bool CheckEntityLooterItem(DWORD formId, DWORD64 entityFlag, SettingsClasses::EntityLooterSettings* customEntityLooterSettings, bool legendaryWeaponsEnabled, bool legendaryArmorEnabled);
+	static bool EntityInventoryValid(const TesObjectRefr& entityData);
+	static bool AllowLegendaryWeapons(const SettingsClasses::EntityLooterSettings& settings);
+	static bool AllowLegendaryArmor(const SettingsClasses::EntityLooterSettings& settings);
+	static bool CheckEntityLooterItem(DWORD formId, DWORD64 entityFlag, const SettingsClasses::EntityLooterSettings& settings, bool legendaryWeaponsEnabled, bool legendaryArmorEnabled);
 	static bool IsLegendaryFormId(DWORD formId);
 	static BYTE GetLegendaryRank(DWORD64 displayPtr);
-	static bool ValidLegendary(BYTE legendaryRank, DWORD64 entityFlag, SettingsClasses::EntityLooterSettings* customEntityLooterSettings, bool legendaryWeaponsEnabled, bool legendaryArmorEnabled);
-	static bool TransferEntityItems(TesObjectRefr entityData, TesItem referenceData, TesObjectRefr localPlayer, bool onlyUseEntityLooterList, bool useEntityLooterBlacklist);
-	static bool ContainerValid(TesItem referenceData);
-	static bool LootEntity(TesObjectRefr entityData, TesItem referenceData, TesObjectRefr localPlayer, bool onlyUseEntityLooterList, bool useEntityLooterBlacklist);
-	static bool CheckEntityLooterSettings(SettingsClasses::EntityLooterSettings* customEntityLooterSettings);
-	static bool CheckOnlyUseEntityLooterList(SettingsClasses::EntityLooterSettings* customEntityLooterSettings);
-	static bool HarvestFlora(TesObjectRefr entityData, TesItem referenceData, TesObjectRefr localPlayer);
+	static bool ValidLegendary(BYTE legendaryRank, DWORD64 entityFlag, const SettingsClasses::EntityLooterSettings& customEntityLooterSettings, bool legendaryWeaponsEnabled, bool legendaryArmorEnabled);
+	static bool TransferEntityItems(const TesObjectRefr& entityData, const TesItem& referenceData, const TesObjectRefr& localPlayer, bool onlyUseEntityLooterList, bool useEntityLooterBlacklist);
+	static bool ContainerValid(const TesItem& referenceData);
+	static bool LootEntity(const TesObjectRefr& entityData, const TesItem& referenceData, const TesObjectRefr& localPlayer, bool onlyUseEntityLooterList, bool useEntityLooterBlacklist);
+	static bool CheckEntityLooterSettings(const SettingsClasses::EntityLooterSettings& settings);
+	static bool CheckOnlyUseEntityLooterList(const SettingsClasses::EntityLooterSettings& settings);
+	static bool HarvestFlora(const TesObjectRefr& entityData, const TesItem& referenceData, const TesObjectRefr& localPlayer);
 
 	static bool CreateProjectile(DWORD itemId, const float* position, const float* rotation);
 
@@ -1655,15 +1692,15 @@ private:
 	static std::vector<DWORD64> GetEntityList();
 	static std::vector<DWORD64> GetNpcPtrList();
 	static std::vector<DWORD64> GetRecipeArray();
-	static bool CheckWhitelistedFlux(TesItem referenceData);
-	static bool FloraLeveledListValid(MemoryClasses::LeveledList leveledListData);
-	static bool FloraValid(TesItem referenceData);
+	static bool CheckWhitelistedFlux(const TesItem& referenceData);
+	static bool FloraLeveledListValid(const MemoryClasses::LeveledList& leveledListData);
+	static bool FloraValid(const TesItem& referenceData);
 	static bool IsTreasureMap(DWORD formId);
 	static bool CheckFactionFormId(DWORD formId);
-	static bool BlacklistedNpcFaction(TesItem referenceData);
-	static bool CheckReferenceItem(TesItem referenceData);
-	static void GetCustomEntityData(TesItem referenceData, DWORD64* entityFlag, DWORD64* entityNamePtr, int* enabledDistance, bool checkScrap, bool checkIngredient);
-	static bool GetActorSnapshotComponentData(TesObjectRefr entityData, MemoryClasses::ActorSnapshotComponent* actorSnapshotComponentData);
+	static bool BlacklistedNpcFaction(const TesItem& referenceData);
+	static bool CheckReferenceItem(const TesItem& referenceData);
+	static void GetCustomEntityData(const TesItem& referenceData, DWORD64* entityFlag, DWORD64* entityNamePtr, int* enabledDistance, bool checkScrap, bool checkIngredient);
+	static bool GetActorSnapshotComponentData(const TesObjectRefr& entityData, MemoryClasses::ActorSnapshotComponent* actorSnapshotComponentData);
 	static std::string GetEntityName(DWORD64 ptr);
 
 	inline static MemoryClasses::OldWeapon* oldWeaponList = nullptr;
