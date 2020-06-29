@@ -14,43 +14,27 @@ int Utils::GetTextLength(const char *text)
 	return 0;
 }
 
-void Utils::ValidateDword(DWORD *value, const DWORD min, const DWORD max)
+void Utils::ValidateInt(int& value, const int min, const int max)
 {
-	if (*value < min)
-		*value = min;
-	else if (*value > max)
-		*value = max;
+	if (value < min)
+		value = min;
+	else if (value > max)
+		value = max;
 }
 
-void Utils::ValidateInt(int *value, const int min, const int max)
+void Utils::ValidateFloat(float& value, const float min, const float max)
 {
-	if (*value < min)
-		*value = min;
-	else if (*value > max)
-		*value = max;
-}
-
-void Utils::ValidateFloat(float *value, const float min, const float max)
-{
-	if (*value < min)
-		*value = min;
-	else if (*value > max)
-		*value = max;
+	if (value < min)
+		value = min;
+	else if (value > max)
+		value = max;
 }
 
 void Utils::ValidateRgb(float *value)
 {
 	for (auto i = 0; i < 3; i++)
 	{
-		ValidateFloat(&value[i], 0.0f, 1.0f);
-	}
-}
-
-void Utils::ValidateRgba(float *value)
-{
-	for (auto i = 0; i < 4; i++)
-	{
-		ValidateFloat(&value[i], 0.0f, 1.0f);
+		ValidateFloat(value[i], 0.0f, 1.0f);
 	}
 }
 

@@ -1,5 +1,6 @@
 #include "ErectusInclude.h"
 #include "resource.h"
+#include "settings.h"
 
 // ReSharper disable once CppInconsistentNaming
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -37,36 +38,36 @@ void ErectusMain::OnHotkey(const WPARAM hotkeyId)
 	switch (hotkeyId)
 	{
 	case (static_cast<int>(HotKeys::ContainerLooterToggle)):
-		ErectusIni::containerLooter.enabled = !ErectusIni::containerLooter.enabled;
+		Settings::containerLooter.enabled = !Settings::containerLooter.enabled;
 		break;
 	case (static_cast<int>(HotKeys::NpcLooterToggle)):
-		ErectusIni::npcLooter.enabled = !ErectusIni::npcLooter.enabled;
+		Settings::npcLooter.enabled = !Settings::npcLooter.enabled;
 		break;
 	case (static_cast<int>(HotKeys::HarvesterToggle)):
-		ErectusIni::harvester.enabled = !ErectusIni::harvester.enabled;
+		Settings::harvester.enabled = !Settings::harvester.enabled;
 		break;
 	case (static_cast<int>(HotKeys::PositionSpoofingToggle)):
-		if (ErectusIni::customLocalPlayerSettings.positionSpoofingEnabled)
+		if (Settings::customLocalPlayerSettings.positionSpoofingEnabled)
 			ErectusThread::positionSpoofingToggle = !ErectusThread::positionSpoofingToggle;
 		break;
 	case (static_cast<int>(HotKeys::NoclipToggle)):
-		if (ErectusIni::customLocalPlayerSettings.noclipEnabled)
+		if (Settings::customLocalPlayerSettings.noclipEnabled)
 			ErectusThread::noclipToggle = !ErectusThread::noclipToggle;
 		break;
 	case (static_cast<int>(HotKeys::OpkPlayersToggle)):
-		if (ErectusIni::customOpkSettings.playersEnabled)
+		if (Settings::opk.playersEnabled)
 			ErectusThread::opkPlayersToggle = !ErectusThread::opkPlayersToggle;
 		break;
 	case (static_cast<int>(HotKeys::OpkNpcsToggle)):
-		if (ErectusIni::customOpkSettings.npcsEnabled)
+		if (Settings::opk.npcsEnabled)
 			ErectusThread::opkNpcsToggle = !ErectusThread::opkNpcsToggle;
 		break;
 	case (static_cast<int>(HotKeys::LootItems)):
-		if (ErectusIni::itemLooter.keybindEnabled)
+		if (Settings::itemLooter.keybindEnabled)
 			ErectusThread::RequestLootItems();
 		break;
 	case (static_cast<int>(HotKeys::LootScrap)):
-		if (ErectusIni::scrapLooter.keybindEnabled)
+		if (Settings::scrapLooter.keybindEnabled)
 			ErectusThread::RequestLootScrap();
 		break;
 	case (static_cast<int>(HotKeys::ToggleOverlay)):
@@ -184,7 +185,7 @@ void ErectusMain::RenderOverlay()
 	Renderer::d3DxSprite->Begin(D3DXSPRITE_ALPHABLEND);
 
 	ErectusMemory::targetLockingValid = false;
-	ErectusMemory::targetLockingClosestDegrees = ErectusIni::customTargetSettings.lockingFov;
+	ErectusMemory::targetLockingClosestDegrees = Settings::targetting.lockingFov;
 	ErectusMemory::targetLockingClosestPtr = 0;
 
 	ErectusMemory::RenderCustomEntityList();
@@ -195,10 +196,10 @@ void ErectusMain::RenderOverlay()
 	{
 		if (ErectusMemory::targetLockingPtr)
 		{
-			ErectusMemory::targetLockingCooldown = ErectusIni::customTargetSettings.retargeting ? ErectusIni::customTargetSettings.cooldown : -1;
+			ErectusMemory::targetLockingCooldown = Settings::targetting.retargeting ? Settings::targetting.cooldown : -1;
 			ErectusMemory::targetLockingPtr = 0;
 		}
-		else if (ErectusMemory::targetLockingClosestDegrees < ErectusIni::customTargetSettings.lockingFov)
+		else if (ErectusMemory::targetLockingClosestDegrees < Settings::targetting.lockingFov)
 		{
 			ErectusMemory::targetLockingCooldown = 0;
 			ErectusMemory::targetLockingPtr = ErectusMemory::targetLockingClosestPtr;
@@ -374,10 +375,7 @@ bool ErectusMain::SetOverlayPosition(const bool topmost, const bool layered)
 		{
 			style |= WS_EX_LAYERED;
 			SetWindowLongPtr(appHwnd, GWL_EXSTYLE, style);
-			if (experimentalOverlayFix)
-				SetLayeredWindowAttributes(appHwnd, RGB(0x00, 0x00, 0x00), 0xFF, LWA_ALPHA | LWA_COLORKEY);
-			else
-				SetLayeredWindowAttributes(appHwnd, RGB(0x00, 0x00, 0x00), 0xFF, LWA_ALPHA);
+			SetLayeredWindowAttributes(appHwnd, RGB(0, 0, 0), 255, LWA_ALPHA | LWA_COLORKEY);
 		}
 		else if (!layered && style & WS_EX_LAYERED)
 		{

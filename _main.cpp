@@ -1,4 +1,5 @@
 #include "ErectusInclude.h"
+#include "settings.h"
 
 void onShutdown() {
 	ErectusProcess::ResetProcessData();
@@ -6,7 +7,7 @@ void onShutdown() {
 	Renderer::Cleanup();
 	ErectusImGui::ImGuiCleanup();
 
-	ErectusIni::WriteIniSettings();
+	Settings::WriteIniSettings();
 
 	ErectusMain::CloseWnd();
 }
@@ -28,7 +29,7 @@ int onStartup(const HINSTANCE hInstance) {
 		return 4;
 	}
 
-	ErectusIni::ReadIniSettings();
+	Settings::ReadIniSettings();
 
 	ErectusProcess::SetProcessMenu();
 	return 0;

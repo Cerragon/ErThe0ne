@@ -1,11 +1,12 @@
+#include "ErectusInclude.h"
+#include "settings.h"
+
+#include "fmt/format.h"
 #include <array>
 #include <unordered_set>
 
-#include "ErectusInclude.h"
-#include "fmt/format.h"
-
 using namespace MemoryClasses;
-using namespace SettingsClasses;
+
 
 DWORD legendaryFormIdArray[]
 {
@@ -38,7 +39,7 @@ DWORD64 ErectusMemory::GetAddress(const DWORD formId)
 	//v1+32 == capacity (_capacity)
 	//
 	//here the hashmap is hashmap<formId, TesObjectRefr*>
-	//item/entry is { std::tuple<formId, TesObjectRefr*> value, Entry* next }
+	//item/entry is { std::pair<formId, TesObjectRefr*> value, Entry* next }
 	//
 	//all this is doing is:
 	//find(key) {
@@ -576,7 +577,7 @@ bool ErectusMemory::CheckReferencePlan(const TesItem& referenceData)
 
 bool ErectusMemory::CheckScrapList()
 {
-	for (auto i : ErectusIni::scrapLooter.enabledList)
+	for (auto i : Settings::scrapLooter.enabledList)
 	{
 		if (i)
 			return true;
@@ -590,7 +591,7 @@ bool ErectusMemory::CheckItemLooterList()
 {
 	for (auto i = 0; i < 100; i++)
 	{
-		if (ErectusIni::itemLooter.formIdList[i] && ErectusIni::itemLooter.enabledList[i])
+		if (Settings::itemLooter.formIdList[i] && Settings::itemLooter.enabledList[i])
 			return true;
 	}
 
@@ -599,11 +600,11 @@ bool ErectusMemory::CheckItemLooterList()
 
 bool ErectusMemory::CheckItemLooterBlacklist()
 {
-	if (ErectusIni::itemLooter.blacklistToggle)
+	if (Settings::itemLooter.blacklistToggle)
 	{
 		for (auto i = 0; i < 64; i++)
 		{
-			if (ErectusIni::itemLooter.blacklist[i] && ErectusIni::itemLooter.blacklistEnabled[i])
+			if (Settings::itemLooter.blacklist[i] && Settings::itemLooter.blacklistEnabled[i])
 				return true;
 		}
 	}
@@ -638,7 +639,7 @@ bool ErectusMemory::CheckEntityLooterBlacklist(const EntityLooterSettings& setti
 
 bool ErectusMemory::CheckIngredientList()
 {
-	for (auto i : ErectusIni::harvester.enabledList)
+	for (auto i : Settings::harvester.enabledList)
 	{
 		if (i)
 			return true;
@@ -651,8 +652,8 @@ bool ErectusMemory::CheckJunkPileEnabled()
 {
 	for (auto i = 0; i < 69; i++)
 	{
-		if (!strcmp(ErectusIni::harvester.nameList[i], "Junk Pile"))
-			return ErectusIni::harvester.enabledList[i];
+		if (!strcmp(Settings::harvester.nameList[i], "Junk Pile"))
+			return Settings::harvester.enabledList[i];
 	}
 
 	return false;
@@ -684,7 +685,7 @@ bool ErectusMemory::CheckComponentArray(const TesItem& referenceData)
 		TesItem componentData{};
 		if (!Utils::Rpm(componentArray[i].componentReferencePtr, &componentData, sizeof componentData))
 			continue;
-		if (CheckFormIdArray(componentData.formId, ErectusIni::scrapLooter.enabledList, ErectusIni::scrapLooter.formIdList, 40))
+		if (CheckFormIdArray(componentData.formId, Settings::scrapLooter.enabledList, Settings::scrapLooter.formIdList, 40))
 		{
 			delete[]componentArray;
 			componentArray = nullptr;
@@ -781,15 +782,15 @@ bool ErectusMemory::CheckWhitelistedFlux(const TesItem& referenceData)
 	switch (formIdCheck)
 	{
 	case 0x002DDD45: //Raw Crimson Flux
-		return ErectusIni::customFluxSettings.crimsonFluxEnabled;
+		return Settings::customFluxSettings.crimsonFluxEnabled;
 	case 0x002DDD46: //Raw Cobalt Flux
-		return ErectusIni::customFluxSettings.cobaltFluxEnabled;
+		return Settings::customFluxSettings.cobaltFluxEnabled;
 	case 0x002DDD49: //Raw Yellowcake Flux
-		return ErectusIni::customFluxSettings.yellowcakeFluxEnabled;
+		return Settings::customFluxSettings.yellowcakeFluxEnabled;
 	case 0x002DDD4B: //Raw Fluorescent Flux
-		return ErectusIni::customFluxSettings.fluorescentFluxEnabled;
+		return Settings::customFluxSettings.fluorescentFluxEnabled;
 	case 0x002DDD4D: //Raw Violet Flux
-		return ErectusIni::customFluxSettings.violetFluxEnabled;
+		return Settings::customFluxSettings.violetFluxEnabled;
 	default:
 		return false;
 	}
@@ -827,7 +828,7 @@ bool ErectusMemory::FloraLeveledListValid(const LeveledList& leveledListData)
 				return true;
 			}
 		}
-		else if (CheckFormIdArray(referenceData.formId, ErectusIni::harvester.enabledList, ErectusIni::harvester.formIdList, 69))
+		else if (CheckFormIdArray(referenceData.formId, Settings::harvester.enabledList, Settings::harvester.formIdList, 69))
 		{
 			delete[]listEntryData;
 			listEntryData = nullptr;
@@ -857,7 +858,7 @@ bool ErectusMemory::FloraValid(const TesItem& referenceData)
 		memcpy(&leveledListData, &harvestedData, sizeof leveledListData);
 		return FloraLeveledListValid(leveledListData);
 	}
-	return CheckFormIdArray(harvestedData.formId, ErectusIni::harvester.enabledList, ErectusIni::harvester.formIdList, 69);
+	return CheckFormIdArray(harvestedData.formId, Settings::harvester.enabledList, Settings::harvester.formIdList, 69);
 }
 
 bool ErectusMemory::IsTreasureMap(const DWORD formId)
@@ -910,13 +911,13 @@ bool ErectusMemory::CheckFactionFormId(const DWORD formId)
 	switch (formId)
 	{
 	case 0x003FC008: //W05_SettlerFaction
-		return ErectusIni::customExtraNpcSettings.hideSettlerFaction;
+		return Settings::customExtraNpcSettings.hideSettlerFaction;
 	case 0x003FE94A: //W05_CraterRaiderFaction
-		return ErectusIni::customExtraNpcSettings.hideCraterRaiderFaction;
+		return Settings::customExtraNpcSettings.hideCraterRaiderFaction;
 	case 0x003FBC00: //W05_DieHardFaction
-		return ErectusIni::customExtraNpcSettings.hideDieHardFaction;
+		return Settings::customExtraNpcSettings.hideDieHardFaction;
 	case 0x005427B2: //W05_SecretServiceFaction
-		return ErectusIni::customExtraNpcSettings.hideSecretServiceFaction;
+		return Settings::customExtraNpcSettings.hideSecretServiceFaction;
 	default:
 		return false;
 	}
@@ -978,15 +979,15 @@ void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* e
 	case (static_cast<byte>(FormTypes::TesNpc)):
 		*entityFlag |= CUSTOM_ENTRY_NPC;
 		*entityNamePtr = referenceData.namePtr0160;
-		*enabledDistance = ErectusIni::npcSettings.enabledDistance;
+		*enabledDistance = Settings::npcSettings.enabledDistance;
 		break;
 	case (static_cast<byte>(FormTypes::TesObjectCont)):
 		*entityFlag |= CUSTOM_ENTRY_CONTAINER;
 		*entityNamePtr = referenceData.namePtr00B0;
-		*enabledDistance = ErectusIni::containerSettings.enabledDistance;
-		if (CheckFormIdArray(referenceData.formId, ErectusIni::containerSettings.whitelisted, ErectusIni::containerSettings.whitelist, 32))
+		*enabledDistance = Settings::containerSettings.enabledDistance;
+		if (CheckFormIdArray(referenceData.formId, Settings::containerSettings.whitelisted, Settings::containerSettings.whitelist, 32))
 			*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-		else if (!ErectusIni::containerSettings.enabled)
+		else if (!Settings::containerSettings.enabled)
 			*entityFlag |= CUSTOM_ENTRY_INVALID;
 		break;
 	case (static_cast<byte>(FormTypes::TesObjectMisc)):
@@ -995,7 +996,7 @@ void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* e
 		if (CheckReferenceJunk(referenceData))
 		{
 			*entityFlag |= CUSTOM_ENTRY_JUNK;
-			*enabledDistance = ErectusIni::junkSettings.enabledDistance;
+			*enabledDistance = Settings::junkSettings.enabledDistance;
 			if (checkScrap)
 			{
 				if (CheckComponentArray(referenceData))
@@ -1005,9 +1006,9 @@ void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* e
 			}
 			else
 			{
-				if (CheckFormIdArray(referenceData.formId, ErectusIni::junkSettings.whitelisted, ErectusIni::junkSettings.whitelist, 32))
+				if (CheckFormIdArray(referenceData.formId, Settings::junkSettings.whitelisted, Settings::junkSettings.whitelist, 32))
 					*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-				else if (!ErectusIni::junkSettings.enabled)
+				else if (!Settings::junkSettings.enabled)
 					*entityFlag |= CUSTOM_ENTRY_INVALID;
 			}
 		}
@@ -1015,29 +1016,29 @@ void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* e
 		{
 			*entityFlag |= CUSTOM_ENTRY_MOD;
 			*entityFlag |= CUSTOM_ENTRY_ITEM;
-			*enabledDistance = ErectusIni::itemSettings.enabledDistance;
-			if (CheckFormIdArray(referenceData.formId, ErectusIni::itemSettings.whitelisted, ErectusIni::itemSettings.whitelist, 32))
+			*enabledDistance = Settings::itemSettings.enabledDistance;
+			if (CheckFormIdArray(referenceData.formId, Settings::itemSettings.whitelisted, Settings::itemSettings.whitelist, 32))
 				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-			else if (!ErectusIni::itemSettings.enabled)
+			else if (!Settings::itemSettings.enabled)
 				*entityFlag |= CUSTOM_ENTRY_INVALID;
 		}
 		else if (CheckReferenceKeywordMisc(referenceData, 0x00135E6C))
 		{
 			*entityFlag |= CUSTOM_ENTRY_BOBBLEHEAD;
-			*enabledDistance = ErectusIni::bobbleheadSettings.enabledDistance;
-			if (CheckFormIdArray(referenceData.formId, ErectusIni::bobbleheadSettings.whitelisted, ErectusIni::bobbleheadSettings.whitelist, 32))
+			*enabledDistance = Settings::bobbleheadSettings.enabledDistance;
+			if (CheckFormIdArray(referenceData.formId, Settings::bobbleheadSettings.whitelisted, Settings::bobbleheadSettings.whitelist, 32))
 				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-			else if (!ErectusIni::bobbleheadSettings.enabled)
+			else if (!Settings::bobbleheadSettings.enabled)
 				*entityFlag |= CUSTOM_ENTRY_INVALID;
 		}
 		else
 		{
 			*entityFlag |= CUSTOM_ENTRY_MISC;
 			*entityFlag |= CUSTOM_ENTRY_ITEM;
-			*enabledDistance = ErectusIni::itemSettings.enabledDistance;
-			if (CheckFormIdArray(referenceData.formId, ErectusIni::itemSettings.whitelisted, ErectusIni::itemSettings.whitelist, 32))
+			*enabledDistance = Settings::itemSettings.enabledDistance;
+			if (CheckFormIdArray(referenceData.formId, Settings::itemSettings.whitelisted, Settings::itemSettings.whitelist, 32))
 				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-			else if (!ErectusIni::itemSettings.enabled)
+			else if (!Settings::itemSettings.enabled)
 				*entityFlag |= CUSTOM_ENTRY_INVALID;
 		}
 		break;
@@ -1047,7 +1048,7 @@ void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* e
 		if (CheckReferencePlan(referenceData))
 		{
 			*entityFlag |= CUSTOM_ENTRY_PLAN;
-			*enabledDistance = ErectusIni::planSettings.enabledDistance;
+			*enabledDistance = Settings::planSettings.enabledDistance;
 			switch (IsKnownRecipe(referenceData.formId))
 			{
 			case 0x01:
@@ -1060,36 +1061,36 @@ void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* e
 				*entityFlag |= CUSTOM_ENTRY_FAILED_RECIPE;
 				break;
 			}
-			if (CheckFormIdArray(referenceData.formId, ErectusIni::planSettings.whitelisted, ErectusIni::planSettings.whitelist, 32))
+			if (CheckFormIdArray(referenceData.formId, Settings::planSettings.whitelisted, Settings::planSettings.whitelist, 32))
 				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-			else if (!ErectusIni::planSettings.enabled)
+			else if (!Settings::planSettings.enabled)
 				*entityFlag |= CUSTOM_ENTRY_INVALID;
 		}
 		else if (CheckReferenceKeywordBook(referenceData, 0x001D4A70))
 		{
 			*entityFlag |= CUSTOM_ENTRY_MAGAZINE;
-			*enabledDistance = ErectusIni::magazineSettings.enabledDistance;
-			if (CheckFormIdArray(referenceData.formId, ErectusIni::magazineSettings.whitelisted, ErectusIni::magazineSettings.whitelist, 32))
+			*enabledDistance = Settings::magazineSettings.enabledDistance;
+			if (CheckFormIdArray(referenceData.formId, Settings::magazineSettings.whitelisted, Settings::magazineSettings.whitelist, 32))
 				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-			else if (!ErectusIni::magazineSettings.enabled)
+			else if (!Settings::magazineSettings.enabled)
 				*entityFlag |= CUSTOM_ENTRY_INVALID;
 		}
 		else
 		{
 			*entityFlag |= CUSTOM_ENTRY_ITEM;
-			*enabledDistance = ErectusIni::itemSettings.enabledDistance;
+			*enabledDistance = Settings::itemSettings.enabledDistance;
 			if (IsTreasureMap(referenceData.formId))
 				*entityFlag |= CUSTOM_ENTRY_TREASURE_MAP;
-			if (CheckFormIdArray(referenceData.formId, ErectusIni::itemSettings.whitelisted, ErectusIni::itemSettings.whitelist, 32))
+			if (CheckFormIdArray(referenceData.formId, Settings::itemSettings.whitelisted, Settings::itemSettings.whitelist, 32))
 				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-			else if (!ErectusIni::itemSettings.enabled)
+			else if (!Settings::itemSettings.enabled)
 				*entityFlag |= CUSTOM_ENTRY_INVALID;
 		}
 		break;
 	case (static_cast<byte>(FormTypes::TesFlora)):
 		*entityFlag |= CUSTOM_ENTRY_FLORA;
 		*entityNamePtr = referenceData.namePtr0098;
-		*enabledDistance = ErectusIni::floraSettings.enabledDistance;
+		*enabledDistance = Settings::floraSettings.enabledDistance;
 		if (checkIngredient)
 		{
 			if (FloraValid(referenceData))
@@ -1099,9 +1100,9 @@ void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* e
 		}
 		else
 		{
-			if (CheckWhitelistedFlux(referenceData) || CheckFormIdArray(referenceData.formId, ErectusIni::floraSettings.whitelisted, ErectusIni::floraSettings.whitelist, 32))
+			if (CheckWhitelistedFlux(referenceData) || CheckFormIdArray(referenceData.formId, Settings::floraSettings.whitelisted, Settings::floraSettings.whitelist, 32))
 				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-			else if (!ErectusIni::floraSettings.enabled)
+			else if (!Settings::floraSettings.enabled)
 				*entityFlag |= CUSTOM_ENTRY_INVALID;
 		}
 		break;
@@ -1110,10 +1111,10 @@ void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* e
 		*entityFlag |= CUSTOM_ENTRY_ITEM;
 		*entityFlag |= CUSTOM_ENTRY_VALID_ITEM;
 		*entityNamePtr = referenceData.namePtr0098;
-		*enabledDistance = ErectusIni::itemSettings.enabledDistance;
-		if (CheckFormIdArray(referenceData.formId, ErectusIni::itemSettings.whitelisted, ErectusIni::itemSettings.whitelist, 32))
+		*enabledDistance = Settings::itemSettings.enabledDistance;
+		if (CheckFormIdArray(referenceData.formId, Settings::itemSettings.whitelisted, Settings::itemSettings.whitelist, 32))
 			*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-		else if (!ErectusIni::itemSettings.enabled)
+		else if (!Settings::itemSettings.enabled)
 			*entityFlag |= CUSTOM_ENTRY_INVALID;
 		break;
 	case (static_cast<byte>(FormTypes::TesObjectArmo)):
@@ -1121,10 +1122,10 @@ void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* e
 		*entityFlag |= CUSTOM_ENTRY_ITEM;
 		*entityFlag |= CUSTOM_ENTRY_VALID_ITEM;
 		*entityNamePtr = referenceData.namePtr0098;
-		*enabledDistance = ErectusIni::itemSettings.enabledDistance;
-		if (CheckFormIdArray(referenceData.formId, ErectusIni::itemSettings.whitelisted, ErectusIni::itemSettings.whitelist, 32))
+		*enabledDistance = Settings::itemSettings.enabledDistance;
+		if (CheckFormIdArray(referenceData.formId, Settings::itemSettings.whitelisted, Settings::itemSettings.whitelist, 32))
 			*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-		else if (!ErectusIni::itemSettings.enabled)
+		else if (!Settings::itemSettings.enabled)
 			*entityFlag |= CUSTOM_ENTRY_INVALID;
 		break;
 	case (static_cast<byte>(FormTypes::TesAmmo)):
@@ -1132,10 +1133,10 @@ void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* e
 		*entityFlag |= CUSTOM_ENTRY_ITEM;
 		*entityFlag |= CUSTOM_ENTRY_VALID_ITEM;
 		*entityNamePtr = referenceData.namePtr0098;
-		*enabledDistance = ErectusIni::itemSettings.enabledDistance;
-		if (CheckFormIdArray(referenceData.formId, ErectusIni::itemSettings.whitelisted, ErectusIni::itemSettings.whitelist, 32))
+		*enabledDistance = Settings::itemSettings.enabledDistance;
+		if (CheckFormIdArray(referenceData.formId, Settings::itemSettings.whitelisted, Settings::itemSettings.whitelist, 32))
 			*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-		else if (!ErectusIni::itemSettings.enabled)
+		else if (!Settings::itemSettings.enabled)
 			*entityFlag |= CUSTOM_ENTRY_INVALID;
 		break;
 	case (static_cast<byte>(FormTypes::AlchemyItem)):
@@ -1143,10 +1144,10 @@ void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* e
 		*entityFlag |= CUSTOM_ENTRY_ITEM;
 		*entityFlag |= CUSTOM_ENTRY_VALID_ITEM;
 		*entityNamePtr = referenceData.namePtr0098;
-		*enabledDistance = ErectusIni::itemSettings.enabledDistance;
-		if (CheckFormIdArray(referenceData.formId, ErectusIni::itemSettings.whitelisted, ErectusIni::itemSettings.whitelist, 32))
+		*enabledDistance = Settings::itemSettings.enabledDistance;
+		if (CheckFormIdArray(referenceData.formId, Settings::itemSettings.whitelisted, Settings::itemSettings.whitelist, 32))
 			*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-		else if (!ErectusIni::itemSettings.enabled)
+		else if (!Settings::itemSettings.enabled)
 			*entityFlag |= CUSTOM_ENTRY_INVALID;
 		break;
 	default:
@@ -1155,20 +1156,20 @@ void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* e
 			*entityFlag |= CUSTOM_ENTRY_ITEM;
 			*entityFlag |= CUSTOM_ENTRY_VALID_ITEM;
 			*entityNamePtr = referenceData.namePtr0098;
-			*enabledDistance = ErectusIni::itemSettings.enabledDistance;
-			if (CheckFormIdArray(referenceData.formId, ErectusIni::itemSettings.whitelisted, ErectusIni::itemSettings.whitelist, 32))
+			*enabledDistance = Settings::itemSettings.enabledDistance;
+			if (CheckFormIdArray(referenceData.formId, Settings::itemSettings.whitelisted, Settings::itemSettings.whitelist, 32))
 				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-			else if (!ErectusIni::itemSettings.enabled)
+			else if (!Settings::itemSettings.enabled)
 				*entityFlag |= CUSTOM_ENTRY_INVALID;
 		}
 		else
 		{
 			*entityFlag |= CUSTOM_ENTRY_ENTITY;
 			*entityNamePtr = 0;
-			*enabledDistance = ErectusIni::entitySettings.enabledDistance;
-			if (CheckFormIdArray(referenceData.formId, ErectusIni::entitySettings.whitelisted, ErectusIni::entitySettings.whitelist, 32))
+			*enabledDistance = Settings::entitySettings.enabledDistance;
+			if (CheckFormIdArray(referenceData.formId, Settings::entitySettings.whitelisted, Settings::entitySettings.whitelist, 32))
 				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-			else if (!ErectusIni::entitySettings.enabled || !ErectusIni::entitySettings.drawUnnamed)
+			else if (!Settings::entitySettings.enabled || !Settings::entitySettings.drawUnnamed)
 				*entityFlag |= CUSTOM_ENTRY_INVALID;
 		}
 		break;
@@ -1270,7 +1271,7 @@ bool ErectusMemory::UpdateBufferEntityList()
 		DWORD64 entityNamePtr = 0;
 		auto enabledDistance = 0;
 
-		GetCustomEntityData(referenceData, &entityFlag, &entityNamePtr, &enabledDistance, ErectusIni::scrapLooter.scrapOverrideEnabled, ErectusIni::harvester.overrideEnabled);
+		GetCustomEntityData(referenceData, &entityFlag, &entityNamePtr, &enabledDistance, Settings::scrapLooter.scrapOverrideEnabled, Settings::harvester.overrideEnabled);
 		if (entityFlag & CUSTOM_ENTRY_INVALID)
 			continue;
 
@@ -1344,17 +1345,17 @@ bool ErectusMemory::UpdateBufferNpcList()
 		auto enabledDistance = 0;
 
 		GetCustomEntityData(referenceData, &entityFlag, &entityNamePtr, &enabledDistance,
-			ErectusIni::scrapLooter.scrapOverrideEnabled,
-			ErectusIni::harvester.overrideEnabled);
+			Settings::scrapLooter.scrapOverrideEnabled,
+			Settings::harvester.overrideEnabled);
 		if (entityFlag & CUSTOM_ENTRY_INVALID)
 			continue;
 
 		if (BlacklistedNpcFaction(referenceData))
 			continue;
 
-		if (ErectusIni::customExtraNpcSettings.useNpcBlacklist)
+		if (Settings::customExtraNpcSettings.useNpcBlacklist)
 		{
-			if (CheckFormIdArray(referenceData.formId, ErectusIni::customExtraNpcSettings.npcBlacklistEnabled, ErectusIni::customExtraNpcSettings.npcBlacklist, 64))
+			if (CheckFormIdArray(referenceData.formId, Settings::customExtraNpcSettings.npcBlacklistEnabled, Settings::customExtraNpcSettings.npcBlacklist, 64))
 				continue;
 		}
 
@@ -1544,26 +1545,26 @@ bool ErectusMemory::TargetValid(const TesObjectRefr& entityData, const TesItem& 
 		return false;
 	}
 
-	if (entityData.spawnFlag != 0x02 && !ErectusIni::customTargetSettings.ignoreRenderDistance)
+	if (entityData.spawnFlag != 0x02 && !Settings::targetting.ignoreRenderDistance)
 		return false;
 
 	ActorSnapshotComponent actorSnapshotComponentData{};
 	if (GetActorSnapshotComponentData(entityData, &actorSnapshotComponentData))
 	{
-		if (ErectusIni::customTargetSettings.ignoreEssentialNpCs && actorSnapshotComponentData.isEssential)
+		if (Settings::targetting.ignoreEssentialNpCs && actorSnapshotComponentData.isEssential)
 			return false;
 	}
 
 	switch (CheckHealthFlag(entityData.healthFlag))
 	{
 	case 0x01: //Alive
-		return ErectusIni::customTargetSettings.targetLiving;
+		return Settings::targetting.targetLiving;
 	case 0x02: //Downed
-		return ErectusIni::customTargetSettings.targetDowned;
+		return Settings::targetting.targetDowned;
 	case 0x03: //Dead
-		return ErectusIni::customTargetSettings.targetDead;
+		return Settings::targetting.targetDead;
 	default: //Unknown
-		return ErectusIni::customTargetSettings.targetUnknown;
+		return Settings::targetting.targetUnknown;
 	}
 }
 
@@ -1598,13 +1599,13 @@ bool ErectusMemory::RenderCustomEntryA(const CustomEntry& entry, const OverlaySe
 					switch (epicRank)
 					{
 					case 1:
-						allowNpc = ErectusIni::customLegendarySettings.overrideLivingOneStar;
+						allowNpc = Settings::customLegendarySettings.overrideLivingOneStar;
 						break;
 					case 2:
-						allowNpc = ErectusIni::customLegendarySettings.overrideLivingTwoStar;
+						allowNpc = Settings::customLegendarySettings.overrideLivingTwoStar;
 						break;
 					case 3:
-						allowNpc = ErectusIni::customLegendarySettings.overrideLivingThreeStar;
+						allowNpc = Settings::customLegendarySettings.overrideLivingThreeStar;
 						break;
 					default:
 						break;
@@ -1681,17 +1682,17 @@ bool ErectusMemory::RenderCustomEntryA(const CustomEntry& entry, const OverlaySe
 			switch (epicRank)
 			{
 			case 1:
-				color = ErectusIni::customLegendarySettings.livingOneStarColor;
+				color = Settings::customLegendarySettings.livingOneStarColor;
 				if (entityData.spawnFlag == 0x02)
 					alpha = legendaryAlpha;
 				break;
 			case 2:
-				color = ErectusIni::customLegendarySettings.livingTwoStarColor;
+				color = Settings::customLegendarySettings.livingTwoStarColor;
 				if (entityData.spawnFlag == 0x02)
 					alpha = legendaryAlpha;
 				break;
 			case 3:
-				color = ErectusIni::customLegendarySettings.livingThreeStarColor;
+				color = Settings::customLegendarySettings.livingThreeStarColor;
 				if (entityData.spawnFlag == 0x02)
 					alpha = legendaryAlpha;
 				break;
@@ -1709,17 +1710,17 @@ bool ErectusMemory::RenderCustomEntryA(const CustomEntry& entry, const OverlaySe
 			switch (epicRank)
 			{
 			case 1:
-				color = ErectusIni::customLegendarySettings.livingOneStarColor;
+				color = Settings::customLegendarySettings.livingOneStarColor;
 				if (entityData.spawnFlag == 0x02)
 					alpha = legendaryAlpha;
 				break;
 			case 2:
-				color = ErectusIni::customLegendarySettings.livingTwoStarColor;
+				color = Settings::customLegendarySettings.livingTwoStarColor;
 				if (entityData.spawnFlag == 0x02)
 					alpha = legendaryAlpha;
 				break;
 			case 3:
-				color = ErectusIni::customLegendarySettings.livingThreeStarColor;
+				color = Settings::customLegendarySettings.livingThreeStarColor;
 				if (entityData.spawnFlag == 0x02)
 					alpha = legendaryAlpha;
 				break;
@@ -1737,17 +1738,17 @@ bool ErectusMemory::RenderCustomEntryA(const CustomEntry& entry, const OverlaySe
 			switch (epicRank)
 			{
 			case 1:
-				color = ErectusIni::customLegendarySettings.deadOneStarColor;
+				color = Settings::customLegendarySettings.deadOneStarColor;
 				if (entityData.spawnFlag == 0x02)
 					alpha = legendaryAlpha;
 				break;
 			case 2:
-				color = ErectusIni::customLegendarySettings.deadTwoStarColor;
+				color = Settings::customLegendarySettings.deadTwoStarColor;
 				if (entityData.spawnFlag == 0x02)
 					alpha = legendaryAlpha;
 				break;
 			case 3:
-				color = ErectusIni::customLegendarySettings.deadThreeStarColor;
+				color = Settings::customLegendarySettings.deadThreeStarColor;
 				if (entityData.spawnFlag == 0x02)
 					alpha = legendaryAlpha;
 				break;
@@ -1781,7 +1782,7 @@ bool ErectusMemory::RenderCustomEntryA(const CustomEntry& entry, const OverlaySe
 	if (normalDistance > settings.enabledDistance)
 		return false;
 
-	if (entry.flag & CUSTOM_ENTRY_PLAYER && ErectusIni::customTargetSettings.lockPlayers || entry.flag & CUSTOM_ENTRY_NPC && ErectusIni::customTargetSettings.lockNpCs)
+	if (entry.flag & CUSTOM_ENTRY_PLAYER && Settings::targetting.lockPlayers || entry.flag & CUSTOM_ENTRY_NPC && Settings::targetting.lockNpCs)
 	{
 		TesItem referenceData{};
 		if (Utils::Rpm(entityData.referencedItemPtr, &referenceData, sizeof referenceData))
@@ -1791,7 +1792,7 @@ bool ErectusMemory::RenderCustomEntryA(const CustomEntry& entry, const OverlaySe
 				if (entry.entityPtr == targetLockingPtr)
 				{
 					targetLockingValid = true;
-					color = ErectusIni::customTargetSettings.lockingColor;
+					color = Settings::targetting.lockingColor;
 				}
 				else if (targetLockingKeyPressed && !targetLockingCooldown)
 				{
@@ -1828,7 +1829,7 @@ bool ErectusMemory::RenderCustomEntryA(const CustomEntry& entry, const OverlaySe
 
 	if (!itemText.empty())
 	{
-		if (ErectusIni::customUtilitySettings.debugEsp)
+		if (Settings::utilities.debugEsp)
 			itemText = fmt::format("{0:16x}\n{1:08x}\n{2:16x}\n{3:08x}", entry.entityPtr, entry.entityFormId, entry.referencePtr, entry.referenceFormId);
 
 		Renderer::DrawTextA(itemText.c_str(), settings.textShadowed, settings.textCentered, screen, color, alpha);
@@ -1865,14 +1866,14 @@ bool ErectusMemory::RenderCustomEntryB(const CustomEntry& entry, const OverlaySe
 
 	if (entry.flag & CUSTOM_ENTRY_PLAN)
 	{
-		if (!ErectusIni::customKnownRecipeSettings.knownRecipesEnabled && !ErectusIni::customKnownRecipeSettings.unknownRecipesEnabled)
+		if (!Settings::customKnownRecipeSettings.knownRecipesEnabled && !Settings::customKnownRecipeSettings.unknownRecipesEnabled)
 			return false;
 
 		if (!(entry.flag & CUSTOM_ENTRY_FAILED_RECIPE))
 		{
-			if (!ErectusIni::customKnownRecipeSettings.knownRecipesEnabled && entry.flag & CUSTOM_ENTRY_KNOWN_RECIPE)
+			if (!Settings::customKnownRecipeSettings.knownRecipesEnabled && entry.flag & CUSTOM_ENTRY_KNOWN_RECIPE)
 				return false;
-			if (!ErectusIni::customKnownRecipeSettings.unknownRecipesEnabled && entry.flag & CUSTOM_ENTRY_UNKNOWN_RECIPE)
+			if (!Settings::customKnownRecipeSettings.unknownRecipesEnabled && entry.flag & CUSTOM_ENTRY_UNKNOWN_RECIPE)
 				return false;
 		}
 	}
@@ -1930,7 +1931,7 @@ bool ErectusMemory::RenderCustomEntryB(const CustomEntry& entry, const OverlaySe
 
 	if (!itemText.empty())
 	{
-		if (ErectusIni::customUtilitySettings.debugEsp)
+		if (Settings::utilities.debugEsp)
 			itemText = fmt::format("{0:16x}\n{1:08x}\n{2:16x}\n{3:08x}", entry.entityPtr, entry.entityFormId, entry.referencePtr, entry.referenceFormId);
 
 		Renderer::DrawTextA(itemText.c_str(), settings.textShadowed, settings.textCentered, screen, settings.color, alpha);
@@ -1945,21 +1946,21 @@ bool ErectusMemory::RenderCustomEntityList()
 	for (const auto& entity : entities)
 	{
 		if (entity.flag & CUSTOM_ENTRY_ENTITY)
-			RenderCustomEntryB(entity, ErectusIni::entitySettings);
+			RenderCustomEntryB(entity, Settings::entitySettings);
 		else if (entity.flag & CUSTOM_ENTRY_JUNK)
-			RenderCustomEntryB(entity, ErectusIni::junkSettings);
+			RenderCustomEntryB(entity, Settings::junkSettings);
 		else if (entity.flag & CUSTOM_ENTRY_ITEM)
-			RenderCustomEntryB(entity, ErectusIni::itemSettings);
+			RenderCustomEntryB(entity, Settings::itemSettings);
 		else if (entity.flag & CUSTOM_ENTRY_CONTAINER)
-			RenderCustomEntryB(entity, ErectusIni::containerSettings);
+			RenderCustomEntryB(entity, Settings::containerSettings);
 		else if (entity.flag & CUSTOM_ENTRY_PLAN)
-			RenderCustomEntryB(entity, ErectusIni::planSettings);
+			RenderCustomEntryB(entity, Settings::planSettings);
 		else if (entity.flag & CUSTOM_ENTRY_MAGAZINE)
-			RenderCustomEntryB(entity, ErectusIni::magazineSettings);
+			RenderCustomEntryB(entity, Settings::magazineSettings);
 		else if (entity.flag & CUSTOM_ENTRY_BOBBLEHEAD)
-			RenderCustomEntryB(entity, ErectusIni::bobbleheadSettings);
+			RenderCustomEntryB(entity, Settings::bobbleheadSettings);
 		else if (entity.flag & CUSTOM_ENTRY_FLORA)
-			RenderCustomEntryB(entity, ErectusIni::floraSettings);
+			RenderCustomEntryB(entity, Settings::floraSettings);
 	}
 	return true;
 }
@@ -1970,7 +1971,7 @@ bool ErectusMemory::RenderCustomNpcList()
 	for (const auto& npc : npcs)
 	{
 		if (npc.flag & CUSTOM_ENTRY_NPC)
-			RenderCustomEntryA(npc, ErectusIni::npcSettings);
+			RenderCustomEntryA(npc, Settings::npcSettings);
 	}
 	return true;
 }
@@ -1980,7 +1981,7 @@ bool ErectusMemory::RenderCustomPlayerList()
 	auto players = playerDataBuffer;
 	for (const auto& player : players) {
 		if (player.flag & CUSTOM_ENTRY_PLAYER)
-			RenderCustomEntryA(player, ErectusIni::playerSettings);
+			RenderCustomEntryA(player, Settings::playerSettings);
 	}
 	return true;
 }
@@ -2081,7 +2082,7 @@ bool ErectusMemory::LootScrap()
 	auto localPlayerPtr = GetLocalPlayerPtr(true);
 	if (!Utils::Valid(localPlayerPtr))
 	{
-		ErectusIni::scrapLooter.autoLootingEnabled = false;
+		Settings::scrapLooter.autoLootingEnabled = false;
 		return false;
 	}
 
@@ -2125,7 +2126,7 @@ bool ErectusMemory::LootScrap()
 		auto distance = Utils::GetDistance(entityData.position, localPlayer.position);
 		auto normalDistance = static_cast<int>(distance * 0.01f);
 
-		if (normalDistance > ErectusIni::scrapLooter.maxDistance)
+		if (normalDistance > Settings::scrapLooter.maxDistance)
 			continue;
 
 		RequestActivateRefMessage requestActivateRefMessageData{};
@@ -2141,29 +2142,29 @@ bool ErectusMemory::LootScrap()
 
 bool ErectusMemory::CheckItemLooterSettings()
 {
-	if (ErectusIni::itemLooter.lootWeaponsEnabled && ErectusIni::itemLooter.lootWeaponsDistance > 0)
+	if (Settings::itemLooter.lootWeaponsEnabled && Settings::itemLooter.lootWeaponsDistance > 0)
 		return true;
-	if (ErectusIni::itemLooter.lootArmorEnabled && ErectusIni::itemLooter.lootArmorDistance > 0)
+	if (Settings::itemLooter.lootArmorEnabled && Settings::itemLooter.lootArmorDistance > 0)
 		return true;
-	if (ErectusIni::itemLooter.lootAmmoEnabled && ErectusIni::itemLooter.lootAmmoDistance > 0)
+	if (Settings::itemLooter.lootAmmoEnabled && Settings::itemLooter.lootAmmoDistance > 0)
 		return true;
-	if (ErectusIni::itemLooter.lootModsEnabled && ErectusIni::itemLooter.lootModsDistance > 0)
+	if (Settings::itemLooter.lootModsEnabled && Settings::itemLooter.lootModsDistance > 0)
 		return true;
-	if (ErectusIni::itemLooter.lootMagazinesEnabled && ErectusIni::itemLooter.lootMagazinesDistance > 0)
+	if (Settings::itemLooter.lootMagazinesEnabled && Settings::itemLooter.lootMagazinesDistance > 0)
 		return true;
-	if (ErectusIni::itemLooter.lootBobbleheadsEnabled && ErectusIni::itemLooter.lootBobbleheadsDistance > 0)
+	if (Settings::itemLooter.lootBobbleheadsEnabled && Settings::itemLooter.lootBobbleheadsDistance > 0)
 		return true;
-	if (ErectusIni::itemLooter.lootAidEnabled && ErectusIni::itemLooter.lootAidDistance > 0)
+	if (Settings::itemLooter.lootAidEnabled && Settings::itemLooter.lootAidDistance > 0)
 		return true;
-	if (ErectusIni::itemLooter.lootKnownPlansEnabled && ErectusIni::itemLooter.lootKnownPlansDistance > 0)
+	if (Settings::itemLooter.lootKnownPlansEnabled && Settings::itemLooter.lootKnownPlansDistance > 0)
 		return true;
-	if (ErectusIni::itemLooter.lootUnknownPlansEnabled && ErectusIni::itemLooter.lootUnknownPlansDistance > 0)
+	if (Settings::itemLooter.lootUnknownPlansEnabled && Settings::itemLooter.lootUnknownPlansDistance > 0)
 		return true;
-	if (ErectusIni::itemLooter.lootMiscEnabled && ErectusIni::itemLooter.lootMiscDistance > 0)
+	if (Settings::itemLooter.lootMiscEnabled && Settings::itemLooter.lootMiscDistance > 0)
 		return true;
-	if (ErectusIni::itemLooter.lootUnlistedEnabled && ErectusIni::itemLooter.lootUnlistedDistance > 0)
+	if (Settings::itemLooter.lootUnlistedEnabled && Settings::itemLooter.lootUnlistedDistance > 0)
 		return true;
-	if (ErectusIni::itemLooter.lootListEnabled && ErectusIni::itemLooter.lootListDistance > 0)
+	if (Settings::itemLooter.lootListEnabled && Settings::itemLooter.lootListDistance > 0)
 		return CheckItemLooterList();
 
 	return false;
@@ -2171,29 +2172,29 @@ bool ErectusMemory::CheckItemLooterSettings()
 
 bool ErectusMemory::CheckOnlyUseItemLooterList()
 {
-	if (ErectusIni::itemLooter.lootWeaponsEnabled && ErectusIni::itemLooter.lootWeaponsDistance > 0)
+	if (Settings::itemLooter.lootWeaponsEnabled && Settings::itemLooter.lootWeaponsDistance > 0)
 		return false;
-	if (ErectusIni::itemLooter.lootArmorEnabled && ErectusIni::itemLooter.lootArmorDistance > 0)
+	if (Settings::itemLooter.lootArmorEnabled && Settings::itemLooter.lootArmorDistance > 0)
 		return false;
-	if (ErectusIni::itemLooter.lootAmmoEnabled && ErectusIni::itemLooter.lootAmmoDistance > 0)
+	if (Settings::itemLooter.lootAmmoEnabled && Settings::itemLooter.lootAmmoDistance > 0)
 		return false;
-	if (ErectusIni::itemLooter.lootModsEnabled && ErectusIni::itemLooter.lootModsDistance > 0)
+	if (Settings::itemLooter.lootModsEnabled && Settings::itemLooter.lootModsDistance > 0)
 		return false;
-	if (ErectusIni::itemLooter.lootMagazinesEnabled && ErectusIni::itemLooter.lootMagazinesDistance > 0)
+	if (Settings::itemLooter.lootMagazinesEnabled && Settings::itemLooter.lootMagazinesDistance > 0)
 		return false;
-	if (ErectusIni::itemLooter.lootBobbleheadsEnabled && ErectusIni::itemLooter.lootBobbleheadsDistance > 0)
+	if (Settings::itemLooter.lootBobbleheadsEnabled && Settings::itemLooter.lootBobbleheadsDistance > 0)
 		return false;
-	if (ErectusIni::itemLooter.lootAidEnabled && ErectusIni::itemLooter.lootAidDistance > 0)
+	if (Settings::itemLooter.lootAidEnabled && Settings::itemLooter.lootAidDistance > 0)
 		return false;
-	if (ErectusIni::itemLooter.lootKnownPlansEnabled && ErectusIni::itemLooter.lootKnownPlansDistance > 0)
+	if (Settings::itemLooter.lootKnownPlansEnabled && Settings::itemLooter.lootKnownPlansDistance > 0)
 		return false;
-	if (ErectusIni::itemLooter.lootUnknownPlansEnabled && ErectusIni::itemLooter.lootUnknownPlansDistance > 0)
+	if (Settings::itemLooter.lootUnknownPlansEnabled && Settings::itemLooter.lootUnknownPlansDistance > 0)
 		return false;
-	if (ErectusIni::itemLooter.lootMiscEnabled && ErectusIni::itemLooter.lootMiscDistance > 0)
+	if (Settings::itemLooter.lootMiscEnabled && Settings::itemLooter.lootMiscDistance > 0)
 		return false;
-	if (ErectusIni::itemLooter.lootUnlistedEnabled && ErectusIni::itemLooter.lootUnlistedDistance > 0)
+	if (Settings::itemLooter.lootUnlistedEnabled && Settings::itemLooter.lootUnlistedDistance > 0)
 		return false;
-	if (ErectusIni::itemLooter.lootListEnabled && ErectusIni::itemLooter.lootListDistance > 0)
+	if (Settings::itemLooter.lootListEnabled && Settings::itemLooter.lootListDistance > 0)
 		return CheckItemLooterList();
 
 	return false;
@@ -2201,38 +2202,38 @@ bool ErectusMemory::CheckOnlyUseItemLooterList()
 
 bool ErectusMemory::CheckEnabledItem(const DWORD formId, const DWORD64 entityFlag, const int normalDistance)
 {
-	if (ErectusIni::itemLooter.lootListEnabled)
+	if (Settings::itemLooter.lootListEnabled)
 	{
-		if (CheckFormIdArray(formId, ErectusIni::itemLooter.enabledList, ErectusIni::itemLooter.formIdList, 100))
+		if (CheckFormIdArray(formId, Settings::itemLooter.enabledList, Settings::itemLooter.formIdList, 100))
 		{
-			if (normalDistance <= ErectusIni::itemLooter.lootListDistance)
+			if (normalDistance <= Settings::itemLooter.lootListDistance)
 				return true;
 		}
 	}
 
-	if (entityFlag & CUSTOM_ENTRY_WEAPON && normalDistance <= ErectusIni::itemLooter.lootWeaponsDistance)
-		return ErectusIni::itemLooter.lootWeaponsEnabled;
-	if (entityFlag & CUSTOM_ENTRY_ARMOR && normalDistance <= ErectusIni::itemLooter.lootArmorDistance)
-		return ErectusIni::itemLooter.lootArmorEnabled;
-	if (entityFlag & CUSTOM_ENTRY_AMMO && normalDistance <= ErectusIni::itemLooter.lootAmmoDistance)
-		return ErectusIni::itemLooter.lootAmmoEnabled;
-	if (entityFlag & CUSTOM_ENTRY_MOD && normalDistance <= ErectusIni::itemLooter.lootModsDistance)
-		return ErectusIni::itemLooter.lootModsEnabled;
-	if (entityFlag & CUSTOM_ENTRY_MAGAZINE && normalDistance <= ErectusIni::itemLooter.lootMagazinesDistance)
-		return ErectusIni::itemLooter.lootMagazinesEnabled;
-	if (entityFlag & CUSTOM_ENTRY_BOBBLEHEAD && normalDistance <= ErectusIni::itemLooter.lootBobbleheadsDistance)
-		return ErectusIni::itemLooter.lootBobbleheadsEnabled;
-	if (entityFlag & CUSTOM_ENTRY_AID && normalDistance <= ErectusIni::itemLooter.lootAidDistance)
-		return ErectusIni::itemLooter.lootAidEnabled;
-	if (entityFlag & CUSTOM_ENTRY_KNOWN_RECIPE && normalDistance <= ErectusIni::itemLooter.lootKnownPlansDistance)
-		return ErectusIni::itemLooter.lootKnownPlansEnabled;
-	if (entityFlag & CUSTOM_ENTRY_UNKNOWN_RECIPE && normalDistance <= ErectusIni::itemLooter.lootUnknownPlansDistance)
-		return ErectusIni::itemLooter.lootUnknownPlansEnabled;
-	if (entityFlag & CUSTOM_ENTRY_FAILED_RECIPE && normalDistance <= ErectusIni::itemLooter.lootUnknownPlansDistance)
-		return ErectusIni::itemLooter.lootUnknownPlansEnabled;
-	if (entityFlag & CUSTOM_ENTRY_MISC && normalDistance <= ErectusIni::itemLooter.lootMiscDistance)
-		return ErectusIni::itemLooter.lootMiscEnabled;
-	if (ErectusIni::itemLooter.lootUnlistedEnabled && normalDistance <= ErectusIni::itemLooter.lootUnlistedDistance)
+	if (entityFlag & CUSTOM_ENTRY_WEAPON && normalDistance <= Settings::itemLooter.lootWeaponsDistance)
+		return Settings::itemLooter.lootWeaponsEnabled;
+	if (entityFlag & CUSTOM_ENTRY_ARMOR && normalDistance <= Settings::itemLooter.lootArmorDistance)
+		return Settings::itemLooter.lootArmorEnabled;
+	if (entityFlag & CUSTOM_ENTRY_AMMO && normalDistance <= Settings::itemLooter.lootAmmoDistance)
+		return Settings::itemLooter.lootAmmoEnabled;
+	if (entityFlag & CUSTOM_ENTRY_MOD && normalDistance <= Settings::itemLooter.lootModsDistance)
+		return Settings::itemLooter.lootModsEnabled;
+	if (entityFlag & CUSTOM_ENTRY_MAGAZINE && normalDistance <= Settings::itemLooter.lootMagazinesDistance)
+		return Settings::itemLooter.lootMagazinesEnabled;
+	if (entityFlag & CUSTOM_ENTRY_BOBBLEHEAD && normalDistance <= Settings::itemLooter.lootBobbleheadsDistance)
+		return Settings::itemLooter.lootBobbleheadsEnabled;
+	if (entityFlag & CUSTOM_ENTRY_AID && normalDistance <= Settings::itemLooter.lootAidDistance)
+		return Settings::itemLooter.lootAidEnabled;
+	if (entityFlag & CUSTOM_ENTRY_KNOWN_RECIPE && normalDistance <= Settings::itemLooter.lootKnownPlansDistance)
+		return Settings::itemLooter.lootKnownPlansEnabled;
+	if (entityFlag & CUSTOM_ENTRY_UNKNOWN_RECIPE && normalDistance <= Settings::itemLooter.lootUnknownPlansDistance)
+		return Settings::itemLooter.lootUnknownPlansEnabled;
+	if (entityFlag & CUSTOM_ENTRY_FAILED_RECIPE && normalDistance <= Settings::itemLooter.lootUnknownPlansDistance)
+		return Settings::itemLooter.lootUnknownPlansEnabled;
+	if (entityFlag & CUSTOM_ENTRY_MISC && normalDistance <= Settings::itemLooter.lootMiscDistance)
+		return Settings::itemLooter.lootMiscEnabled;
+	if (Settings::itemLooter.lootUnlistedEnabled && normalDistance <= Settings::itemLooter.lootUnlistedDistance)
 		return true;
 
 	return false;
@@ -2252,7 +2253,7 @@ bool ErectusMemory::LootItems()
 	auto localPlayerPtr = GetLocalPlayerPtr(true);
 	if (!Utils::Valid(localPlayerPtr))
 	{
-		ErectusIni::itemLooter.autoLootingEnabled = false;
+		Settings::itemLooter.autoLootingEnabled = false;
 		return false;
 	}
 
@@ -2290,13 +2291,13 @@ bool ErectusMemory::LootItems()
 
 		if (useItemLooterBlacklist)
 		{
-			if (CheckFormIdArray(referenceData.formId, ErectusIni::itemLooter.blacklistEnabled, ErectusIni::itemLooter.blacklist, 64))
+			if (CheckFormIdArray(referenceData.formId, Settings::itemLooter.blacklistEnabled, Settings::itemLooter.blacklist, 64))
 				continue;
 		}
 
 		if (onlyUseItemLooterList)
 		{
-			if (!CheckFormIdArray(referenceData.formId, ErectusIni::itemLooter.enabledList, ErectusIni::itemLooter.formIdList, 100))
+			if (!CheckFormIdArray(referenceData.formId, Settings::itemLooter.enabledList, Settings::itemLooter.formIdList, 100))
 				continue;
 		}
 
@@ -2320,7 +2321,7 @@ bool ErectusMemory::LootItems()
 		}
 		else
 		{
-			if (normalDistance > ErectusIni::itemLooter.lootListDistance)
+			if (normalDistance > Settings::itemLooter.lootListDistance)
 				continue;
 		}
 
@@ -2434,11 +2435,11 @@ int ErectusMemory::GetOldWeaponIndex(const DWORD formId)
 
 bool ErectusMemory::WeaponEditingEnabled()
 {
-	auto bufferSettings = ErectusIni::customWeaponSettings;
-	bufferSettings.capacity = ErectusIni::defaultWeaponSettings.capacity;
-	bufferSettings.speed = ErectusIni::defaultWeaponSettings.speed;
-	bufferSettings.reach = ErectusIni::defaultWeaponSettings.reach;
-	if (!memcmp(&bufferSettings, &ErectusIni::defaultWeaponSettings, sizeof(WeaponSettings)))
+	auto bufferSettings = Settings::weapons;
+	bufferSettings.capacity = Settings::defaultWeaponSettings.capacity;
+	bufferSettings.speed = Settings::defaultWeaponSettings.speed;
+	bufferSettings.reach = Settings::defaultWeaponSettings.reach;
+	if (!memcmp(&bufferSettings, &Settings::defaultWeaponSettings, sizeof(WeaponSettings)))
 		return false;
 
 	return true;
@@ -2481,7 +2482,7 @@ bool ErectusMemory::EditWeapon(const int index, const bool revertWeaponData)
 	auto writeWeaponData = false;
 	auto writeAimModelData = false;
 
-	if (!revertWeaponData && ErectusIni::customWeaponSettings.instantReload)
+	if (!revertWeaponData && Settings::weapons.instantReload)
 	{
 		if (weaponData.reloadSpeed != 100.0f)
 		{
@@ -2498,7 +2499,7 @@ bool ErectusMemory::EditWeapon(const int index, const bool revertWeaponData)
 		}
 	}
 
-	if (!revertWeaponData && ErectusIni::customWeaponSettings.automaticflag)
+	if (!revertWeaponData && Settings::weapons.automaticflag)
 	{
 		if (!(weaponData.flagB >> 7 & 1))
 		{
@@ -2515,11 +2516,11 @@ bool ErectusMemory::EditWeapon(const int index, const bool revertWeaponData)
 		}
 	}
 
-	if (!revertWeaponData && ErectusIni::customWeaponSettings.capacityEnabled)
+	if (!revertWeaponData && Settings::weapons.capacityEnabled)
 	{
-		if (weaponData.capacity != static_cast<short>(ErectusIni::customWeaponSettings.capacity))
+		if (weaponData.capacity != static_cast<short>(Settings::weapons.capacity))
 		{
-			weaponData.capacity = static_cast<short>(ErectusIni::customWeaponSettings.capacity);
+			weaponData.capacity = static_cast<short>(Settings::weapons.capacity);
 			writeWeaponData = true;
 		}
 	}
@@ -2532,11 +2533,11 @@ bool ErectusMemory::EditWeapon(const int index, const bool revertWeaponData)
 		}
 	}
 
-	if (!revertWeaponData && ErectusIni::customWeaponSettings.speedEnabled)
+	if (!revertWeaponData && Settings::weapons.speedEnabled)
 	{
-		if (weaponData.speed != ErectusIni::customWeaponSettings.speed)
+		if (weaponData.speed != Settings::weapons.speed)
 		{
-			weaponData.speed = ErectusIni::customWeaponSettings.speed;
+			weaponData.speed = Settings::weapons.speed;
 			writeWeaponData = true;
 		}
 	}
@@ -2549,11 +2550,11 @@ bool ErectusMemory::EditWeapon(const int index, const bool revertWeaponData)
 		}
 	}
 
-	if (!revertWeaponData && ErectusIni::customWeaponSettings.reachEnabled)
+	if (!revertWeaponData && Settings::weapons.reachEnabled)
 	{
-		if (weaponData.reach != ErectusIni::customWeaponSettings.reach)
+		if (weaponData.reach != Settings::weapons.reach)
 		{
-			weaponData.reach = ErectusIni::customWeaponSettings.reach;
+			weaponData.reach = Settings::weapons.reach;
 			writeWeaponData = true;
 		}
 	}
@@ -2585,7 +2586,7 @@ bool ErectusMemory::EditWeapon(const int index, const bool revertWeaponData)
 	BYTE noSpread[sizeof AimModel::spreadData];
 	memset(noSpread, 0x00, sizeof noSpread);
 
-	if (!revertWeaponData && ErectusIni::customWeaponSettings.noRecoil)
+	if (!revertWeaponData && Settings::weapons.noRecoil)
 	{
 		if (memcmp(aimModelData.recoilData, noRecoil, sizeof AimModel::recoilData) != 0)
 		{
@@ -2602,7 +2603,7 @@ bool ErectusMemory::EditWeapon(const int index, const bool revertWeaponData)
 		}
 	}
 
-	if (!revertWeaponData && ErectusIni::customWeaponSettings.noSpread)
+	if (!revertWeaponData && Settings::weapons.noSpread)
 	{
 		if (memcmp(aimModelData.spreadData, noSpread, sizeof AimModel::spreadData) != 0)
 		{
@@ -2619,7 +2620,7 @@ bool ErectusMemory::EditWeapon(const int index, const bool revertWeaponData)
 		}
 	}
 
-	if (!revertWeaponData && ErectusIni::customWeaponSettings.noSway)
+	if (!revertWeaponData && Settings::weapons.noSway)
 	{
 		if (aimModelData.sway != 100.0f)
 		{
@@ -2752,7 +2753,7 @@ bool ErectusMemory::DamageRedirection(DWORD64* targetingPage, bool* targetingPag
 
 	auto isPlayer = false;
 	auto targetValid = LockedTargetValid(&isPlayer);
-	if (!ErectusIni::customTargetSettings.indirectPlayers && isPlayer || !ErectusIni::customTargetSettings.indirectNpCs && !isPlayer)
+	if (!Settings::targetting.indirectPlayers && isPlayer || !Settings::targetting.indirectNpCs && !isPlayer)
 		targetValid = false;
 
 	const auto redirection = Utils::Rpm(ErectusProcess::exe + OFFSET_REDIRECTION, &redirectionCheck,
@@ -2808,7 +2809,7 @@ bool ErectusMemory::MovePlayer()
 	float velocityB[4];
 	memset(velocityB, 0x00, sizeof velocityB);
 
-	auto speed = ErectusIni::customLocalPlayerSettings.noclipSpeed;
+	auto speed = Settings::customLocalPlayerSettings.noclipSpeed;
 	if (GetAsyncKeyState(VK_SHIFT))
 		speed *= 1.5f;
 
@@ -2943,22 +2944,22 @@ bool ErectusMemory::ActorValue(DWORD64* actorValuePage, bool* actorValuePageVali
 		return false;
 
 	ActorValueHook actorValueHookData;
-	actorValueHookData.actionPointsEnabled = static_cast<int>(ErectusIni::customLocalPlayerSettings.actionPointsEnabled);
-	actorValueHookData.actionPoints = static_cast<float>(ErectusIni::customLocalPlayerSettings.actionPoints);
-	actorValueHookData.strengthEnabled = static_cast<int>(ErectusIni::customLocalPlayerSettings.strengthEnabled);
-	actorValueHookData.strength = static_cast<float>(ErectusIni::customLocalPlayerSettings.strength);
-	actorValueHookData.perceptionEnabled = static_cast<int>(ErectusIni::customLocalPlayerSettings.perceptionEnabled);
-	actorValueHookData.perception = static_cast<float>(ErectusIni::customLocalPlayerSettings.perception);
-	actorValueHookData.enduranceEnabled = static_cast<int>(ErectusIni::customLocalPlayerSettings.enduranceEnabled);
-	actorValueHookData.endurance = static_cast<float>(ErectusIni::customLocalPlayerSettings.endurance);
-	actorValueHookData.charismaEnabled = static_cast<int>(ErectusIni::customLocalPlayerSettings.charismaEnabled);
-	actorValueHookData.charisma = static_cast<float>(ErectusIni::customLocalPlayerSettings.charisma);
-	actorValueHookData.intelligenceEnabled = static_cast<int>(ErectusIni::customLocalPlayerSettings.intelligenceEnabled);
-	actorValueHookData.intelligence = static_cast<float>(ErectusIni::customLocalPlayerSettings.intelligence);
-	actorValueHookData.agilityEnabled = static_cast<int>(ErectusIni::customLocalPlayerSettings.agilityEnabled);
-	actorValueHookData.agility = static_cast<float>(ErectusIni::customLocalPlayerSettings.agility);
-	actorValueHookData.luckEnabled = static_cast<int>(ErectusIni::customLocalPlayerSettings.luckEnabled);
-	actorValueHookData.luck = static_cast<float>(ErectusIni::customLocalPlayerSettings.luck);
+	actorValueHookData.actionPointsEnabled = static_cast<int>(Settings::customLocalPlayerSettings.actionPointsEnabled);
+	actorValueHookData.actionPoints = static_cast<float>(Settings::customLocalPlayerSettings.actionPoints);
+	actorValueHookData.strengthEnabled = static_cast<int>(Settings::customLocalPlayerSettings.strengthEnabled);
+	actorValueHookData.strength = static_cast<float>(Settings::customLocalPlayerSettings.strength);
+	actorValueHookData.perceptionEnabled = static_cast<int>(Settings::customLocalPlayerSettings.perceptionEnabled);
+	actorValueHookData.perception = static_cast<float>(Settings::customLocalPlayerSettings.perception);
+	actorValueHookData.enduranceEnabled = static_cast<int>(Settings::customLocalPlayerSettings.enduranceEnabled);
+	actorValueHookData.endurance = static_cast<float>(Settings::customLocalPlayerSettings.endurance);
+	actorValueHookData.charismaEnabled = static_cast<int>(Settings::customLocalPlayerSettings.charismaEnabled);
+	actorValueHookData.charisma = static_cast<float>(Settings::customLocalPlayerSettings.charisma);
+	actorValueHookData.intelligenceEnabled = static_cast<int>(Settings::customLocalPlayerSettings.intelligenceEnabled);
+	actorValueHookData.intelligence = static_cast<float>(Settings::customLocalPlayerSettings.intelligence);
+	actorValueHookData.agilityEnabled = static_cast<int>(Settings::customLocalPlayerSettings.agilityEnabled);
+	actorValueHookData.agility = static_cast<float>(Settings::customLocalPlayerSettings.agility);
+	actorValueHookData.luckEnabled = static_cast<int>(Settings::customLocalPlayerSettings.luckEnabled);
+	actorValueHookData.luck = static_cast<float>(Settings::customLocalPlayerSettings.luck);
 	actorValueHookData.originalFunction = ErectusProcess::exe + OFFSET_ACTOR_VALUE;
 
 	if (actorValueFunction != ErectusProcess::exe + OFFSET_ACTOR_VALUE && actorValueFunction != *actorValuePage)
@@ -3282,7 +3283,7 @@ int ErectusMemory::RenderLocalPlayerData()
 void ErectusMemory::RenderData()
 {
 	auto spacing = 0;
-	if (ErectusIni::customUtilitySettings.debugPlayer)
+	if (Settings::utilities.debugPlayer)
 		spacing = RenderLocalPlayerData();
 
 	float enabledTextColor[3] = { 0.0f, 1.0f, 0.0f };
@@ -3293,63 +3294,63 @@ void ErectusMemory::RenderData()
 	std::string featureText = {};
 	auto featureState = false;
 
-	if (ErectusIni::scrapLooter.drawStatus)
+	if (Settings::scrapLooter.drawStatus)
 	{
-		featureText = fmt::format("Scrap Looter (Automatic): {:d}", static_cast<int>(ErectusIni::scrapLooter.autoLootingEnabled));
-		featureState = ErectusIni::scrapLooter.autoLootingEnabled;
+		featureText = fmt::format("Scrap Looter (Automatic): {:d}", static_cast<int>(Settings::scrapLooter.autoLootingEnabled));
+		featureState = Settings::scrapLooter.autoLootingEnabled;
 		infoTexts.push_back({ featureText, featureState });
 	}
 
-	if (ErectusIni::itemLooter.drawStatus)
+	if (Settings::itemLooter.drawStatus)
 	{
-		featureText = fmt::format("Item Looter (Automatic): {:d}", static_cast<int>(ErectusIni::itemLooter.autoLootingEnabled));
-		featureState = ErectusIni::itemLooter.autoLootingEnabled;
+		featureText = fmt::format("Item Looter (Automatic): {:d}", static_cast<int>(Settings::itemLooter.autoLootingEnabled));
+		featureState = Settings::itemLooter.autoLootingEnabled;
 		infoTexts.push_back({ featureText, featureState });
 	}
 
-	if (ErectusIni::npcLooter.drawStatus)
+	if (Settings::npcLooter.drawStatus)
 	{
-		featureText = fmt::format("NPC Looter (76m Distance Limit): {:d}", static_cast<int>(ErectusIni::npcLooter.enabled));
-		featureState = ErectusIni::npcLooter.enabled;
+		featureText = fmt::format("NPC Looter (76m Distance Limit): {:d}", static_cast<int>(Settings::npcLooter.enabled));
+		featureState = Settings::npcLooter.enabled;
 		infoTexts.push_back({ featureText, featureState });
 	}
 
-	if (ErectusIni::containerLooter.drawStatus)
+	if (Settings::containerLooter.drawStatus)
 	{
-		featureText = fmt::format("Container Looter (6m Distance Limit): {:d}", static_cast<int>(ErectusIni::containerLooter.enabled));
-		featureState = ErectusIni::containerLooter.enabled;
+		featureText = fmt::format("Container Looter (6m Distance Limit): {:d}", static_cast<int>(Settings::containerLooter.enabled));
+		featureState = Settings::containerLooter.enabled;
 		infoTexts.push_back({ featureText, featureState });
 	}
 
-	if (ErectusIni::harvester.drawStatus)
+	if (Settings::harvester.drawStatus)
 	{
-		featureText = fmt::format("Flora Harvester (6m Distance Limit): {:d}", static_cast<int>(ErectusIni::harvester.enabled));
-		featureState = ErectusIni::harvester.enabled;
+		featureText = fmt::format("Flora Harvester (6m Distance Limit): {:d}", static_cast<int>(Settings::harvester.enabled));
+		featureState = Settings::harvester.enabled;
 		infoTexts.push_back({ featureText, featureState });
 	}
 
-	if (ErectusIni::customLocalPlayerSettings.drawPositionSpoofingStatus)
+	if (Settings::customLocalPlayerSettings.drawPositionSpoofingStatus)
 	{
-		featureText = fmt::format("Position Spoofing (Active): {0:d} (Height: {1:d})", static_cast<int>(ErectusThread::positionSpoofingToggle), ErectusIni::customLocalPlayerSettings.positionSpoofingHeight);
-		featureState = InsideInteriorCell() ? false : ErectusIni::customLocalPlayerSettings.positionSpoofingEnabled;
+		featureText = fmt::format("Position Spoofing (Active): {0:d} (Height: {1:d})", static_cast<int>(ErectusThread::positionSpoofingToggle), Settings::customLocalPlayerSettings.positionSpoofingHeight);
+		featureState = InsideInteriorCell() ? false : Settings::customLocalPlayerSettings.positionSpoofingEnabled;
 		infoTexts.push_back({ featureText, featureState });
 	}
 
-	if (ErectusIni::customNukeCodeSettings.drawCodeAlpha)
+	if (Settings::customNukeCodeSettings.drawCodeAlpha)
 	{
 		featureText = fmt::format("{} - Alpha", fmt::join(ErectusImGui::alphaCode, " "));
 		featureState = ErectusImGui::alphaCode == std::array<int, 8>{} ? false : true;
 		infoTexts.push_back({ featureText, featureState });
 	}
 
-	if (ErectusIni::customNukeCodeSettings.drawCodeBravo)
+	if (Settings::customNukeCodeSettings.drawCodeBravo)
 	{
 		featureText = fmt::format("{} - Bravo", fmt::join(ErectusImGui::bravoCode, " "));
 		featureState = ErectusImGui::bravoCode == std::array<int, 8>{} ? false : true;
 		infoTexts.push_back({ featureText, featureState });
 	}
 
-	if (ErectusIni::customNukeCodeSettings.drawCodeCharlie)
+	if (Settings::customNukeCodeSettings.drawCodeCharlie)
 	{
 		featureText = fmt::format("{} - Charlie", fmt::join(ErectusImGui::charlieCode, " "));
 		featureState = ErectusImGui::charlieCode == std::array<int, 8>{} ? false : true;
@@ -3391,7 +3392,7 @@ bool ErectusMemory::CheckItemTransferList()
 {
 	for (auto i = 0; i < 32; i++)
 	{
-		if (ErectusIni::customTransferSettings.whitelist[i] && ErectusIni::customTransferSettings.whitelisted[i])
+		if (Settings::customTransferSettings.whitelist[i] && Settings::customTransferSettings.whitelisted[i])
 			return true;
 	}
 
@@ -3439,21 +3440,21 @@ bool ErectusMemory::TransferItems(const DWORD sourceFormId, const DWORD destinat
 		if (!Utils::Valid(itemData[i].displayPtr) || itemData[i].iterations < itemData[i].displayPtr)
 			continue;
 
-		if (ErectusIni::customTransferSettings.useWhitelist || ErectusIni::customTransferSettings.useBlacklist)
+		if (Settings::customTransferSettings.useWhitelist || Settings::customTransferSettings.useBlacklist)
 		{
 			TesItem referenceData{};
 			if (!Utils::Rpm(itemData[i].referencePtr, &referenceData, sizeof referenceData))
 				continue;
 
-			if (ErectusIni::customTransferSettings.useWhitelist)
+			if (Settings::customTransferSettings.useWhitelist)
 			{
-				if (!CheckFormIdArray(referenceData.formId, ErectusIni::customTransferSettings.whitelisted, ErectusIni::customTransferSettings.whitelist, 32))
+				if (!CheckFormIdArray(referenceData.formId, Settings::customTransferSettings.whitelisted, Settings::customTransferSettings.whitelist, 32))
 					continue;
 			}
 
-			if (ErectusIni::customTransferSettings.useBlacklist)
+			if (Settings::customTransferSettings.useBlacklist)
 			{
-				if (CheckFormIdArray(referenceData.formId, ErectusIni::customTransferSettings.blacklisted, ErectusIni::customTransferSettings.blacklist, 32))
+				if (CheckFormIdArray(referenceData.formId, Settings::customTransferSettings.blacklisted, Settings::customTransferSettings.blacklist, 32))
 					continue;
 			}
 		}
@@ -3518,30 +3519,30 @@ bool ErectusMemory::GetTeleportPosition(const int index)
 	if (!Utils::Rpm(localPlayer.cellPtr + 0x20, &cellFormId, sizeof cellFormId))
 		return false;
 
-	ErectusIni::customTeleportSettings.teleportEntryData[index].destination[0] = localPlayer.position[0];
-	ErectusIni::customTeleportSettings.teleportEntryData[index].destination[1] = localPlayer.position[1];
-	ErectusIni::customTeleportSettings.teleportEntryData[index].destination[2] = localPlayer.position[2];
-	ErectusIni::customTeleportSettings.teleportEntryData[index].destination[3] = localPlayer.yaw;
-	ErectusIni::customTeleportSettings.teleportEntryData[index].cellFormId = cellFormId;
+	Settings::teleporter.entries[index].destination[0] = localPlayer.position[0];
+	Settings::teleporter.entries[index].destination[1] = localPlayer.position[1];
+	Settings::teleporter.entries[index].destination[2] = localPlayer.position[2];
+	Settings::teleporter.entries[index].destination[3] = localPlayer.yaw;
+	Settings::teleporter.entries[index].cellFormId = cellFormId;
 
 	return true;
 }
 
 bool ErectusMemory::RequestTeleport(const int index)
 {
-	const auto cellPtr = GetPtr(ErectusIni::customTeleportSettings.teleportEntryData[index].cellFormId);
+	const auto cellPtr = GetPtr(Settings::teleporter.entries[index].cellFormId);
 	if (!Utils::Valid(cellPtr))
 		return false;
 
 	RequestTeleportMessage requestTeleportMessageData =
 	{
 		.vtable = ErectusProcess::exe + VTABLE_REQUESTTELEPORTTOLOCATIONMSG,
-		.positionX = ErectusIni::customTeleportSettings.teleportEntryData[index].destination[0],
-		.positionY = ErectusIni::customTeleportSettings.teleportEntryData[index].destination[1],
-		.positionZ = ErectusIni::customTeleportSettings.teleportEntryData[index].destination[2],
+		.positionX = Settings::teleporter.entries[index].destination[0],
+		.positionY = Settings::teleporter.entries[index].destination[1],
+		.positionZ = Settings::teleporter.entries[index].destination[2],
 		.rotationX = 0.0f,
 		.rotationY = 0.0f,
-		.rotationZ = ErectusIni::customTeleportSettings.teleportEntryData[index].destination[3],
+		.rotationZ = Settings::teleporter.entries[index].destination[3],
 		.cellPtr = cellPtr
 	};
 
@@ -3624,7 +3625,7 @@ bool ErectusMemory::FreezeActionPoints(DWORD64* freezeApPage, bool* freezeApPage
 	if (state)
 	{
 		FreezeAp freezeApData;
-		freezeApData.freezeApEnabled = ErectusIni::customLocalPlayerSettings.freezeApEnabled;
+		freezeApData.freezeApEnabled = Settings::customLocalPlayerSettings.freezeApEnabled;
 
 		if (*freezeApPageValid)
 		{
@@ -3704,14 +3705,14 @@ bool ErectusMemory::PositionSpoofing(const bool state)
 
 	int spoofingHeightCheck;
 	memcpy(&spoofingHeightCheck, &positionSpoofingCheck[1], sizeof spoofingHeightCheck);
-	memcpy(&positionSpoofingOn[1], &ErectusIni::customLocalPlayerSettings.positionSpoofingHeight,
-		sizeof ErectusIni::customLocalPlayerSettings.positionSpoofingHeight);
+	memcpy(&positionSpoofingOn[1], &Settings::customLocalPlayerSettings.positionSpoofingHeight,
+		sizeof Settings::customLocalPlayerSettings.positionSpoofingHeight);
 
 	if (!memcmp(positionSpoofingCheck, positionSpoofingOn, sizeof positionSpoofingOn))
 		return true;
 	if (!memcmp(positionSpoofingCheck, positionSpoofingOff, sizeof positionSpoofingOff))
 		return Utils::Wpm(ErectusProcess::exe + OFFSET_SERVER_POSITION, &positionSpoofingOn, sizeof positionSpoofingOn);
-	if (spoofingHeightCheck != ErectusIni::customLocalPlayerSettings.positionSpoofingHeight)
+	if (spoofingHeightCheck != Settings::customLocalPlayerSettings.positionSpoofingHeight)
 	{
 		if (positionSpoofingCheck[0] != 0xBA || spoofingHeightCheck < -524287 || spoofingHeightCheck > 524287)
 			return false;
@@ -3817,7 +3818,7 @@ bool ErectusMemory::SendDamage(const DWORD weaponId, BYTE* shotsHit, BYTE* shots
 
 	auto isPlayer = false;
 	LockedTargetValid(&isPlayer);
-	if (!ErectusIni::customTargetSettings.directPlayers && isPlayer || !ErectusIni::customTargetSettings.directNpCs && !isPlayer)
+	if (!Settings::targetting.directPlayers && isPlayer || !Settings::targetting.directNpCs && !isPlayer)
 		return false;
 
 	const auto localPlayerPtr = GetLocalPlayerPtr(true);
@@ -3871,9 +3872,9 @@ bool ErectusMemory::SendDamage(const DWORD weaponId, BYTE* shotsHit, BYTE* shots
 		hitsData[i].bTargetWasDead = 0;
 		hitsData[i].padding0037 = 0;
 
-		if (ErectusIni::customTargetSettings.sendDamageMax < 10)
+		if (Settings::targetting.sendDamageMax < 10)
 		{
-			if (Utils::GetRangedInt(1, 10) <= static_cast<int>(10 - ErectusIni::customTargetSettings.sendDamageMax))
+			if (Utils::GetRangedInt(1, 10) <= static_cast<int>(10 - Settings::targetting.sendDamageMax))
 			{
 				if (*shotsHit == 0 || *shotsHit == 255)
 					*shotsHit = 1;
@@ -3974,7 +3975,7 @@ bool ErectusMemory::GetNukeCode(const DWORD formId, std::array<int, 8>& nukeCode
 DWORD ErectusMemory::GetFavoritedWeaponId(const BYTE favouriteIndex)
 {
 
-	if (ErectusIni::customTargetSettings.favoriteIndex >= 12)
+	if (Settings::targetting.favoriteIndex >= 12)
 		return 0;
 
 	const auto localPlayerPtr = GetLocalPlayerPtr(true);
@@ -4521,10 +4522,10 @@ bool ErectusMemory::TransferEntityItems(const TesObjectRefr& entityData, const T
 	switch (referenceData.formType)
 	{
 	case (static_cast<BYTE>(FormTypes::TesNpc)):
-		currentEntityLooterSettings = ErectusIni::npcLooter;
+		currentEntityLooterSettings = Settings::npcLooter;
 		break;
 	case (static_cast<BYTE>(FormTypes::TesObjectCont)):
-		currentEntityLooterSettings = ErectusIni::containerLooter;
+		currentEntityLooterSettings = Settings::containerLooter;
 		break;
 	default:
 		return false;
@@ -4849,11 +4850,11 @@ bool ErectusMemory::Harvester()
 	if (!allowMessages)
 		return false;
 
-	auto useNpcLooter = ErectusIni::npcLooter.enabled && CheckEntityLooterSettings(ErectusIni::npcLooter);
+	auto useNpcLooter = Settings::npcLooter.enabled && CheckEntityLooterSettings(Settings::npcLooter);
 
-	auto useContainerLooter = ErectusIni::containerLooter.enabled && CheckEntityLooterSettings(ErectusIni::containerLooter);
+	auto useContainerLooter = Settings::containerLooter.enabled && CheckEntityLooterSettings(Settings::containerLooter);
 
-	auto useFloraHarvester = ErectusIni::harvester.enabled && CheckIngredientList();
+	auto useFloraHarvester = Settings::harvester.enabled && CheckIngredientList();
 
 	if (!useNpcLooter && !useContainerLooter && !useFloraHarvester)
 		return false;
@@ -4870,16 +4871,16 @@ bool ErectusMemory::Harvester()
 	auto useNpcLooterBlacklist = false;
 	if (useNpcLooter)
 	{
-		onlyUseNpcLooterList = CheckOnlyUseEntityLooterList(ErectusIni::npcLooter);
-		useNpcLooterBlacklist = CheckEntityLooterBlacklist(ErectusIni::npcLooter);
+		onlyUseNpcLooterList = CheckOnlyUseEntityLooterList(Settings::npcLooter);
+		useNpcLooterBlacklist = CheckEntityLooterBlacklist(Settings::npcLooter);
 	}
 
 	auto onlyUseContainerLooterList = false;
 	auto useContainerLooterBlacklist = false;
 	if (useContainerLooter)
 	{
-		onlyUseContainerLooterList = CheckOnlyUseEntityLooterList(ErectusIni::containerLooter);
-		useContainerLooterBlacklist = CheckEntityLooterBlacklist(ErectusIni::containerLooter);
+		onlyUseContainerLooterList = CheckOnlyUseEntityLooterList(Settings::containerLooter);
+		useContainerLooterBlacklist = CheckEntityLooterBlacklist(Settings::containerLooter);
 	}
 
 	if (useNpcLooter)
@@ -5011,7 +5012,7 @@ bool ErectusMemory::MeleeAttack()
 
 bool ErectusMemory::ChargenEditing()
 {
-	if (!ErectusIni::customChargenSettings.chargenEditingEnabled)
+	if (!Settings::characterEditor.enabled)
 		return false;
 
 	DWORD64 chargenPtr;
@@ -5026,21 +5027,21 @@ bool ErectusMemory::ChargenEditing()
 
 	auto shouldEdit = false;
 
-	if (chargenData.thin != ErectusIni::customChargenSettings.thin)
+	if (chargenData.thin != Settings::characterEditor.thin)
 	{
-		chargenData.thin = ErectusIni::customChargenSettings.thin;
+		chargenData.thin = Settings::characterEditor.thin;
 		shouldEdit = true;
 	}
 
-	if (chargenData.muscular != ErectusIni::customChargenSettings.muscular)
+	if (chargenData.muscular != Settings::characterEditor.muscular)
 	{
-		chargenData.muscular = ErectusIni::customChargenSettings.muscular;
+		chargenData.muscular = Settings::characterEditor.muscular;
 		shouldEdit = true;
 	}
 
-	if (chargenData.large != ErectusIni::customChargenSettings.large)
+	if (chargenData.large != Settings::characterEditor.large)
 	{
-		chargenData.large = ErectusIni::customChargenSettings.large;
+		chargenData.large = Settings::characterEditor.large;
 		shouldEdit = true;
 	}
 

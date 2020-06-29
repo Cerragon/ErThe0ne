@@ -1,4 +1,5 @@
 #include "ErectusInclude.h"
+#include "settings.h"
 
 void ErectusThread::RequestLootItems()
 {
@@ -79,7 +80,7 @@ DWORD WINAPI ErectusThread::WeaponEditorThread([[maybe_unused]] LPVOID lpParamet
 					ErectusMemory::EditWeapon(i, revertWeapons);
 				}
 			}
-			ErectusMemory::InfiniteAmmo(ErectusIni::customWeaponSettings.infiniteAmmo);
+			ErectusMemory::InfiniteAmmo(Settings::weapons.infiniteAmmo);
 		}
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(16));
@@ -127,7 +128,7 @@ DWORD WINAPI ErectusThread::LockingThread([[maybe_unused]] LPVOID lpParameter)
 		if (favoritedWeaponCounter > 60)
 		{
 			favoritedWeaponCounter = 0;
-			weaponId = ErectusMemory::GetFavoritedWeaponId(BYTE(ErectusIni::customTargetSettings.favoriteIndex));
+			weaponId = ErectusMemory::GetFavoritedWeaponId(BYTE(Settings::targetting.favoriteIndex));
 
 		}
 
@@ -152,7 +153,7 @@ DWORD WINAPI ErectusThread::LockingThread([[maybe_unused]] LPVOID lpParameter)
 			if (sendDamageCounter > sendDamageThreshold)
 			{
 				sendDamageCounter = 0;
-				sendDamageThreshold = Utils::GetRangedInt(ErectusIni::customTargetSettings.sendDamageMin, ErectusIni::customTargetSettings.sendDamageMax);
+				sendDamageThreshold = Utils::GetRangedInt(Settings::targetting.sendDamageMin, Settings::targetting.sendDamageMax);
 				ErectusMemory::SendDamage(weaponId, &shotsHit, &shotsFired, 1);
 			}
 		}
@@ -162,7 +163,7 @@ DWORD WINAPI ErectusThread::LockingThread([[maybe_unused]] LPVOID lpParameter)
 			sendDamageThreshold = 0;
 		}
 
-		if (ErectusIni::melee.enabled)
+		if (Settings::melee.enabled)
 		{
 			if (ErectusMain::overlayForeground && GetAsyncKeyState('U'))
 			{
@@ -170,7 +171,7 @@ DWORD WINAPI ErectusThread::LockingThread([[maybe_unused]] LPVOID lpParameter)
 				if (meleeCounter > meleeThreshold)
 				{
 					meleeCounter = 0;
-					meleeThreshold = Utils::GetRangedInt(ErectusIni::melee.speedMin, ErectusIni::melee.speedMax);
+					meleeThreshold = Utils::GetRangedInt(Settings::melee.speedMin, Settings::melee.speedMax);
 					ErectusMemory::MeleeAttack();
 				}
 			}
@@ -213,10 +214,10 @@ DWORD WINAPI ErectusThread::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 	{
 		loopCount = (loopCount + 1) % 30000;
 
-		if (positionSpoofingToggle && ErectusIni::customLocalPlayerSettings.positionSpoofingEnabled && ErectusIni::customLocalPlayerSettings.clientState)
+		if (positionSpoofingToggle && Settings::customLocalPlayerSettings.positionSpoofingEnabled && Settings::customLocalPlayerSettings.clientState)
 			ErectusMemory::SetClientState(2);
 
-		if (noclipToggle && ErectusIni::customLocalPlayerSettings.noclipEnabled && ErectusIni::customLocalPlayerSettings.clientState)
+		if (noclipToggle && Settings::customLocalPlayerSettings.noclipEnabled && Settings::customLocalPlayerSettings.clientState)
 			ErectusMemory::SetClientState(2);
 
 		if (lootScrapRequested) {
@@ -229,7 +230,7 @@ DWORD WINAPI ErectusThread::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 			lootItemsRequested = false;
 		}
 
-		if ((positionSpoofingToggle || noclipToggle) && ErectusIni::customLocalPlayerSettings.automaticClientState)
+		if ((positionSpoofingToggle || noclipToggle) && Settings::customLocalPlayerSettings.automaticClientState)
 		{
 			if (loopCount % 60 == 0) //every 60 loops
 				ErectusMemory::SetClientState(2);
@@ -240,13 +241,13 @@ DWORD WINAPI ErectusThread::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 
 		ErectusMemory::ActorValue(&actorValuePage, &actorValuePageValid, true);
 		if (loopCount % 60 == 0) { //every 60 loops
-			ErectusMemory::SetActorValueMaximum(0x000002C2, 100.0f, static_cast<float>(ErectusIni::customLocalPlayerSettings.strength), ErectusIni::customLocalPlayerSettings.strengthEnabled);
-			ErectusMemory::SetActorValueMaximum(0x000002C3, 100.0f, static_cast<float>(ErectusIni::customLocalPlayerSettings.perception), ErectusIni::customLocalPlayerSettings.perceptionEnabled);
-			ErectusMemory::SetActorValueMaximum(0x000002C4, 100.0f, static_cast<float>(ErectusIni::customLocalPlayerSettings.endurance), ErectusIni::customLocalPlayerSettings.enduranceEnabled);
-			ErectusMemory::SetActorValueMaximum(0x000002C5, 100.0f, static_cast<float>(ErectusIni::customLocalPlayerSettings.charisma), ErectusIni::customLocalPlayerSettings.charismaEnabled);
-			ErectusMemory::SetActorValueMaximum(0x000002C6, 100.0f, static_cast<float>(ErectusIni::customLocalPlayerSettings.agility), ErectusIni::customLocalPlayerSettings.agilityEnabled);
-			ErectusMemory::SetActorValueMaximum(0x000002C7, 100.0f, static_cast<float>(ErectusIni::customLocalPlayerSettings.intelligence), ErectusIni::customLocalPlayerSettings.intelligenceEnabled);
-			ErectusMemory::SetActorValueMaximum(0x000002C8, 100.0f, static_cast<float>(ErectusIni::customLocalPlayerSettings.luck), ErectusIni::customLocalPlayerSettings.luckEnabled);
+			ErectusMemory::SetActorValueMaximum(0x000002C2, 100.0f, static_cast<float>(Settings::customLocalPlayerSettings.strength), Settings::customLocalPlayerSettings.strengthEnabled);
+			ErectusMemory::SetActorValueMaximum(0x000002C3, 100.0f, static_cast<float>(Settings::customLocalPlayerSettings.perception), Settings::customLocalPlayerSettings.perceptionEnabled);
+			ErectusMemory::SetActorValueMaximum(0x000002C4, 100.0f, static_cast<float>(Settings::customLocalPlayerSettings.endurance), Settings::customLocalPlayerSettings.enduranceEnabled);
+			ErectusMemory::SetActorValueMaximum(0x000002C5, 100.0f, static_cast<float>(Settings::customLocalPlayerSettings.charisma), Settings::customLocalPlayerSettings.charismaEnabled);
+			ErectusMemory::SetActorValueMaximum(0x000002C6, 100.0f, static_cast<float>(Settings::customLocalPlayerSettings.agility), Settings::customLocalPlayerSettings.agilityEnabled);
+			ErectusMemory::SetActorValueMaximum(0x000002C7, 100.0f, static_cast<float>(Settings::customLocalPlayerSettings.intelligence), Settings::customLocalPlayerSettings.intelligenceEnabled);
+			ErectusMemory::SetActorValueMaximum(0x000002C8, 100.0f, static_cast<float>(Settings::customLocalPlayerSettings.luck), Settings::customLocalPlayerSettings.luckEnabled);
 		}
 
 		ErectusMemory::FreezeActionPoints(&freezeApPage, &freezeApPageValid, true);
@@ -265,7 +266,7 @@ DWORD WINAPI ErectusThread::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 				ErectusMemory::SetOpkData(opkPage, false, false);
 		}
 
-		if (ErectusIni::customNukeCodeSettings.automaticNukeCodes)
+		if (Settings::customNukeCodeSettings.automaticNukeCodes)
 		{
 			if (loopCount % 300 == 0) { //every 300 loops
 				ErectusMemory::GetNukeCode(0x000921AE, ErectusImGui::alphaCode);
@@ -274,13 +275,13 @@ DWORD WINAPI ErectusThread::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 			}
 		}
 
-		if (ErectusIni::scrapLooter.autoLootingEnabled)
+		if (Settings::scrapLooter.autoLootingEnabled)
 		{
 			lootScrapCounter++;
 			if (lootScrapCounter > lootScrapThreshold)
 			{
 				lootScrapCounter = 0;
-				lootScrapThreshold = Utils::GetRangedInt(ErectusIni::scrapLooter.autoLootingSpeedMin, ErectusIni::scrapLooter.autoLootingSpeedMax);
+				lootScrapThreshold = Utils::GetRangedInt(Settings::scrapLooter.autoLootingSpeedMin, Settings::scrapLooter.autoLootingSpeedMax);
 				if (ErectusMemory::CheckScrapList())
 				{
 					ErectusMemory::LootScrap();
@@ -290,13 +291,13 @@ DWORD WINAPI ErectusThread::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 		else
 			lootScrapThreshold = 0;
 
-		if (ErectusIni::itemLooter.autoLootingEnabled)
+		if (Settings::itemLooter.autoLootingEnabled)
 		{
 			lootItemsCounter++;
 			if (lootItemsCounter > lootItemsThreshold)
 			{
 				lootItemsCounter = 0;
-				lootItemsThreshold = Utils::GetRangedInt(ErectusIni::itemLooter.autoLootingSpeedMin, ErectusIni::itemLooter.autoLootingSpeedMax);
+				lootItemsThreshold = Utils::GetRangedInt(Settings::itemLooter.autoLootingSpeedMin, Settings::itemLooter.autoLootingSpeedMax);
 				if (ErectusMemory::CheckItemLooterSettings())
 					ErectusMemory::LootItems();
 			}
@@ -318,13 +319,13 @@ DWORD WINAPI ErectusThread::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 	if (actorValuePage)
 		Utils::FreeEx(actorValuePage);
 
-	ErectusMemory::SetActorValueMaximum(0x000002C2, 100.0f, static_cast<float>(ErectusIni::customLocalPlayerSettings.strength), false);
-	ErectusMemory::SetActorValueMaximum(0x000002C3, 100.0f, static_cast<float>(ErectusIni::customLocalPlayerSettings.perception), false);
-	ErectusMemory::SetActorValueMaximum(0x000002C4, 100.0f, static_cast<float>(ErectusIni::customLocalPlayerSettings.endurance), false);
-	ErectusMemory::SetActorValueMaximum(0x000002C5, 100.0f, static_cast<float>(ErectusIni::customLocalPlayerSettings.charisma), false);
-	ErectusMemory::SetActorValueMaximum(0x000002C6, 100.0f, static_cast<float>(ErectusIni::customLocalPlayerSettings.agility), false);
-	ErectusMemory::SetActorValueMaximum(0x000002C7, 100.0f, static_cast<float>(ErectusIni::customLocalPlayerSettings.intelligence), false);
-	ErectusMemory::SetActorValueMaximum(0x000002C8, 100.0f, static_cast<float>(ErectusIni::customLocalPlayerSettings.luck), false);
+	ErectusMemory::SetActorValueMaximum(0x000002C2, 100.0f, static_cast<float>(Settings::customLocalPlayerSettings.strength), false);
+	ErectusMemory::SetActorValueMaximum(0x000002C3, 100.0f, static_cast<float>(Settings::customLocalPlayerSettings.perception), false);
+	ErectusMemory::SetActorValueMaximum(0x000002C4, 100.0f, static_cast<float>(Settings::customLocalPlayerSettings.endurance), false);
+	ErectusMemory::SetActorValueMaximum(0x000002C5, 100.0f, static_cast<float>(Settings::customLocalPlayerSettings.charisma), false);
+	ErectusMemory::SetActorValueMaximum(0x000002C6, 100.0f, static_cast<float>(Settings::customLocalPlayerSettings.agility), false);
+	ErectusMemory::SetActorValueMaximum(0x000002C7, 100.0f, static_cast<float>(Settings::customLocalPlayerSettings.intelligence), false);
+	ErectusMemory::SetActorValueMaximum(0x000002C8, 100.0f, static_cast<float>(Settings::customLocalPlayerSettings.luck), false);
 
 	ErectusMemory::OnePositionKill(&opkPage, &opkPageValid, false);
 

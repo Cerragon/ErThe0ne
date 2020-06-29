@@ -994,343 +994,7 @@ namespace MemoryClasses {
 	};
 }
 
-namespace SettingsClasses {
-	class OverlaySettingsA
-	{
-	public:
-		bool enabled;
-		int enabledDistance;
-		bool drawAlive;
-		float aliveColor[3];
-		bool drawDowned;
-		float downedColor[3];
-		bool drawDead;
-		float deadColor[3];
-		bool drawUnknown;
-		float unknownColor[3];
-		bool drawEnabled;
-		float enabledAlpha;
-		bool drawDisabled;
-		float disabledAlpha;
-		bool drawNamed;
-		bool drawUnnamed;
-		bool showName;
-		bool showDistance;
-		bool showHealth;
-		bool showDeadHealth;
-		bool textCentered;
-		bool textShadowed;
-	};
 
-	class OverlaySettingsB
-	{
-	public:
-		bool enabled;
-		int enabledDistance;
-		float color[3];
-		bool drawEnabled;
-		float enabledAlpha;
-		bool drawDisabled;
-		float disabledAlpha;
-		bool drawNamed;
-		bool drawUnnamed;
-		bool showName;
-		bool showDistance;
-		bool textCentered;
-		bool textShadowed;
-		bool whitelisted[32];
-		DWORD whitelist[32];
-	};
-
-	class ScrapLooterSettings
-	{
-	public:
-		bool drawStatus;
-		bool keybindEnabled;
-		bool scrapOverrideEnabled;
-		bool autoLootingEnabled;
-		int autoLootingSpeedMin;
-		int autoLootingSpeedMax;
-		int maxDistance;
-		bool enabledList[40];
-		DWORD formIdList[40];
-		const char* nameList[40];
-	};
-
-	class ItemLooterSettings
-	{
-	public:
-		bool drawStatus;
-		bool keybindEnabled;
-		bool autoLootingEnabled;
-		int autoLootingSpeedMin;
-		int autoLootingSpeedMax;
-		bool lootWeaponsEnabled;
-		int lootWeaponsDistance;
-		bool lootArmorEnabled;
-		int lootArmorDistance;
-		bool lootAmmoEnabled;
-		int lootAmmoDistance;
-		bool lootModsEnabled;
-		int lootModsDistance;
-		bool lootMagazinesEnabled;
-		int lootMagazinesDistance;
-		bool lootBobbleheadsEnabled;
-		int lootBobbleheadsDistance;
-		bool lootAidEnabled;
-		int lootAidDistance;
-		bool lootKnownPlansEnabled;
-		int lootKnownPlansDistance;
-		bool lootUnknownPlansEnabled;
-		int lootUnknownPlansDistance;
-		bool lootMiscEnabled;
-		int lootMiscDistance;
-		bool lootUnlistedEnabled;
-		int lootUnlistedDistance;
-		bool lootListEnabled;
-		int lootListDistance;
-		bool blacklistToggle;
-		bool enabledList[100];
-		DWORD formIdList[100];
-		bool blacklistEnabled[64];
-		DWORD blacklist[64];
-	};
-
-	class WeaponSettings
-	{
-	public:
-		bool noRecoil;
-		bool noSpread;
-		bool noSway;
-		bool infiniteAmmo;
-		bool instantReload;
-		bool automaticflag;
-		bool capacityEnabled;
-		int capacity;
-		bool speedEnabled;
-		float speed;
-		bool reachEnabled;
-		float reach;
-	};
-
-	class TargetSettings
-	{
-	public:
-		bool lockPlayers;
-		bool lockNpCs;
-		bool indirectPlayers;
-		bool indirectNpCs;
-		bool directPlayers;
-		bool directNpCs;
-		bool targetLiving;
-		bool targetDowned;
-		bool targetDead;
-		bool targetUnknown;
-		bool ignoreRenderDistance;
-		float lockingFov;
-		bool ignoreEssentialNpCs;
-		float lockingColor[3];
-		bool retargeting;
-		int cooldown;
-		int sendDamageMin;
-		int sendDamageMax;
-		int favoriteIndex;
-	};
-
-	class LocalPlayerSettings
-	{
-	public:
-		bool drawPositionSpoofingStatus;
-		bool positionSpoofingEnabled;
-		int positionSpoofingHeight;
-		bool noclipEnabled;
-		float noclipSpeed;
-		bool clientState;
-		bool automaticClientState;
-		bool freezeApEnabled;
-		bool actionPointsEnabled;
-		int actionPoints;
-		bool strengthEnabled;
-		int strength;
-		bool perceptionEnabled;
-		int perception;
-		bool enduranceEnabled;
-		int endurance;
-		bool charismaEnabled;
-		int charisma;
-		bool intelligenceEnabled;
-		int intelligence;
-		bool agilityEnabled;
-		int agility;
-		bool luckEnabled;
-		int luck;
-	};
-
-	class OpkSettings
-	{
-	public:
-		bool playersEnabled;
-		bool npcsEnabled;
-	};
-
-	class UtilitySettings
-	{
-	public:
-		bool debugPlayer;
-		bool debugEsp;
-		DWORD ptrFormId;
-		DWORD addressFormId;
-	};
-
-	class SwapperSettings
-	{
-	public:
-		DWORD sourceFormId;
-		DWORD destinationFormId;
-	};
-
-	class TransferSettings
-	{
-	public:
-		DWORD sourceFormId;
-		DWORD destinationFormId;
-		bool useWhitelist;
-		bool useBlacklist;
-		bool whitelisted[32];
-		DWORD whitelist[32];
-		bool blacklisted[32];
-		DWORD blacklist[32];
-	};
-
-	class TeleportEntry
-	{
-	public:
-		float destination[4];
-		DWORD cellFormId;
-		bool disableSaving;
-	};
-
-	class TeleportSettings
-	{
-	public:
-		TeleportEntry teleportEntryData[16];
-	};
-
-	class NukeCodeSettings
-	{
-	public:
-		bool automaticNukeCodes;
-		bool drawCodeAlpha;
-		bool drawCodeBravo;
-		bool drawCodeCharlie;
-	};
-
-	class LegendarySettings
-	{
-	public:
-		bool overrideLivingOneStar;
-		float livingOneStarColor[3];
-		bool overrideDeadOneStar;
-		float deadOneStarColor[3];
-		bool overrideLivingTwoStar;
-		float livingTwoStarColor[3];
-		bool overrideDeadTwoStar;
-		float deadTwoStarColor[3];
-		bool overrideLivingThreeStar;
-		float livingThreeStarColor[3];
-		bool overrideDeadThreeStar;
-		float deadThreeStarColor[3];
-	};
-
-	class FluxSettings
-	{
-	public:
-		bool crimsonFluxEnabled;
-		bool cobaltFluxEnabled;
-		bool yellowcakeFluxEnabled;
-		bool fluorescentFluxEnabled;
-		bool violetFluxEnabled;
-	};
-
-	class EntityLooterSettings
-	{
-	public:
-		bool enabled;
-		bool drawStatus;
-		bool oneStarWeaponsEnabled;
-		bool oneStarArmorEnabled;
-		bool twoStarWeaponsEnabled;
-		bool twoStarArmorEnabled;
-		bool threeStarWeaponsEnabled;
-		bool threeStarArmorEnabled;
-		bool allWeaponsEnabled;
-		bool allArmorEnabled;
-		bool ammoEnabled;
-		bool modsEnabled;
-		bool capsEnabled;
-		bool junkEnabled;
-		bool aidEnabled;
-		bool treasureMapsEnabled;
-		bool knownPlansEnabled;
-		bool unknownPlansEnabled;
-		bool miscEnabled;
-		bool unlistedEnabled;
-		bool listEnabled;
-		bool blacklistToggle;
-		bool enabledList[100];
-		DWORD formIdList[100];
-		bool blacklistEnabled[64];
-		DWORD blacklist[64];
-	};
-
-	class HarvesterSettings
-	{
-	public:
-		bool enabled;
-		bool drawStatus;
-		bool overrideEnabled;
-		bool enabledList[69];
-		DWORD formIdList[69];
-		const char* nameList[69];
-	};
-
-	class KnownRecipeSettings
-	{
-	public:
-		bool knownRecipesEnabled;
-		bool unknownRecipesEnabled;
-	};
-
-	class MeleeSettings
-	{
-	public:
-		bool enabled;
-		int speedMin;
-		int speedMax;
-	};
-
-	class ChargenSettings
-	{
-	public:
-		bool chargenEditingEnabled;
-		float thin;
-		float muscular;
-		float large;
-	};
-
-	class ExtraNpcSettings
-	{
-	public:
-		bool hideSettlerFaction;
-		bool hideCraterRaiderFaction;
-		bool hideDieHardFaction;
-		bool hideSecretServiceFaction;
-		bool useNpcBlacklist;
-		bool npcBlacklistEnabled[64];
-		DWORD npcBlacklist[64];
-	};
-
-}
 
 
 class ErectusMain final {
@@ -1350,7 +1014,6 @@ public:
 	inline static bool overlayMenuActive = false;
 	inline static bool overlayActive = false;
 	inline static bool overlayForeground = false;
-	inline static bool experimentalOverlayFix = false;
 
 	inline static HWND appHwnd = nullptr;
 
@@ -1370,9 +1033,9 @@ private:
 };
 class Utils final {
 public:
-	static void ValidateFloat(float* value, float min, float max);
+	static void ValidateFloat(float& value, float min, float max);
 	static void ValidateRgb(float* value);
-	static void ValidateInt(int* value, int min, int max);
+	static void ValidateInt(int& value, int min, int max);
 	static int GetRangedInt(int min, int max);
 
 	static int GetTextLength(const char* text);
@@ -1391,8 +1054,6 @@ public:
 
 private:
 	static float RadiansToDegrees(float radians);
-	static void ValidateDword(DWORD* value, DWORD min, DWORD max);
-	static void ValidateRgba(float* value);
 
 	virtual void __dummy() = 0;
 };
@@ -1441,6 +1102,14 @@ private:
 	static void ButtonToggle(const char* label, bool* state);
 	static void LargeButtonToggle(const char* label, bool* state);
 	static void SmallButtonToggle(const char* label, bool* state);
+
+	static void OverlayMenuTabEsp();
+	static void OverlayMenuTabLoot();
+	static void OverlayMenuTabCombat();
+	static void OverlayMenuTabPlayer();
+	static void OverlayMenuTabUtilities();
+	static void OverlayMenuTabTeleporter();
+	static void OverlayMenuTabBitMsgWriter();
 
 	inline static bool swapperSourceToggle = false;
 	inline static bool swapperDestinationToggle = false;
@@ -1521,6 +1190,11 @@ private:
 	
 	virtual void __dummy();
 };
+
+class EntityLooterSettings;
+class OverlaySettingsB;
+class OverlaySettingsA;
+
 class ErectusMemory final {
 public:
 	static DWORD64 GetAddress(DWORD formId);
@@ -1609,8 +1283,8 @@ public:
 	inline static std::vector<MemoryClasses::CustomEntry> playerDataBuffer{};
 
 private:
-	static bool RenderCustomEntryA(const MemoryClasses::CustomEntry& entry, const SettingsClasses::OverlaySettingsA& settings);
-	static bool RenderCustomEntryB(const MemoryClasses::CustomEntry& entry, const SettingsClasses::OverlaySettingsB& settings);
+	static bool RenderCustomEntryA(const MemoryClasses::CustomEntry& entry, const OverlaySettingsA& settings);
+	static bool RenderCustomEntryB(const MemoryClasses::CustomEntry& entry, const OverlaySettingsB& settings);
 
 	static std::string GetPlayerName(const MemoryClasses::ClientAccount& clientAccountData);
 	static bool TargetValid(const TesObjectRefr& entityData, const TesItem& referenceData);
@@ -1618,8 +1292,8 @@ private:
 
 	static bool CheckItemLooterList();
 	static bool CheckItemLooterBlacklist();
-	static bool CheckEntityLooterList(const SettingsClasses::EntityLooterSettings& settings);
-	static bool CheckEntityLooterBlacklist(const SettingsClasses::EntityLooterSettings& settings);
+	static bool CheckEntityLooterList(const EntityLooterSettings& settings);
+	static bool CheckEntityLooterBlacklist(const EntityLooterSettings& settings);
 	static bool CheckIngredientList();
 	static bool CheckJunkPileEnabled();
 	static bool CheckComponentArray(const TesItem& referenceData);
@@ -1650,17 +1324,17 @@ private:
 	static DWORD64 RttiGetNamePtr(DWORD64 vtable);
 	static std::string GetInstancedItemName(DWORD64 displayPtr);
 	static bool EntityInventoryValid(const TesObjectRefr& entityData);
-	static bool AllowLegendaryWeapons(const SettingsClasses::EntityLooterSettings& settings);
-	static bool AllowLegendaryArmor(const SettingsClasses::EntityLooterSettings& settings);
-	static bool CheckEntityLooterItem(DWORD formId, DWORD64 entityFlag, const SettingsClasses::EntityLooterSettings& settings, bool legendaryWeaponsEnabled, bool legendaryArmorEnabled);
+	static bool AllowLegendaryWeapons(const EntityLooterSettings& settings);
+	static bool AllowLegendaryArmor(const EntityLooterSettings& settings);
+	static bool CheckEntityLooterItem(DWORD formId, DWORD64 entityFlag, const EntityLooterSettings& settings, bool legendaryWeaponsEnabled, bool legendaryArmorEnabled);
 	static bool IsLegendaryFormId(DWORD formId);
 	static BYTE GetLegendaryRank(DWORD64 displayPtr);
-	static bool ValidLegendary(BYTE legendaryRank, DWORD64 entityFlag, const SettingsClasses::EntityLooterSettings& customEntityLooterSettings, bool legendaryWeaponsEnabled, bool legendaryArmorEnabled);
+	static bool ValidLegendary(BYTE legendaryRank, DWORD64 entityFlag, const EntityLooterSettings& customEntityLooterSettings, bool legendaryWeaponsEnabled, bool legendaryArmorEnabled);
 	static bool TransferEntityItems(const TesObjectRefr& entityData, const TesItem& referenceData, const TesObjectRefr& localPlayer, bool onlyUseEntityLooterList, bool useEntityLooterBlacklist);
 	static bool ContainerValid(const TesItem& referenceData);
 	static bool LootEntity(const TesObjectRefr& entityData, const TesItem& referenceData, const TesObjectRefr& localPlayer, bool onlyUseEntityLooterList, bool useEntityLooterBlacklist);
-	static bool CheckEntityLooterSettings(const SettingsClasses::EntityLooterSettings& settings);
-	static bool CheckOnlyUseEntityLooterList(const SettingsClasses::EntityLooterSettings& settings);
+	static bool CheckEntityLooterSettings(const EntityLooterSettings& settings);
+	static bool CheckOnlyUseEntityLooterList(const EntityLooterSettings& settings);
 	static bool HarvestFlora(const TesObjectRefr& entityData, const TesItem& referenceData, const TesObjectRefr& localPlayer);
 
 	static bool CreateProjectile(DWORD itemId, const float* position, const float* rotation);
@@ -1691,112 +1365,5 @@ private:
 
 	virtual void __dummy() = 0;
 };
-class ErectusIni final {
-public:
-	static void ReadIniSettings();
-	static void WriteIniSettings();
 
-	static SettingsClasses::OverlaySettingsA playerSettings;
-	static SettingsClasses::OverlaySettingsB junkSettings;
-	static SettingsClasses::OverlaySettingsA npcSettings;
-	static SettingsClasses::OverlaySettingsB containerSettings;
-	static SettingsClasses::OverlaySettingsB planSettings;
-	static SettingsClasses::OverlaySettingsB magazineSettings;
-	static SettingsClasses::OverlaySettingsB bobbleheadSettings;
-	static SettingsClasses::OverlaySettingsB itemSettings;
-	static SettingsClasses::OverlaySettingsB floraSettings;
-	static SettingsClasses::OverlaySettingsB entitySettings;
-
-	static SettingsClasses::ScrapLooterSettings scrapLooter;
-	static SettingsClasses::ItemLooterSettings itemLooter;
-	static SettingsClasses::WeaponSettings customWeaponSettings;
-	static SettingsClasses::TargetSettings customTargetSettings;
-	static SettingsClasses::LocalPlayerSettings customLocalPlayerSettings;
-	static SettingsClasses::OpkSettings customOpkSettings;
-	static SettingsClasses::UtilitySettings customUtilitySettings;
-	static SettingsClasses::SwapperSettings customSwapperSettings;
-	static SettingsClasses::TransferSettings customTransferSettings;
-	static SettingsClasses::TeleportSettings customTeleportSettings;
-	static SettingsClasses::NukeCodeSettings customNukeCodeSettings;
-	static SettingsClasses::LegendarySettings customLegendarySettings;
-	static SettingsClasses::FluxSettings customFluxSettings;
-	static SettingsClasses::EntityLooterSettings npcLooter;
-	static SettingsClasses::EntityLooterSettings containerLooter;
-	static SettingsClasses::HarvesterSettings harvester;
-	static SettingsClasses::KnownRecipeSettings customKnownRecipeSettings;
-	static SettingsClasses::MeleeSettings melee;
-	static SettingsClasses::ChargenSettings customChargenSettings;
-	static SettingsClasses::ExtraNpcSettings customExtraNpcSettings;
-
-	inline static SettingsClasses::WeaponSettings defaultWeaponSettings{
-		false, false, false, false, false, false, false, 250, false, 2.0f, false, 500.0f
-	};
-
-private:
-	static void GetOverlaySettingsB(const char* section, SettingsClasses::OverlaySettingsB* value, SettingsClasses::OverlaySettingsB* deflt);
-	static void SetOverlaySettingsB(const char* section, SettingsClasses::OverlaySettingsB* value, SettingsClasses::OverlaySettingsB* deflt);
-	static void GetScrapSettings();
-	static void SetScrapSettings();
-	static void GetItemLooterSettings();
-	static void SetItemLooterSettings();
-	static void GetWeaponSettings();
-	static void SetWeaponSettings();
-	static void GetTargetSettings();
-	static void SetTargetSettings();
-	static void GetLocalPlayerSettings();
-	static void SetLocalPlayerSettings();
-	static void GetOpkSettings();
-	static void SetOpkSettings();
-	static void GetUtilitySettings();
-	static void SetUtilitySettings();
-	static void GetSwapperSettings();
-	static void SetSwapperSettings();
-	static void GetTransferSettings();
-	static void SetTransferSettings();
-	static void GetTeleportSettings();
-	static void SetTeleportSettings();
-	static void GetNukeCodeSettings();
-	static void SetNukeCodeSettings();
-	static void GetLegendarySettings();
-	static void SetLegendarySettings();
-	static void GetFluxSettings();
-	static void SetFluxSettings();
-	static void GetEntityLooterSettings(const char* section, SettingsClasses::EntityLooterSettings* value, SettingsClasses::EntityLooterSettings* deflt);
-	static void SetEntityLooterSettings(const char* section, SettingsClasses::EntityLooterSettings* value, SettingsClasses::EntityLooterSettings* deflt);
-	static void GetHarvesterSettings();
-	static void SetHarvesterSettings();
-	static void GetKnownRecipeSettings();
-	static void SetKnownRecipeSettings();
-	static void GetMeleeSettings();
-	static void SetMeleeSettings();
-	static void GetChargenSettings();
-	static void SetChargenSettings();
-	static void GetExtraNpcSettings();
-	static void SetExtraNpcSettings();
-	static void GetBitMsgWriterSettings();
-	static void SetBitMsgWriterSettings();
-	static void GetExperimentalSettings();
-	static void SetExperimentalSettings();
-
-	static void GetDword(const char* section, const char* key, DWORD* value, const DWORD* deflt);
-	static void SetDword(const char* section, const char* key, const DWORD* value, const DWORD* deflt);
-	static void GetInt(const char* section, const char* key, int* value, const int* deflt);
-	static void SetInt(const char* section, const char* key, const int* value, const int* deflt);
-	static void GetSliderInt(const char* section, const char* key, int* value, int* deflt, int min, int max);
-	static void SetSliderInt(const char* section, const char* key, int* value, int* deflt, int min, int max);
-	static void GetFloat(const char* section, const char* key, float* value, const float* deflt);
-	static void SetFloat(const char* section, const char* key, const float* value, const float* deflt);
-	static void GetSliderFloat(const char* section, const char* key, float* value, float* deflt, float min, float max);
-	static void SetSliderFloat(const char* section, const char* key, float* value, float* deflt, float min, float max);
-	static void GetRgb(const char* section, const char* key, float* value, float* deflt);
-	static void SetRgb(const char* section, const char* key, float* value, float* deflt);
-	static void GetQuadFloat(const char* section, const char* key, float* value, float* deflt);
-	static void SetQuadFloat(const char* section, const char* key, float* value, float* deflt);
-	static void GetBool(const char* section, const char* key, bool* value, const bool* deflt);
-	static void SetBool(const char* section, const char* key, const bool* value, const bool* deflt);
-	static void GetOverlaySettingsA(const char* section, SettingsClasses::OverlaySettingsA* value, SettingsClasses::OverlaySettingsA* deflt);
-	static void SetOverlaySettingsA(const char* section, SettingsClasses::OverlaySettingsA* value, SettingsClasses::OverlaySettingsA* deflt);
-
-	virtual void __dummy() = 0;
-};
 
