@@ -1,7 +1,7 @@
 #include "ErectusInclude.h"
-#include "imgui_impl_dx9.h"
+#include "imgui/imgui_impl_dx9.h"
 
-bool Renderer::DrawText(const char* text, const bool shadowed, const bool centered, float* position, const float* color, const float alpha)
+bool Renderer::DrawTextA(const char* text, const bool shadowed, const bool centered, float* position, const float* color, const float alpha)
 {
 	if (text == nullptr)
 	{
@@ -21,11 +21,11 @@ bool Renderer::DrawText(const char* text, const bool shadowed, const bool center
 	if (shadowed)
 	{
 		RECT background = { longPosition[0] + 1L, longPosition[1] + 1L, longPosition[0] + 1L, longPosition[1] + 1L };
-		d3DxFont->DrawText(d3DxSprite, text, -1, &background, format, D3DCOLOR_COLORVALUE(0.0f, 0.0f, 0.0f, alpha));
+		d3DxFont->DrawTextA(d3DxSprite, text, -1, &background, format, D3DCOLOR_COLORVALUE(0.0f, 0.0f, 0.0f, alpha));
 	}
 
 	RECT foreground = { longPosition[0], longPosition[1], longPosition[0], longPosition[1] };
-	d3DxFont->DrawText(d3DxSprite, text, -1, &foreground, format, D3DCOLOR_COLORVALUE(color[0], color[1], color[2], alpha));
+	d3DxFont->DrawTextA(d3DxSprite, text, -1, &foreground, format, D3DCOLOR_COLORVALUE(color[0], color[1], color[2], alpha));
 
 	return true;
 }
@@ -76,10 +76,6 @@ bool Renderer::Reset(const HRESULT deviceState)
 
 int Renderer::BeginScene()
 {
-	if (!d3D9Initialized || !ErectusImGui::imGuiInitialized)
-		return 1;
-
-
 	const auto deviceState = d3D9Device->TestCooperativeLevel();
 
 	if (deviceResetQueued)

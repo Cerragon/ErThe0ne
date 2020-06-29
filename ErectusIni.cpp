@@ -87,10 +87,10 @@ OverlaySettingsB defltOverlaySettingsB
 
 ScrapLooterSettings defltScrapLooterSettings
 {
-	.scrapAutomaticSpeedMin = 30,
-	.scrapAutomaticSpeedMax = 60,
-	.scrapLooterDistance = 3000,
-	.scrapFormIdList = {
+	.autoLootingSpeedMin = 30,
+	.autoLootingSpeedMax = 60,
+	.maxDistance = 3000,
+	.formIdList = {
 		0x00017DE8,//Black Titanium
 		0x00017DE9,//Ultracite
 		0x0001FA8C,//Acid
@@ -132,7 +132,7 @@ ScrapLooterSettings defltScrapLooterSettings
 		0x0031C09A,//Coal
 		0x0054E4FA,//Vault 94 Steel
 	},
-	.scrapNameList = {
+	.nameList = {
 		"Black Titanium",//0x00017DE8
 		"Ultracite",//0x00017DE9
 		"Acid",//0x0001FA8C
@@ -178,20 +178,20 @@ ScrapLooterSettings defltScrapLooterSettings
 
 ItemLooterSettings defltItemLooterSettings
 {
-	.itemAutomaticSpeedMin = 30,
-	.itemAutomaticSpeedMax = 60,
-	.itemLooterWeaponsDistance = 3000,
-	.itemLooterArmorDistance = 3000,
-	.itemLooterAmmoDistance = 3000,
-	.itemLooterModsDistance = 3000,
-	.itemLooterMagazinesDistance = 3000,
-	.itemLooterBobbleheadsDistance = 3000,
-	.itemLooterAidDistance = 3000,
-	.itemLooterKnownPlansDistance = 3000,
-	.itemLooterUnknownPlansDistance = 3000,
-	.itemLooterMiscDistance = 3000,
-	.itemLooterUnlistedDistance = 3000,
-	.itemLooterListDistance = 3000,
+	.autoLootingSpeedMin = 30,
+	.autoLootingSpeedMax = 60,
+	.lootWeaponsDistance = 3000,
+	.lootArmorDistance = 3000,
+	.lootAmmoDistance = 3000,
+	.lootModsDistance = 3000,
+	.lootMagazinesDistance = 3000,
+	.lootBobbleheadsDistance = 3000,
+	.lootAidDistance = 3000,
+	.lootKnownPlansDistance = 3000,
+	.lootUnknownPlansDistance = 3000,
+	.lootMiscDistance = 3000,
+	.lootUnlistedDistance = 3000,
+	.lootListDistance = 3000,
 };
 
 TargetSettings defltTargetSettings
@@ -291,7 +291,7 @@ EntityLooterSettings defltEntityLooterSettings = {};
 
 HarvesterSettings defltHarvesterSettings
 {
-	.harvesterFormIdList = {
+	.formIdList = {
 		0x002DDD45,//Raw Crimson Flux
 		0x002DDD46,//Raw Cobalt Flux
 		0x002DDD49,//Raw Yellowcake Flux
@@ -362,7 +362,7 @@ HarvesterSettings defltHarvesterSettings
 		0x000933EA,//Glowing Resin
 		0x0008E922,//Mothman Egg
 	},
-	.harvesterNameList = {
+	.nameList = {
 		"Raw Crimson Flux",
 		"Raw Cobalt Flux",
 		"Raw Yellowcake Flux",
@@ -468,8 +468,8 @@ OverlaySettingsB ErectusIni::bobbleheadSettings = defltOverlaySettingsB;
 OverlaySettingsB ErectusIni::itemSettings = defltOverlaySettingsB;
 OverlaySettingsB ErectusIni::floraSettings = defltOverlaySettingsB;
 OverlaySettingsB ErectusIni::entitySettings = defltOverlaySettingsB;
-ScrapLooterSettings ErectusIni::customScrapLooterSettings = defltScrapLooterSettings;
-ItemLooterSettings ErectusIni::customItemLooterSettings = defltItemLooterSettings;
+ScrapLooterSettings ErectusIni::scrapLooter = defltScrapLooterSettings;
+ItemLooterSettings ErectusIni::itemLooter = defltItemLooterSettings;
 WeaponSettings ErectusIni::customWeaponSettings = defaultWeaponSettings;
 TargetSettings ErectusIni::customTargetSettings = defltTargetSettings;
 LocalPlayerSettings ErectusIni::customLocalPlayerSettings = defltLocalPlayerSettings;
@@ -481,11 +481,11 @@ TeleportSettings ErectusIni::customTeleportSettings = defltTeleportSettings;
 NukeCodeSettings ErectusIni::customNukeCodeSettings = defltNukeCodeSettings;
 LegendarySettings ErectusIni::customLegendarySettings = defltLegendarySettings;
 FluxSettings ErectusIni::customFluxSettings = defltFluxSettings;
-EntityLooterSettings ErectusIni::npcLooterSettings = defltEntityLooterSettings;
-EntityLooterSettings ErectusIni::containerLooterSettings = defltEntityLooterSettings;
-HarvesterSettings ErectusIni::customHarvesterSettings = defltHarvesterSettings;
+EntityLooterSettings ErectusIni::npcLooter = defltEntityLooterSettings;
+EntityLooterSettings ErectusIni::containerLooter = defltEntityLooterSettings;
+HarvesterSettings ErectusIni::harvester = defltHarvesterSettings;
 KnownRecipeSettings ErectusIni::customKnownRecipeSettings = defltKnownRecipeSettings;
-MeleeSettings ErectusIni::customMeleeSettings = defltMeleeSettings;
+MeleeSettings ErectusIni::melee = defltMeleeSettings;
 ChargenSettings ErectusIni::customChargenSettings = defltChargenSettings;
 ExtraNpcSettings ErectusIni::customExtraNpcSettings = defltExtraNpcSettings;
 
@@ -867,82 +867,82 @@ void ErectusIni::SetOverlaySettingsB(const char* section, OverlaySettingsB* valu
 
 void ErectusIni::GetScrapSettings()
 {
-	GetBool("ScrapSettings", "ScrapKeybindEnabled", &customScrapLooterSettings.scrapKeybindEnabled, &defltScrapLooterSettings.scrapKeybindEnabled);
-	GetBool("ScrapSettings", "ScrapOverrideEnabled", &customScrapLooterSettings.scrapOverrideEnabled, &defltScrapLooterSettings.scrapOverrideEnabled);
-	GetBool("ScrapSettings", "ScrapAutomaticLootingEnabled", &customScrapLooterSettings.scrapAutomaticLootingEnabled, &defltScrapLooterSettings.scrapAutomaticLootingEnabled);
-	GetBool("ScrapSettings", "ScrapAutomaticStatus", &customScrapLooterSettings.scrapAutomaticStatus, &defltScrapLooterSettings.scrapAutomaticStatus);
-	GetSliderInt("ScrapSettings", "ScrapAutomaticSpeedMin", &customScrapLooterSettings.scrapAutomaticSpeedMin, &defltScrapLooterSettings.scrapAutomaticSpeedMin, 10, 60);
-	GetSliderInt("ScrapSettings", "ScrapAutomaticSpeedMax", &customScrapLooterSettings.scrapAutomaticSpeedMax, &defltScrapLooterSettings.scrapAutomaticSpeedMax, 10, 60);
-	GetSliderInt("ScrapSettings", "ScrapLooterDistance", &customScrapLooterSettings.scrapLooterDistance, &defltScrapLooterSettings.scrapLooterDistance, 0, 3000);
+	GetBool("ScrapSettings", "ScrapKeybindEnabled", &scrapLooter.keybindEnabled, &defltScrapLooterSettings.keybindEnabled);
+	GetBool("ScrapSettings", "ScrapOverrideEnabled", &scrapLooter.scrapOverrideEnabled, &defltScrapLooterSettings.scrapOverrideEnabled);
+	GetBool("ScrapSettings", "ScrapAutomaticLootingEnabled", &scrapLooter.autoLootingEnabled, &defltScrapLooterSettings.autoLootingEnabled);
+	GetBool("ScrapSettings", "ScrapAutomaticStatus", &scrapLooter.drawStatus, &defltScrapLooterSettings.drawStatus);
+	GetSliderInt("ScrapSettings", "ScrapAutomaticSpeedMin", &scrapLooter.autoLootingSpeedMin, &defltScrapLooterSettings.autoLootingSpeedMin, 10, 60);
+	GetSliderInt("ScrapSettings", "ScrapAutomaticSpeedMax", &scrapLooter.autoLootingSpeedMax, &defltScrapLooterSettings.autoLootingSpeedMax, 10, 60);
+	GetSliderInt("ScrapSettings", "ScrapLooterDistance", &scrapLooter.maxDistance, &defltScrapLooterSettings.maxDistance, 1, 3000);
 	for (auto i = 0; i < 40; i++)
 	{
 		char scrapEnabledText[sizeof"ScrapEnabled39"];
 		sprintf_s(scrapEnabledText, "ScrapEnabled%d", i);
-		GetBool("ScrapSettings", scrapEnabledText, &customScrapLooterSettings.scrapEnabledList[i], &defltScrapLooterSettings.scrapEnabledList[i]);
+		GetBool("ScrapSettings", scrapEnabledText, &scrapLooter.enabledList[i], &defltScrapLooterSettings.enabledList[i]);
 	}
-	if (customScrapLooterSettings.scrapAutomaticSpeedMax < customScrapLooterSettings.scrapAutomaticSpeedMin)
-		customScrapLooterSettings.scrapAutomaticSpeedMax = customScrapLooterSettings.scrapAutomaticSpeedMin;
+	if (scrapLooter.autoLootingSpeedMax < scrapLooter.autoLootingSpeedMin)
+		scrapLooter.autoLootingSpeedMax = scrapLooter.autoLootingSpeedMin;
 }
 
 void ErectusIni::SetScrapSettings()
 {
-	if (customScrapLooterSettings.scrapAutomaticSpeedMax < customScrapLooterSettings.scrapAutomaticSpeedMin)
-		customScrapLooterSettings.scrapAutomaticSpeedMax = customScrapLooterSettings.scrapAutomaticSpeedMin;
-	SetBool("ScrapSettings", "ScrapKeybindEnabled", &customScrapLooterSettings.scrapKeybindEnabled, &defltScrapLooterSettings.scrapKeybindEnabled);
-	SetBool("ScrapSettings", "ScrapOverrideEnabled", &customScrapLooterSettings.scrapOverrideEnabled, &defltScrapLooterSettings.scrapOverrideEnabled);
-	SetBool("ScrapSettings", "ScrapAutomaticLootingEnabled", &customScrapLooterSettings.scrapAutomaticLootingEnabled, &defltScrapLooterSettings.scrapAutomaticLootingEnabled);
-	SetBool("ScrapSettings", "ScrapAutomaticStatus", &customScrapLooterSettings.scrapAutomaticStatus, &defltScrapLooterSettings.scrapAutomaticStatus);
-	SetSliderInt("ScrapSettings", "ScrapAutomaticSpeedMin", &customScrapLooterSettings.scrapAutomaticSpeedMin, &defltScrapLooterSettings.scrapAutomaticSpeedMin, 10, 60);
-	SetSliderInt("ScrapSettings", "ScrapAutomaticSpeedMax", &customScrapLooterSettings.scrapAutomaticSpeedMax, &defltScrapLooterSettings.scrapAutomaticSpeedMax, 10, 60);
-	SetSliderInt("ScrapSettings", "ScrapLooterDistance", &customScrapLooterSettings.scrapLooterDistance, &defltScrapLooterSettings.scrapLooterDistance, 0, 3000);
+	if (scrapLooter.autoLootingSpeedMax < scrapLooter.autoLootingSpeedMin)
+		scrapLooter.autoLootingSpeedMax = scrapLooter.autoLootingSpeedMin;
+	SetBool("ScrapSettings", "ScrapKeybindEnabled", &scrapLooter.keybindEnabled, &defltScrapLooterSettings.keybindEnabled);
+	SetBool("ScrapSettings", "ScrapOverrideEnabled", &scrapLooter.scrapOverrideEnabled, &defltScrapLooterSettings.scrapOverrideEnabled);
+	SetBool("ScrapSettings", "ScrapAutomaticLootingEnabled", &scrapLooter.autoLootingEnabled, &defltScrapLooterSettings.autoLootingEnabled);
+	SetBool("ScrapSettings", "ScrapAutomaticStatus", &scrapLooter.drawStatus, &defltScrapLooterSettings.drawStatus);
+	SetSliderInt("ScrapSettings", "ScrapAutomaticSpeedMin", &scrapLooter.autoLootingSpeedMin, &defltScrapLooterSettings.autoLootingSpeedMin, 10, 60);
+	SetSliderInt("ScrapSettings", "ScrapAutomaticSpeedMax", &scrapLooter.autoLootingSpeedMax, &defltScrapLooterSettings.autoLootingSpeedMax, 10, 60);
+	SetSliderInt("ScrapSettings", "ScrapLooterDistance", &scrapLooter.maxDistance, &defltScrapLooterSettings.maxDistance, 1, 3000);
 	for (auto i = 0; i < 40; i++)
 	{
 		char scrapEnabledText[sizeof"ScrapEnabled39"];
 		sprintf_s(scrapEnabledText, "ScrapEnabled%d", i);
-		SetBool("ScrapSettings", scrapEnabledText, &customScrapLooterSettings.scrapEnabledList[i], &defltScrapLooterSettings.scrapEnabledList[i]);
+		SetBool("ScrapSettings", scrapEnabledText, &scrapLooter.enabledList[i], &defltScrapLooterSettings.enabledList[i]);
 	}
 }
 
 void ErectusIni::GetItemLooterSettings()
 {
-	GetBool("ItemLooterSettings", "ItemKeybindEnabled", &customItemLooterSettings.itemKeybindEnabled, &defltItemLooterSettings.itemKeybindEnabled);
-	GetBool("ItemLooterSettings", "ItemAutomaticLootingEnabled", &customItemLooterSettings.itemAutomaticLootingEnabled, &defltItemLooterSettings.itemAutomaticLootingEnabled);
-	GetBool("ItemLooterSettings", "ItemAutomaticStatus", &customItemLooterSettings.itemAutomaticStatus, &defltItemLooterSettings.itemAutomaticStatus);
-	GetSliderInt("ItemLooterSettings", "ItemAutomaticSpeedMin", &customItemLooterSettings.itemAutomaticSpeedMin, &defltItemLooterSettings.itemAutomaticSpeedMin, 10, 60);
-	GetSliderInt("ItemLooterSettings", "ItemAutomaticSpeedMax", &customItemLooterSettings.itemAutomaticSpeedMax, &defltItemLooterSettings.itemAutomaticSpeedMax, 10, 60);
-	GetBool("ItemLooterSettings", "ItemLooterWeaponsEnabled", &customItemLooterSettings.itemLooterWeaponsEnabled, &defltItemLooterSettings.itemLooterWeaponsEnabled);
-	GetSliderInt("ItemLooterSettings", "ItemLooterWeaponsDistance", &customItemLooterSettings.itemLooterWeaponsDistance, &defltItemLooterSettings.itemLooterWeaponsDistance, 0, 3000);
-	GetBool("ItemLooterSettings", "ItemLooterArmorEnabled", &customItemLooterSettings.itemLooterArmorEnabled, &defltItemLooterSettings.itemLooterArmorEnabled);
-	GetSliderInt("ItemLooterSettings", "ItemLooterArmorDistance", &customItemLooterSettings.itemLooterArmorDistance, &defltItemLooterSettings.itemLooterArmorDistance, 0, 3000);
-	GetBool("ItemLooterSettings", "ItemLooterAmmoEnabled", &customItemLooterSettings.itemLooterAmmoEnabled, &defltItemLooterSettings.itemLooterAmmoEnabled);
-	GetSliderInt("ItemLooterSettings", "ItemLooterAmmoDistance", &customItemLooterSettings.itemLooterAmmoDistance, &defltItemLooterSettings.itemLooterAmmoDistance, 0, 3000);
-	GetBool("ItemLooterSettings", "ItemLooterModsEnabled", &customItemLooterSettings.itemLooterModsEnabled, &defltItemLooterSettings.itemLooterModsEnabled);
-	GetSliderInt("ItemLooterSettings", "ItemLooterModsDistance", &customItemLooterSettings.itemLooterModsDistance, &defltItemLooterSettings.itemLooterModsDistance, 0, 3000);
-	GetBool("ItemLooterSettings", "ItemLooterMagazinesEnabled", &customItemLooterSettings.itemLooterMagazinesEnabled, &defltItemLooterSettings.itemLooterMagazinesEnabled);
-	GetSliderInt("ItemLooterSettings", "ItemLooterMagazinesDistance", &customItemLooterSettings.itemLooterMagazinesDistance, &defltItemLooterSettings.itemLooterMagazinesDistance, 0, 3000);
-	GetBool("ItemLooterSettings", "ItemLooterBobbleheadsEnabled", &customItemLooterSettings.itemLooterBobbleheadsEnabled, &defltItemLooterSettings.itemLooterBobbleheadsEnabled);
-	GetSliderInt("ItemLooterSettings", "ItemLooterBobbleheadsDistance", &customItemLooterSettings.itemLooterBobbleheadsDistance, &defltItemLooterSettings.itemLooterBobbleheadsDistance, 0, 3000);
-	GetBool("ItemLooterSettings", "ItemLooterAidEnabled", &customItemLooterSettings.itemLooterAidEnabled, &defltItemLooterSettings.itemLooterAidEnabled);
-	GetSliderInt("ItemLooterSettings", "ItemLooterAidDistance", &customItemLooterSettings.itemLooterAidDistance, &defltItemLooterSettings.itemLooterAidDistance, 0, 3000);
-	GetBool("ItemLooterSettings", "ItemLooterKnownPlansEnabled", &customItemLooterSettings.itemLooterKnownPlansEnabled, &defltItemLooterSettings.itemLooterKnownPlansEnabled);
-	GetSliderInt("ItemLooterSettings", "ItemLooterKnownPlansDistance", &customItemLooterSettings.itemLooterKnownPlansDistance, &defltItemLooterSettings.itemLooterKnownPlansDistance, 0, 3000);
-	GetBool("ItemLooterSettings", "ItemLooterUnknownPlansEnabled", &customItemLooterSettings.itemLooterUnknownPlansEnabled, &defltItemLooterSettings.itemLooterUnknownPlansEnabled);
-	GetSliderInt("ItemLooterSettings", "ItemLooterUnknownPlansDistance", &customItemLooterSettings.itemLooterUnknownPlansDistance, &defltItemLooterSettings.itemLooterUnknownPlansDistance, 0, 3000);
-	GetBool("ItemLooterSettings", "ItemLooterMiscEnabled", &customItemLooterSettings.itemLooterMiscEnabled, &defltItemLooterSettings.itemLooterMiscEnabled);
-	GetSliderInt("ItemLooterSettings", "ItemLooterMiscDistance", &customItemLooterSettings.itemLooterMiscDistance, &defltItemLooterSettings.itemLooterMiscDistance, 0, 3000);
-	GetBool("ItemLooterSettings", "ItemLooterUnlistedEnabled", &customItemLooterSettings.itemLooterUnlistedEnabled, &defltItemLooterSettings.itemLooterUnlistedEnabled);
-	GetSliderInt("ItemLooterSettings", "ItemLooterUnlistedDistance", &customItemLooterSettings.itemLooterUnlistedDistance, &defltItemLooterSettings.itemLooterUnlistedDistance, 0, 3000);
-	GetBool("ItemLooterSettings", "ItemLooterListEnabled", &customItemLooterSettings.itemLooterListEnabled, &defltItemLooterSettings.itemLooterListEnabled);
-	GetSliderInt("ItemLooterSettings", "ItemLooterListDistance", &customItemLooterSettings.itemLooterListDistance, &defltItemLooterSettings.itemLooterListDistance, 0, 3000);
-	GetBool("ItemLooterSettings", "ItemLooterBlacklistToggle", &customItemLooterSettings.itemLooterBlacklistToggle, &defltItemLooterSettings.itemLooterBlacklistToggle);
+	GetBool("ItemLooterSettings", "ItemKeybindEnabled", &itemLooter.keybindEnabled, &defltItemLooterSettings.keybindEnabled);
+	GetBool("ItemLooterSettings", "ItemAutomaticLootingEnabled", &itemLooter.autoLootingEnabled, &defltItemLooterSettings.autoLootingEnabled);
+	GetBool("ItemLooterSettings", "ItemAutomaticStatus", &itemLooter.drawStatus, &defltItemLooterSettings.drawStatus);
+	GetSliderInt("ItemLooterSettings", "ItemAutomaticSpeedMin", &itemLooter.autoLootingSpeedMin, &defltItemLooterSettings.autoLootingSpeedMin, 10, 60);
+	GetSliderInt("ItemLooterSettings", "ItemAutomaticSpeedMax", &itemLooter.autoLootingSpeedMax, &defltItemLooterSettings.autoLootingSpeedMax, 10, 60);
+	GetBool("ItemLooterSettings", "ItemLooterWeaponsEnabled", &itemLooter.lootWeaponsEnabled, &defltItemLooterSettings.lootWeaponsEnabled);
+	GetSliderInt("ItemLooterSettings", "ItemLooterWeaponsDistance", &itemLooter.lootWeaponsDistance, &defltItemLooterSettings.lootWeaponsDistance, 0, 3000);
+	GetBool("ItemLooterSettings", "ItemLooterArmorEnabled", &itemLooter.lootArmorEnabled, &defltItemLooterSettings.lootArmorEnabled);
+	GetSliderInt("ItemLooterSettings", "ItemLooterArmorDistance", &itemLooter.lootArmorDistance, &defltItemLooterSettings.lootArmorDistance, 0, 3000);
+	GetBool("ItemLooterSettings", "ItemLooterAmmoEnabled", &itemLooter.lootAmmoEnabled, &defltItemLooterSettings.lootAmmoEnabled);
+	GetSliderInt("ItemLooterSettings", "ItemLooterAmmoDistance", &itemLooter.lootAmmoDistance, &defltItemLooterSettings.lootAmmoDistance, 0, 3000);
+	GetBool("ItemLooterSettings", "ItemLooterModsEnabled", &itemLooter.lootModsEnabled, &defltItemLooterSettings.lootModsEnabled);
+	GetSliderInt("ItemLooterSettings", "ItemLooterModsDistance", &itemLooter.lootModsDistance, &defltItemLooterSettings.lootModsDistance, 0, 3000);
+	GetBool("ItemLooterSettings", "ItemLooterMagazinesEnabled", &itemLooter.lootMagazinesEnabled, &defltItemLooterSettings.lootMagazinesEnabled);
+	GetSliderInt("ItemLooterSettings", "ItemLooterMagazinesDistance", &itemLooter.lootMagazinesDistance, &defltItemLooterSettings.lootMagazinesDistance, 0, 3000);
+	GetBool("ItemLooterSettings", "ItemLooterBobbleheadsEnabled", &itemLooter.lootBobbleheadsEnabled, &defltItemLooterSettings.lootBobbleheadsEnabled);
+	GetSliderInt("ItemLooterSettings", "ItemLooterBobbleheadsDistance", &itemLooter.lootBobbleheadsDistance, &defltItemLooterSettings.lootBobbleheadsDistance, 0, 3000);
+	GetBool("ItemLooterSettings", "ItemLooterAidEnabled", &itemLooter.lootAidEnabled, &defltItemLooterSettings.lootAidEnabled);
+	GetSliderInt("ItemLooterSettings", "ItemLooterAidDistance", &itemLooter.lootAidDistance, &defltItemLooterSettings.lootAidDistance, 0, 3000);
+	GetBool("ItemLooterSettings", "ItemLooterKnownPlansEnabled", &itemLooter.lootKnownPlansEnabled, &defltItemLooterSettings.lootKnownPlansEnabled);
+	GetSliderInt("ItemLooterSettings", "ItemLooterKnownPlansDistance", &itemLooter.lootKnownPlansDistance, &defltItemLooterSettings.lootKnownPlansDistance, 0, 3000);
+	GetBool("ItemLooterSettings", "ItemLooterUnknownPlansEnabled", &itemLooter.lootUnknownPlansEnabled, &defltItemLooterSettings.lootUnknownPlansEnabled);
+	GetSliderInt("ItemLooterSettings", "ItemLooterUnknownPlansDistance", &itemLooter.lootUnknownPlansDistance, &defltItemLooterSettings.lootUnknownPlansDistance, 0, 3000);
+	GetBool("ItemLooterSettings", "ItemLooterMiscEnabled", &itemLooter.lootMiscEnabled, &defltItemLooterSettings.lootMiscEnabled);
+	GetSliderInt("ItemLooterSettings", "ItemLooterMiscDistance", &itemLooter.lootMiscDistance, &defltItemLooterSettings.lootMiscDistance, 0, 3000);
+	GetBool("ItemLooterSettings", "ItemLooterUnlistedEnabled", &itemLooter.lootUnlistedEnabled, &defltItemLooterSettings.lootUnlistedEnabled);
+	GetSliderInt("ItemLooterSettings", "ItemLooterUnlistedDistance", &itemLooter.lootUnlistedDistance, &defltItemLooterSettings.lootUnlistedDistance, 0, 3000);
+	GetBool("ItemLooterSettings", "ItemLooterListEnabled", &itemLooter.lootListEnabled, &defltItemLooterSettings.lootListEnabled);
+	GetSliderInt("ItemLooterSettings", "ItemLooterListDistance", &itemLooter.lootListDistance, &defltItemLooterSettings.lootListDistance, 0, 3000);
+	GetBool("ItemLooterSettings", "ItemLooterBlacklistToggle", &itemLooter.blacklistToggle, &defltItemLooterSettings.blacklistToggle);
 	for (auto i = 0; i < 100; i++)
 	{
 		char itemEnabledText[sizeof"ItemLooterEnabled99"];
 		char itemFormIdText[sizeof"ItemLooterList99"];
 		sprintf_s(itemEnabledText, "ItemLooterEnabled%d", i);
 		sprintf_s(itemFormIdText, "ItemLooterList%d", i);
-		GetBool("ItemLooterSettings", itemEnabledText, &customItemLooterSettings.itemLooterEnabledList[i], &defltItemLooterSettings.itemLooterEnabledList[i]);
-		GetDword("ItemLooterSettings", itemFormIdText, &customItemLooterSettings.itemLooterFormIdList[i], &defltItemLooterSettings.itemLooterFormIdList[i]);
+		GetBool("ItemLooterSettings", itemEnabledText, &itemLooter.enabledList[i], &defltItemLooterSettings.enabledList[i]);
+		GetDword("ItemLooterSettings", itemFormIdText, &itemLooter.formIdList[i], &defltItemLooterSettings.formIdList[i]);
 	}
 	for (auto i = 0; i < 64; i++)
 	{
@@ -950,56 +950,56 @@ void ErectusIni::GetItemLooterSettings()
 		char itemBlacklistFormIdText[sizeof"ItemLooterBlacklist63"];
 		sprintf_s(itemBlacklistEnabledText, "ItemLooterBlacklistEnabled%d", i);
 		sprintf_s(itemBlacklistFormIdText, "ItemLooterBlacklist%d", i);
-		GetBool("ItemLooterSettings", itemBlacklistEnabledText, &customItemLooterSettings.itemLooterBlacklistEnabled[i], &defltItemLooterSettings.itemLooterBlacklistEnabled[i]);
-		GetDword("ItemLooterSettings", itemBlacklistFormIdText, &customItemLooterSettings.itemLooterBlacklist[i], &defltItemLooterSettings.itemLooterBlacklist[i]);
+		GetBool("ItemLooterSettings", itemBlacklistEnabledText, &itemLooter.blacklistEnabled[i], &defltItemLooterSettings.blacklistEnabled[i]);
+		GetDword("ItemLooterSettings", itemBlacklistFormIdText, &itemLooter.blacklist[i], &defltItemLooterSettings.blacklist[i]);
 	}
-	if (customItemLooterSettings.itemAutomaticSpeedMax < customItemLooterSettings.itemAutomaticSpeedMin)
-		customItemLooterSettings.itemAutomaticSpeedMax = customItemLooterSettings.itemAutomaticSpeedMin;
+	if (itemLooter.autoLootingSpeedMax < itemLooter.autoLootingSpeedMin)
+		itemLooter.autoLootingSpeedMax = itemLooter.autoLootingSpeedMin;
 }
 
 void ErectusIni::SetItemLooterSettings()
 {
-	if (customItemLooterSettings.itemAutomaticSpeedMax < customItemLooterSettings.itemAutomaticSpeedMin)
-		customItemLooterSettings.itemAutomaticSpeedMax = customItemLooterSettings.itemAutomaticSpeedMin;
+	if (itemLooter.autoLootingSpeedMax < itemLooter.autoLootingSpeedMin)
+		itemLooter.autoLootingSpeedMax = itemLooter.autoLootingSpeedMin;
 	
-	SetBool("ItemLooterSettings", "ItemKeybindEnabled", &customItemLooterSettings.itemKeybindEnabled, &defltItemLooterSettings.itemKeybindEnabled);
-	SetBool("ItemLooterSettings", "ItemAutomaticLootingEnabled", &customItemLooterSettings.itemAutomaticLootingEnabled, &defltItemLooterSettings.itemAutomaticLootingEnabled);
-	SetBool("ItemLooterSettings", "ItemAutomaticStatus", &customItemLooterSettings.itemAutomaticStatus, &defltItemLooterSettings.itemAutomaticStatus);
-	SetSliderInt("ItemLooterSettings", "ItemAutomaticSpeedMin", &customItemLooterSettings.itemAutomaticSpeedMin, &defltItemLooterSettings.itemAutomaticSpeedMin, 10, 60);
-	SetSliderInt("ItemLooterSettings", "ItemAutomaticSpeedMax", &customItemLooterSettings.itemAutomaticSpeedMax, &defltItemLooterSettings.itemAutomaticSpeedMax, 10, 60);
-	SetBool("ItemLooterSettings", "ItemLooterWeaponsEnabled", &customItemLooterSettings.itemLooterWeaponsEnabled, &defltItemLooterSettings.itemLooterWeaponsEnabled);
-	SetSliderInt("ItemLooterSettings", "ItemLooterWeaponsDistance", &customItemLooterSettings.itemLooterWeaponsDistance, &defltItemLooterSettings.itemLooterWeaponsDistance, 0, 3000);
-	SetBool("ItemLooterSettings", "ItemLooterArmorEnabled", &customItemLooterSettings.itemLooterArmorEnabled, &defltItemLooterSettings.itemLooterArmorEnabled);
-	SetSliderInt("ItemLooterSettings", "ItemLooterArmorDistance", &customItemLooterSettings.itemLooterArmorDistance, &defltItemLooterSettings.itemLooterArmorDistance, 0, 3000);
-	SetBool("ItemLooterSettings", "ItemLooterAmmoEnabled", &customItemLooterSettings.itemLooterAmmoEnabled, &defltItemLooterSettings.itemLooterAmmoEnabled);
-	SetSliderInt("ItemLooterSettings", "ItemLooterAmmoDistance", &customItemLooterSettings.itemLooterAmmoDistance, &defltItemLooterSettings.itemLooterAmmoDistance, 0, 3000);
-	SetBool("ItemLooterSettings", "ItemLooterModsEnabled", &customItemLooterSettings.itemLooterModsEnabled, &defltItemLooterSettings.itemLooterModsEnabled);
-	SetSliderInt("ItemLooterSettings", "ItemLooterModsDistance", &customItemLooterSettings.itemLooterModsDistance, &defltItemLooterSettings.itemLooterModsDistance, 0, 3000);
-	SetBool("ItemLooterSettings", "ItemLooterMagazinesEnabled", &customItemLooterSettings.itemLooterMagazinesEnabled, &defltItemLooterSettings.itemLooterMagazinesEnabled);
-	SetSliderInt("ItemLooterSettings", "ItemLooterMagazinesDistance", &customItemLooterSettings.itemLooterMagazinesDistance, &defltItemLooterSettings.itemLooterMagazinesDistance, 0, 3000);
-	SetBool("ItemLooterSettings", "ItemLooterBobbleheadsEnabled", &customItemLooterSettings.itemLooterBobbleheadsEnabled, &defltItemLooterSettings.itemLooterBobbleheadsEnabled);
-	SetSliderInt("ItemLooterSettings", "ItemLooterBobbleheadsDistance", &customItemLooterSettings.itemLooterBobbleheadsDistance, &defltItemLooterSettings.itemLooterBobbleheadsDistance, 0, 3000);
-	SetBool("ItemLooterSettings", "ItemLooterAidEnabled", &customItemLooterSettings.itemLooterAidEnabled, &defltItemLooterSettings.itemLooterAidEnabled);
-	SetSliderInt("ItemLooterSettings", "ItemLooterAidDistance", &customItemLooterSettings.itemLooterAidDistance, &defltItemLooterSettings.itemLooterAidDistance, 0, 3000);
-	SetBool("ItemLooterSettings", "ItemLooterKnownPlansEnabled", &customItemLooterSettings.itemLooterKnownPlansEnabled, &defltItemLooterSettings.itemLooterKnownPlansEnabled);
-	SetSliderInt("ItemLooterSettings", "ItemLooterKnownPlansDistance", &customItemLooterSettings.itemLooterKnownPlansDistance, &defltItemLooterSettings.itemLooterKnownPlansDistance, 0, 3000);
-	SetBool("ItemLooterSettings", "ItemLooterUnknownPlansEnabled", &customItemLooterSettings.itemLooterUnknownPlansEnabled, &defltItemLooterSettings.itemLooterUnknownPlansEnabled);
-	SetSliderInt("ItemLooterSettings", "ItemLooterUnknownPlansDistance", &customItemLooterSettings.itemLooterUnknownPlansDistance, &defltItemLooterSettings.itemLooterUnknownPlansDistance, 0, 3000);
-	SetBool("ItemLooterSettings", "ItemLooterMiscEnabled", &customItemLooterSettings.itemLooterMiscEnabled, &defltItemLooterSettings.itemLooterMiscEnabled);
-	SetSliderInt("ItemLooterSettings", "ItemLooterMiscDistance", &customItemLooterSettings.itemLooterMiscDistance, &defltItemLooterSettings.itemLooterMiscDistance, 0, 3000);
-	SetBool("ItemLooterSettings", "ItemLooterUnlistedEnabled", &customItemLooterSettings.itemLooterUnlistedEnabled, &defltItemLooterSettings.itemLooterUnlistedEnabled);
-	SetSliderInt("ItemLooterSettings", "ItemLooterUnlistedDistance", &customItemLooterSettings.itemLooterUnlistedDistance, &defltItemLooterSettings.itemLooterUnlistedDistance, 0, 3000);
-	SetBool("ItemLooterSettings", "ItemLooterListEnabled", &customItemLooterSettings.itemLooterListEnabled, &defltItemLooterSettings.itemLooterListEnabled);
-	SetSliderInt("ItemLooterSettings", "ItemLooterListDistance", &customItemLooterSettings.itemLooterListDistance, &defltItemLooterSettings.itemLooterListDistance, 0, 3000);
-	SetBool("ItemLooterSettings", "ItemLooterBlacklistToggle", &customItemLooterSettings.itemLooterBlacklistToggle, &defltItemLooterSettings.itemLooterBlacklistToggle);
+	SetBool("ItemLooterSettings", "ItemKeybindEnabled", &itemLooter.keybindEnabled, &defltItemLooterSettings.keybindEnabled);
+	SetBool("ItemLooterSettings", "ItemAutomaticLootingEnabled", &itemLooter.autoLootingEnabled, &defltItemLooterSettings.autoLootingEnabled);
+	SetBool("ItemLooterSettings", "ItemAutomaticStatus", &itemLooter.drawStatus, &defltItemLooterSettings.drawStatus);
+	SetSliderInt("ItemLooterSettings", "ItemAutomaticSpeedMin", &itemLooter.autoLootingSpeedMin, &defltItemLooterSettings.autoLootingSpeedMin, 10, 60);
+	SetSliderInt("ItemLooterSettings", "ItemAutomaticSpeedMax", &itemLooter.autoLootingSpeedMax, &defltItemLooterSettings.autoLootingSpeedMax, 10, 60);
+	SetBool("ItemLooterSettings", "ItemLooterWeaponsEnabled", &itemLooter.lootWeaponsEnabled, &defltItemLooterSettings.lootWeaponsEnabled);
+	SetSliderInt("ItemLooterSettings", "ItemLooterWeaponsDistance", &itemLooter.lootWeaponsDistance, &defltItemLooterSettings.lootWeaponsDistance, 0, 3000);
+	SetBool("ItemLooterSettings", "ItemLooterArmorEnabled", &itemLooter.lootArmorEnabled, &defltItemLooterSettings.lootArmorEnabled);
+	SetSliderInt("ItemLooterSettings", "ItemLooterArmorDistance", &itemLooter.lootArmorDistance, &defltItemLooterSettings.lootArmorDistance, 0, 3000);
+	SetBool("ItemLooterSettings", "ItemLooterAmmoEnabled", &itemLooter.lootAmmoEnabled, &defltItemLooterSettings.lootAmmoEnabled);
+	SetSliderInt("ItemLooterSettings", "ItemLooterAmmoDistance", &itemLooter.lootAmmoDistance, &defltItemLooterSettings.lootAmmoDistance, 0, 3000);
+	SetBool("ItemLooterSettings", "ItemLooterModsEnabled", &itemLooter.lootModsEnabled, &defltItemLooterSettings.lootModsEnabled);
+	SetSliderInt("ItemLooterSettings", "ItemLooterModsDistance", &itemLooter.lootModsDistance, &defltItemLooterSettings.lootModsDistance, 0, 3000);
+	SetBool("ItemLooterSettings", "ItemLooterMagazinesEnabled", &itemLooter.lootMagazinesEnabled, &defltItemLooterSettings.lootMagazinesEnabled);
+	SetSliderInt("ItemLooterSettings", "ItemLooterMagazinesDistance", &itemLooter.lootMagazinesDistance, &defltItemLooterSettings.lootMagazinesDistance, 0, 3000);
+	SetBool("ItemLooterSettings", "ItemLooterBobbleheadsEnabled", &itemLooter.lootBobbleheadsEnabled, &defltItemLooterSettings.lootBobbleheadsEnabled);
+	SetSliderInt("ItemLooterSettings", "ItemLooterBobbleheadsDistance", &itemLooter.lootBobbleheadsDistance, &defltItemLooterSettings.lootBobbleheadsDistance, 0, 3000);
+	SetBool("ItemLooterSettings", "ItemLooterAidEnabled", &itemLooter.lootAidEnabled, &defltItemLooterSettings.lootAidEnabled);
+	SetSliderInt("ItemLooterSettings", "ItemLooterAidDistance", &itemLooter.lootAidDistance, &defltItemLooterSettings.lootAidDistance, 0, 3000);
+	SetBool("ItemLooterSettings", "ItemLooterKnownPlansEnabled", &itemLooter.lootKnownPlansEnabled, &defltItemLooterSettings.lootKnownPlansEnabled);
+	SetSliderInt("ItemLooterSettings", "ItemLooterKnownPlansDistance", &itemLooter.lootKnownPlansDistance, &defltItemLooterSettings.lootKnownPlansDistance, 0, 3000);
+	SetBool("ItemLooterSettings", "ItemLooterUnknownPlansEnabled", &itemLooter.lootUnknownPlansEnabled, &defltItemLooterSettings.lootUnknownPlansEnabled);
+	SetSliderInt("ItemLooterSettings", "ItemLooterUnknownPlansDistance", &itemLooter.lootUnknownPlansDistance, &defltItemLooterSettings.lootUnknownPlansDistance, 0, 3000);
+	SetBool("ItemLooterSettings", "ItemLooterMiscEnabled", &itemLooter.lootMiscEnabled, &defltItemLooterSettings.lootMiscEnabled);
+	SetSliderInt("ItemLooterSettings", "ItemLooterMiscDistance", &itemLooter.lootMiscDistance, &defltItemLooterSettings.lootMiscDistance, 0, 3000);
+	SetBool("ItemLooterSettings", "ItemLooterUnlistedEnabled", &itemLooter.lootUnlistedEnabled, &defltItemLooterSettings.lootUnlistedEnabled);
+	SetSliderInt("ItemLooterSettings", "ItemLooterUnlistedDistance", &itemLooter.lootUnlistedDistance, &defltItemLooterSettings.lootUnlistedDistance, 0, 3000);
+	SetBool("ItemLooterSettings", "ItemLooterListEnabled", &itemLooter.lootListEnabled, &defltItemLooterSettings.lootListEnabled);
+	SetSliderInt("ItemLooterSettings", "ItemLooterListDistance", &itemLooter.lootListDistance, &defltItemLooterSettings.lootListDistance, 0, 3000);
+	SetBool("ItemLooterSettings", "ItemLooterBlacklistToggle", &itemLooter.blacklistToggle, &defltItemLooterSettings.blacklistToggle);
 	for (auto i = 0; i < 100; i++)
 	{
 		char itemEnabledText[sizeof"ItemLooterEnabled99"];
 		char itemFormIdText[sizeof"ItemLooterList99"];
 		sprintf_s(itemEnabledText, "ItemLooterEnabled%d", i);
 		sprintf_s(itemFormIdText, "ItemLooterList%d", i);
-		SetBool("ItemLooterSettings", itemEnabledText, &customItemLooterSettings.itemLooterEnabledList[i], &defltItemLooterSettings.itemLooterEnabledList[i]);
-		SetDword("ItemLooterSettings", itemFormIdText, &customItemLooterSettings.itemLooterFormIdList[i], &defltItemLooterSettings.itemLooterFormIdList[i]);
+		SetBool("ItemLooterSettings", itemEnabledText, &itemLooter.enabledList[i], &defltItemLooterSettings.enabledList[i]);
+		SetDword("ItemLooterSettings", itemFormIdText, &itemLooter.formIdList[i], &defltItemLooterSettings.formIdList[i]);
 	}
 	for (auto i = 0; i < 64; i++)
 	{
@@ -1007,8 +1007,8 @@ void ErectusIni::SetItemLooterSettings()
 		char itemBlacklistFormIdText[sizeof"ItemLooterBlacklist63"];
 		sprintf_s(itemBlacklistEnabledText, "ItemLooterBlacklistEnabled%d", i);
 		sprintf_s(itemBlacklistFormIdText, "ItemLooterBlacklist%d", i);
-		SetBool("ItemLooterSettings", itemBlacklistEnabledText, &customItemLooterSettings.itemLooterBlacklistEnabled[i], &defltItemLooterSettings.itemLooterBlacklistEnabled[i]);
-		SetDword("ItemLooterSettings", itemBlacklistFormIdText, &customItemLooterSettings.itemLooterBlacklist[i], &defltItemLooterSettings.itemLooterBlacklist[i]);
+		SetBool("ItemLooterSettings", itemBlacklistEnabledText, &itemLooter.blacklistEnabled[i], &defltItemLooterSettings.blacklistEnabled[i]);
+		SetDword("ItemLooterSettings", itemBlacklistFormIdText, &itemLooter.blacklist[i], &defltItemLooterSettings.blacklist[i]);
 	}
 }
 
@@ -1098,7 +1098,7 @@ void ErectusIni::SetTargetSettings()
 void ErectusIni::GetLocalPlayerSettings()
 {
 	GetBool("LocalPlayerSettings", "PositionSpoofingEnabled", &customLocalPlayerSettings.positionSpoofingEnabled, &defltLocalPlayerSettings.positionSpoofingEnabled);
-	GetBool("LocalPlayerSettings", "DrawPositionSpoofingEnabled", &customLocalPlayerSettings.drawPositionSpoofingEnabled, &defltLocalPlayerSettings.drawPositionSpoofingEnabled);
+	GetBool("LocalPlayerSettings", "DrawPositionSpoofingEnabled", &customLocalPlayerSettings.drawPositionSpoofingStatus, &defltLocalPlayerSettings.drawPositionSpoofingStatus);
 	GetSliderInt("LocalPlayerSettings", "PositionSpoofingHeight", &customLocalPlayerSettings.positionSpoofingHeight, &defltLocalPlayerSettings.positionSpoofingHeight, -524287, 524287);
 	GetBool("LocalPlayerSettings", "NoclipEnabled", &customLocalPlayerSettings.noclipEnabled, &defltLocalPlayerSettings.noclipEnabled);
 	GetSliderFloat("LocalPlayerSettings", "NoclipSpeed", &customLocalPlayerSettings.noclipSpeed, &defltLocalPlayerSettings.noclipSpeed, 0.0f, 2.0f);
@@ -1126,7 +1126,7 @@ void ErectusIni::GetLocalPlayerSettings()
 void ErectusIni::SetLocalPlayerSettings()
 {
 	SetBool("LocalPlayerSettings", "PositionSpoofingEnabled", &customLocalPlayerSettings.positionSpoofingEnabled, &defltLocalPlayerSettings.positionSpoofingEnabled);
-	SetBool("LocalPlayerSettings", "DrawPositionSpoofingEnabled", &customLocalPlayerSettings.drawPositionSpoofingEnabled, &defltLocalPlayerSettings.drawPositionSpoofingEnabled);
+	SetBool("LocalPlayerSettings", "DrawPositionSpoofingEnabled", &customLocalPlayerSettings.drawPositionSpoofingStatus, &defltLocalPlayerSettings.drawPositionSpoofingStatus);
 	SetSliderInt("LocalPlayerSettings", "PositionSpoofingHeight", &customLocalPlayerSettings.positionSpoofingHeight, &defltLocalPlayerSettings.positionSpoofingHeight, -524287, 524287);
 	SetBool("LocalPlayerSettings", "NoclipEnabled", &customLocalPlayerSettings.noclipEnabled, &defltLocalPlayerSettings.noclipEnabled);
 	SetSliderFloat("LocalPlayerSettings", "NoclipSpeed", &customLocalPlayerSettings.noclipSpeed, &defltLocalPlayerSettings.noclipSpeed, 0.0f, 2.0f);
@@ -1343,36 +1343,36 @@ void ErectusIni::SetFluxSettings()
 
 void ErectusIni::GetEntityLooterSettings(const char* section, EntityLooterSettings* value, EntityLooterSettings* deflt)
 {
-	GetBool(section, "EntityLooterEnabled", &value->entityLooterEnabled, &deflt->entityLooterEnabled);
-	GetBool(section, "EntityLooterStatusEnabled", &value->entityLooterStatusEnabled, &deflt->entityLooterStatusEnabled);
-	GetBool(section, "EntityLooterAllWeaponsEnabled", &value->entityLooterAllWeaponsEnabled, &deflt->entityLooterAllWeaponsEnabled);
-	GetBool(section, "EntityLooterAllArmorEnabled", &value->entityLooterAllArmorEnabled, &deflt->entityLooterAllArmorEnabled);
-	GetBool(section, "EntityLooterOneStarWeaponsEnabled", &value->entityLooterOneStarWeaponsEnabled, &deflt->entityLooterOneStarWeaponsEnabled);
-	GetBool(section, "EntityLooterOneStarArmorEnabled", &value->entityLooterOneStarArmorEnabled, &deflt->entityLooterOneStarArmorEnabled);
-	GetBool(section, "EntityLooterTwoStarWeaponsEnabled", &value->entityLooterTwoStarWeaponsEnabled, &deflt->entityLooterTwoStarWeaponsEnabled);
-	GetBool(section, "EntityLooterTwoStarArmorEnabled", &value->entityLooterTwoStarArmorEnabled, &deflt->entityLooterTwoStarArmorEnabled);
-	GetBool(section, "EntityLooterThreeStarWeaponsEnabled", &value->entityLooterThreeStarWeaponsEnabled, &deflt->entityLooterThreeStarWeaponsEnabled);
-	GetBool(section, "EntityLooterThreeStarArmorEnabled", &value->entityLooterThreeStarArmorEnabled, &deflt->entityLooterThreeStarArmorEnabled);
-	GetBool(section, "EntityLooterAmmoEnabled", &value->entityLooterAmmoEnabled, &deflt->entityLooterAmmoEnabled);
-	GetBool(section, "EntityLooterModsEnabled", &value->entityLooterModsEnabled, &deflt->entityLooterModsEnabled);
-	GetBool(section, "EntityLooterCapsEnabled", &value->entityLooterCapsEnabled, &deflt->entityLooterCapsEnabled);
-	GetBool(section, "EntityLooterJunkEnabled", &value->entityLooterJunkEnabled, &deflt->entityLooterJunkEnabled);
-	GetBool(section, "EntityLooterAidEnabled", &value->entityLooterAidEnabled, &deflt->entityLooterAidEnabled);
-	GetBool(section, "EntityLooterTreasureMapsEnabled", &value->entityLooterTreasureMapsEnabled, &deflt->entityLooterTreasureMapsEnabled);
-	GetBool(section, "EntityLooterKnownPlansEnabled", &value->entityLooterKnownPlansEnabled, &deflt->entityLooterKnownPlansEnabled);
-	GetBool(section, "EntityLooterUnknownPlansEnabled", &value->entityLooterUnknownPlansEnabled, &deflt->entityLooterUnknownPlansEnabled);
-	GetBool(section, "EntityLooterMiscEnabled", &value->entityLooterMiscEnabled, &deflt->entityLooterMiscEnabled);
-	GetBool(section, "EntityLooterUnlistedEnabled", &value->entityLooterUnlistedEnabled, &deflt->entityLooterUnlistedEnabled);
-	GetBool(section, "EntityLooterListEnabled", &value->entityLooterListEnabled, &deflt->entityLooterListEnabled);
-	GetBool(section, "EntityLooterBlacklistToggle", &value->entityLooterBlacklistToggle, &deflt->entityLooterBlacklistToggle);
+	GetBool(section, "EntityLooterEnabled", &value->enabled, &deflt->enabled);
+	GetBool(section, "EntityLooterStatusEnabled", &value->drawStatus, &deflt->drawStatus);
+	GetBool(section, "EntityLooterAllWeaponsEnabled", &value->allWeaponsEnabled, &deflt->allWeaponsEnabled);
+	GetBool(section, "EntityLooterAllArmorEnabled", &value->allArmorEnabled, &deflt->allArmorEnabled);
+	GetBool(section, "EntityLooterOneStarWeaponsEnabled", &value->oneStarWeaponsEnabled, &deflt->oneStarWeaponsEnabled);
+	GetBool(section, "EntityLooterOneStarArmorEnabled", &value->oneStarArmorEnabled, &deflt->oneStarArmorEnabled);
+	GetBool(section, "EntityLooterTwoStarWeaponsEnabled", &value->twoStarWeaponsEnabled, &deflt->twoStarWeaponsEnabled);
+	GetBool(section, "EntityLooterTwoStarArmorEnabled", &value->twoStarArmorEnabled, &deflt->twoStarArmorEnabled);
+	GetBool(section, "EntityLooterThreeStarWeaponsEnabled", &value->threeStarWeaponsEnabled, &deflt->threeStarWeaponsEnabled);
+	GetBool(section, "EntityLooterThreeStarArmorEnabled", &value->threeStarArmorEnabled, &deflt->threeStarArmorEnabled);
+	GetBool(section, "EntityLooterAmmoEnabled", &value->ammoEnabled, &deflt->ammoEnabled);
+	GetBool(section, "EntityLooterModsEnabled", &value->modsEnabled, &deflt->modsEnabled);
+	GetBool(section, "EntityLooterCapsEnabled", &value->capsEnabled, &deflt->capsEnabled);
+	GetBool(section, "EntityLooterJunkEnabled", &value->junkEnabled, &deflt->junkEnabled);
+	GetBool(section, "EntityLooterAidEnabled", &value->aidEnabled, &deflt->aidEnabled);
+	GetBool(section, "EntityLooterTreasureMapsEnabled", &value->treasureMapsEnabled, &deflt->treasureMapsEnabled);
+	GetBool(section, "EntityLooterKnownPlansEnabled", &value->knownPlansEnabled, &deflt->knownPlansEnabled);
+	GetBool(section, "EntityLooterUnknownPlansEnabled", &value->unknownPlansEnabled, &deflt->unknownPlansEnabled);
+	GetBool(section, "EntityLooterMiscEnabled", &value->miscEnabled, &deflt->miscEnabled);
+	GetBool(section, "EntityLooterUnlistedEnabled", &value->unlistedEnabled, &deflt->unlistedEnabled);
+	GetBool(section, "EntityLooterListEnabled", &value->listEnabled, &deflt->listEnabled);
+	GetBool(section, "EntityLooterBlacklistToggle", &value->blacklistToggle, &deflt->blacklistToggle);
 	for (auto i = 0; i < 100; i++)
 	{
 		char entityEnabledText[sizeof"EntityLooterEnabled99"];
 		char entityFormIdText[sizeof"EntityLooterList99"];
 		sprintf_s(entityEnabledText, "EntityLooterEnabled%d", i);
 		sprintf_s(entityFormIdText, "EntityLooterList%d", i);
-		GetBool(section, entityEnabledText, &value->entityLooterEnabledList[i], &deflt->entityLooterEnabledList[i]);
-		GetDword(section, entityFormIdText, &value->entityLooterFormIdList[i], &deflt->entityLooterFormIdList[i]);
+		GetBool(section, entityEnabledText, &value->enabledList[i], &deflt->enabledList[i]);
+		GetDword(section, entityFormIdText, &value->formIdList[i], &deflt->formIdList[i]);
 	}
 	for (auto i = 0; i < 64; i++)
 	{
@@ -1380,43 +1380,43 @@ void ErectusIni::GetEntityLooterSettings(const char* section, EntityLooterSettin
 		char entityBlacklistFormIdText[sizeof"EntityLooterBlacklist63"];
 		sprintf_s(entityBlacklistEnabledText, "EntityLooterBlacklistEnabled%d", i);
 		sprintf_s(entityBlacklistFormIdText, "EntityLooterBlacklist%d", i);
-		GetBool(section, entityBlacklistEnabledText, &value->entityLooterBlacklistEnabled[i], &deflt->entityLooterBlacklistEnabled[i]);
-		GetDword(section, entityBlacklistFormIdText, &value->entityLooterBlacklist[i], &deflt->entityLooterBlacklist[i]);
+		GetBool(section, entityBlacklistEnabledText, &value->blacklistEnabled[i], &deflt->blacklistEnabled[i]);
+		GetDword(section, entityBlacklistFormIdText, &value->blacklist[i], &deflt->blacklist[i]);
 	}
 }
 
 void ErectusIni::SetEntityLooterSettings(const char* section, EntityLooterSettings* value, EntityLooterSettings* deflt)
 {
-	SetBool(section, "EntityLooterEnabled", &value->entityLooterEnabled, &deflt->entityLooterEnabled);
-	SetBool(section, "EntityLooterStatusEnabled", &value->entityLooterStatusEnabled, &deflt->entityLooterStatusEnabled);
-	SetBool(section, "EntityLooterAllWeaponsEnabled", &value->entityLooterAllWeaponsEnabled, &deflt->entityLooterAllWeaponsEnabled);
-	SetBool(section, "EntityLooterAllArmorEnabled", &value->entityLooterAllArmorEnabled, &deflt->entityLooterAllArmorEnabled);
-	SetBool(section, "EntityLooterOneStarWeaponsEnabled", &value->entityLooterOneStarWeaponsEnabled, &deflt->entityLooterOneStarWeaponsEnabled);
-	SetBool(section, "EntityLooterOneStarArmorEnabled", &value->entityLooterOneStarArmorEnabled, &deflt->entityLooterOneStarArmorEnabled);
-	SetBool(section, "EntityLooterTwoStarWeaponsEnabled", &value->entityLooterTwoStarWeaponsEnabled, &deflt->entityLooterTwoStarWeaponsEnabled);
-	SetBool(section, "EntityLooterTwoStarArmorEnabled", &value->entityLooterTwoStarArmorEnabled, &deflt->entityLooterTwoStarArmorEnabled);
-	SetBool(section, "EntityLooterThreeStarWeaponsEnabled", &value->entityLooterThreeStarWeaponsEnabled, &deflt->entityLooterThreeStarWeaponsEnabled);
-	SetBool(section, "EntityLooterThreeStarArmorEnabled", &value->entityLooterThreeStarArmorEnabled, &deflt->entityLooterThreeStarArmorEnabled);
-	SetBool(section, "EntityLooterAmmoEnabled", &value->entityLooterAmmoEnabled, &deflt->entityLooterAmmoEnabled);
-	SetBool(section, "EntityLooterModsEnabled", &value->entityLooterModsEnabled, &deflt->entityLooterModsEnabled);
-	SetBool(section, "EntityLooterCapsEnabled", &value->entityLooterCapsEnabled, &deflt->entityLooterCapsEnabled);
-	SetBool(section, "EntityLooterJunkEnabled", &value->entityLooterJunkEnabled, &deflt->entityLooterJunkEnabled);
-	SetBool(section, "EntityLooterAidEnabled", &value->entityLooterAidEnabled, &deflt->entityLooterAidEnabled);
-	SetBool(section, "EntityLooterTreasureMapsEnabled", &value->entityLooterTreasureMapsEnabled, &deflt->entityLooterTreasureMapsEnabled);
-	SetBool(section, "EntityLooterKnownPlansEnabled", &value->entityLooterKnownPlansEnabled, &deflt->entityLooterKnownPlansEnabled);
-	SetBool(section, "EntityLooterUnknownPlansEnabled", &value->entityLooterUnknownPlansEnabled, &deflt->entityLooterUnknownPlansEnabled);
-	SetBool(section, "EntityLooterMiscEnabled", &value->entityLooterMiscEnabled, &deflt->entityLooterMiscEnabled);
-	SetBool(section, "EntityLooterUnlistedEnabled", &value->entityLooterUnlistedEnabled, &deflt->entityLooterUnlistedEnabled);
-	SetBool(section, "EntityLooterListEnabled", &value->entityLooterListEnabled, &deflt->entityLooterListEnabled);
-	SetBool(section, "EntityLooterBlacklistToggle", &value->entityLooterBlacklistToggle, &deflt->entityLooterBlacklistToggle);
+	SetBool(section, "EntityLooterEnabled", &value->enabled, &deflt->enabled);
+	SetBool(section, "EntityLooterStatusEnabled", &value->drawStatus, &deflt->drawStatus);
+	SetBool(section, "EntityLooterAllWeaponsEnabled", &value->allWeaponsEnabled, &deflt->allWeaponsEnabled);
+	SetBool(section, "EntityLooterAllArmorEnabled", &value->allArmorEnabled, &deflt->allArmorEnabled);
+	SetBool(section, "EntityLooterOneStarWeaponsEnabled", &value->oneStarWeaponsEnabled, &deflt->oneStarWeaponsEnabled);
+	SetBool(section, "EntityLooterOneStarArmorEnabled", &value->oneStarArmorEnabled, &deflt->oneStarArmorEnabled);
+	SetBool(section, "EntityLooterTwoStarWeaponsEnabled", &value->twoStarWeaponsEnabled, &deflt->twoStarWeaponsEnabled);
+	SetBool(section, "EntityLooterTwoStarArmorEnabled", &value->twoStarArmorEnabled, &deflt->twoStarArmorEnabled);
+	SetBool(section, "EntityLooterThreeStarWeaponsEnabled", &value->threeStarWeaponsEnabled, &deflt->threeStarWeaponsEnabled);
+	SetBool(section, "EntityLooterThreeStarArmorEnabled", &value->threeStarArmorEnabled, &deflt->threeStarArmorEnabled);
+	SetBool(section, "EntityLooterAmmoEnabled", &value->ammoEnabled, &deflt->ammoEnabled);
+	SetBool(section, "EntityLooterModsEnabled", &value->modsEnabled, &deflt->modsEnabled);
+	SetBool(section, "EntityLooterCapsEnabled", &value->capsEnabled, &deflt->capsEnabled);
+	SetBool(section, "EntityLooterJunkEnabled", &value->junkEnabled, &deflt->junkEnabled);
+	SetBool(section, "EntityLooterAidEnabled", &value->aidEnabled, &deflt->aidEnabled);
+	SetBool(section, "EntityLooterTreasureMapsEnabled", &value->treasureMapsEnabled, &deflt->treasureMapsEnabled);
+	SetBool(section, "EntityLooterKnownPlansEnabled", &value->knownPlansEnabled, &deflt->knownPlansEnabled);
+	SetBool(section, "EntityLooterUnknownPlansEnabled", &value->unknownPlansEnabled, &deflt->unknownPlansEnabled);
+	SetBool(section, "EntityLooterMiscEnabled", &value->miscEnabled, &deflt->miscEnabled);
+	SetBool(section, "EntityLooterUnlistedEnabled", &value->unlistedEnabled, &deflt->unlistedEnabled);
+	SetBool(section, "EntityLooterListEnabled", &value->listEnabled, &deflt->listEnabled);
+	SetBool(section, "EntityLooterBlacklistToggle", &value->blacklistToggle, &deflt->blacklistToggle);
 	for (auto i = 0; i < 100; i++)
 	{
 		char entityEnabledText[sizeof"EntityLooterEnabled99"];
 		char entityFormIdText[sizeof"EntityLooterList99"];
 		sprintf_s(entityEnabledText, "EntityLooterEnabled%d", i);
 		sprintf_s(entityFormIdText, "EntityLooterList%d", i);
-		SetBool(section, entityEnabledText, &value->entityLooterEnabledList[i], &deflt->entityLooterEnabledList[i]);
-		SetDword(section, entityFormIdText, &value->entityLooterFormIdList[i], &deflt->entityLooterFormIdList[i]);
+		SetBool(section, entityEnabledText, &value->enabledList[i], &deflt->enabledList[i]);
+		SetDword(section, entityFormIdText, &value->formIdList[i], &deflt->formIdList[i]);
 	}
 	for (auto i = 0; i < 64; i++)
 	{
@@ -1424,34 +1424,34 @@ void ErectusIni::SetEntityLooterSettings(const char* section, EntityLooterSettin
 		char entityBlacklistFormIdText[sizeof"EntityLooterBlacklist63"];
 		sprintf_s(entityBlacklistEnabledText, "EntityLooterBlacklistEnabled%d", i);
 		sprintf_s(entityBlacklistFormIdText, "EntityLooterBlacklist%d", i);
-		SetBool(section, entityBlacklistEnabledText, &value->entityLooterBlacklistEnabled[i], &deflt->entityLooterBlacklistEnabled[i]);
-		SetDword(section, entityBlacklistFormIdText, &value->entityLooterBlacklist[i], &deflt->entityLooterBlacklist[i]);
+		SetBool(section, entityBlacklistEnabledText, &value->blacklistEnabled[i], &deflt->blacklistEnabled[i]);
+		SetDword(section, entityBlacklistFormIdText, &value->blacklist[i], &deflt->blacklist[i]);
 	}
 }
 
 void ErectusIni::GetHarvesterSettings()
 {
-	GetBool("HarvesterSettings", "HarvesterEnabled", &customHarvesterSettings.harvesterEnabled, &defltHarvesterSettings.harvesterEnabled);
-	GetBool("HarvesterSettings", "HarvesterStatusEnabled", &customHarvesterSettings.harvesterStatusEnabled, &defltHarvesterSettings.harvesterStatusEnabled);
-	GetBool("HarvesterSettings", "HarvesterOverrideEnabled", &customHarvesterSettings.harvesterOverrideEnabled, &defltHarvesterSettings.harvesterOverrideEnabled);
+	GetBool("HarvesterSettings", "HarvesterEnabled", &harvester.enabled, &defltHarvesterSettings.enabled);
+	GetBool("HarvesterSettings", "HarvesterStatusEnabled", &harvester.drawStatus, &defltHarvesterSettings.drawStatus);
+	GetBool("HarvesterSettings", "HarvesterOverrideEnabled", &harvester.overrideEnabled, &defltHarvesterSettings.overrideEnabled);
 	for (auto i = 0; i < 69; i++)
 	{
 		char harvesterEnabledText[sizeof"HarvesterEnabled68"];
 		sprintf_s(harvesterEnabledText, "HarvesterEnabled%d", i);
-		GetBool("HarvesterSettings", harvesterEnabledText, &customHarvesterSettings.harvesterEnabledList[i], &defltHarvesterSettings.harvesterEnabledList[i]);
+		GetBool("HarvesterSettings", harvesterEnabledText, &harvester.enabledList[i], &defltHarvesterSettings.enabledList[i]);
 	}
 }
 
 void ErectusIni::SetHarvesterSettings()
 {
-	SetBool("HarvesterSettings", "HarvesterEnabled", &customHarvesterSettings.harvesterEnabled, &defltHarvesterSettings.harvesterEnabled);
-	SetBool("HarvesterSettings", "HarvesterStatusEnabled", &customHarvesterSettings.harvesterStatusEnabled, &defltHarvesterSettings.harvesterStatusEnabled);
-	SetBool("HarvesterSettings", "HarvesterOverrideEnabled", &customHarvesterSettings.harvesterOverrideEnabled, &defltHarvesterSettings.harvesterOverrideEnabled);
+	SetBool("HarvesterSettings", "HarvesterEnabled", &harvester.enabled, &defltHarvesterSettings.enabled);
+	SetBool("HarvesterSettings", "HarvesterStatusEnabled", &harvester.drawStatus, &defltHarvesterSettings.drawStatus);
+	SetBool("HarvesterSettings", "HarvesterOverrideEnabled", &harvester.overrideEnabled, &defltHarvesterSettings.overrideEnabled);
 	for (auto i = 0; i < 69; i++)
 	{
 		char harvesterEnabledText[sizeof"HarvesterEnabled68"];
 		sprintf_s(harvesterEnabledText, "HarvesterEnabled%d", i);
-		SetBool("HarvesterSettings", harvesterEnabledText, &customHarvesterSettings.harvesterEnabledList[i], &defltHarvesterSettings.harvesterEnabledList[i]);
+		SetBool("HarvesterSettings", harvesterEnabledText, &harvester.enabledList[i], &defltHarvesterSettings.enabledList[i]);
 	}
 }
 
@@ -1469,22 +1469,22 @@ void ErectusIni::SetKnownRecipeSettings()
 
 void ErectusIni::GetMeleeSettings()
 {
-	GetBool("MeleeSettings", "MeleeEnabled", &customMeleeSettings.meleeEnabled, &defltMeleeSettings.meleeEnabled);
-	GetSliderInt("MeleeSettings", "MeleeSpeedMin", &customMeleeSettings.meleeSpeedMin, &defltMeleeSettings.meleeSpeedMin, 1, 60);
-	GetSliderInt("MeleeSettings", "MeleeSpeedMax", &customMeleeSettings.meleeSpeedMax, &defltMeleeSettings.meleeSpeedMax, 1, 60);
+	GetBool("MeleeSettings", "MeleeEnabled", &melee.enabled, &defltMeleeSettings.enabled);
+	GetSliderInt("MeleeSettings", "MeleeSpeedMin", &melee.speedMin, &defltMeleeSettings.speedMin, 1, 60);
+	GetSliderInt("MeleeSettings", "MeleeSpeedMax", &melee.speedMax, &defltMeleeSettings.speedMax, 1, 60);
 
-	if (customMeleeSettings.meleeSpeedMax < customMeleeSettings.meleeSpeedMin)
-		customMeleeSettings.meleeSpeedMax = customMeleeSettings.meleeSpeedMin;
+	if (melee.speedMax < melee.speedMin)
+		melee.speedMax = melee.speedMin;
 }
 
 void ErectusIni::SetMeleeSettings()
 {
-	if (customMeleeSettings.meleeSpeedMax < customMeleeSettings.meleeSpeedMin)
-		customMeleeSettings.meleeSpeedMax = customMeleeSettings.meleeSpeedMin;
+	if (melee.speedMax < melee.speedMin)
+		melee.speedMax = melee.speedMin;
 
-	SetBool("MeleeSettings", "MeleeEnabled", &customMeleeSettings.meleeEnabled, &defltMeleeSettings.meleeEnabled);
-	SetSliderInt("MeleeSettings", "MeleeSpeedMin", &customMeleeSettings.meleeSpeedMin, &defltMeleeSettings.meleeSpeedMin, 1, 60);
-	SetSliderInt("MeleeSettings", "MeleeSpeedMax", &customMeleeSettings.meleeSpeedMax, &defltMeleeSettings.meleeSpeedMax, 1, 60);
+	SetBool("MeleeSettings", "MeleeEnabled", &melee.enabled, &defltMeleeSettings.enabled);
+	SetSliderInt("MeleeSettings", "MeleeSpeedMin", &melee.speedMin, &defltMeleeSettings.speedMin, 1, 60);
+	SetSliderInt("MeleeSettings", "MeleeSpeedMax", &melee.speedMax, &defltMeleeSettings.speedMax, 1, 60);
 }
 
 void ErectusIni::GetChargenSettings()
@@ -1582,8 +1582,8 @@ void ErectusIni::ReadIniSettings()
 	GetOverlaySettingsB("EntitySettings", &entitySettings, &defltOverlaySettingsB);
 	GetScrapSettings();
 	GetItemLooterSettings();
-	GetEntityLooterSettings("NPCLooterSettings", &npcLooterSettings, &defltEntityLooterSettings);
-	GetEntityLooterSettings("ContainerLooterSettings", &containerLooterSettings, &defltEntityLooterSettings);
+	GetEntityLooterSettings("NPCLooterSettings", &npcLooter, &defltEntityLooterSettings);
+	GetEntityLooterSettings("ContainerLooterSettings", &containerLooter, &defltEntityLooterSettings);
 	GetHarvesterSettings();
 	GetWeaponSettings();
 	GetTargetSettings();
@@ -1619,8 +1619,8 @@ void ErectusIni::WriteIniSettings()
 	SetOverlaySettingsB("EntitySettings", &entitySettings, &defltOverlaySettingsB);
 	SetScrapSettings();
 	SetItemLooterSettings();
-	SetEntityLooterSettings("NPCLooterSettings", &npcLooterSettings, &defltEntityLooterSettings);
-	SetEntityLooterSettings("ContainerLooterSettings", &containerLooterSettings, &defltEntityLooterSettings);
+	SetEntityLooterSettings("NPCLooterSettings", &npcLooter, &defltEntityLooterSettings);
+	SetEntityLooterSettings("ContainerLooterSettings", &containerLooter, &defltEntityLooterSettings);
 	SetHarvesterSettings();
 	SetWeaponSettings();
 	SetTargetSettings();

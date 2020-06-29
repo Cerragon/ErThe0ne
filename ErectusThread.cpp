@@ -127,10 +127,8 @@ DWORD WINAPI ErectusThread::LockingThread([[maybe_unused]] LPVOID lpParameter)
 		if (favoritedWeaponCounter > 60)
 		{
 			favoritedWeaponCounter = 0;
-			if (ErectusIni::customTargetSettings.favoriteIndex < 12)
-				weaponId = ErectusMemory::GetFavoritedWeaponId(BYTE(ErectusIni::customTargetSettings.favoriteIndex));
-			else
-				weaponId = 0;
+			weaponId = ErectusMemory::GetFavoritedWeaponId(BYTE(ErectusIni::customTargetSettings.favoriteIndex));
+
 		}
 
 		if (ErectusMain::overlayForeground && GetAsyncKeyState('T'))
@@ -164,7 +162,7 @@ DWORD WINAPI ErectusThread::LockingThread([[maybe_unused]] LPVOID lpParameter)
 			sendDamageThreshold = 0;
 		}
 
-		if (ErectusIni::customMeleeSettings.meleeEnabled)
+		if (ErectusIni::melee.enabled)
 		{
 			if (ErectusMain::overlayForeground && GetAsyncKeyState('U'))
 			{
@@ -172,7 +170,7 @@ DWORD WINAPI ErectusThread::LockingThread([[maybe_unused]] LPVOID lpParameter)
 				if (meleeCounter > meleeThreshold)
 				{
 					meleeCounter = 0;
-					meleeThreshold = Utils::GetRangedInt(ErectusIni::customMeleeSettings.meleeSpeedMin, ErectusIni::customMeleeSettings.meleeSpeedMax);
+					meleeThreshold = Utils::GetRangedInt(ErectusIni::melee.speedMin, ErectusIni::melee.speedMax);
 					ErectusMemory::MeleeAttack();
 				}
 			}
@@ -276,13 +274,13 @@ DWORD WINAPI ErectusThread::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 			}
 		}
 
-		if (ErectusIni::customScrapLooterSettings.scrapAutomaticLootingEnabled)
+		if (ErectusIni::scrapLooter.autoLootingEnabled)
 		{
 			lootScrapCounter++;
 			if (lootScrapCounter > lootScrapThreshold)
 			{
 				lootScrapCounter = 0;
-				lootScrapThreshold = Utils::GetRangedInt(ErectusIni::customScrapLooterSettings.scrapAutomaticSpeedMin, ErectusIni::customScrapLooterSettings.scrapAutomaticSpeedMax);
+				lootScrapThreshold = Utils::GetRangedInt(ErectusIni::scrapLooter.autoLootingSpeedMin, ErectusIni::scrapLooter.autoLootingSpeedMax);
 				if (ErectusMemory::CheckScrapList())
 				{
 					ErectusMemory::LootScrap();
@@ -292,13 +290,13 @@ DWORD WINAPI ErectusThread::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 		else
 			lootScrapThreshold = 0;
 
-		if (ErectusIni::customItemLooterSettings.itemAutomaticLootingEnabled)
+		if (ErectusIni::itemLooter.autoLootingEnabled)
 		{
 			lootItemsCounter++;
 			if (lootItemsCounter > lootItemsThreshold)
 			{
 				lootItemsCounter = 0;
-				lootItemsThreshold = Utils::GetRangedInt(ErectusIni::customItemLooterSettings.itemAutomaticSpeedMin, ErectusIni::customItemLooterSettings.itemAutomaticSpeedMax);
+				lootItemsThreshold = Utils::GetRangedInt(ErectusIni::itemLooter.autoLootingSpeedMin, ErectusIni::itemLooter.autoLootingSpeedMax);
 				if (ErectusMemory::CheckItemLooterSettings())
 					ErectusMemory::LootItems();
 			}

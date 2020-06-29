@@ -37,13 +37,13 @@ void ErectusMain::OnHotkey(const WPARAM hotkeyId)
 	switch (hotkeyId)
 	{
 	case (static_cast<int>(HotKeys::ContainerLooterToggle)):
-		ErectusIni::containerLooterSettings.entityLooterEnabled = !ErectusIni::containerLooterSettings.entityLooterEnabled;
+		ErectusIni::containerLooter.enabled = !ErectusIni::containerLooter.enabled;
 		break;
 	case (static_cast<int>(HotKeys::NpcLooterToggle)):
-		ErectusIni::npcLooterSettings.entityLooterEnabled = !ErectusIni::npcLooterSettings.entityLooterEnabled;
+		ErectusIni::npcLooter.enabled = !ErectusIni::npcLooter.enabled;
 		break;
 	case (static_cast<int>(HotKeys::HarvesterToggle)):
-		ErectusIni::customHarvesterSettings.harvesterEnabled = !ErectusIni::customHarvesterSettings.harvesterEnabled;
+		ErectusIni::harvester.enabled = !ErectusIni::harvester.enabled;
 		break;
 	case (static_cast<int>(HotKeys::PositionSpoofingToggle)):
 		if (ErectusIni::customLocalPlayerSettings.positionSpoofingEnabled)
@@ -62,11 +62,11 @@ void ErectusMain::OnHotkey(const WPARAM hotkeyId)
 			ErectusThread::opkNpcsToggle = !ErectusThread::opkNpcsToggle;
 		break;
 	case (static_cast<int>(HotKeys::LootItems)):
-		if (ErectusIni::customItemLooterSettings.itemKeybindEnabled)
+		if (ErectusIni::itemLooter.keybindEnabled)
 			ErectusThread::RequestLootItems();
 		break;
 	case (static_cast<int>(HotKeys::LootScrap)):
-		if (ErectusIni::customScrapLooterSettings.scrapKeybindEnabled)
+		if (ErectusIni::scrapLooter.keybindEnabled)
 			ErectusThread::RequestLootScrap();
 		break;
 	case (static_cast<int>(HotKeys::ToggleOverlay)):

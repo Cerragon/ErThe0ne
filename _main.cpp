@@ -16,15 +16,13 @@ int onStartup(const HINSTANCE hInstance) {
 
 	ShowWindow(ErectusMain::appHwnd, SW_SHOW);
 
-	Renderer::d3D9Initialized = Renderer::Init();
-	if (!Renderer::d3D9Initialized)
+	if (!Renderer::Init())
 	{
 		onShutdown();
 		return 3;
 	}
 
-	ErectusImGui::imGuiInitialized = ErectusImGui::ImGuiInitialize();
-	if (!ErectusImGui::imGuiInitialized)
+	if (!ErectusImGui::ImGuiInitialize())
 	{
 		onShutdown();
 		return 4;

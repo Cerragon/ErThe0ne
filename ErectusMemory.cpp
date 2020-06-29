@@ -1,3 +1,4 @@
+#include <array>
 #include <unordered_set>
 
 #include "ErectusInclude.h"
@@ -32,74 +33,107 @@ DWORD legendaryFormIdArray[]
 
 DWORD64 ErectusMemory::GetAddress(const DWORD formId)
 {
+	//this is basically hashmap.find(key)
+	//v1+24 == hashmap start (_entries)
+	//v1+32 == capacity (_capacity)
+	//
+	//here the hashmap is hashmap<formId, TesObjectRefr*>
+	//item/entry is { std::tuple<formId, TesObjectRefr*> value, Entry* next }
+	//
+	//all this is doing is:
+	//find(key) {
+	//	if(!_entries)
+	//		return 0;
+	//
+	//	item = _entries[calc_idx(key)]; //ideal position
+	//
+	//	if(!item->next)
+	//		return 0;
+	//	do{
+	//		if(item->value.first == key)
+	//			return item->value.second;
+	//		else
+	//			item = item->next;
+	//	}
+	//}
+	//
+	//calc_idx(key) {
+	//	return crc32hash(key) & (_capacity - 1); //note, this is a homegrown crc32 implementation
+	//}
+	//
+	//==> should be able to refactor this into reading an array of struct {DWORD64 formId, DWORD64 address, DWORD64 pad}
+	//==> then just loop over it and check formid
+	//==> the array will be huge but probably still worth it
+
+
 	DWORD64 v1;
 	if (!Utils::Rpm(ErectusProcess::exe + OFFSET_GET_PTR_A1, &v1, sizeof v1))
 		return 0;
 	if (!Utils::Valid(v1))
 		return 0;
 
-	DWORD v2; //array size or count
-	if (!Utils::Rpm(v1 + 32, &v2, sizeof v2))
+	DWORD _capacity;
+	if (!Utils::Rpm(v1 + 32, &_capacity, sizeof _capacity))
 		return 0;
-	if (!v2)
+	if (!_capacity)
 		return 0;
 
-	//v3 = cr32(formId)
-	DWORD crc = 0;
+	//hash = crc32hash(formId)
+	DWORD hash = 0;
 	for (auto i = 0; i < sizeof formId; i++)
 	{
-		const auto v4 = (crc ^ formId >> i * 0x8) & 0xFF;
+		const auto v4 = (hash ^ formId >> i * 0x8) & 0xFF;
 
 		DWORD v5;
-		if (!Utils::Rpm(ErectusProcess::exe + OFFSET_GET_PTR_A2 + v4 * 0x4, &v5, sizeof v5))
+		if (!Utils::Rpm(ErectusProcess::exe + OFFSET_GET_PTR_A2 + v4 * 0x4, &v5, sizeof v5)) //OFFSET_GET_PTR_A2 is just the start of a crc32 lookup table
 			return 0;
 
-		crc = crc >> 0x8 ^ v5;
+		hash = hash >> 0x8 ^ v5;
 	}
 
-	auto v6 = crc & v2 - 1; // our formId's array index;
+	auto _index = hash & _capacity - 1;
 
-	DWORD64 v7; //array of refs to items in the world(?), each item of the array is: { formid (dword64!!!), ptr to object (dword64), item index/key in the array (dword64) }
+	DWORD64 entries;
 
 	//sanity check: array exists
-	if (!Utils::Rpm(v1 + 24, &v7, sizeof v7))
+	if (!Utils::Rpm(v1 + 24, &entries, sizeof entries))
 		return 0;
-	if (!Utils::Valid(v7))
+	if (!Utils::Valid(entries))
 		return 0;
 
-	//sanity check: the item has valid key
-	DWORD v8;
-	if (!Utils::Rpm(v7 + v6 * 24 + 16, &v8, sizeof v8))
+	//check item->next != -1
+	DWORD next;
+	if (!Utils::Rpm(entries + _index * 24 + 16, &next, sizeof next))
 		return 0;
-	if (v8 == 0xFFFFFFFF)
-		return 0; //item id in the array == -1
+	if (next == 0xFFFFFFFF)
+		return 0;
 
-	auto v9 = v2;
+	auto v9 = _capacity;
 
-	//no clue what this loop is for ...
+
 	for (auto i = 0; i < 100; i++)
 	{
 		DWORD v10;
-		if (!Utils::Rpm(v7 + v6 * 24, &v10, sizeof v10))
+		if (!Utils::Rpm(entries + _index * 24, &v10, sizeof v10)) //item->value.first
 			return 0;
 		if (v10 == formId)
 		{
-			v9 = v6;
-			if (v9 != v2)
+			v9 = _index; //item->value
+			if (v9 != _capacity)
 				break;
 		}
 		else
 		{
-			if (!Utils::Rpm(v7 + v6 * 24 + 16, &v6, sizeof v6))
-				return 0; //  try  next entry in the array
-			if (v6 == v2)
+			if (!Utils::Rpm(entries + _index * 24 + 16, &_index, sizeof _index)) //item = item->next
+				return 0;
+			if (_index == _capacity)
 				break;
 		}
 	}
 
-	if (v9 == v2) return 0;
+	if (v9 == _capacity) return 0;
 
-	return v7 + v9 * 24 + 8;
+	return entries + v9 * 24 + 8; //item->value.second
 }
 
 DWORD64 ErectusMemory::GetPtr(const DWORD formId)
@@ -203,7 +237,7 @@ std::vector<DWORD64> ErectusMemory::GetEntityList()
 	if (!Utils::Rpm(cellPtrArrayPtr, cellPtrArray.get(), cellPtrArraySize * sizeof DWORD64))
 		return result;
 
-	//4) Read each cell and push object  pointers into objectPtrs
+	//4) Read each cell and push object pointers into objectPtrs
 	for (auto i = 0; i < cellPtrArraySize; i++)
 	{
 		if (i % 2 == 0)
@@ -542,14 +576,12 @@ bool ErectusMemory::CheckReferencePlan(const TesItem& referenceData)
 
 bool ErectusMemory::CheckScrapList()
 {
-	if (ErectusIni::customScrapLooterSettings.scrapLooterDistance)
+	for (auto i : ErectusIni::scrapLooter.enabledList)
 	{
-		for (auto i : ErectusIni::customScrapLooterSettings.scrapEnabledList)
-		{
-			if (i)
-				return true;
-		}
+		if (i)
+			return true;
 	}
+
 
 	return false;
 }
@@ -558,7 +590,7 @@ bool ErectusMemory::CheckItemLooterList()
 {
 	for (auto i = 0; i < 100; i++)
 	{
-		if (ErectusIni::customItemLooterSettings.itemLooterFormIdList[i] && ErectusIni::customItemLooterSettings.itemLooterEnabledList[i])
+		if (ErectusIni::itemLooter.formIdList[i] && ErectusIni::itemLooter.enabledList[i])
 			return true;
 	}
 
@@ -567,11 +599,11 @@ bool ErectusMemory::CheckItemLooterList()
 
 bool ErectusMemory::CheckItemLooterBlacklist()
 {
-	if (ErectusIni::customItemLooterSettings.itemLooterBlacklistToggle)
+	if (ErectusIni::itemLooter.blacklistToggle)
 	{
 		for (auto i = 0; i < 64; i++)
 		{
-			if (ErectusIni::customItemLooterSettings.itemLooterBlacklist[i] && ErectusIni::customItemLooterSettings.itemLooterBlacklistEnabled[i])
+			if (ErectusIni::itemLooter.blacklist[i] && ErectusIni::itemLooter.blacklistEnabled[i])
 				return true;
 		}
 	}
@@ -583,7 +615,7 @@ bool ErectusMemory::CheckEntityLooterList(const EntityLooterSettings& settings)
 {
 	for (auto i = 0; i < 100; i++)
 	{
-		if (settings.entityLooterFormIdList[i] && settings.entityLooterEnabledList[i])
+		if (settings.formIdList[i] && settings.enabledList[i])
 			return true;
 	}
 
@@ -592,13 +624,13 @@ bool ErectusMemory::CheckEntityLooterList(const EntityLooterSettings& settings)
 
 bool ErectusMemory::CheckEntityLooterBlacklist(const EntityLooterSettings& settings)
 {
-	if (settings.entityLooterBlacklistToggle)
+	if (!settings.blacklistToggle)
+		return false;
+
+	for (auto i = 0; i < 64; i++)
 	{
-		for (auto i = 0; i < 64; i++)
-		{
-			if (settings.entityLooterBlacklist[i] && settings.entityLooterBlacklistEnabled[i])
-				return true;
-		}
+		if (settings.blacklist[i] && settings.blacklistEnabled[i])
+			return true;
 	}
 
 	return false;
@@ -606,7 +638,7 @@ bool ErectusMemory::CheckEntityLooterBlacklist(const EntityLooterSettings& setti
 
 bool ErectusMemory::CheckIngredientList()
 {
-	for (auto i : ErectusIni::customHarvesterSettings.harvesterEnabledList)
+	for (auto i : ErectusIni::harvester.enabledList)
 	{
 		if (i)
 			return true;
@@ -619,8 +651,8 @@ bool ErectusMemory::CheckJunkPileEnabled()
 {
 	for (auto i = 0; i < 69; i++)
 	{
-		if (!strcmp(ErectusIni::customHarvesterSettings.harvesterNameList[i], "Junk Pile"))
-			return ErectusIni::customHarvesterSettings.harvesterEnabledList[i];
+		if (!strcmp(ErectusIni::harvester.nameList[i], "Junk Pile"))
+			return ErectusIni::harvester.enabledList[i];
 	}
 
 	return false;
@@ -652,7 +684,7 @@ bool ErectusMemory::CheckComponentArray(const TesItem& referenceData)
 		TesItem componentData{};
 		if (!Utils::Rpm(componentArray[i].componentReferencePtr, &componentData, sizeof componentData))
 			continue;
-		if (CheckFormIdArray(componentData.formId, ErectusIni::customScrapLooterSettings.scrapEnabledList, ErectusIni::customScrapLooterSettings.scrapFormIdList, 40))
+		if (CheckFormIdArray(componentData.formId, ErectusIni::scrapLooter.enabledList, ErectusIni::scrapLooter.formIdList, 40))
 		{
 			delete[]componentArray;
 			componentArray = nullptr;
@@ -709,8 +741,7 @@ bool ErectusMemory::CheckReferenceKeywordMisc(const TesItem& referenceData, cons
 		return false;
 
 	auto* keywordArray = new DWORD64[referenceData.keywordArrayData01B8];
-	if (!Utils::Rpm(referenceData.keywordArrayData01B0, &*keywordArray,
-		referenceData.keywordArrayData01B8 * sizeof(DWORD64)))
+	if (!Utils::Rpm(referenceData.keywordArrayData01B0, &*keywordArray, referenceData.keywordArrayData01B8 * sizeof(DWORD64)))
 	{
 		delete[]keywordArray;
 		keywordArray = nullptr;
@@ -796,7 +827,7 @@ bool ErectusMemory::FloraLeveledListValid(const LeveledList& leveledListData)
 				return true;
 			}
 		}
-		else if (CheckFormIdArray(referenceData.formId, ErectusIni::customHarvesterSettings.harvesterEnabledList, ErectusIni::customHarvesterSettings.harvesterFormIdList, 69))
+		else if (CheckFormIdArray(referenceData.formId, ErectusIni::harvester.enabledList, ErectusIni::harvester.formIdList, 69))
 		{
 			delete[]listEntryData;
 			listEntryData = nullptr;
@@ -826,7 +857,7 @@ bool ErectusMemory::FloraValid(const TesItem& referenceData)
 		memcpy(&leveledListData, &harvestedData, sizeof leveledListData);
 		return FloraLeveledListValid(leveledListData);
 	}
-	return CheckFormIdArray(harvestedData.formId, ErectusIni::customHarvesterSettings.harvesterEnabledList, ErectusIni::customHarvesterSettings.harvesterFormIdList, 69);
+	return CheckFormIdArray(harvestedData.formId, ErectusIni::harvester.enabledList, ErectusIni::harvester.formIdList, 69);
 }
 
 bool ErectusMemory::IsTreasureMap(const DWORD formId)
@@ -1194,11 +1225,9 @@ std::string ErectusMemory::GetEntityName(const DWORD64 ptr)
 	auto name = std::make_unique<char[]>(nameSize);
 
 	if (!Utils::Rpm(namePtr + 0x18, name.get(), nameSize))
-	{
 		return result;
-	}
-	result = name.get();
 
+	result = name.get();
 	return result;
 }
 
@@ -1241,7 +1270,7 @@ bool ErectusMemory::UpdateBufferEntityList()
 		DWORD64 entityNamePtr = 0;
 		auto enabledDistance = 0;
 
-		GetCustomEntityData(referenceData, &entityFlag, &entityNamePtr, &enabledDistance, ErectusIni::customScrapLooterSettings.scrapOverrideEnabled, ErectusIni::customHarvesterSettings.harvesterOverrideEnabled);
+		GetCustomEntityData(referenceData, &entityFlag, &entityNamePtr, &enabledDistance, ErectusIni::scrapLooter.scrapOverrideEnabled, ErectusIni::harvester.overrideEnabled);
 		if (entityFlag & CUSTOM_ENTRY_INVALID)
 			continue;
 
@@ -1254,7 +1283,7 @@ bool ErectusMemory::UpdateBufferEntityList()
 		if (entityName.empty())
 		{
 			entityFlag |= CUSTOM_ENTRY_UNNAMED;
-			entityName = fmt::format("{0:x}", entityData.formId);
+			entityName = fmt::format("{:x}", entityData.formId);
 		}
 
 		CustomEntry entry{
@@ -1315,8 +1344,8 @@ bool ErectusMemory::UpdateBufferNpcList()
 		auto enabledDistance = 0;
 
 		GetCustomEntityData(referenceData, &entityFlag, &entityNamePtr, &enabledDistance,
-			ErectusIni::customScrapLooterSettings.scrapOverrideEnabled,
-			ErectusIni::customHarvesterSettings.harvesterOverrideEnabled);
+			ErectusIni::scrapLooter.scrapOverrideEnabled,
+			ErectusIni::harvester.overrideEnabled);
 		if (entityFlag & CUSTOM_ENTRY_INVALID)
 			continue;
 
@@ -1338,7 +1367,7 @@ bool ErectusMemory::UpdateBufferNpcList()
 		if (entityName.empty())
 		{
 			entityFlag |= CUSTOM_ENTRY_UNNAMED;
-			entityName = fmt::format("{0:x}", entityData.formId);
+			entityName = fmt::format("{:x}", entityData.formId);
 		}
 		CustomEntry entry{
 			.entityPtr = npcPtr,
@@ -1392,12 +1421,12 @@ std::string ErectusMemory::GetPlayerName(const ClientAccount& clientAccountData)
 		playerName = nullptr;
 		return result;
 	}
-	result = playerName;
+	result.assign(playerName);
 
 	delete[]playerName;
 	playerName = nullptr;
 
-	return playerName;
+	return result;
 }
 
 bool ErectusMemory::UpdateBufferPlayerList()
@@ -1486,7 +1515,7 @@ bool ErectusMemory::UpdateBufferPlayerList()
 		if (entityName.empty())
 		{
 			entityFlag |= CUSTOM_ENTRY_UNNAMED;
-			entityName = fmt::format("{0:x}", entityData.formId);
+			entityName = fmt::format("{:x}", entityData.formId);
 		}
 
 		CustomEntry entry{
@@ -1802,7 +1831,7 @@ bool ErectusMemory::RenderCustomEntryA(const CustomEntry& entry, const OverlaySe
 		if (ErectusIni::customUtilitySettings.debugEsp)
 			itemText = fmt::format("{0:16x}\n{1:08x}\n{2:16x}\n{3:08x}", entry.entityPtr, entry.entityFormId, entry.referencePtr, entry.referenceFormId);
 
-		Renderer::DrawText(itemText.c_str(), settings.textShadowed, settings.textCentered, screen, color, alpha);
+		Renderer::DrawTextA(itemText.c_str(), settings.textShadowed, settings.textCentered, screen, color, alpha);
 	}
 
 	return true;
@@ -1904,7 +1933,7 @@ bool ErectusMemory::RenderCustomEntryB(const CustomEntry& entry, const OverlaySe
 		if (ErectusIni::customUtilitySettings.debugEsp)
 			itemText = fmt::format("{0:16x}\n{1:08x}\n{2:16x}\n{3:08x}", entry.entityPtr, entry.entityFormId, entry.referencePtr, entry.referenceFormId);
 
-		Renderer::DrawText(itemText.c_str(), settings.textShadowed, settings.textCentered, screen, settings.color, alpha);
+		Renderer::DrawTextA(itemText.c_str(), settings.textShadowed, settings.textCentered, screen, settings.color, alpha);
 	}
 
 	return true;
@@ -2052,7 +2081,7 @@ bool ErectusMemory::LootScrap()
 	auto localPlayerPtr = GetLocalPlayerPtr(true);
 	if (!Utils::Valid(localPlayerPtr))
 	{
-		ErectusIni::customScrapLooterSettings.scrapAutomaticLootingEnabled = false;
+		ErectusIni::scrapLooter.autoLootingEnabled = false;
 		return false;
 	}
 
@@ -2096,7 +2125,7 @@ bool ErectusMemory::LootScrap()
 		auto distance = Utils::GetDistance(entityData.position, localPlayer.position);
 		auto normalDistance = static_cast<int>(distance * 0.01f);
 
-		if (normalDistance > ErectusIni::customScrapLooterSettings.scrapLooterDistance)
+		if (normalDistance > ErectusIni::scrapLooter.maxDistance)
 			continue;
 
 		RequestActivateRefMessage requestActivateRefMessageData{};
@@ -2112,29 +2141,29 @@ bool ErectusMemory::LootScrap()
 
 bool ErectusMemory::CheckItemLooterSettings()
 {
-	if (ErectusIni::customItemLooterSettings.itemLooterWeaponsEnabled && ErectusIni::customItemLooterSettings.itemLooterWeaponsDistance > 0)
+	if (ErectusIni::itemLooter.lootWeaponsEnabled && ErectusIni::itemLooter.lootWeaponsDistance > 0)
 		return true;
-	if (ErectusIni::customItemLooterSettings.itemLooterArmorEnabled && ErectusIni::customItemLooterSettings.itemLooterArmorDistance > 0)
+	if (ErectusIni::itemLooter.lootArmorEnabled && ErectusIni::itemLooter.lootArmorDistance > 0)
 		return true;
-	if (ErectusIni::customItemLooterSettings.itemLooterAmmoEnabled && ErectusIni::customItemLooterSettings.itemLooterAmmoDistance > 0)
+	if (ErectusIni::itemLooter.lootAmmoEnabled && ErectusIni::itemLooter.lootAmmoDistance > 0)
 		return true;
-	if (ErectusIni::customItemLooterSettings.itemLooterModsEnabled && ErectusIni::customItemLooterSettings.itemLooterModsDistance > 0)
+	if (ErectusIni::itemLooter.lootModsEnabled && ErectusIni::itemLooter.lootModsDistance > 0)
 		return true;
-	if (ErectusIni::customItemLooterSettings.itemLooterMagazinesEnabled && ErectusIni::customItemLooterSettings.itemLooterMagazinesDistance > 0)
+	if (ErectusIni::itemLooter.lootMagazinesEnabled && ErectusIni::itemLooter.lootMagazinesDistance > 0)
 		return true;
-	if (ErectusIni::customItemLooterSettings.itemLooterBobbleheadsEnabled && ErectusIni::customItemLooterSettings.itemLooterBobbleheadsDistance > 0)
+	if (ErectusIni::itemLooter.lootBobbleheadsEnabled && ErectusIni::itemLooter.lootBobbleheadsDistance > 0)
 		return true;
-	if (ErectusIni::customItemLooterSettings.itemLooterAidEnabled && ErectusIni::customItemLooterSettings.itemLooterAidDistance > 0)
+	if (ErectusIni::itemLooter.lootAidEnabled && ErectusIni::itemLooter.lootAidDistance > 0)
 		return true;
-	if (ErectusIni::customItemLooterSettings.itemLooterKnownPlansEnabled && ErectusIni::customItemLooterSettings.itemLooterKnownPlansDistance > 0)
+	if (ErectusIni::itemLooter.lootKnownPlansEnabled && ErectusIni::itemLooter.lootKnownPlansDistance > 0)
 		return true;
-	if (ErectusIni::customItemLooterSettings.itemLooterUnknownPlansEnabled && ErectusIni::customItemLooterSettings.itemLooterUnknownPlansDistance > 0)
+	if (ErectusIni::itemLooter.lootUnknownPlansEnabled && ErectusIni::itemLooter.lootUnknownPlansDistance > 0)
 		return true;
-	if (ErectusIni::customItemLooterSettings.itemLooterMiscEnabled && ErectusIni::customItemLooterSettings.itemLooterMiscDistance > 0)
+	if (ErectusIni::itemLooter.lootMiscEnabled && ErectusIni::itemLooter.lootMiscDistance > 0)
 		return true;
-	if (ErectusIni::customItemLooterSettings.itemLooterUnlistedEnabled && ErectusIni::customItemLooterSettings.itemLooterUnlistedDistance > 0)
+	if (ErectusIni::itemLooter.lootUnlistedEnabled && ErectusIni::itemLooter.lootUnlistedDistance > 0)
 		return true;
-	if (ErectusIni::customItemLooterSettings.itemLooterListEnabled && ErectusIni::customItemLooterSettings.itemLooterListDistance > 0)
+	if (ErectusIni::itemLooter.lootListEnabled && ErectusIni::itemLooter.lootListDistance > 0)
 		return CheckItemLooterList();
 
 	return false;
@@ -2142,29 +2171,29 @@ bool ErectusMemory::CheckItemLooterSettings()
 
 bool ErectusMemory::CheckOnlyUseItemLooterList()
 {
-	if (ErectusIni::customItemLooterSettings.itemLooterWeaponsEnabled && ErectusIni::customItemLooterSettings.itemLooterWeaponsDistance > 0)
+	if (ErectusIni::itemLooter.lootWeaponsEnabled && ErectusIni::itemLooter.lootWeaponsDistance > 0)
 		return false;
-	if (ErectusIni::customItemLooterSettings.itemLooterArmorEnabled && ErectusIni::customItemLooterSettings.itemLooterArmorDistance > 0)
+	if (ErectusIni::itemLooter.lootArmorEnabled && ErectusIni::itemLooter.lootArmorDistance > 0)
 		return false;
-	if (ErectusIni::customItemLooterSettings.itemLooterAmmoEnabled && ErectusIni::customItemLooterSettings.itemLooterAmmoDistance > 0)
+	if (ErectusIni::itemLooter.lootAmmoEnabled && ErectusIni::itemLooter.lootAmmoDistance > 0)
 		return false;
-	if (ErectusIni::customItemLooterSettings.itemLooterModsEnabled && ErectusIni::customItemLooterSettings.itemLooterModsDistance > 0)
+	if (ErectusIni::itemLooter.lootModsEnabled && ErectusIni::itemLooter.lootModsDistance > 0)
 		return false;
-	if (ErectusIni::customItemLooterSettings.itemLooterMagazinesEnabled && ErectusIni::customItemLooterSettings.itemLooterMagazinesDistance > 0)
+	if (ErectusIni::itemLooter.lootMagazinesEnabled && ErectusIni::itemLooter.lootMagazinesDistance > 0)
 		return false;
-	if (ErectusIni::customItemLooterSettings.itemLooterBobbleheadsEnabled && ErectusIni::customItemLooterSettings.itemLooterBobbleheadsDistance > 0)
+	if (ErectusIni::itemLooter.lootBobbleheadsEnabled && ErectusIni::itemLooter.lootBobbleheadsDistance > 0)
 		return false;
-	if (ErectusIni::customItemLooterSettings.itemLooterAidEnabled && ErectusIni::customItemLooterSettings.itemLooterAidDistance > 0)
+	if (ErectusIni::itemLooter.lootAidEnabled && ErectusIni::itemLooter.lootAidDistance > 0)
 		return false;
-	if (ErectusIni::customItemLooterSettings.itemLooterKnownPlansEnabled && ErectusIni::customItemLooterSettings.itemLooterKnownPlansDistance > 0)
+	if (ErectusIni::itemLooter.lootKnownPlansEnabled && ErectusIni::itemLooter.lootKnownPlansDistance > 0)
 		return false;
-	if (ErectusIni::customItemLooterSettings.itemLooterUnknownPlansEnabled && ErectusIni::customItemLooterSettings.itemLooterUnknownPlansDistance > 0)
+	if (ErectusIni::itemLooter.lootUnknownPlansEnabled && ErectusIni::itemLooter.lootUnknownPlansDistance > 0)
 		return false;
-	if (ErectusIni::customItemLooterSettings.itemLooterMiscEnabled && ErectusIni::customItemLooterSettings.itemLooterMiscDistance > 0)
+	if (ErectusIni::itemLooter.lootMiscEnabled && ErectusIni::itemLooter.lootMiscDistance > 0)
 		return false;
-	if (ErectusIni::customItemLooterSettings.itemLooterUnlistedEnabled && ErectusIni::customItemLooterSettings.itemLooterUnlistedDistance > 0)
+	if (ErectusIni::itemLooter.lootUnlistedEnabled && ErectusIni::itemLooter.lootUnlistedDistance > 0)
 		return false;
-	if (ErectusIni::customItemLooterSettings.itemLooterListEnabled && ErectusIni::customItemLooterSettings.itemLooterListDistance > 0)
+	if (ErectusIni::itemLooter.lootListEnabled && ErectusIni::itemLooter.lootListDistance > 0)
 		return CheckItemLooterList();
 
 	return false;
@@ -2172,38 +2201,38 @@ bool ErectusMemory::CheckOnlyUseItemLooterList()
 
 bool ErectusMemory::CheckEnabledItem(const DWORD formId, const DWORD64 entityFlag, const int normalDistance)
 {
-	if (ErectusIni::customItemLooterSettings.itemLooterListEnabled)
+	if (ErectusIni::itemLooter.lootListEnabled)
 	{
-		if (CheckFormIdArray(formId, ErectusIni::customItemLooterSettings.itemLooterEnabledList, ErectusIni::customItemLooterSettings.itemLooterFormIdList, 100))
+		if (CheckFormIdArray(formId, ErectusIni::itemLooter.enabledList, ErectusIni::itemLooter.formIdList, 100))
 		{
-			if (normalDistance <= ErectusIni::customItemLooterSettings.itemLooterListDistance)
+			if (normalDistance <= ErectusIni::itemLooter.lootListDistance)
 				return true;
 		}
 	}
 
-	if (entityFlag & CUSTOM_ENTRY_WEAPON && normalDistance <= ErectusIni::customItemLooterSettings.itemLooterWeaponsDistance)
-		return ErectusIni::customItemLooterSettings.itemLooterWeaponsEnabled;
-	if (entityFlag & CUSTOM_ENTRY_ARMOR && normalDistance <= ErectusIni::customItemLooterSettings.itemLooterArmorDistance)
-		return ErectusIni::customItemLooterSettings.itemLooterArmorEnabled;
-	if (entityFlag & CUSTOM_ENTRY_AMMO && normalDistance <= ErectusIni::customItemLooterSettings.itemLooterAmmoDistance)
-		return ErectusIni::customItemLooterSettings.itemLooterAmmoEnabled;
-	if (entityFlag & CUSTOM_ENTRY_MOD && normalDistance <= ErectusIni::customItemLooterSettings.itemLooterModsDistance)
-		return ErectusIni::customItemLooterSettings.itemLooterModsEnabled;
-	if (entityFlag & CUSTOM_ENTRY_MAGAZINE && normalDistance <= ErectusIni::customItemLooterSettings.itemLooterMagazinesDistance)
-		return ErectusIni::customItemLooterSettings.itemLooterMagazinesEnabled;
-	if (entityFlag & CUSTOM_ENTRY_BOBBLEHEAD && normalDistance <= ErectusIni::customItemLooterSettings.itemLooterBobbleheadsDistance)
-		return ErectusIni::customItemLooterSettings.itemLooterBobbleheadsEnabled;
-	if (entityFlag & CUSTOM_ENTRY_AID && normalDistance <= ErectusIni::customItemLooterSettings.itemLooterAidDistance)
-		return ErectusIni::customItemLooterSettings.itemLooterAidEnabled;
-	if (entityFlag & CUSTOM_ENTRY_KNOWN_RECIPE && normalDistance <= ErectusIni::customItemLooterSettings.itemLooterKnownPlansDistance)
-		return ErectusIni::customItemLooterSettings.itemLooterKnownPlansEnabled;
-	if (entityFlag & CUSTOM_ENTRY_UNKNOWN_RECIPE && normalDistance <= ErectusIni::customItemLooterSettings.itemLooterUnknownPlansDistance)
-		return ErectusIni::customItemLooterSettings.itemLooterUnknownPlansEnabled;
-	if (entityFlag & CUSTOM_ENTRY_FAILED_RECIPE && normalDistance <= ErectusIni::customItemLooterSettings.itemLooterUnknownPlansDistance)
-		return ErectusIni::customItemLooterSettings.itemLooterUnknownPlansEnabled;
-	if (entityFlag & CUSTOM_ENTRY_MISC && normalDistance <= ErectusIni::customItemLooterSettings.itemLooterMiscDistance)
-		return ErectusIni::customItemLooterSettings.itemLooterMiscEnabled;
-	if (ErectusIni::customItemLooterSettings.itemLooterUnlistedEnabled && normalDistance <= ErectusIni::customItemLooterSettings.itemLooterUnlistedDistance)
+	if (entityFlag & CUSTOM_ENTRY_WEAPON && normalDistance <= ErectusIni::itemLooter.lootWeaponsDistance)
+		return ErectusIni::itemLooter.lootWeaponsEnabled;
+	if (entityFlag & CUSTOM_ENTRY_ARMOR && normalDistance <= ErectusIni::itemLooter.lootArmorDistance)
+		return ErectusIni::itemLooter.lootArmorEnabled;
+	if (entityFlag & CUSTOM_ENTRY_AMMO && normalDistance <= ErectusIni::itemLooter.lootAmmoDistance)
+		return ErectusIni::itemLooter.lootAmmoEnabled;
+	if (entityFlag & CUSTOM_ENTRY_MOD && normalDistance <= ErectusIni::itemLooter.lootModsDistance)
+		return ErectusIni::itemLooter.lootModsEnabled;
+	if (entityFlag & CUSTOM_ENTRY_MAGAZINE && normalDistance <= ErectusIni::itemLooter.lootMagazinesDistance)
+		return ErectusIni::itemLooter.lootMagazinesEnabled;
+	if (entityFlag & CUSTOM_ENTRY_BOBBLEHEAD && normalDistance <= ErectusIni::itemLooter.lootBobbleheadsDistance)
+		return ErectusIni::itemLooter.lootBobbleheadsEnabled;
+	if (entityFlag & CUSTOM_ENTRY_AID && normalDistance <= ErectusIni::itemLooter.lootAidDistance)
+		return ErectusIni::itemLooter.lootAidEnabled;
+	if (entityFlag & CUSTOM_ENTRY_KNOWN_RECIPE && normalDistance <= ErectusIni::itemLooter.lootKnownPlansDistance)
+		return ErectusIni::itemLooter.lootKnownPlansEnabled;
+	if (entityFlag & CUSTOM_ENTRY_UNKNOWN_RECIPE && normalDistance <= ErectusIni::itemLooter.lootUnknownPlansDistance)
+		return ErectusIni::itemLooter.lootUnknownPlansEnabled;
+	if (entityFlag & CUSTOM_ENTRY_FAILED_RECIPE && normalDistance <= ErectusIni::itemLooter.lootUnknownPlansDistance)
+		return ErectusIni::itemLooter.lootUnknownPlansEnabled;
+	if (entityFlag & CUSTOM_ENTRY_MISC && normalDistance <= ErectusIni::itemLooter.lootMiscDistance)
+		return ErectusIni::itemLooter.lootMiscEnabled;
+	if (ErectusIni::itemLooter.lootUnlistedEnabled && normalDistance <= ErectusIni::itemLooter.lootUnlistedDistance)
 		return true;
 
 	return false;
@@ -2223,7 +2252,7 @@ bool ErectusMemory::LootItems()
 	auto localPlayerPtr = GetLocalPlayerPtr(true);
 	if (!Utils::Valid(localPlayerPtr))
 	{
-		ErectusIni::customItemLooterSettings.itemAutomaticLootingEnabled = false;
+		ErectusIni::itemLooter.autoLootingEnabled = false;
 		return false;
 	}
 
@@ -2261,13 +2290,13 @@ bool ErectusMemory::LootItems()
 
 		if (useItemLooterBlacklist)
 		{
-			if (CheckFormIdArray(referenceData.formId, ErectusIni::customItemLooterSettings.itemLooterBlacklistEnabled, ErectusIni::customItemLooterSettings.itemLooterBlacklist, 64))
+			if (CheckFormIdArray(referenceData.formId, ErectusIni::itemLooter.blacklistEnabled, ErectusIni::itemLooter.blacklist, 64))
 				continue;
 		}
 
 		if (onlyUseItemLooterList)
 		{
-			if (!CheckFormIdArray(referenceData.formId, ErectusIni::customItemLooterSettings.itemLooterEnabledList, ErectusIni::customItemLooterSettings.itemLooterFormIdList, 100))
+			if (!CheckFormIdArray(referenceData.formId, ErectusIni::itemLooter.enabledList, ErectusIni::itemLooter.formIdList, 100))
 				continue;
 		}
 
@@ -2291,7 +2320,7 @@ bool ErectusMemory::LootItems()
 		}
 		else
 		{
-			if (normalDistance > ErectusIni::customItemLooterSettings.itemLooterListDistance)
+			if (normalDistance > ErectusIni::itemLooter.lootListDistance)
 				continue;
 		}
 
@@ -3206,6 +3235,8 @@ bool ErectusMemory::InsideInteriorCell()
 
 int ErectusMemory::RenderLocalPlayerData()
 {
+	std::vector<std::string> infoTexts = {};
+
 	const auto localPlayerPtr = GetLocalPlayerPtr(false);
 	if (!Utils::Valid(localPlayerPtr))
 		return 0;
@@ -3223,55 +3254,25 @@ int ErectusMemory::RenderLocalPlayerData()
 	if (GetActorSnapshotComponentData(localPlayer, &actorSnapshotComponentData))
 		playerHealth = actorSnapshotComponentData.maxHealth + actorSnapshotComponentData.modifiedHealth + actorSnapshotComponentData.lostHealth;
 
-	char entityFormIdText[256];
-	sprintf_s(entityFormIdText, "Entity FormId: %08lX", localPlayer.formId);
 
-	char stashFormIdText[256];
-	sprintf_s(stashFormIdText, "STASH FormId: %08lX", localPlayer.formId0C24);
-
-	char cellFormIdText[256];
-	sprintf_s(cellFormIdText, "Cell FormId: %08lX", cellFormId);
-
-	char positionTextX[256];
-	sprintf_s(positionTextX, "X: %f", localPlayer.position[0]);
-
-	char positionTextY[256];
-	sprintf_s(positionTextY, "Y: %f", localPlayer.position[1]);
-
-	char positionTextZ[256];
-	sprintf_s(positionTextZ, "Z: %f", localPlayer.position[2]);
-
-	char yawTest[256];
-	sprintf_s(yawTest, "Yaw: %f", localPlayer.yaw);
-
-	char pitchText[256];
-	sprintf_s(pitchText, "Pitch: %f", localPlayer.pitch);
-
-	char healthText[256];
-	sprintf_s(healthText, "Health: %f", playerHealth);
-
-	char* textArray[]
-	{
-		entityFormIdText,
-		stashFormIdText,
-		cellFormIdText,
-		positionTextX,
-		positionTextY,
-		positionTextZ,
-		yawTest,
-		pitchText,
-		healthText,
-	};
+	infoTexts.push_back(fmt::format("Entity FormId: {:08x}", localPlayer.formId));
+	infoTexts.push_back(fmt::format("STASH FormId: {:08x}", localPlayer.formId0C24));
+	infoTexts.push_back(fmt::format("Cell FormId: {:08x}", cellFormId));
+	infoTexts.push_back(fmt::format("X: {:f}", localPlayer.position[0]));
+	infoTexts.push_back(fmt::format("Y: {:f}", localPlayer.position[1]));
+	infoTexts.push_back(fmt::format("Z: {:f}", localPlayer.position[2]));
+	infoTexts.push_back(fmt::format("Yaw: {:f}", localPlayer.yaw));
+	infoTexts.push_back(fmt::format("Pitch: {:f}", localPlayer.pitch));
+	infoTexts.push_back(fmt::format("Health: {:f}", playerHealth));
 
 	float textColor[3] = { 1.0f, 1.0f, 1.0f };
-	const auto textAlpha = 1.0f;
-
-	auto index = 0;
-
-	while (index < sizeof textArray / sizeof(char*))
+	auto index = 0.f;
+	for (const auto& item : infoTexts)
 	{
-		float textPosition[2] = { 0.0f, static_cast<float>(index) * 16.0f };
-		Renderer::DrawText(textArray[index], true, false, textPosition, textColor, textAlpha);
+
+		float position[2] = { 0.f, index * 16.f };
+		Renderer::DrawTextA(item.c_str(), true, false, position, textColor, 1.f);
+
 		index++;
 	}
 
@@ -3286,130 +3287,80 @@ void ErectusMemory::RenderData()
 
 	float enabledTextColor[3] = { 0.0f, 1.0f, 0.0f };
 	float disabledTextColor[3] = { 1.0f, 0.0f, 0.0f };
-	const auto textAlpha = 1.0f;
 
-	char scrapLooterText[256];
-	sprintf_s(scrapLooterText, "Scrap Looter (Automatic): %d", static_cast<int>(ErectusIni::customScrapLooterSettings.scrapAutomaticLootingEnabled));
+	std::vector<std::pair<std::string, bool>> infoTexts = {};
 
-	char itemLooterText[256];
-	sprintf_s(itemLooterText, "Item Looter (Automatic): %d", static_cast<int>(ErectusIni::customItemLooterSettings.itemAutomaticLootingEnabled));
+	std::string featureText = {};
+	auto featureState = false;
 
-	char npcLooterText[256];
-	sprintf_s(npcLooterText, "NPC Looter (76m Distance Limit): %d", static_cast<int>(ErectusIni::npcLooterSettings.entityLooterEnabled));
-
-	char containerLooterText[256];
-	sprintf_s(containerLooterText, "Container Looter (6m Distance Limit): %d", static_cast<int>(ErectusIni::containerLooterSettings.entityLooterEnabled));
-
-	char harvesterText[256];
-	sprintf_s(harvesterText, "Flora Harvester (6m Distance Limit): %d", static_cast<int>(ErectusIni::customHarvesterSettings.harvesterEnabled));
-
-	char positionSpoofingText[256];
-	sprintf_s(positionSpoofingText, "Position Spoofing (Active): %d (Height: %d)",
-		static_cast<int>(ErectusThread::positionSpoofingToggle), ErectusIni::customLocalPlayerSettings.positionSpoofingHeight);
-
-	char drawAlphaCodeText[256];
-	sprintf_s(drawAlphaCodeText, "%d %d %d %d %d %d %d %d - Alpha", ErectusImGui::alphaCode[0],
-		ErectusImGui::alphaCode[1], ErectusImGui::alphaCode[2], ErectusImGui::alphaCode[3],
-		ErectusImGui::alphaCode[4], ErectusImGui::alphaCode[5], ErectusImGui::alphaCode[6],
-		ErectusImGui::alphaCode[7]);
-
-	char drawBravoCodeText[256];
-	sprintf_s(drawBravoCodeText, "%d %d %d %d %d %d %d %d - Bravo", ErectusImGui::bravoCode[0],
-		ErectusImGui::bravoCode[1], ErectusImGui::bravoCode[2], ErectusImGui::bravoCode[3],
-		ErectusImGui::bravoCode[4], ErectusImGui::bravoCode[5], ErectusImGui::bravoCode[6],
-		ErectusImGui::bravoCode[7]);
-
-	char drawCharlieCodeText[256];
-	sprintf_s(drawCharlieCodeText, "%d %d %d %d %d %d %d %d - Charlie", ErectusImGui::charlieCode[0],
-		ErectusImGui::charlieCode[1], ErectusImGui::charlieCode[2], ErectusImGui::charlieCode[3],
-		ErectusImGui::charlieCode[4], ErectusImGui::charlieCode[5], ErectusImGui::charlieCode[6],
-		ErectusImGui::charlieCode[7]);
-
-	const auto positionSpoofingState = InsideInteriorCell()
-		? false
-		: ErectusIni::customLocalPlayerSettings.positionSpoofingEnabled;
-
-	auto alphaCodeState = false;
-	for (auto i : ErectusImGui::alphaCode)
+	if (ErectusIni::scrapLooter.drawStatus)
 	{
-		if (i)
-		{
-			alphaCodeState = true;
-			break;
-		}
+		featureText = fmt::format("Scrap Looter (Automatic): {:d}", static_cast<int>(ErectusIni::scrapLooter.autoLootingEnabled));
+		featureState = ErectusIni::scrapLooter.autoLootingEnabled;
+		infoTexts.push_back({ featureText, featureState });
 	}
 
-	auto bravoCodeState = false;
-	for (auto i : ErectusImGui::bravoCode)
+	if (ErectusIni::itemLooter.drawStatus)
 	{
-		if (i)
-		{
-			bravoCodeState = true;
-			break;
-		}
+		featureText = fmt::format("Item Looter (Automatic): {:d}", static_cast<int>(ErectusIni::itemLooter.autoLootingEnabled));
+		featureState = ErectusIni::itemLooter.autoLootingEnabled;
+		infoTexts.push_back({ featureText, featureState });
 	}
 
-	auto charlieCodeState = false;
-	for (const auto& i : ErectusImGui::charlieCode)
+	if (ErectusIni::npcLooter.drawStatus)
 	{
-		if (i)
-		{
-			charlieCodeState = true;
-			break;
-		}
+		featureText = fmt::format("NPC Looter (76m Distance Limit): {:d}", static_cast<int>(ErectusIni::npcLooter.enabled));
+		featureState = ErectusIni::npcLooter.enabled;
+		infoTexts.push_back({ featureText, featureState });
 	}
 
-	char* textArray[]
+	if (ErectusIni::containerLooter.drawStatus)
 	{
-		scrapLooterText,
-		itemLooterText,
-		npcLooterText,
-		containerLooterText,
-		harvesterText,
-		positionSpoofingText,
-		drawAlphaCodeText,
-		drawBravoCodeText,
-		drawCharlieCodeText,
-	};
+		featureText = fmt::format("Container Looter (6m Distance Limit): {:d}", static_cast<int>(ErectusIni::containerLooter.enabled));
+		featureState = ErectusIni::containerLooter.enabled;
+		infoTexts.push_back({ featureText, featureState });
+	}
 
-	bool stateArray[]
+	if (ErectusIni::harvester.drawStatus)
 	{
-		ErectusIni::customScrapLooterSettings.scrapAutomaticLootingEnabled,
-		ErectusIni::customItemLooterSettings.itemAutomaticLootingEnabled,
-		ErectusIni::npcLooterSettings.entityLooterEnabled,
-		ErectusIni::containerLooterSettings.entityLooterEnabled,
-		ErectusIni::customHarvesterSettings.harvesterEnabled,
-		positionSpoofingState,
-		alphaCodeState,
-		bravoCodeState,
-		charlieCodeState,
-	};
+		featureText = fmt::format("Flora Harvester (6m Distance Limit): {:d}", static_cast<int>(ErectusIni::harvester.enabled));
+		featureState = ErectusIni::harvester.enabled;
+		infoTexts.push_back({ featureText, featureState });
+	}
 
-	bool enabledArray[]
+	if (ErectusIni::customLocalPlayerSettings.drawPositionSpoofingStatus)
 	{
-		ErectusIni::customScrapLooterSettings.scrapAutomaticStatus,
-		ErectusIni::customItemLooterSettings.itemAutomaticStatus,
-		ErectusIni::npcLooterSettings.entityLooterStatusEnabled,
-		ErectusIni::containerLooterSettings.entityLooterStatusEnabled,
-		ErectusIni::customHarvesterSettings.harvesterStatusEnabled,
-		ErectusIni::customLocalPlayerSettings.drawPositionSpoofingEnabled,
-		ErectusIni::customNukeCodeSettings.drawCodeAlpha,
-		ErectusIni::customNukeCodeSettings.drawCodeBravo,
-		ErectusIni::customNukeCodeSettings.drawCodeCharlie,
-	};
+		featureText = fmt::format("Position Spoofing (Active): {0:d} (Height: {1:d})", static_cast<int>(ErectusThread::positionSpoofingToggle), ErectusIni::customLocalPlayerSettings.positionSpoofingHeight);
+		featureState = InsideInteriorCell() ? false : ErectusIni::customLocalPlayerSettings.positionSpoofingEnabled;
+		infoTexts.push_back({ featureText, featureState });
+	}
 
-	for (auto i = 0; i < sizeof textArray / sizeof(char*); i++)
+	if (ErectusIni::customNukeCodeSettings.drawCodeAlpha)
 	{
-		if (!enabledArray[i])
-			continue;
+		featureText = fmt::format("{} - Alpha", fmt::join(ErectusImGui::alphaCode, " "));
+		featureState = ErectusImGui::alphaCode == std::array<int, 8>{} ? false : true;
+		infoTexts.push_back({ featureText, featureState });
+	}
 
-		float* textColor;
-		if (stateArray[i])
-			textColor = enabledTextColor;
-		else
-			textColor = disabledTextColor;
+	if (ErectusIni::customNukeCodeSettings.drawCodeBravo)
+	{
+		featureText = fmt::format("{} - Bravo", fmt::join(ErectusImGui::bravoCode, " "));
+		featureState = ErectusImGui::bravoCode == std::array<int, 8>{} ? false : true;
+		infoTexts.push_back({ featureText, featureState });
+	}
+
+	if (ErectusIni::customNukeCodeSettings.drawCodeCharlie)
+	{
+		featureText = fmt::format("{} - Charlie", fmt::join(ErectusImGui::charlieCode, " "));
+		featureState = ErectusImGui::charlieCode == std::array<int, 8>{} ? false : true;
+		infoTexts.push_back({ featureText, featureState });
+	}
+
+	for (const auto& item : infoTexts)
+	{
 		float textPosition[2] = { 0.0f, static_cast<float>(spacing) * 16.0f };
-		Renderer::DrawText(textArray[i], true, false, textPosition, textColor, textAlpha);
+		auto textColor = item.second ? enabledTextColor : disabledTextColor;
+		Renderer::DrawTextA(item.first.c_str(), true, false, textPosition, textColor, 1.f);
 		spacing++;
 	}
 }
@@ -3997,7 +3948,7 @@ DWORD64 ErectusMemory::GetNukeCodePtr(const DWORD formId)
 	return nukeCodePtr;
 }
 
-bool ErectusMemory::GetNukeCode(const DWORD formId, int* nukeCode)
+bool ErectusMemory::GetNukeCode(const DWORD formId, std::array<int, 8>& nukeCode)
 {
 	const auto nukeCodePtr = GetNukeCodePtr(formId);
 	if (!nukeCodePtr)
@@ -4011,7 +3962,7 @@ bool ErectusMemory::GetNukeCode(const DWORD formId, int* nukeCode)
 	{
 		if (nukeCodeArray[i * 2 + 1] < 0.0f || nukeCodeArray[i * 2 + 1] > 9.0f)
 		{
-			memset(nukeCode, 0x00, sizeof(int) * 8);
+			nukeCode = {};
 			return false;
 		}
 		nukeCode[i] = static_cast<int>(nukeCodeArray[i * 2 + 1]);
@@ -4020,8 +3971,12 @@ bool ErectusMemory::GetNukeCode(const DWORD formId, int* nukeCode)
 	return true;
 }
 
-DWORD ErectusMemory::GetFavoritedWeaponId(const BYTE index)
+DWORD ErectusMemory::GetFavoritedWeaponId(const BYTE favouriteIndex)
 {
+
+	if (ErectusIni::customTargetSettings.favoriteIndex >= 12)
+		return 0;
+
 	const auto localPlayerPtr = GetLocalPlayerPtr(true);
 	if (!Utils::Valid(localPlayerPtr))
 		return 0;
@@ -4042,19 +3997,15 @@ DWORD ErectusMemory::GetFavoritedWeaponId(const BYTE index)
 	if (!itemArraySize || itemArraySize > 0x7FFF)
 		return 0;
 
-	auto* itemData = new Item[itemArraySize];
-	if (!Utils::Rpm(inventoryData.itemArrayPtr, &*itemData, itemArraySize * sizeof(Item)))
-	{
-		delete[]itemData;
-		itemData = nullptr;
+	auto itemData = std::make_unique<Item[]>(itemArraySize);
+	if (!Utils::Rpm(inventoryData.itemArrayPtr, itemData.get(), itemArraySize * sizeof(Item)))
 		return 0;
-	}
 
 	for (DWORD64 i = 0; i < itemArraySize; i++)
 	{
 		if (!Utils::Valid(itemData[i].referencePtr))
 			continue;
-		if (itemData[i].favoriteIndex != index)
+		if (itemData[i].favoriteIndex != favouriteIndex)
 			continue;
 
 		TesItem referenceData{};
@@ -4063,18 +4014,13 @@ DWORD ErectusMemory::GetFavoritedWeaponId(const BYTE index)
 		if (referenceData.formType != static_cast<BYTE>(FormTypes::TesObjectWeap))
 			break;
 
-		const auto weaponId = itemData[i].itemId;
-		delete[]itemData;
-		itemData = nullptr;
-		return weaponId;
+		return itemData[i].itemId;
 	}
 
-	delete[]itemData;
-	itemData = nullptr;
 	return 0;
 }
 
-char ErectusMemory::GetFavoriteSlot(const BYTE favoriteIndex)
+char ErectusMemory::FavoriteIndex2Slot(const BYTE favoriteIndex)
 {
 	switch (favoriteIndex)
 	{
@@ -4147,13 +4093,9 @@ std::string ErectusMemory::GetInstancedItemName(const DWORD64 displayPtr)
 	if (!instancedArraySize || instancedArraySize > 0x7FFF)
 		return result;
 
-	auto* instancedArray = new DWORD64[instancedArraySize];
-	if (!Utils::Rpm(itemInstancedArrayData.arrayPtr, &*instancedArray, instancedArraySize * sizeof(DWORD64)))
-	{
-		delete[]instancedArray;
-		instancedArray = nullptr;
+	auto instancedArray = std::make_unique<DWORD64[]>(instancedArraySize);
+	if (!Utils::Rpm(itemInstancedArrayData.arrayPtr, instancedArray.get(), instancedArraySize * sizeof(DWORD64)))
 		return result;
-	}
 
 	for (DWORD64 i = 0; i < instancedArraySize; i++)
 	{
@@ -4174,54 +4116,55 @@ std::string ErectusMemory::GetInstancedItemName(const DWORD64 displayPtr)
 		if (strcmp(rttiNameCheck, ".?AVExtraTextDisplayData@@") != 0)
 			continue;
 
-		delete[]instancedArray;
-		instancedArray = nullptr;
-		return GetEntityName(extraTextDisplayDataData.instancedNamePtr);
+		result = GetEntityName(extraTextDisplayDataData.instancedNamePtr);
+		return result;
 	}
 
-	delete[]instancedArray;
-	instancedArray = nullptr;
 	return result;
 }
 
-char** ErectusMemory::GetFavoritedWeapons()
+std::unordered_map<int, std::string> ErectusMemory::GetFavoritedWeapons()
 {
+	std::unordered_map<int, std::string> result = {
+		{0, "[?] No Weapon Selected"},
+		{1, "[1] Favorited Item Invalid"},
+		{2, "[2] Favorited Item Invalid"},
+		{3, "[3] Favorited Item Invalid"},
+		{4, "[4] Favorited Item Invalid"},
+		{5, "[5] Favorited Item Invalid"},
+		{6, "[6] Favorited Item Invalid"},
+		{7, "[7] Favorited Item Invalid"},
+		{8, "[8] Favorited Item Invalid"},
+		{9, "[9] Favorited Item Invalid"},
+		{10, "[0] Favorited Item Invalid"},
+		{11, "[-] Favorited Item Invalid"},
+		{12, "[=] Favorited Item Invalid"},
+		{13, "[?] Favorited Item Invalid"},
+	};
+
 	const auto localPlayerPtr = GetLocalPlayerPtr(true);
 	if (!Utils::Valid(localPlayerPtr))
-		return nullptr;
+		return result;
 
 	TesObjectRefr localPlayer{};
 	if (!Utils::Rpm(localPlayerPtr, &localPlayer, sizeof localPlayer))
-		return nullptr;
+		return result;
 	if (!Utils::Valid(localPlayer.inventoryPtr))
-		return nullptr;
+		return result;
 
 	Inventory inventoryData{};
 	if (!Utils::Rpm(localPlayer.inventoryPtr, &inventoryData, sizeof inventoryData))
-		return nullptr;
+		return result;
 	if (!Utils::Valid(inventoryData.itemArrayPtr) || inventoryData.itemArrayEnd < inventoryData.itemArrayPtr)
-		return
-		nullptr;
+		return result;
 
 	const auto itemArraySize = (inventoryData.itemArrayEnd - inventoryData.itemArrayPtr) / sizeof(Item);
 	if (!itemArraySize || itemArraySize > 0x7FFF)
-		return nullptr;
+		return result;
 
-	auto* itemData = new Item[itemArraySize];
-	if (!Utils::Rpm(inventoryData.itemArrayPtr, &*itemData, itemArraySize * sizeof(Item)))
-	{
-		delete[]itemData;
-		itemData = nullptr;
-		return nullptr;
-	}
-
-	auto* array = new char* [13];
-	array[0] = new char[sizeof"[?] No Weapon Selected"];
-	sprintf_s(array[0], sizeof"[?] No Weapon Selected", "[?] No Weapon Selected");
-	for (auto i = 1; i < 13; i++)
-	{
-		array[i] = nullptr;
-	}
+	auto itemData = std::make_unique<Item[]>(itemArraySize);
+	if (!Utils::Rpm(inventoryData.itemArrayPtr, itemData.get(), itemArraySize * sizeof(Item)))
+		return result;
 
 	for (DWORD64 i = 0; i < itemArraySize; i++)
 	{
@@ -4233,68 +4176,50 @@ char** ErectusMemory::GetFavoritedWeapons()
 		TesItem referenceData{};
 		if (!Utils::Rpm(itemData[i].referencePtr, &referenceData, sizeof referenceData))
 			continue;
-		if (referenceData.formType != static_cast<BYTE>(FormTypes::TesNpc))
+		if (referenceData.formType != static_cast<BYTE>(FormTypes::TesObjectWeap))
 			continue;
 
-		auto tempWeaponName = GetInstancedItemName(itemData[i].displayPtr);
-		if (tempWeaponName.empty())
+		auto weaponName = GetInstancedItemName(itemData[i].displayPtr);
+		if (weaponName.empty())
 		{
-			tempWeaponName = GetEntityName(referenceData.namePtr0098);
-			if (tempWeaponName.empty())
+			weaponName = GetEntityName(referenceData.namePtr0098);
+			if (weaponName.empty())
 				continue;
 		}
 
-		const auto arrayTextSize = static_cast <int>(sizeof"[?] " + tempWeaponName.size());
-		auto* arrayText = new char[arrayTextSize];
-		sprintf_s(arrayText, arrayTextSize, "[%c] %s", GetFavoriteSlot(itemData[i].favoriteIndex), tempWeaponName.c_str());
-
-		array[itemData[i].favoriteIndex + 1] = arrayText;
+		result[itemData[i].favoriteIndex + 1] = fmt::format("[{}] {}", FavoriteIndex2Slot(itemData[i].favoriteIndex), weaponName);
 	}
 
-	for (auto i = 1; i < 13; i++)
-	{
-		if (array[i] == nullptr)
-		{
-			array[i] = new char[sizeof"[?] Favorited Item InValid"];
-			sprintf_s(array[i], sizeof"[?] Favorited Item InValid", "[%c] Favorited Item InValid", GetFavoriteSlot(BYTE(i - 1)));
-		}
-	}
-
-	delete[]itemData;
-	itemData = nullptr;
-	return array;
+	return result;
 }
 
-char* ErectusMemory::GetFavoritedWeaponText(const BYTE index)
+std::string ErectusMemory::GetFavoritedWeaponText(const BYTE index)
 {
+	std::string result = {};
+
 	const auto localPlayerPtr = GetLocalPlayerPtr(true);
 	if (!Utils::Valid(localPlayerPtr))
-		return nullptr;
+		return result;
 
 	TesObjectRefr localPlayer{};
 	if (!Utils::Rpm(localPlayerPtr, &localPlayer, sizeof localPlayer))
-		return nullptr;
+		return result;
 	if (!Utils::Valid(localPlayer.inventoryPtr))
-		return nullptr;
+		return result;
 
 	Inventory inventoryData{};
 	if (!Utils::Rpm(localPlayer.inventoryPtr, &inventoryData, sizeof inventoryData))
-		return nullptr;
+		return result;
 	if (!Utils::Valid(inventoryData.itemArrayPtr) || inventoryData.itemArrayEnd < inventoryData.itemArrayPtr)
-		return
-		nullptr;
+		return result;
 
 	const auto itemArraySize = (inventoryData.itemArrayEnd - inventoryData.itemArrayPtr) / sizeof(Item);
 	if (!itemArraySize || itemArraySize > 0x7FFF)
-		return nullptr;
+		return result;
 
-	auto* itemData = new Item[itemArraySize];
-	if (!Utils::Rpm(inventoryData.itemArrayPtr, &*itemData, itemArraySize * sizeof(Item)))
-	{
-		delete[]itemData;
-		itemData = nullptr;
-		return nullptr;
-	}
+	auto itemData = std::make_unique<Item[]>(itemArraySize);
+	if (!Utils::Rpm(inventoryData.itemArrayPtr, itemData.get(), itemArraySize * sizeof(Item)))
+		return result;
 
 	for (DWORD64 i = 0; i < itemArraySize; i++)
 	{
@@ -4306,7 +4231,7 @@ char* ErectusMemory::GetFavoritedWeaponText(const BYTE index)
 		TesItem referenceData{};
 		if (!Utils::Rpm(itemData[i].referencePtr, &referenceData, sizeof referenceData))
 			break;
-		if (referenceData.formType != static_cast<BYTE>(FormTypes::TesNpc))
+		if (referenceData.formType != static_cast<BYTE>(FormTypes::TesObjectWeap))
 			break;
 
 		auto tempWeaponName = GetInstancedItemName(itemData[i].displayPtr);
@@ -4317,18 +4242,10 @@ char* ErectusMemory::GetFavoritedWeaponText(const BYTE index)
 				continue;
 		}
 
-		const auto weaponTextSize = static_cast <int>(sizeof"[?] " + tempWeaponName.size());
-		auto* weaponText = new char[weaponTextSize];
-		sprintf_s(weaponText, weaponTextSize, "[%c] %s", GetFavoriteSlot(itemData[i].favoriteIndex), tempWeaponName.c_str());
-
-		delete[]itemData;
-		itemData = nullptr;
-		return weaponText;
+		result = fmt::format("[{0}] {1}", FavoriteIndex2Slot(itemData[i].favoriteIndex), tempWeaponName);
+		return result;
 	}
-
-	delete[]itemData;
-	itemData = nullptr;
-	return nullptr;
+	return result;
 }
 
 bool ErectusMemory::EntityInventoryValid(const TesObjectRefr& entityData)
@@ -4377,13 +4294,13 @@ bool ErectusMemory::EntityInventoryValid(const TesObjectRefr& entityData)
 
 bool ErectusMemory::AllowLegendaryWeapons(const EntityLooterSettings& settings)
 {
-	if (!settings.entityLooterAllWeaponsEnabled)
+	if (!settings.allWeaponsEnabled)
 	{
-		if (settings.entityLooterOneStarWeaponsEnabled)
+		if (settings.oneStarWeaponsEnabled)
 			return true;
-		if (settings.entityLooterTwoStarWeaponsEnabled)
+		if (settings.twoStarWeaponsEnabled)
 			return true;
-		if (settings.entityLooterThreeStarWeaponsEnabled)
+		if (settings.threeStarWeaponsEnabled)
 			return true;
 	}
 
@@ -4392,7 +4309,7 @@ bool ErectusMemory::AllowLegendaryWeapons(const EntityLooterSettings& settings)
 
 bool ErectusMemory::AllowLegendaryArmor(const EntityLooterSettings& settings)
 {
-	if (settings.entityLooterAllArmorEnabled || settings.entityLooterOneStarArmorEnabled || settings.entityLooterTwoStarArmorEnabled || settings.entityLooterThreeStarArmorEnabled)
+	if (settings.allArmorEnabled || settings.oneStarArmorEnabled || settings.twoStarArmorEnabled || settings.threeStarArmorEnabled)
 		return true;
 
 	return false;
@@ -4400,52 +4317,52 @@ bool ErectusMemory::AllowLegendaryArmor(const EntityLooterSettings& settings)
 
 bool ErectusMemory::CheckEntityLooterItem(const DWORD formId, const DWORD64 entityFlag, const EntityLooterSettings& settings, const bool legendaryWeaponsEnabled, const bool legendaryArmorEnabled)
 {
-	if (settings.entityLooterCapsEnabled && formId == 0x0000000F)
+	if (settings.capsEnabled && formId == 0x0000000F)
 		return true;
 
-	if (settings.entityLooterListEnabled)
+	if (settings.listEnabled)
 	{
-		if (CheckFormIdArray(formId, settings.entityLooterEnabledList, settings.entityLooterFormIdList, 100))
+		if (CheckFormIdArray(formId, settings.enabledList, settings.formIdList, 100))
 			return true;
 	}
 
 	if (entityFlag & CUSTOM_ENTRY_WEAPON)
 	{
-		if (settings.entityLooterAllWeaponsEnabled)
+		if (settings.allWeaponsEnabled)
 			return true;
 
 		return legendaryWeaponsEnabled;
 	}
 	if (entityFlag & CUSTOM_ENTRY_ARMOR)
 	{
-		if (settings.entityLooterAllArmorEnabled)
+		if (settings.allArmorEnabled)
 			return true;
 
 		return legendaryArmorEnabled;
 	}
 	if (entityFlag & CUSTOM_ENTRY_AMMO)
-		return settings.entityLooterAmmoEnabled;
+		return settings.ammoEnabled;
 	if (entityFlag & CUSTOM_ENTRY_MOD)
-		return settings.entityLooterModsEnabled;
+		return settings.modsEnabled;
 	if (entityFlag & CUSTOM_ENTRY_JUNK)
-		return settings.entityLooterJunkEnabled;
+		return settings.junkEnabled;
 	if (entityFlag & CUSTOM_ENTRY_AID)
-		return settings.entityLooterAidEnabled;
+		return settings.aidEnabled;
 	if (entityFlag & CUSTOM_ENTRY_TREASURE_MAP)
-		return settings.entityLooterTreasureMapsEnabled;
+		return settings.treasureMapsEnabled;
 	if (entityFlag & CUSTOM_ENTRY_PLAN)
 	{
 		if (entityFlag & CUSTOM_ENTRY_KNOWN_RECIPE)
-			return settings.entityLooterKnownPlansEnabled;
+			return settings.knownPlansEnabled;
 		if (entityFlag & CUSTOM_ENTRY_UNKNOWN_RECIPE)
-			return settings.entityLooterUnknownPlansEnabled;
+			return settings.unknownPlansEnabled;
 		if (entityFlag & CUSTOM_ENTRY_FAILED_RECIPE)
-			return settings.entityLooterUnknownPlansEnabled;
+			return settings.unknownPlansEnabled;
 	}
 	else if (entityFlag & CUSTOM_ENTRY_MISC)
-		return settings.entityLooterMiscEnabled;
+		return settings.miscEnabled;
 
-	if (settings.entityLooterUnlistedEnabled)
+	if (settings.unlistedEnabled)
 		return true;
 
 	return false;
@@ -4567,13 +4484,13 @@ bool ErectusMemory::ValidLegendary(const BYTE legendaryRank, const DWORD64 entit
 			switch (legendaryRank)
 			{
 			case 0x01:
-				return customEntityLooterSettings.entityLooterOneStarWeaponsEnabled;
+				return customEntityLooterSettings.oneStarWeaponsEnabled;
 			case 0x02:
-				return customEntityLooterSettings.entityLooterTwoStarWeaponsEnabled;
+				return customEntityLooterSettings.twoStarWeaponsEnabled;
 			case 0x03:
-				return customEntityLooterSettings.entityLooterThreeStarWeaponsEnabled;
+				return customEntityLooterSettings.threeStarWeaponsEnabled;
 			default:
-				return customEntityLooterSettings.entityLooterAllWeaponsEnabled;
+				return customEntityLooterSettings.allWeaponsEnabled;
 			}
 		}
 	}
@@ -4584,13 +4501,13 @@ bool ErectusMemory::ValidLegendary(const BYTE legendaryRank, const DWORD64 entit
 			switch (legendaryRank)
 			{
 			case 0x01:
-				return customEntityLooterSettings.entityLooterOneStarArmorEnabled;
+				return customEntityLooterSettings.oneStarArmorEnabled;
 			case 0x02:
-				return customEntityLooterSettings.entityLooterTwoStarArmorEnabled;
+				return customEntityLooterSettings.twoStarArmorEnabled;
 			case 0x03:
-				return customEntityLooterSettings.entityLooterThreeStarArmorEnabled;
+				return customEntityLooterSettings.threeStarArmorEnabled;
 			default:
-				return customEntityLooterSettings.entityLooterAllArmorEnabled;
+				return customEntityLooterSettings.allArmorEnabled;
 			}
 		}
 	}
@@ -4604,10 +4521,10 @@ bool ErectusMemory::TransferEntityItems(const TesObjectRefr& entityData, const T
 	switch (referenceData.formType)
 	{
 	case (static_cast<BYTE>(FormTypes::TesNpc)):
-		currentEntityLooterSettings = ErectusIni::npcLooterSettings;
+		currentEntityLooterSettings = ErectusIni::npcLooter;
 		break;
 	case (static_cast<BYTE>(FormTypes::TesObjectCont)):
-		currentEntityLooterSettings = ErectusIni::containerLooterSettings;
+		currentEntityLooterSettings = ErectusIni::containerLooter;
 		break;
 	default:
 		return false;
@@ -4652,13 +4569,13 @@ bool ErectusMemory::TransferEntityItems(const TesObjectRefr& entityData, const T
 
 		if (useEntityLooterBlacklist)
 		{
-			if (CheckFormIdArray(itemReferenceData.formId, currentEntityLooterSettings.entityLooterBlacklistEnabled, currentEntityLooterSettings.entityLooterBlacklist, 64))
+			if (CheckFormIdArray(itemReferenceData.formId, currentEntityLooterSettings.blacklistEnabled, currentEntityLooterSettings.blacklist, 64))
 				continue;
 		}
 
 		if (onlyUseEntityLooterList)
 		{
-			if (!CheckFormIdArray(itemReferenceData.formId, currentEntityLooterSettings.entityLooterEnabledList, currentEntityLooterSettings.entityLooterFormIdList, 100))
+			if (!CheckFormIdArray(itemReferenceData.formId, currentEntityLooterSettings.enabledList, currentEntityLooterSettings.formIdList, 100))
 				continue;
 		}
 
@@ -4816,43 +4733,43 @@ bool ErectusMemory::LootEntity(const TesObjectRefr& entityData, const TesItem& r
 
 bool ErectusMemory::CheckEntityLooterSettings(const EntityLooterSettings& settings)
 {
-	if (settings.entityLooterAllWeaponsEnabled)
+	if (settings.allWeaponsEnabled)
 		return true;
-	if (settings.entityLooterAllArmorEnabled)
+	if (settings.allArmorEnabled)
 		return true;
-	if (settings.entityLooterOneStarWeaponsEnabled)
+	if (settings.oneStarWeaponsEnabled)
 		return true;
-	if (settings.entityLooterOneStarArmorEnabled)
+	if (settings.oneStarArmorEnabled)
 		return true;
-	if (settings.entityLooterTwoStarWeaponsEnabled)
+	if (settings.twoStarWeaponsEnabled)
 		return true;
-	if (settings.entityLooterTwoStarArmorEnabled)
+	if (settings.twoStarArmorEnabled)
 		return true;
-	if (settings.entityLooterThreeStarWeaponsEnabled)
+	if (settings.threeStarWeaponsEnabled)
 		return true;
-	if (settings.entityLooterThreeStarArmorEnabled)
+	if (settings.threeStarArmorEnabled)
 		return true;
-	if (settings.entityLooterAmmoEnabled)
+	if (settings.ammoEnabled)
 		return true;
-	if (settings.entityLooterModsEnabled)
+	if (settings.modsEnabled)
 		return true;
-	if (settings.entityLooterCapsEnabled)
+	if (settings.capsEnabled)
 		return true;
-	if (settings.entityLooterJunkEnabled)
+	if (settings.junkEnabled)
 		return true;
-	if (settings.entityLooterAidEnabled)
+	if (settings.aidEnabled)
 		return true;
-	if (settings.entityLooterTreasureMapsEnabled)
+	if (settings.treasureMapsEnabled)
 		return true;
-	if (settings.entityLooterKnownPlansEnabled)
+	if (settings.knownPlansEnabled)
 		return true;
-	if (settings.entityLooterUnknownPlansEnabled)
+	if (settings.unknownPlansEnabled)
 		return true;
-	if (settings.entityLooterMiscEnabled)
+	if (settings.miscEnabled)
 		return true;
-	if (settings.entityLooterUnlistedEnabled)
+	if (settings.unlistedEnabled)
 		return true;
-	if (settings.entityLooterListEnabled)
+	if (settings.listEnabled)
 		return CheckEntityLooterList(settings);
 
 	return false;
@@ -4860,43 +4777,43 @@ bool ErectusMemory::CheckEntityLooterSettings(const EntityLooterSettings& settin
 
 bool ErectusMemory::CheckOnlyUseEntityLooterList(const EntityLooterSettings& settings)
 {
-	if (settings.entityLooterAllWeaponsEnabled)
+	if (settings.allWeaponsEnabled)
 		return false;
-	if (settings.entityLooterAllArmorEnabled)
+	if (settings.allArmorEnabled)
 		return false;
-	if (settings.entityLooterOneStarWeaponsEnabled)
+	if (settings.oneStarWeaponsEnabled)
 		return false;
-	if (settings.entityLooterOneStarArmorEnabled)
+	if (settings.oneStarArmorEnabled)
 		return false;
-	if (settings.entityLooterTwoStarWeaponsEnabled)
+	if (settings.twoStarWeaponsEnabled)
 		return false;
-	if (settings.entityLooterTwoStarArmorEnabled)
+	if (settings.twoStarArmorEnabled)
 		return false;
-	if (settings.entityLooterThreeStarWeaponsEnabled)
+	if (settings.threeStarWeaponsEnabled)
 		return false;
-	if (settings.entityLooterThreeStarArmorEnabled)
+	if (settings.threeStarArmorEnabled)
 		return false;
-	if (settings.entityLooterAmmoEnabled)
+	if (settings.ammoEnabled)
 		return false;
-	if (settings.entityLooterModsEnabled)
+	if (settings.modsEnabled)
 		return false;
-	if (settings.entityLooterCapsEnabled)
+	if (settings.capsEnabled)
 		return false;
-	if (settings.entityLooterJunkEnabled)
+	if (settings.junkEnabled)
 		return false;
-	if (settings.entityLooterAidEnabled)
+	if (settings.aidEnabled)
 		return false;
-	if (settings.entityLooterTreasureMapsEnabled)
+	if (settings.treasureMapsEnabled)
 		return false;
-	if (settings.entityLooterKnownPlansEnabled)
+	if (settings.knownPlansEnabled)
 		return false;
-	if (settings.entityLooterUnknownPlansEnabled)
+	if (settings.unknownPlansEnabled)
 		return false;
-	if (settings.entityLooterMiscEnabled)
+	if (settings.miscEnabled)
 		return false;
-	if (settings.entityLooterUnlistedEnabled)
+	if (settings.unlistedEnabled)
 		return false;
-	if (settings.entityLooterListEnabled)
+	if (settings.listEnabled)
 		return CheckEntityLooterList(settings);
 
 	return false;
@@ -4932,11 +4849,11 @@ bool ErectusMemory::Harvester()
 	if (!allowMessages)
 		return false;
 
-	auto useNpcLooter = ErectusIni::npcLooterSettings.entityLooterEnabled && CheckEntityLooterSettings(ErectusIni::npcLooterSettings);
+	auto useNpcLooter = ErectusIni::npcLooter.enabled && CheckEntityLooterSettings(ErectusIni::npcLooter);
 
-	auto useContainerLooter = ErectusIni::containerLooterSettings.entityLooterEnabled && CheckEntityLooterSettings(ErectusIni::containerLooterSettings);
+	auto useContainerLooter = ErectusIni::containerLooter.enabled && CheckEntityLooterSettings(ErectusIni::containerLooter);
 
-	auto useFloraHarvester = ErectusIni::customHarvesterSettings.harvesterEnabled && CheckIngredientList();
+	auto useFloraHarvester = ErectusIni::harvester.enabled && CheckIngredientList();
 
 	if (!useNpcLooter && !useContainerLooter && !useFloraHarvester)
 		return false;
@@ -4953,16 +4870,16 @@ bool ErectusMemory::Harvester()
 	auto useNpcLooterBlacklist = false;
 	if (useNpcLooter)
 	{
-		onlyUseNpcLooterList = CheckOnlyUseEntityLooterList(ErectusIni::npcLooterSettings);
-		useNpcLooterBlacklist = CheckEntityLooterBlacklist(ErectusIni::npcLooterSettings);
+		onlyUseNpcLooterList = CheckOnlyUseEntityLooterList(ErectusIni::npcLooter);
+		useNpcLooterBlacklist = CheckEntityLooterBlacklist(ErectusIni::npcLooter);
 	}
 
 	auto onlyUseContainerLooterList = false;
 	auto useContainerLooterBlacklist = false;
 	if (useContainerLooter)
 	{
-		onlyUseContainerLooterList = CheckOnlyUseEntityLooterList(ErectusIni::containerLooterSettings);
-		useContainerLooterBlacklist = CheckEntityLooterBlacklist(ErectusIni::containerLooterSettings);
+		onlyUseContainerLooterList = CheckOnlyUseEntityLooterList(ErectusIni::containerLooter);
+		useContainerLooterBlacklist = CheckEntityLooterBlacklist(ErectusIni::containerLooter);
 	}
 
 	if (useNpcLooter)
@@ -5086,9 +5003,7 @@ bool ErectusMemory::MeleeAttack()
 	CloseHandle(thread);
 
 	if (threadResult == WAIT_TIMEOUT)
-	{
 		return false;
-	}
 
 	Utils::FreeEx(allocAddress);
 	return true;
@@ -5130,9 +5045,7 @@ bool ErectusMemory::ChargenEditing()
 	}
 
 	if (shouldEdit)
-	{
 		return Utils::Wpm(chargenPtr, &chargenData, sizeof chargenData);
-	}
 
 	return true;
 }
@@ -5203,9 +5116,7 @@ bool ErectusMemory::CreateProjectile(const DWORD itemId, const float* position, 
 	CloseHandle(thread);
 
 	if (threadResult == WAIT_TIMEOUT)
-	{
 		return false;
-	}
 
 	Utils::FreeEx(allocAddress);
 	return true;

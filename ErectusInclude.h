@@ -5,6 +5,7 @@
 #include <Windows.h>
 #include <TlHelp32.h>
 
+#include <array>
 #include <unordered_set>
 
 //Overlay
@@ -17,13 +18,10 @@
 #pragma comment(lib, "d3d9.lib")
 #pragma comment(lib, "d3dx9.lib")
 
-//ImGui
-#include "imgui.h"
-#include "imgui_internal.h"
-
 //mINI
 #define MINI_CASE_SENSITIVE
 #include "ini.h"
+#include "imgui/imgui.h"
 
 //overlay
 constexpr LPCSTR OVERLAY_WINDOW_NAME = "Er";
@@ -1047,55 +1045,55 @@ namespace SettingsClasses {
 	class ScrapLooterSettings
 	{
 	public:
-		bool scrapKeybindEnabled;
+		bool drawStatus;
+		bool keybindEnabled;
 		bool scrapOverrideEnabled;
-		bool scrapAutomaticLootingEnabled;
-		bool scrapAutomaticStatus;
-		int scrapAutomaticSpeedMin;
-		int scrapAutomaticSpeedMax;
-		int scrapLooterDistance;
-		bool scrapEnabledList[40];
-		DWORD scrapFormIdList[40];
-		const char* scrapNameList[40];
+		bool autoLootingEnabled;
+		int autoLootingSpeedMin;
+		int autoLootingSpeedMax;
+		int maxDistance;
+		bool enabledList[40];
+		DWORD formIdList[40];
+		const char* nameList[40];
 	};
 
 	class ItemLooterSettings
 	{
 	public:
-		bool itemKeybindEnabled;
-		bool itemAutomaticLootingEnabled;
-		bool itemAutomaticStatus;
-		int itemAutomaticSpeedMin;
-		int itemAutomaticSpeedMax;
-		bool itemLooterWeaponsEnabled;
-		int itemLooterWeaponsDistance;
-		bool itemLooterArmorEnabled;
-		int itemLooterArmorDistance;
-		bool itemLooterAmmoEnabled;
-		int itemLooterAmmoDistance;
-		bool itemLooterModsEnabled;
-		int itemLooterModsDistance;
-		bool itemLooterMagazinesEnabled;
-		int itemLooterMagazinesDistance;
-		bool itemLooterBobbleheadsEnabled;
-		int itemLooterBobbleheadsDistance;
-		bool itemLooterAidEnabled;
-		int itemLooterAidDistance;
-		bool itemLooterKnownPlansEnabled;
-		int itemLooterKnownPlansDistance;
-		bool itemLooterUnknownPlansEnabled;
-		int itemLooterUnknownPlansDistance;
-		bool itemLooterMiscEnabled;
-		int itemLooterMiscDistance;
-		bool itemLooterUnlistedEnabled;
-		int itemLooterUnlistedDistance;
-		bool itemLooterListEnabled;
-		int itemLooterListDistance;
-		bool itemLooterBlacklistToggle;
-		bool itemLooterEnabledList[100];
-		DWORD itemLooterFormIdList[100];
-		bool itemLooterBlacklistEnabled[64];
-		DWORD itemLooterBlacklist[64];
+		bool drawStatus;
+		bool keybindEnabled;
+		bool autoLootingEnabled;
+		int autoLootingSpeedMin;
+		int autoLootingSpeedMax;
+		bool lootWeaponsEnabled;
+		int lootWeaponsDistance;
+		bool lootArmorEnabled;
+		int lootArmorDistance;
+		bool lootAmmoEnabled;
+		int lootAmmoDistance;
+		bool lootModsEnabled;
+		int lootModsDistance;
+		bool lootMagazinesEnabled;
+		int lootMagazinesDistance;
+		bool lootBobbleheadsEnabled;
+		int lootBobbleheadsDistance;
+		bool lootAidEnabled;
+		int lootAidDistance;
+		bool lootKnownPlansEnabled;
+		int lootKnownPlansDistance;
+		bool lootUnknownPlansEnabled;
+		int lootUnknownPlansDistance;
+		bool lootMiscEnabled;
+		int lootMiscDistance;
+		bool lootUnlistedEnabled;
+		int lootUnlistedDistance;
+		bool lootListEnabled;
+		int lootListDistance;
+		bool blacklistToggle;
+		bool enabledList[100];
+		DWORD formIdList[100];
+		bool blacklistEnabled[64];
+		DWORD blacklist[64];
 	};
 
 	class WeaponSettings
@@ -1142,8 +1140,8 @@ namespace SettingsClasses {
 	class LocalPlayerSettings
 	{
 	public:
+		bool drawPositionSpoofingStatus;
 		bool positionSpoofingEnabled;
-		bool drawPositionSpoofingEnabled;
 		int positionSpoofingHeight;
 		bool noclipEnabled;
 		float noclipSpeed;
@@ -1257,43 +1255,43 @@ namespace SettingsClasses {
 	class EntityLooterSettings
 	{
 	public:
-		bool entityLooterEnabled;
-		bool entityLooterStatusEnabled;
-		bool entityLooterOneStarWeaponsEnabled;
-		bool entityLooterOneStarArmorEnabled;
-		bool entityLooterTwoStarWeaponsEnabled;
-		bool entityLooterTwoStarArmorEnabled;
-		bool entityLooterThreeStarWeaponsEnabled;
-		bool entityLooterThreeStarArmorEnabled;
-		bool entityLooterAllWeaponsEnabled;
-		bool entityLooterAllArmorEnabled;
-		bool entityLooterAmmoEnabled;
-		bool entityLooterModsEnabled;
-		bool entityLooterCapsEnabled;
-		bool entityLooterJunkEnabled;
-		bool entityLooterAidEnabled;
-		bool entityLooterTreasureMapsEnabled;
-		bool entityLooterKnownPlansEnabled;
-		bool entityLooterUnknownPlansEnabled;
-		bool entityLooterMiscEnabled;
-		bool entityLooterUnlistedEnabled;
-		bool entityLooterListEnabled;
-		bool entityLooterBlacklistToggle;
-		bool entityLooterEnabledList[100];
-		DWORD entityLooterFormIdList[100];
-		bool entityLooterBlacklistEnabled[64];
-		DWORD entityLooterBlacklist[64];
+		bool enabled;
+		bool drawStatus;
+		bool oneStarWeaponsEnabled;
+		bool oneStarArmorEnabled;
+		bool twoStarWeaponsEnabled;
+		bool twoStarArmorEnabled;
+		bool threeStarWeaponsEnabled;
+		bool threeStarArmorEnabled;
+		bool allWeaponsEnabled;
+		bool allArmorEnabled;
+		bool ammoEnabled;
+		bool modsEnabled;
+		bool capsEnabled;
+		bool junkEnabled;
+		bool aidEnabled;
+		bool treasureMapsEnabled;
+		bool knownPlansEnabled;
+		bool unknownPlansEnabled;
+		bool miscEnabled;
+		bool unlistedEnabled;
+		bool listEnabled;
+		bool blacklistToggle;
+		bool enabledList[100];
+		DWORD formIdList[100];
+		bool blacklistEnabled[64];
+		DWORD blacklist[64];
 	};
 
 	class HarvesterSettings
 	{
 	public:
-		bool harvesterEnabled;
-		bool harvesterStatusEnabled;
-		bool harvesterOverrideEnabled;
-		bool harvesterEnabledList[69];
-		DWORD harvesterFormIdList[69];
-		const char* harvesterNameList[69];
+		bool enabled;
+		bool drawStatus;
+		bool overrideEnabled;
+		bool enabledList[69];
+		DWORD formIdList[69];
+		const char* nameList[69];
 	};
 
 	class KnownRecipeSettings
@@ -1306,9 +1304,9 @@ namespace SettingsClasses {
 	class MeleeSettings
 	{
 	public:
-		bool meleeEnabled;
-		int meleeSpeedMin;
-		int meleeSpeedMax;
+		bool enabled;
+		int speedMin;
+		int speedMax;
 	};
 
 	class ChargenSettings
@@ -1366,10 +1364,6 @@ private:
 	static void RenderOverlay();
 
 	inline static HINSTANCE mHInstance = nullptr;
-	inline static DWORD* keybindHandlerKey = nullptr;
-	inline static DWORD* keybindHandlerBit = nullptr;
-	inline static DWORD oldKeybindHandlerKey = 0;
-	inline static DWORD oldKeybindHandlerBit = 0;
 	inline static int windowTopmostCounter = 0;
 
 	virtual void __dummy() = 0;
@@ -1440,20 +1434,13 @@ public:
 	static bool ImGuiInitialize();
 	static void ImGuiCleanup();
 
-	inline static bool imGuiInitialized = false;
-
-	inline static int alphaCode[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-	inline static int bravoCode[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-	inline static int charlieCode[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+	inline static std::array<int, 8> alphaCode = { };
+	inline static std::array<int, 8> bravoCode = { };
+	inline static std::array<int, 8> charlieCode = { };
 private:
-	static bool DragMenu();
 	static void ButtonToggle(const char* label, bool* state);
 	static void LargeButtonToggle(const char* label, bool* state);
 	static void SmallButtonToggle(const char* label, bool* state);
-
-	inline static POINT pointerPosition = { 0, 0 };
-	inline static ImVec2 pointerOrigin = { 0.0f, 0.0f };
-	inline static bool pointerDrag = false;
 
 	inline static bool swapperSourceToggle = false;
 	inline static bool swapperDestinationToggle = false;
@@ -1462,8 +1449,6 @@ private:
 
 	inline static DWORD64 getPtrResult = 0;
 	inline static DWORD64 getAddressResult = 0;
-
-	inline static char** favoritedWeaponsArray = nullptr;
 
 	virtual void __dummy() = 0;
 };
@@ -1477,8 +1462,6 @@ public:
 	static bool DrawText(const char* text, bool shadowed, bool centered, float* position, const float* color, float alpha);
 
 	inline static LPD3DXSPRITE d3DxSprite = nullptr;
-
-	inline static bool d3D9Initialized = false;
 	inline static LPDIRECT3DDEVICE9 d3D9Device = nullptr;
 	inline static bool deviceResetQueued = false;
 
@@ -1548,10 +1531,10 @@ public:
 	static bool RenderCustomPlayerList();
 	static void RenderData();
 
-	static char** GetFavoritedWeapons();
-	static char* GetFavoritedWeaponText(BYTE index);
-	static DWORD GetFavoritedWeaponId(BYTE index);
-	static char GetFavoriteSlot(BYTE favoriteIndex);
+	static std::unordered_map<int, std::string> GetFavoritedWeapons();
+	static std::string GetFavoritedWeaponText(BYTE index);
+	static DWORD GetFavoritedWeaponId(BYTE favouriteIndex);
+	static char FavoriteIndex2Slot(BYTE favoriteIndex);
 
 	static DWORD GetLocalPlayerFormId();
 	static DWORD GetStashFormId();
@@ -1576,8 +1559,7 @@ public:
 
 	static bool ReferenceSwap(DWORD& sourceFormId, DWORD& destinationFormId);
 
-	static bool GetNukeCode(DWORD formId, int* nukeCode);
-
+	static bool GetNukeCode(DWORD formId, std::array<int, 8>& nukeCode);
 	static bool GetTeleportPosition(int index);
 	static bool RequestTeleport(int index);
 
@@ -1725,8 +1707,8 @@ public:
 	static SettingsClasses::OverlaySettingsB floraSettings;
 	static SettingsClasses::OverlaySettingsB entitySettings;
 
-	static SettingsClasses::ScrapLooterSettings customScrapLooterSettings;
-	static SettingsClasses::ItemLooterSettings customItemLooterSettings;
+	static SettingsClasses::ScrapLooterSettings scrapLooter;
+	static SettingsClasses::ItemLooterSettings itemLooter;
 	static SettingsClasses::WeaponSettings customWeaponSettings;
 	static SettingsClasses::TargetSettings customTargetSettings;
 	static SettingsClasses::LocalPlayerSettings customLocalPlayerSettings;
@@ -1738,11 +1720,11 @@ public:
 	static SettingsClasses::NukeCodeSettings customNukeCodeSettings;
 	static SettingsClasses::LegendarySettings customLegendarySettings;
 	static SettingsClasses::FluxSettings customFluxSettings;
-	static SettingsClasses::EntityLooterSettings npcLooterSettings;
-	static SettingsClasses::EntityLooterSettings containerLooterSettings;
-	static SettingsClasses::HarvesterSettings customHarvesterSettings;
+	static SettingsClasses::EntityLooterSettings npcLooter;
+	static SettingsClasses::EntityLooterSettings containerLooter;
+	static SettingsClasses::HarvesterSettings harvester;
 	static SettingsClasses::KnownRecipeSettings customKnownRecipeSettings;
-	static SettingsClasses::MeleeSettings customMeleeSettings;
+	static SettingsClasses::MeleeSettings melee;
 	static SettingsClasses::ChargenSettings customChargenSettings;
 	static SettingsClasses::ExtraNpcSettings customExtraNpcSettings;
 
