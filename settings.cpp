@@ -1,9 +1,11 @@
 #include "settings.h"
+#include "utils.h"
 
+#include "ErectusMemory.h"
+
+#define MINI_CASE_SENSITIVE
 #include "ini.h"
 #include "fmt/format.h"
-
-#include "ErectusInclude.h" //temp, this is for Utils access
 
 mINI::INIFile file("Erectus.ini");
 mINI::INIStructure ini;

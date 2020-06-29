@@ -1,4 +1,11 @@
-#include "ErectusInclude.h"
+//#include "ErectusInclude.h"
+#include "utils.h"
+#include "app.h"
+#include "ErectusProcess.h"
+
+#include <memoryapi.h>
+
+
 
 int Utils::GetTextLength(const char *text)
 {
@@ -115,8 +122,8 @@ bool Utils::WorldToScreen(const float *view, const float *position, float *scree
 	if (buffer[3] < 0.1f) return false;
 
 	float halfWindowSize[2];
-	halfWindowSize[0] = static_cast<float>(ErectusMain::windowSize[0]) * 0.5f;
-	halfWindowSize[1] = static_cast<float>(ErectusMain::windowSize[1]) * 0.5f;
+	halfWindowSize[0] = static_cast<float>(App::windowSize[0]) * 0.5f;
+	halfWindowSize[1] = static_cast<float>(App::windowSize[1]) * 0.5f;
 
 	screen[0] = halfWindowSize[0] + halfWindowSize[0] * buffer[0] / buffer[3];
 	screen[1] = halfWindowSize[1] - halfWindowSize[1] * buffer[1] / buffer[3];

@@ -1,21 +1,26 @@
-#include "ErectusInclude.h"
+#include "app.h"
+#include "renderer.h"
 #include "settings.h"
+#include "gui.h"
+
+#include "ErectusProcess.h"
+
 
 void onShutdown() {
 	ErectusProcess::ResetProcessData();
 	
 	Renderer::Cleanup();
-	ErectusImGui::ImGuiCleanup();
+	Gui::ImGuiCleanup();
 
 	Settings::WriteIniSettings();
 
-	ErectusMain::CloseWnd();
+	App::CloseWnd();
 }
 
 int onStartup(const HINSTANCE hInstance) {
-	ErectusMain::CreateWnd(hInstance);
+	App::CreateWnd(hInstance);
 
-	ShowWindow(ErectusMain::appHwnd, SW_SHOW);
+	ShowWindow(App::appHwnd, SW_SHOW);
 
 	if (!Renderer::Init())
 	{
@@ -23,7 +28,7 @@ int onStartup(const HINSTANCE hInstance) {
 		return 3;
 	}
 
-	if (!ErectusImGui::ImGuiInitialize())
+	if (!Gui::ImGuiInitialize())
 	{
 		onShutdown();
 		return 4;
@@ -45,7 +50,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, [[maybe_unused]] HINSTANCE hPrevInstanc
 	if (((result = onStartup(hInstance))) && result != 0)
 		return result;
 
-	ErectusMain::RegisterHotkeys();
+	App::RegisterHotkeys();
 	
 	MSG overlayMsg;
 	while (GetMessage(&overlayMsg, nullptr, 0, 0))

@@ -132,14 +132,14 @@
     <ClCompile Include="imgui\imgui_impl_win32.cpp" />
     <ClCompile Include="imgui\imgui_stdlib.cpp" />
     <ClCompile Include="imgui\imgui_widgets.cpp" />
-    <ClCompile Include="Utils.cpp" />
-    <ClCompile Include="ErectusD3D9.cpp" />
-    <ClCompile Include="ErectusImGui.cpp" />
+    <ClCompile Include="utils.cpp" />
+    <ClCompile Include="renderer.cpp" />
+    <ClCompile Include="gui.cpp" />
     <ClCompile Include="settings.cpp" />
-    <ClCompile Include="ErectusMain.cpp" />
+    <ClCompile Include="app.cpp" />
     <ClCompile Include="ErectusMemory.cpp" />
     <ClCompile Include="ErectusProcess.cpp" />
-    <ClCompile Include="ErectusThread.cpp" />
+    <ClCompile Include="threads.cpp" />
     <ClCompile Include="_main.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -149,10 +149,14 @@
     <ResourceCompile Include="Erectus.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ErectusInclude.h" />
+    <ClInclude Include="app.h" />
+    <ClInclude Include="common.h" />
+    <ClInclude Include="ErectusMemory.h" />
+    <ClInclude Include="ErectusProcess.h" />
     <ClInclude Include="fmt\core.h" />
     <ClInclude Include="fmt\format-inl.h" />
     <ClInclude Include="fmt\format.h" />
+    <ClInclude Include="gui.h" />
     <ClInclude Include="imgui\imconfig.h" />
     <ClInclude Include="imgui\imgui.h" />
     <ClInclude Include="imgui\imgui_impl_dx9.h" />
@@ -163,8 +167,11 @@
     <ClInclude Include="imgui\imstb_textedit.h" />
     <ClInclude Include="imgui\imstb_truetype.h" />
     <ClInclude Include="ini.h" />
+    <ClInclude Include="renderer.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="settings.h" />
+    <ClInclude Include="threads.h" />
+    <ClInclude Include="utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

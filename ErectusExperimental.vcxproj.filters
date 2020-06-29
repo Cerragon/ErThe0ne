@@ -30,28 +30,13 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ErectusD3D9.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ErectusImGui.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ErectusMain.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ErectusMemory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ErectusProcess.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ErectusThread.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="_main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="format.cc">
@@ -78,6 +63,21 @@
     <ClCompile Include="settings.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="utils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="threads.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gui.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="app.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Image Include="Erectus.ico">
@@ -90,9 +90,6 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ErectusInclude.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -136,6 +133,30 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="settings.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="threads.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="gui.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="app.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ErectusProcess.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ErectusMemory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

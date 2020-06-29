@@ -1,60 +1,69 @@
-#include "ErectusInclude.h"
+#include "app.h"
+#include "renderer.h"
+#include "threads.h"
+
+#include <thread>
+#include <TlHelp32.h>
+
+#include "ErectusProcess.h"
+#include "ErectusMemory.h"
+
 
 void ErectusProcess::SetProcessMenu()
 {
 	if (processMenuActive)
 		return;
 	
-	if (ErectusMain::windowSize[0] != 384 || ErectusMain::windowSize[1] != 224)
+	if (App::windowSize[0] != 384 || App::windowSize[1] != 224)
 	{
-		ErectusMain::windowSize[0] = 384;
-		ErectusMain::windowSize[1] = 224;
+		App::windowSize[0] = 384;
+		App::windowSize[1] = 224;
 
-		if (ErectusMain::appHwnd != nullptr)
+		if (App::appHwnd != nullptr)
 		{
 			Renderer::deviceResetQueued = true;
-			SetWindowPos(ErectusMain::appHwnd, HWND_NOTOPMOST, ErectusMain::windowPosition[0], ErectusMain::windowPosition[1], ErectusMain::windowSize[0], ErectusMain::windowSize[1], 0);
+			SetWindowPos(App::appHwnd, HWND_NOTOPMOST, App::windowPosition[0], App::windowPosition[1], App::windowSize[0], App::windowSize[1], 0);
 		}
 	}
 
 	int bufferPosition[2];
-	bufferPosition[0] = GetSystemMetrics(SM_CXSCREEN) / 2 - ErectusMain::windowSize[0] / 2;
-	bufferPosition[1] = GetSystemMetrics(SM_CYSCREEN) / 2 - ErectusMain::windowSize[1] / 2;
+	bufferPosition[0] = GetSystemMetrics(SM_CXSCREEN) / 2 - App::windowSize[0] / 2;
+	bufferPosition[1] = GetSystemMetrics(SM_CYSCREEN) / 2 - App::windowSize[1] / 2;
 
-	if (ErectusMain::windowPosition[0] != bufferPosition[0] || ErectusMain::windowPosition[1] != bufferPosition[1])
+	if (App::windowPosition[0] != bufferPosition[0] || App::windowPosition[1] != bufferPosition[1])
 	{
-		ErectusMain::windowPosition[0] = bufferPosition[0];
-		ErectusMain::windowPosition[1] = bufferPosition[1];
+		App::windowPosition[0] = bufferPosition[0];
+		App::windowPosition[1] = bufferPosition[1];
 
-		if (ErectusMain::appHwnd != nullptr)
+		if (App::appHwnd != nullptr)
 		{
-			MoveWindow(ErectusMain::appHwnd, ErectusMain::windowPosition[0], ErectusMain::windowPosition[1], ErectusMain::windowSize[0], ErectusMain::windowSize[1], FALSE);
+			MoveWindow(App::appHwnd, App::windowPosition[0], App::windowPosition[1], App::windowSize[0], App::windowSize[1], FALSE);
 			if (!Renderer::deviceResetQueued)
 			{
-				SetWindowPos(ErectusMain::appHwnd, HWND_NOTOPMOST, ErectusMain::windowPosition[0], ErectusMain::windowPosition[1], ErectusMain::windowSize[0], ErectusMain::windowSize[1], 0);
+				SetWindowPos(App::appHwnd, HWND_NOTOPMOST, App::windowPosition[0], App::windowPosition[1], App::windowSize[0], App::windowSize[1], 0);
 			}
 		}
 	}
 
-	if (ErectusMain::appHwnd != nullptr)
+	if (App::appHwnd != nullptr)
 	{
-		auto style = GetWindowLongPtr(ErectusMain::appHwnd, GWL_EXSTYLE);
+		auto style = GetWindowLongPtr(App::appHwnd, GWL_EXSTYLE);
 
 		if (style & WS_EX_LAYERED)
 		{
 			style &= ~WS_EX_LAYERED;
-			SetWindowLongPtr(ErectusMain::appHwnd, GWL_EXSTYLE, style);
+			SetWindowLongPtr(App::appHwnd, GWL_EXSTYLE, style);
 		}
 
 		if (style & WS_EX_TOPMOST)
 		{
-			SetWindowPos(ErectusMain::appHwnd, HWND_NOTOPMOST, ErectusMain::windowPosition[0], ErectusMain::windowPosition[1], ErectusMain::windowSize[0], ErectusMain::windowSize[1], 0);
+			SetWindowPos(App::appHwnd, HWND_NOTOPMOST, App::windowPosition[0], App::windowPosition[1], App::windowSize[0], App::windowSize[1], 0);
 		}
 	}
 
 	processMenuActive = true;
-	ErectusMain::overlayMenuActive = false;
-	ErectusMain::overlayActive = false;
+	App::overlayMenuActive = false;
+	App::overlayActive = false;
 }
 
 void ErectusProcess::SetProcessError(const int errorId, const char* error)
@@ -72,17 +81,17 @@ void ErectusProcess::ResetProcessData()
 	SetProcessMenu();
 	SetProcessError(0, "Process State: No process selected");
 
-	if (ErectusThread::threadCreationState)
+	if (Threads::threadCreationState)
 	{
 		auto areThreadsActive = false;
 
-		while (!ErectusThread::ThreadDestruction())
+		while (!Threads::ThreadDestruction())
 		{
-			ErectusThread::threadDestructionCounter++;
-			if (ErectusThread::threadDestructionCounter > 1440)
+			Threads::threadDestructionCounter++;
+			if (Threads::threadDestructionCounter > 1440)
 			{
 				areThreadsActive = true;
-				ErectusMain::CloseWnd();
+				App::CloseWnd();
 				break;
 			}
 			std::this_thread::sleep_for(std::chrono::milliseconds(10));

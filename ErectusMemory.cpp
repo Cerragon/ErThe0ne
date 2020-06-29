@@ -1,12 +1,67 @@
-#include "ErectusInclude.h"
+#include "ErectusMemory.h"
+
+#include "common.h"
+
 #include "settings.h"
+#include "gui.h"
+#include "renderer.h"
+#include "threads.h"
+#include "utils.h"
 
 #include "fmt/format.h"
 #include <array>
 #include <unordered_set>
 
-using namespace MemoryClasses;
+#include "ErectusProcess.h"
 
+namespace
+{
+	enum class FormTypes : BYTE
+	{
+		TesObjectArmo = 0x25,
+		TesObjectBook = 0x26,
+		TesObjectCont = 0x27,
+		TesObjectMisc = 0x2B,
+		CurrencyObject = 0x2E,
+		TesFlora = 0x34,
+		TesObjectWeap = 0x36,
+		TesAmmo = 0x37,
+		TesNpc = 0x38,
+		TesKey = 0x3B,
+		AlchemyItem = 0x3C,
+		TesUtilityItem = 0x3D,
+		BgsNote = 0x3F,
+		TesLevItem = 0x47,
+	};
+	
+	constexpr auto CUSTOM_ENTRY_DEFAULT = 0x0000000000000000ULL;
+	constexpr auto CUSTOM_ENTRY_UNNAMED = 0x0000000000000001ULL;
+	constexpr auto CUSTOM_ENTRY_PLAYER = 0x0000000000000002ULL;
+	constexpr auto CUSTOM_ENTRY_NPC = 0x0000000000000004ULL;
+	constexpr auto CUSTOM_ENTRY_CONTAINER = 0x0000000000000008ULL;
+	constexpr auto CUSTOM_ENTRY_JUNK = 0x0000000000000010ULL;
+	constexpr auto CUSTOM_ENTRY_PLAN = 0x0000000000000020ULL;
+	constexpr auto CUSTOM_ENTRY_ITEM = 0x0000000000000040ULL;
+	constexpr auto CUSTOM_ENTRY_ENTITY = 0x0000000000000080ULL;
+	constexpr auto CUSTOM_ENTRY_VALID_SCRAP = 0x0000000000000100ULL;
+	constexpr auto CUSTOM_ENTRY_VALID_ITEM = 0x0000000000000200ULL;
+	constexpr auto CUSTOM_ENTRY_MAGAZINE = 0x0000000000000400ULL;
+	constexpr auto CUSTOM_ENTRY_BOBBLEHEAD = 0x0000000000000800ULL;
+	constexpr auto CUSTOM_ENTRY_FLORA = 0x0000000000001000ULL;
+	constexpr auto CUSTOM_ENTRY_MISC = 0x0000000000002000ULL;
+	constexpr auto CUSTOM_ENTRY_MOD = 0x0000000000004000ULL;
+	constexpr auto CUSTOM_ENTRY_WEAPON = 0x0000000000008000ULL;
+	constexpr auto CUSTOM_ENTRY_ARMOR = 0x0000000000010000ULL;
+	constexpr auto CUSTOM_ENTRY_AMMO = 0x0000000000020000ULL;
+	constexpr auto CUSTOM_ENTRY_AID = 0x0000000000040000ULL;
+	constexpr auto CUSTOM_ENTRY_VALID_INGREDIENT = 0x0000000000080000ULL;
+	constexpr auto CUSTOM_ENTRY_KNOWN_RECIPE = 0x0000000000100000ULL;
+	constexpr auto CUSTOM_ENTRY_UNKNOWN_RECIPE = 0x0000000000200000ULL;
+	constexpr auto CUSTOM_ENTRY_FAILED_RECIPE = 0x0000000000400000ULL;
+	constexpr auto CUSTOM_ENTRY_TREASURE_MAP = 0x0000000000800000ULL;
+	constexpr auto CUSTOM_ENTRY_WHITELISTED = 0x4000000000000000ULL;
+	constexpr auto CUSTOM_ENTRY_INVALID = 0x8000000000000000ULL;
+}
 
 DWORD legendaryFormIdArray[]
 {
@@ -3331,29 +3386,29 @@ void ErectusMemory::RenderData()
 
 	if (Settings::customLocalPlayerSettings.drawPositionSpoofingStatus)
 	{
-		featureText = fmt::format("Position Spoofing (Active): {0:d} (Height: {1:d})", static_cast<int>(ErectusThread::positionSpoofingToggle), Settings::customLocalPlayerSettings.positionSpoofingHeight);
+		featureText = fmt::format("Position Spoofing (Active): {0:d} (Height: {1:d})", static_cast<int>(Threads::positionSpoofingToggle), Settings::customLocalPlayerSettings.positionSpoofingHeight);
 		featureState = InsideInteriorCell() ? false : Settings::customLocalPlayerSettings.positionSpoofingEnabled;
 		infoTexts.push_back({ featureText, featureState });
 	}
 
 	if (Settings::customNukeCodeSettings.drawCodeAlpha)
 	{
-		featureText = fmt::format("{} - Alpha", fmt::join(ErectusImGui::alphaCode, " "));
-		featureState = ErectusImGui::alphaCode == std::array<int, 8>{} ? false : true;
+		featureText = fmt::format("{} - Alpha", fmt::join(Gui::alphaCode, " "));
+		featureState = Gui::alphaCode == std::array<int, 8>{} ? false : true;
 		infoTexts.push_back({ featureText, featureState });
 	}
 
 	if (Settings::customNukeCodeSettings.drawCodeBravo)
 	{
-		featureText = fmt::format("{} - Bravo", fmt::join(ErectusImGui::bravoCode, " "));
-		featureState = ErectusImGui::bravoCode == std::array<int, 8>{} ? false : true;
+		featureText = fmt::format("{} - Bravo", fmt::join(Gui::bravoCode, " "));
+		featureState = Gui::bravoCode == std::array<int, 8>{} ? false : true;
 		infoTexts.push_back({ featureText, featureState });
 	}
 
 	if (Settings::customNukeCodeSettings.drawCodeCharlie)
 	{
-		featureText = fmt::format("{} - Charlie", fmt::join(ErectusImGui::charlieCode, " "));
-		featureState = ErectusImGui::charlieCode == std::array<int, 8>{} ? false : true;
+		featureText = fmt::format("{} - Charlie", fmt::join(Gui::charlieCode, " "));
+		featureState = Gui::charlieCode == std::array<int, 8>{} ? false : true;
 		infoTexts.push_back({ featureText, featureState });
 	}
 
