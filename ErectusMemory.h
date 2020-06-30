@@ -5,6 +5,7 @@
 
 #include <unordered_map>
 #include <unordered_set>
+#include <array>
 
 class TesObjectRefr
 {
@@ -82,7 +83,6 @@ public:
 	BYTE padding01Fc[0x14];
 	DWORD64 harvestedPtr;//0x210
 };
-
 
 class LeveledList
 {
@@ -853,15 +853,22 @@ public:
 	DWORD64 targetLockingPtr{};
 };
 
+struct LocalPlayerInfo
+{
+	DWORD formId;
+	DWORD stashFormId;
+	DWORD cellFormId;
+	float position[3];
+	float yaw;
+	float pitch;
+	float currentHealth;
+};
+
+
 class ErectusMemory final {
 public:
 	static DWORD64 GetAddress(DWORD formId);
 	static DWORD64 GetPtr(DWORD formId);
-
-	static bool RenderCustomNpcList();
-	static bool RenderCustomEntityList();
-	static bool RenderCustomPlayerList();
-	static void RenderData();
 
 	static std::unordered_map<int, std::string> GetFavoritedWeapons();
 	static std::string GetFavoritedWeaponText(BYTE index);
@@ -870,7 +877,7 @@ public:
 
 	static DWORD GetLocalPlayerFormId();
 	static DWORD GetStashFormId();
-
+	static void UpdateNukeCodes();
 	static bool UpdateBufferEntityList();
 	static bool UpdateBufferNpcList();
 	static bool UpdateBufferPlayerList();
@@ -921,14 +928,21 @@ public:
 	static bool Harvester();
 
 	static bool MessagePatcher(bool state);
+	static bool InsideInteriorCell();
+	static LocalPlayerInfo GetLocalPlayerInfo();
+	static Camera GetCameraInfo();
+	static bool IsFloraHarvested(BYTE harvestFlagA, BYTE harvestFlagB);
+	static BYTE CheckHealthFlag(BYTE healthFlag);
+	static bool GetActorSnapshotComponentData(const TesObjectRefr& entityData, ActorSnapshotComponent* actorSnapshotComponentData);
+	static bool TargetValid(const TesObjectRefr& entityData);
 
+	static bool Rpm(DWORD64 src, void* dst, size_t size);
+	static bool FreeEx(DWORD64 src);
+	
 	inline static bool oldWeaponListUpdated = false;
 	inline static int oldWeaponListCounter = 0;
 	inline static int oldWeaponListSize = 0;
 
-	inline static bool targetLockingValid = false;
-	inline static float targetLockingClosestDegrees = 0.0f;
-	inline static DWORD64 targetLockingClosestPtr = 0;
 	inline static int targetLockingCooldown = 0;
 	inline static DWORD64 targetLockingPtr = 0;
 
@@ -940,13 +954,15 @@ public:
 	inline static std::vector<CustomEntry> npcDataBuffer{};
 	inline static std::vector<CustomEntry> playerDataBuffer{};
 
-private:
-	static bool RenderCustomEntryA(const CustomEntry& entry, const OverlaySettingsA& settings);
-	static bool RenderCustomEntryB(const CustomEntry& entry, const OverlaySettingsB& settings);
 
+	inline static std::array<int, 8> alphaCode = { };
+	inline static std::array<int, 8> bravoCode = { };
+	inline static std::array<int, 8> charlieCode = { };
+
+private:
 	static std::string GetPlayerName(const ClientAccount& clientAccountData);
-	static bool TargetValid(const TesObjectRefr& entityData, const TesItem& referenceData);
-	static bool FloraHarvested(BYTE harvestFlagA, BYTE harvestFlagB);
+
+
 
 	static bool CheckItemLooterList();
 	static bool CheckItemLooterBlacklist();
@@ -973,8 +989,6 @@ private:
 	static bool MovePlayer();
 
 	static bool CheckOpkDistance(DWORD64 opkPage, bool players);
-	static bool InsideInteriorCell();
-	static int RenderLocalPlayerData();
 
 	static DWORD GetEntityId(const TesObjectRefr& entityData);
 	static bool SendHitsToServer(Hits* hitsData, size_t hitsDataSize);
@@ -1001,7 +1015,6 @@ private:
 	static bool CreateForwardProjectile(DWORD itemId);
 
 	static DWORD64 GetCameraPtr();
-	static BYTE CheckHealthFlag(BYTE healthFlag);
 	static DWORD64 GetLocalPlayerPtr(bool checkMainMenu);
 	static std::vector<DWORD64> GetEntityList();
 	static std::vector<DWORD64> GetNpcPtrList();
@@ -1014,12 +1027,19 @@ private:
 	static bool BlacklistedNpcFaction(const TesItem& referenceData);
 	static bool CheckReferenceItem(const TesItem& referenceData);
 	static void GetCustomEntityData(const TesItem& referenceData, DWORD64* entityFlag, DWORD64* entityNamePtr, int* enabledDistance, bool checkScrap, bool checkIngredient);
-	static bool GetActorSnapshotComponentData(const TesObjectRefr& entityData, ActorSnapshotComponent* actorSnapshotComponentData);
+
 	static std::string GetEntityName(DWORD64 ptr);
 
+
+	static bool Wpm(DWORD64 dst, void* src, size_t size);
+	static DWORD64 AllocEx(size_t size);
+
+	static bool VtableSwap(DWORD64 dst, DWORD64 src);
+	
 	inline static OldWeapon* oldWeaponList = nullptr;
 
 	inline static std::unordered_set<DWORD> knownRecipes{};
 
 	virtual void __dummy() = 0;
+
 };

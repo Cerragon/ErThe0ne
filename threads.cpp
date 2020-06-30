@@ -2,8 +2,7 @@
 #include "app.h"
 #include "settings.h"
 #include "utils.h"
-#include "gui.h"
-
+#include "common.h"
 #include <thread>
 
 #include "ErectusMemory.h"
@@ -131,12 +130,63 @@ DWORD WINAPI Threads::LockingThread([[maybe_unused]] LPVOID lpParameter)
 
 	while (!threadDestructionState)
 	{
+		//no clue if this works properly
+		//begin targetting
+
+		auto currentTargetValid = false;
+		DWORD64 closestEntityPtr = 0;
+		float closestEntityDegrees = Settings::targetting.lockingFov;
+
+
+		auto cameraData = ErectusMemory::GetCameraInfo();
+		auto entities = ErectusMemory::entityDataBuffer;
+		for (const auto& entity : entities)
+		{
+			if ((!(entity.flag & CUSTOM_ENTRY_PLAYER) || !Settings::targetting.lockPlayers) && (!(entity.flag & CUSTOM_ENTRY_NPC) || !Settings::targetting.lockNpCs))
+				continue;
+
+			TesObjectRefr entityData{};
+			if (!ErectusMemory::Rpm(entity.entityPtr, &entityData, sizeof entityData))
+				continue;
+
+			if (!ErectusMemory::TargetValid(entityData))
+				continue;
+
+			if (entity.entityPtr == ErectusMemory::targetLockingPtr)
+			{
+				currentTargetValid = true;
+			}
+			else if (ErectusMemory::targetLockingKeyPressed && !ErectusMemory::targetLockingCooldown)
+			{
+				auto degrees = Utils::GetDegrees(entityData.position, cameraData.forward, cameraData.origin);
+				if (degrees < closestEntityDegrees)
+				{
+					closestEntityDegrees = degrees;
+					closestEntityPtr = entity.entityPtr;
+				}
+			}
+		}
+
+		if (!currentTargetValid)
+		{
+			if (ErectusMemory::targetLockingPtr)
+			{
+				ErectusMemory::targetLockingCooldown = Settings::targetting.retargeting ? Settings::targetting.cooldown : -1;
+				ErectusMemory::targetLockingPtr = 0;
+			}
+			else if (closestEntityDegrees < Settings::targetting.lockingFov)
+			{
+				ErectusMemory::targetLockingCooldown = 0;
+				ErectusMemory::targetLockingPtr = closestEntityPtr;
+			}
+		}
+		//end targetting
+
 		favoritedWeaponCounter++;
 		if (favoritedWeaponCounter > 60)
 		{
 			favoritedWeaponCounter = 0;
 			weaponId = ErectusMemory::GetFavoritedWeaponId(BYTE(Settings::targetting.favoriteIndex));
-
 		}
 
 		if (App::overlayForeground && GetAsyncKeyState('T'))
@@ -192,7 +242,7 @@ DWORD WINAPI Threads::LockingThread([[maybe_unused]] LPVOID lpParameter)
 	ErectusMemory::DamageRedirection(&targetingPage, &targetingPageValid, true, false);
 
 	if (targetingPage)
-		Utils::FreeEx(targetingPage);
+		ErectusMemory::FreeEx(targetingPage);
 
 	lockingThreadActive = false;
 
@@ -276,9 +326,8 @@ DWORD WINAPI Threads::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 		if (Settings::customNukeCodeSettings.automaticNukeCodes)
 		{
 			if (loopCount % 300 == 0) { //every 300 loops
-				ErectusMemory::GetNukeCode(0x000921AE, Gui::alphaCode);
-				ErectusMemory::GetNukeCode(0x00092213, Gui::bravoCode);
-				ErectusMemory::GetNukeCode(0x00092214, Gui::charlieCode);
+				ErectusMemory::UpdateNukeCodes();
+
 			}
 		}
 
@@ -324,7 +373,7 @@ DWORD WINAPI Threads::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 	ErectusMemory::ActorValue(&actorValuePage, &actorValuePageValid, false);
 
 	if (actorValuePage)
-		Utils::FreeEx(actorValuePage);
+		ErectusMemory::FreeEx(actorValuePage);
 
 	ErectusMemory::SetActorValueMaximum(0x000002C2, 100.0f, static_cast<float>(Settings::customLocalPlayerSettings.strength), false);
 	ErectusMemory::SetActorValueMaximum(0x000002C3, 100.0f, static_cast<float>(Settings::customLocalPlayerSettings.perception), false);
@@ -337,12 +386,12 @@ DWORD WINAPI Threads::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 	ErectusMemory::OnePositionKill(&opkPage, &opkPageValid, false);
 
 	if (opkPage)
-		Utils::FreeEx(opkPage);
+		ErectusMemory::FreeEx(opkPage);
 
 	ErectusMemory::FreezeActionPoints(&freezeApPage, &freezeApPageValid, false);
 
 	if (freezeApPage)
-		Utils::FreeEx(freezeApPage);
+		ErectusMemory::FreeEx(freezeApPage);
 
 	multihackThreadActive = false;
 

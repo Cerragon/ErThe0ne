@@ -5,41 +5,42 @@
 
 #include "ErectusProcess.h"
 
+namespace {
 
-void onShutdown() {
-	ErectusProcess::ResetProcessData();
-	
-	Renderer::Cleanup();
-	Gui::ImGuiCleanup();
+	void shutdown() {
+		ErectusProcess::ResetProcessData();
 
-	Settings::WriteIniSettings();
+		Renderer::Cleanup();
+		Gui::Shutdown();
 
-	App::CloseWnd();
-}
+		Settings::WriteIniSettings();
 
-int onStartup(const HINSTANCE hInstance) {
-	App::CreateWnd(hInstance);
-
-	ShowWindow(App::appHwnd, SW_SHOW);
-
-	if (!Renderer::Init())
-	{
-		onShutdown();
-		return 3;
+		App::CloseWnd();
 	}
 
-	if (!Gui::ImGuiInitialize())
-	{
-		onShutdown();
-		return 4;
+	int init(const HINSTANCE hInstance) {
+		App::CreateWnd(hInstance);
+
+		ShowWindow(App::appHwnd, SW_SHOW);
+
+		if (!Renderer::Init())
+		{
+			shutdown();
+			return 3;
+		}
+
+		if (!Gui::Init())
+		{
+			shutdown();
+			return 4;
+		}
+
+		Settings::ReadIniSettings();
+
+		ErectusProcess::SetProcessMenu();
+		return 0;
 	}
-
-	Settings::ReadIniSettings();
-
-	ErectusProcess::SetProcessMenu();
-	return 0;
 }
-
 
 // ReSharper disable once CppInconsistentNaming
 // ReSharper disable once CppParameterMayBeConst
@@ -47,7 +48,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, [[maybe_unused]] HINSTANCE hPrevInstanc
 {
 	int result;
 
-	if (((result = onStartup(hInstance))) && result != 0)
+	if (((result = init(hInstance))) && result != 0)
 		return result;
 
 	App::RegisterHotkeys();
@@ -59,7 +60,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, [[maybe_unused]] HINSTANCE hPrevInstanc
 		DispatchMessage(&overlayMsg);
 	}
 
-	onShutdown();
+	shutdown();
 
-	return result;
+	return 0;
 }

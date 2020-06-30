@@ -121,12 +121,11 @@ void App::Render() {
 		CloseWnd();
 	}
 
-	//render
-	RenderProcessMenu();
-	RenderOverlayMenu();
-	RenderOverlay();
+	Gui::Render();
 
 	Renderer::EndScene();
+
+	
 
 	if (ErectusProcess::processSelected)
 	{
@@ -175,53 +174,6 @@ void App::Render() {
 
 	//ghetto run once per frame
 	std::this_thread::sleep_for(std::chrono::milliseconds(16));
-}
-
-void App::RenderProcessMenu() {
-	if (!ErectusProcess::processMenuActive)
-		return;
-
-	Gui::ProcessMenu();
-}
-
-void App::RenderOverlayMenu() {
-	if (!overlayMenuActive)
-		return;
-
-	Gui::OverlayMenu();
-}
-
-void App::RenderOverlay()
-{
-	if (!overlayActive)
-		return;
-
-	Renderer::d3DxSprite->Begin(D3DXSPRITE_ALPHABLEND);
-
-	ErectusMemory::targetLockingValid = false;
-	ErectusMemory::targetLockingClosestDegrees = Settings::targetting.lockingFov;
-	ErectusMemory::targetLockingClosestPtr = 0;
-
-	ErectusMemory::RenderCustomEntityList();
-	ErectusMemory::RenderCustomNpcList();
-	ErectusMemory::RenderCustomPlayerList();
-
-	if (!ErectusMemory::targetLockingValid)
-	{
-		if (ErectusMemory::targetLockingPtr)
-		{
-			ErectusMemory::targetLockingCooldown = Settings::targetting.retargeting ? Settings::targetting.cooldown : -1;
-			ErectusMemory::targetLockingPtr = 0;
-		}
-		else if (ErectusMemory::targetLockingClosestDegrees < Settings::targetting.lockingFov)
-		{
-			ErectusMemory::targetLockingCooldown = 0;
-			ErectusMemory::targetLockingPtr = ErectusMemory::targetLockingClosestPtr;
-		}
-	}
-	ErectusMemory::RenderData();
-
-	Renderer::d3DxSprite->End();
 }
 
 void App::SetOverlayMenu()

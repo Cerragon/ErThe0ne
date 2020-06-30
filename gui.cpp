@@ -1,12 +1,14 @@
 #include "gui.h"
 
 #include "app.h"
+#include "common.h"
 #include "settings.h"
-#include "utils.h"
 #include "renderer.h"
 
 #include "ErectusProcess.h"
 #include "ErectusMemory.h"
+#include "threads.h"
+#include "utils.h"
 
 #include "fmt/format.h"
 #include "imgui/imgui_impl_dx9.h"
@@ -15,13 +17,522 @@
 #include "imgui/imgui_stdlib.h"
 
 
-
-
-void Gui::ProcessMenu()
+void Gui::Render()
 {
 	ImGui_ImplDX9_NewFrame();
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
+
+	ProcessMenu();
+	OverlayMenu();
+	RenderOverlay();
+
+	
+	ImGui::EndFrame();
+	ImGui::Render();
+	ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
+}
+
+void Gui::RenderOverlay()
+{
+	if (!App::overlayActive)
+		return;
+
+	Renderer::d3DxSprite->Begin(D3DXSPRITE_ALPHABLEND);
+
+	RenderEntities();
+	RenderNpcs();
+	RenderPlayers();
+
+	RenderInfoBox();
+
+	Renderer::d3DxSprite->End();
+}
+
+void Gui::RenderEntities()
+{
+	auto entities = ErectusMemory::entityDataBuffer;
+	for (const auto& entity : entities)
+	{
+		if (entity.flag & CUSTOM_ENTRY_ENTITY)
+			RenderItems(entity, Settings::entitySettings);
+		else if (entity.flag & CUSTOM_ENTRY_JUNK)
+			RenderItems(entity, Settings::junkSettings);
+		else if (entity.flag & CUSTOM_ENTRY_ITEM)
+			RenderItems(entity, Settings::itemSettings);
+		else if (entity.flag & CUSTOM_ENTRY_CONTAINER)
+			RenderItems(entity, Settings::containerSettings);
+		else if (entity.flag & CUSTOM_ENTRY_PLAN)
+			RenderItems(entity, Settings::planSettings);
+		else if (entity.flag & CUSTOM_ENTRY_MAGAZINE)
+			RenderItems(entity, Settings::magazineSettings);
+		else if (entity.flag & CUSTOM_ENTRY_BOBBLEHEAD)
+			RenderItems(entity, Settings::bobbleheadSettings);
+		else if (entity.flag & CUSTOM_ENTRY_FLORA)
+			RenderItems(entity, Settings::floraSettings);
+	}
+}
+
+void Gui::RenderNpcs()
+{
+	auto npcs = ErectusMemory::npcDataBuffer;
+	for (const auto& npc : npcs)
+	{
+		if (npc.flag & CUSTOM_ENTRY_NPC)
+			RenderActors(npc, Settings::npcSettings);
+	}
+}
+
+void Gui::RenderPlayers()
+{
+	auto players = ErectusMemory::playerDataBuffer;
+	for (const auto& player : players) {
+		if (player.flag & CUSTOM_ENTRY_PLAYER)
+			RenderActors(player, Settings::playerSettings);
+	}
+}
+
+void Gui::RenderActors(const CustomEntry& entry, const OverlaySettingsA& settings)
+{
+	auto health = -1;
+	BYTE epicRank = 0;
+	auto allowNpc = false;
+	if (entry.flag & CUSTOM_ENTRY_NPC)
+	{
+		TesObjectRefr npcData{};
+		if (!ErectusMemory::Rpm(entry.entityPtr, &npcData, sizeof npcData))
+			return;
+
+		ActorSnapshotComponent actorSnapshotComponentData{};
+		if (ErectusMemory::GetActorSnapshotComponentData(npcData, &actorSnapshotComponentData))
+		{
+			health = static_cast<int>(actorSnapshotComponentData.maxHealth + actorSnapshotComponentData.modifiedHealth + actorSnapshotComponentData.lostHealth);
+			epicRank = actorSnapshotComponentData.epicRank;
+			if (epicRank)
+			{
+				switch (ErectusMemory::CheckHealthFlag(npcData.healthFlag))
+				{
+				case 0x01: //Alive
+				case 0x02: //Downed
+				case 0x03: //Dead
+					switch (epicRank)
+					{
+					case 1:
+						allowNpc = Settings::customLegendarySettings.overrideLivingOneStar;
+						break;
+					case 2:
+						allowNpc = Settings::customLegendarySettings.overrideLivingTwoStar;
+						break;
+					case 3:
+						allowNpc = Settings::customLegendarySettings.overrideLivingThreeStar;
+						break;
+					default:
+						break;
+					}
+				default:
+					break;
+				}
+			}
+		}
+	}
+
+	if (!settings.enabled && !allowNpc)
+		return;
+
+	if (!settings.drawEnabled && !settings.drawDisabled)
+		return;
+
+	if (settings.enabledAlpha == 0.0f && settings.disabledAlpha == 0.0f)
+		return;
+
+	if (!settings.drawNamed && !settings.drawUnnamed)
+		return;
+
+	TesObjectRefr entityData{};
+	if (!ErectusMemory::Rpm(entry.entityPtr, &entityData, sizeof entityData))
+		return;
+
+	if (entry.flag & CUSTOM_ENTRY_PLAYER)
+	{
+		ActorSnapshotComponent actorSnapshotComponentData{};
+		if (ErectusMemory::GetActorSnapshotComponentData(entityData, &actorSnapshotComponentData))
+			health = static_cast<int>(actorSnapshotComponentData.maxHealth + actorSnapshotComponentData.modifiedHealth + actorSnapshotComponentData.lostHealth);
+	}
+
+	if (entry.flag & CUSTOM_ENTRY_UNNAMED)
+	{
+		if (!settings.drawUnnamed)
+			return;
+	}
+	else
+	{
+		if (!settings.drawNamed)
+			return;
+	}
+
+	auto alpha = 0.f;
+
+	if (entityData.spawnFlag == 0x02)
+	{
+		if (settings.drawEnabled)
+			alpha = settings.enabledAlpha;
+	}
+	else
+	{
+		if (settings.drawDisabled)
+			alpha = settings.disabledAlpha;
+	}
+
+	if (alpha == 0.f)
+		return;
+
+	auto showHealthText = false;
+
+	const float* color = nullptr;
+
+	auto legendaryAlpha = 1.0f;
+
+	switch (ErectusMemory::CheckHealthFlag(entityData.healthFlag))
+	{
+	case 0x01: //Alive
+		showHealthText = settings.showHealth;
+		if (allowNpc)
+		{
+			switch (epicRank)
+			{
+			case 1:
+				color = Settings::customLegendarySettings.livingOneStarColor;
+				if (entityData.spawnFlag == 0x02)
+					alpha = legendaryAlpha;
+				break;
+			case 2:
+				color = Settings::customLegendarySettings.livingTwoStarColor;
+				if (entityData.spawnFlag == 0x02)
+					alpha = legendaryAlpha;
+				break;
+			case 3:
+				color = Settings::customLegendarySettings.livingThreeStarColor;
+				if (entityData.spawnFlag == 0x02)
+					alpha = legendaryAlpha;
+				break;
+			default:
+				break;
+			}
+		}
+		else if (settings.drawAlive)
+			color = settings.aliveColor;
+		break;
+	case 0x02: //Downed
+		showHealthText = settings.showHealth;
+		if (allowNpc)
+		{
+			switch (epicRank)
+			{
+			case 1:
+				color = Settings::customLegendarySettings.livingOneStarColor;
+				if (entityData.spawnFlag == 0x02)
+					alpha = legendaryAlpha;
+				break;
+			case 2:
+				color = Settings::customLegendarySettings.livingTwoStarColor;
+				if (entityData.spawnFlag == 0x02)
+					alpha = legendaryAlpha;
+				break;
+			case 3:
+				color = Settings::customLegendarySettings.livingThreeStarColor;
+				if (entityData.spawnFlag == 0x02)
+					alpha = legendaryAlpha;
+				break;
+			default:
+				break;
+			}
+		}
+		else if (settings.drawDowned)
+			color = settings.downedColor;
+		break;
+	case 0x03: //Dead
+		showHealthText = settings.showDeadHealth;
+		if (allowNpc)
+		{
+			switch (epicRank)
+			{
+			case 1:
+				color = Settings::customLegendarySettings.deadOneStarColor;
+				if (entityData.spawnFlag == 0x02)
+					alpha = legendaryAlpha;
+				break;
+			case 2:
+				color = Settings::customLegendarySettings.deadTwoStarColor;
+				if (entityData.spawnFlag == 0x02)
+					alpha = legendaryAlpha;
+				break;
+			case 3:
+				color = Settings::customLegendarySettings.deadThreeStarColor;
+				if (entityData.spawnFlag == 0x02)
+					alpha = legendaryAlpha;
+				break;
+			default:
+				break;
+			}
+		}
+		else if (settings.drawDead)
+			color = settings.deadColor;
+		break;
+	default: //Unknown
+		showHealthText = settings.showHealth;
+		if (settings.drawUnknown)
+			color = settings.unknownColor;
+		break;
+	}
+
+	if (color == nullptr)
+		return;
+
+	auto cameraData = ErectusMemory::GetCameraInfo();
+	auto distance = Utils::GetDistance(entityData.position, cameraData.origin);
+	auto normalDistance = static_cast<int>(distance * 0.01f);
+	if (normalDistance > settings.enabledDistance)
+		return;
+
+	if (entry.entityPtr == ErectusMemory::targetLockingPtr)
+		color = Settings::targetting.lockingColor;
+
+	float screen[2] = { 0.0f, 0.0f };
+	if (!Utils::WorldToScreen(cameraData.view, entityData.position, screen))
+		return;
+
+	std::string itemText;
+	if (settings.showName && showHealthText && settings.showDistance) //Name, Health, Distance
+		itemText = fmt::format("{0}\n{1:d} hp [{2:d} m]", entry.name, health, normalDistance);
+	else if (settings.showName && showHealthText && !settings.showDistance) //Name, Health
+		itemText = fmt::format("{0}\n{1:d} hp", entry.name, health);
+	else if (settings.showName && !showHealthText && settings.showDistance) //Name, Distance
+		itemText = fmt::format("{0}\n[{1:d} m]", entry.name, normalDistance);
+	else if (!settings.showName && showHealthText && settings.showDistance) //Health, Distance
+		itemText = fmt::format("{0:d} hp [{1:d} m]", health, normalDistance);
+	else if (settings.showName && !showHealthText && !settings.showDistance) //Name
+		itemText = entry.name;
+	else if (!settings.showName && showHealthText && !settings.showDistance) //Health
+		itemText = fmt::format("{:d} hp", health);
+	else if (!settings.showName && !showHealthText && settings.showDistance) //Distance
+		itemText = fmt::format("[{:d} m]", normalDistance);
+
+	if (!itemText.empty())
+	{
+		if (Settings::utilities.debugEsp)
+			itemText = fmt::format("{0:16x}\n{1:08x}\n{2:16x}\n{3:08x}", entry.entityPtr, entry.entityFormId, entry.referencePtr, entry.referenceFormId);
+
+		Renderer::DrawTextA(itemText.c_str(), settings.textShadowed, settings.textCentered, screen, color, alpha);
+	}
+}
+
+void Gui::RenderItems(const CustomEntry& entry, const OverlaySettingsB& settings)
+{
+	if (!(entry.flag & CUSTOM_ENTRY_WHITELISTED) && !settings.enabled)
+		return;
+
+	if (!settings.drawEnabled && !settings.drawDisabled)
+		return;
+
+	if (settings.enabledAlpha == 0.0f && settings.disabledAlpha == 0.0f)
+		return;
+
+	if (!settings.drawNamed && !settings.drawUnnamed)
+		return;
+
+	TesObjectRefr entityData{};
+	if (!ErectusMemory::Rpm(entry.entityPtr, &entityData, sizeof entityData))
+		return;
+
+	if (entry.flag & CUSTOM_ENTRY_UNNAMED)
+	{
+		if (!settings.drawUnnamed)
+			return;
+	}
+	else if (!settings.drawNamed)
+		return;
+
+	if (entry.flag & CUSTOM_ENTRY_PLAN)
+	{
+		if (!Settings::recipes.knownRecipesEnabled && !Settings::recipes.unknownRecipesEnabled)
+			return;
+
+		if (!(entry.flag & CUSTOM_ENTRY_FAILED_RECIPE))
+		{
+			if (!Settings::recipes.knownRecipesEnabled && entry.flag & CUSTOM_ENTRY_KNOWN_RECIPE)
+				return;
+			if (!Settings::recipes.unknownRecipesEnabled && entry.flag & CUSTOM_ENTRY_UNKNOWN_RECIPE)
+				return;
+		}
+	}
+
+	auto alpha = 0.f;
+
+	if (entityData.spawnFlag == 0x02)
+	{
+		if (settings.drawEnabled)
+		{
+			if (entry.flag & CUSTOM_ENTRY_FLORA)
+			{
+				if (!ErectusMemory::IsFloraHarvested(entityData.harvestFlagA, entityData.harvestFlagB))
+					alpha = settings.enabledAlpha;
+				else if (settings.drawDisabled)
+					alpha = settings.disabledAlpha;
+			}
+			else
+				alpha = settings.enabledAlpha;
+		}
+	}
+	else
+	{
+		if (settings.drawDisabled)
+			alpha = settings.disabledAlpha;
+	}
+
+	if (alpha == 0.f)
+		return;
+
+	auto cameraData = ErectusMemory::GetCameraInfo();
+
+	const auto distance = Utils::GetDistance(entityData.position, cameraData.origin);
+	const auto normalDistance = static_cast<int>(distance * 0.01f);
+	if (normalDistance > settings.enabledDistance)
+		return;
+
+	float screen[2] = { 0.0f, 0.0f };
+	if (!Utils::WorldToScreen(cameraData.view, entityData.position, screen))
+		return;
+
+	std::string itemText{};
+	if (settings.showName && settings.showDistance)
+		itemText = fmt::format("{0}\n[{1:d} m]", entry.name, normalDistance);
+	else if (settings.showName && !settings.showDistance)
+		itemText = entry.name;
+	else if (!settings.showName && settings.showDistance)
+		itemText = fmt::format("[{0:d} m]", normalDistance);
+
+	if (!itemText.empty())
+	{
+		if (Settings::utilities.debugEsp)
+			itemText = fmt::format("{0:16x}\n{1:08x}\n{2:16x}\n{3:08x}", entry.entityPtr, entry.entityFormId, entry.referencePtr, entry.referenceFormId);
+
+		Renderer::DrawTextA(itemText.c_str(), settings.textShadowed, settings.textCentered, screen, settings.color, alpha);
+	}
+}
+
+void Gui::RenderInfoBox()
+{
+	std::vector<std::pair<std::string, bool>> infoTexts = {};
+
+	std::string featureText = {};
+	auto featureState = false;
+
+	float enabledTextColor[3] = { 0.0f, 1.0f, 0.0f };
+	float disabledTextColor[3] = { 1.0f, 0.0f, 0.0f };
+
+	if (Settings::utilities.debugPlayer) {
+		auto localPlayer = ErectusMemory::GetLocalPlayerInfo();
+
+		featureText = fmt::format("Player FormId: {:08x}", localPlayer.formId);
+		infoTexts.emplace_back(featureText, true);
+
+		featureText = fmt::format("STASH FormId: {:08x}", localPlayer.stashFormId);
+		infoTexts.emplace_back(featureText, true);
+
+		featureText = fmt::format("Cell FormId: {:08x}}", localPlayer.cellFormId);
+		infoTexts.emplace_back(featureText, true);
+
+		featureText = fmt::format("X: {:f}", localPlayer.position[0]);
+		infoTexts.emplace_back(featureText, true);
+
+		featureText = fmt::format("Y: {:f}", localPlayer.position[1]);
+		infoTexts.emplace_back(featureText, true);
+
+		featureText = fmt::format("Z: {:f}", localPlayer.position[2]);
+		infoTexts.emplace_back(featureText, true);
+
+		featureText = fmt::format("Yaw: {:f}", localPlayer.yaw);
+		infoTexts.emplace_back(featureText, true);
+
+		featureText = fmt::format("Pitch: {:f}", localPlayer.pitch);
+		infoTexts.emplace_back(featureText, true);
+
+		featureText = fmt::format("Health: {:f}", localPlayer.currentHealth);
+		infoTexts.emplace_back(featureText, true);
+	}
+
+	if (Settings::infobox.drawScrapLooterStatus)
+	{
+		featureText = fmt::format("Scrap Looter (Automatic): {:d}", static_cast<int>(Settings::scrapLooter.autoLootingEnabled));
+		featureState = Settings::scrapLooter.autoLootingEnabled;
+		infoTexts.emplace_back(featureText, featureState);
+	}
+
+	if (Settings::infobox.drawItemLooterStatus)
+	{
+		featureText = fmt::format("Item Looter (Automatic): {:d}", static_cast<int>(Settings::itemLooter.autoLootingEnabled));
+		featureState = Settings::itemLooter.autoLootingEnabled;
+		infoTexts.emplace_back(featureText, featureState);
+	}
+
+	if (Settings::infobox.drawNpcLooterStatus)
+	{
+		featureText = fmt::format("NPC Looter (76m Distance Limit): {:d}", static_cast<int>(Settings::npcLooter.enabled));
+		featureState = Settings::npcLooter.enabled;
+		infoTexts.emplace_back(featureText, featureState);
+	}
+
+	if (Settings::infobox.drawContainerLooterStatus)
+	{
+		featureText = fmt::format("Container Looter (6m Distance Limit): {:d}", static_cast<int>(Settings::containerLooter.enabled));
+		featureState = Settings::containerLooter.enabled;
+		infoTexts.emplace_back(featureText, featureState);
+	}
+
+	if (Settings::infobox.drawHarvesterStatus)
+	{
+		featureText = fmt::format("Flora Harvester (6m Distance Limit): {:d}", static_cast<int>(Settings::harvester.enabled));
+		featureState = Settings::harvester.enabled;
+		infoTexts.emplace_back(featureText, featureState);
+	}
+
+	if (Settings::infobox.drawPositionSpoofingStatus)
+	{
+		featureText = fmt::format("Position Spoofing (Active): {0:d} (Height: {1:d})", static_cast<int>(Threads::positionSpoofingToggle), Settings::customLocalPlayerSettings.positionSpoofingHeight);
+		featureState = ErectusMemory::InsideInteriorCell() ? false : Settings::customLocalPlayerSettings.positionSpoofingEnabled;
+		infoTexts.emplace_back(featureText, featureState);
+	}
+
+	if (Settings::infobox.drawNukeCodes)
+	{
+		featureText = format("{} - Alpha", fmt::join(ErectusMemory::alphaCode, " "));
+		featureState = ErectusMemory::alphaCode == std::array<int, 8>{} ? false : true;
+		infoTexts.emplace_back(featureText, featureState);
+
+		featureText = format("{} - Bravo", fmt::join(ErectusMemory::bravoCode, " "));
+		featureState = ErectusMemory::bravoCode == std::array<int, 8>{} ? false : true;
+		infoTexts.emplace_back(featureText, featureState);
+
+		featureText = format("{} - Charlie", fmt::join(ErectusMemory::charlieCode, " "));
+		featureState = ErectusMemory::charlieCode == std::array<int, 8>{} ? false : true;
+		infoTexts.emplace_back(featureText, featureState);
+	}
+
+	auto spacing = 0;
+	for (const auto& item : infoTexts)
+	{
+		float textPosition[2] = { 0.0f, static_cast<float>(spacing) * 16.0f };
+		auto* textColor = item.second ? enabledTextColor : disabledTextColor;
+		Renderer::DrawTextA(item.first.c_str(), true, false, textPosition, textColor, 1.f);
+		spacing++;
+	}
+}
+
+
+void Gui::ProcessMenu()
+{
+	if (!ErectusProcess::processMenuActive)
+		return;
 
 	ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
 	ImGui::SetNextWindowSize(ImVec2(static_cast<float>(App::windowSize[0]), static_cast<float>(App::windowSize[1])));
@@ -123,10 +634,6 @@ void Gui::ProcessMenu()
 		ImGui::PopItemFlag();
 	}
 	ImGui::End();
-
-	ImGui::EndFrame();
-	ImGui::Render();
-	ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
 }
 
 void Gui::ButtonToggle(const char* label, bool* state)
@@ -496,9 +1003,9 @@ void Gui::OverlayMenuTabEsp()
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::SliderFloat("###PlanSettingsDisabledAlpha", &Settings::planSettings.disabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
 
-			ButtonToggle("Draw Known Plans", &Settings::customKnownRecipeSettings.knownRecipesEnabled);
+			ButtonToggle("Draw Known Plans", &Settings::recipes.knownRecipesEnabled);
 			ImGui::SameLine(235.0f);
-			ButtonToggle("Draw Unknown Plans", &Settings::customKnownRecipeSettings.unknownRecipesEnabled);
+			ButtonToggle("Draw Unknown Plans", &Settings::recipes.unknownRecipesEnabled);
 
 			ButtonToggle("Draw Named Plans", &Settings::planSettings.drawNamed);
 			ImGui::SameLine(235.0f);
@@ -788,6 +1295,21 @@ void Gui::OverlayMenuTabEsp()
 	}
 }
 
+void Gui::OverlayMenuTabInfoBox()
+{
+	if (ImGui::BeginTabItem("InfoBox###InfoBoxTab"))
+	{
+		LargeButtonToggle("Draw Automatic Scrap Looter Status", &Settings::infobox.drawScrapLooterStatus);
+		LargeButtonToggle("Draw Automatic Item Looter Status", &Settings::infobox.drawItemLooterStatus);
+		LargeButtonToggle("Draw NPC Looter Status", &Settings::infobox.drawNpcLooterStatus);
+		LargeButtonToggle("Draw Container Looter Status", &Settings::infobox.drawContainerLooterStatus);
+		LargeButtonToggle("Draw Flora Harvester Status", &Settings::infobox.drawHarvesterStatus);
+		LargeButtonToggle("Draw Position Status", &Settings::infobox.drawPositionSpoofingStatus);
+		LargeButtonToggle("Draw Nuke Codes", &Settings::infobox.drawNukeCodes);
+
+		ImGui::EndTabItem();
+	}
+}
 void Gui::OverlayMenuTabLoot()
 {
 	if (ImGui::BeginTabItem("Loot###LootTab"))
@@ -820,9 +1342,6 @@ void Gui::OverlayMenuTabLoot()
 			LargeButtonToggle("Scrap Looter ESP Override (Uses Junk ESP Settings)", &Settings::scrapLooter.scrapOverrideEnabled);
 
 			ButtonToggle("Automatic Looting Enabled###ScrapAutomaticLootingEnabled", &Settings::scrapLooter.autoLootingEnabled);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Draw Automatic Looting Status###ScrapAutomaticStatus", &Settings::scrapLooter.drawStatus);
-
 
 			{
 				ImGui::SetNextItemWidth(224.0f);
@@ -888,9 +1407,6 @@ void Gui::OverlayMenuTabLoot()
 			ButtonToggle("Item Looter Keybind Enabled", &Settings::itemLooter.keybindEnabled);
 
 			ButtonToggle("Automatic Looting Enabled###ItemAutomaticLootingEnabled", &Settings::itemLooter.autoLootingEnabled);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Draw Automatic Looting Status###ItemAutomaticStatus", &Settings::itemLooter.drawStatus);
-
 			{
 				ImGui::SetNextItemWidth(224.0f);
 				auto sliderText = fmt::format("Speed (Min): {0:d} ({1:d} ms)", Settings::itemLooter.autoLootingSpeedMin, Settings::itemLooter.autoLootingSpeedMin * 16);
@@ -1012,8 +1528,6 @@ void Gui::OverlayMenuTabLoot()
 		{
 			LargeButtonToggle("Automatic NPC Looting Enabled (Keybind: CTRL+COMMA)###NPCLooterEnabled", &Settings::npcLooter.enabled);
 
-			LargeButtonToggle("Draw NPC Looter Status###NPCLooterStatusEnabled", &Settings::npcLooter.drawStatus);
-
 			ButtonToggle("All Weapons Enabled###NPCLooterAllWeaponsEnabled", &Settings::npcLooter.allWeaponsEnabled);
 			ImGui::SameLine(235.0f);
 			ButtonToggle("All Armor Enabled###NPCLooterAllArmorEnabled", &Settings::npcLooter.allArmorEnabled);
@@ -1089,8 +1603,6 @@ void Gui::OverlayMenuTabLoot()
 		if (ImGui::CollapsingHeader("Container Looter (6m Distance Limit)"))
 		{
 			LargeButtonToggle("Automatic Container Looting Enabled (Keybind: CTRL+PERIOD)###ContainerLooterEnabled", &Settings::containerLooter.enabled);
-
-			LargeButtonToggle("Draw Container Looter Status###ContainerLooterStatusEnabled", &Settings::containerLooter.drawStatus);
 
 			ButtonToggle("All Weapons Enabled###ContainerLooterAllWeaponsEnabled", &Settings::containerLooter.allWeaponsEnabled);
 			ImGui::SameLine(235.0f);
@@ -1168,7 +1680,6 @@ void Gui::OverlayMenuTabLoot()
 		if (ImGui::CollapsingHeader("Flora Harvester (6m Distance Limit)"))
 		{
 			LargeButtonToggle("Automatic Flora Harvesting Enabled (Keybind: CTRL+P])###HarvesterEnabled", &Settings::harvester.enabled);
-			LargeButtonToggle("Draw Flora Harvester Status###HarvesterStatusEnabled", &Settings::harvester.drawStatus);
 			LargeButtonToggle("Flora Harvester ESP Override (Uses Flora ESP Settings)", &Settings::harvester.overrideEnabled);
 
 			for (auto i = 0; i < 69; i++)
@@ -1362,7 +1873,6 @@ void Gui::OverlayMenuTabPlayer()
 		if (ImGui::CollapsingHeader("Local Player Settings"))
 		{
 			LargeButtonToggle("Position Spoofing (Keybind CTRL+L)##LocalPlayerPositionSpoofingEnabled", &Settings::customLocalPlayerSettings.positionSpoofingEnabled);
-			ButtonToggle("Draw Position Status###LocalPlayerDrawPositionSpoofingEnabled", &Settings::customLocalPlayerSettings.drawPositionSpoofingStatus);
 
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
@@ -1559,7 +2069,7 @@ void Gui::OverlayMenuTabUtilities()
 
 			{
 				ImGui::SetNextItemWidth(224.0f);
-				ImGui::InputScalar("###SwapperSourceFormIdText", ImGuiDataType_U32, & Settings::swapper.sourceFormId,
+				ImGui::InputScalar("###SwapperSourceFormIdText", ImGuiDataType_U32, &Settings::swapper.sourceFormId,
 					nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal);
 			}
 
@@ -1741,34 +2251,18 @@ void Gui::OverlayMenuTabUtilities()
 				ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 1.0f, 0.0f, 0.5f));
 
 				if (ImGui::Button("Get Nuke Codes", ImVec2(224.0f, 0.0f)))
-				{
-					ErectusMemory::GetNukeCode(0x000921AE, alphaCode);
-					ErectusMemory::GetNukeCode(0x00092213, bravoCode);
-					ErectusMemory::GetNukeCode(0x00092214, charlieCode);
-				}
+					ErectusMemory::UpdateNukeCodes();
 
 				ImGui::PopStyleColor(3);
 			}
 
-			ButtonToggle("Draw Nuke Code Alpha", &Settings::customNukeCodeSettings.drawCodeAlpha);
-
-			ImGui::SameLine(255.0f);
-
-			auto text = fmt::format("{} - Alpha", fmt::join(alphaCode, " "));
+			auto text = format("{} - Alpha", fmt::join(ErectusMemory::alphaCode, " "));
 			ImGui::Text(text.c_str());
 
-			ButtonToggle("Draw Nuke Code Bravo", &Settings::customNukeCodeSettings.drawCodeBravo);
-
-			ImGui::SameLine(255.0f);
-
-			text = fmt::format("{} - Bravo", fmt::join(bravoCode, " "));
+			text = format("{} - Bravo", fmt::join(ErectusMemory::bravoCode, " "));
 			ImGui::Text(text.c_str());
 
-			ButtonToggle("Draw Nuke Code Charlie", &Settings::customNukeCodeSettings.drawCodeCharlie);
-
-			ImGui::SameLine(255.0f);
-
-			text = fmt::format("{} - Charlie", fmt::join(charlieCode, " "));
+			text = format("{} - Charlie", fmt::join(ErectusMemory::charlieCode, " "));
 			ImGui::Text(text.c_str());
 		}
 
@@ -1790,7 +2284,7 @@ void Gui::OverlayMenuTabTeleporter()
 					auto inputLabel = fmt::format("###TeleportDestinationX{:d}", i);
 					ImGui::InputFloat(inputLabel.c_str(), &Settings::teleporter.entries[i].destination[0]);
 				}
-				
+
 				ImGui::SameLine(122.0f);
 
 				{
@@ -1798,7 +2292,7 @@ void Gui::OverlayMenuTabTeleporter()
 					auto inputLabel = fmt::format("###TeleportDestinationY{:d}", i);
 					ImGui::InputFloat(inputLabel.c_str(), &Settings::teleporter.entries[i].destination[1]);
 				}
-				
+
 				ImGui::SameLine(235.0f);
 
 				{
@@ -1806,7 +2300,7 @@ void Gui::OverlayMenuTabTeleporter()
 					auto inputLabel = fmt::format("###TeleportDestinationZ{:d}", i);
 					ImGui::InputFloat(inputLabel.c_str(), &Settings::teleporter.entries[i].destination[2]);
 				}
-				
+
 				ImGui::SameLine(349.0f);
 
 				{
@@ -1814,14 +2308,14 @@ void Gui::OverlayMenuTabTeleporter()
 					auto inputLabel = fmt::format("###TeleportDestinationW{:d}", i);
 					ImGui::InputFloat(inputLabel.c_str(), &Settings::teleporter.entries[i].destination[3]);
 				}
-				
+
 				{
 					ImGui::SetNextItemWidth(110.0f);
 					auto inputLabel = fmt::format("###TeleportCellFormId{:d}", i);
 					ImGui::InputScalar(inputLabel.c_str(), ImGuiDataType_U32, &Settings::teleporter.entries[i].cellFormId,
 						nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal);
 				}
-				
+
 				ImGui::SameLine(122.0f);
 
 				{
@@ -1850,7 +2344,7 @@ void Gui::OverlayMenuTabTeleporter()
 						ImGui::PopStyleColor(3);
 					}
 				}
-				
+
 				ImGui::SameLine(235.0f);
 
 				{
@@ -1901,9 +2395,8 @@ void Gui::OverlayMenuTabBitMsgWriter()
 
 void Gui::OverlayMenu()
 {
-	ImGui_ImplDX9_NewFrame();
-	ImGui_ImplWin32_NewFrame();
-	ImGui::NewFrame();
+	if (!App::overlayMenuActive)
+		return;
 
 	ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
 	ImGui::SetNextWindowSize(ImVec2(static_cast<float>(App::windowSize[0]), static_cast<float>(App::windowSize[1])));
@@ -1935,6 +2428,7 @@ void Gui::OverlayMenu()
 			OverlayMenuTabLoot();
 			OverlayMenuTabCombat();
 			OverlayMenuTabPlayer();
+			OverlayMenuTabInfoBox();
 			OverlayMenuTabUtilities();
 			OverlayMenuTabTeleporter();
 			OverlayMenuTabBitMsgWriter();
@@ -1943,13 +2437,9 @@ void Gui::OverlayMenu()
 		}
 	}
 	ImGui::End();
-
-	ImGui::EndFrame();
-	ImGui::Render();
-	ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
 }
 
-bool Gui::ImGuiInitialize()
+bool Gui::Init()
 {
 	ImGui::CreateContext();
 	if (!ImGui_ImplWin32_Init(App::appHwnd))
@@ -1961,7 +2451,7 @@ bool Gui::ImGuiInitialize()
 	return true;
 }
 
-void Gui::ImGuiCleanup()
+void Gui::Shutdown()
 {
 	ImGui_ImplDX9_Shutdown();
 	ImGui_ImplWin32_Shutdown();

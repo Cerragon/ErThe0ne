@@ -1,11 +1,8 @@
-//#include "ErectusInclude.h"
 #include "utils.h"
+
+#include <cmath>
+
 #include "app.h"
-#include "ErectusProcess.h"
-
-#include <memoryapi.h>
-
-
 
 int Utils::GetTextLength(const char *text)
 {
@@ -51,41 +48,6 @@ bool Utils::Valid(const DWORD64 ptr)
 		return false;
 	
 	return true;
-}
-
-bool Utils::Rpm(const DWORD64 src, void *dst, const size_t size)
-{
-	return ReadProcessMemory(ErectusProcess::handle, reinterpret_cast<void*>(src), dst, size, nullptr);
-}
-
-bool Utils::Wpm(const DWORD64 dst, void *src, const size_t size)
-{
-	return WriteProcessMemory(ErectusProcess::handle, reinterpret_cast<void*>(dst), src, size, nullptr);
-}
-
-DWORD64 Utils::AllocEx(const size_t size)
-{
-	return DWORD64(VirtualAllocEx(ErectusProcess::handle, nullptr, size, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE));
-}
-
-bool Utils::FreeEx(const DWORD64 src)
-{
-	return VirtualFreeEx(ErectusProcess::handle, LPVOID(src), 0, MEM_RELEASE);
-}
-
-bool Utils::VtableSwap(const DWORD64 dst, DWORD64 src)
-{
-	DWORD oldProtect;
-	if (!VirtualProtectEx(ErectusProcess::handle, reinterpret_cast<void*>(dst), sizeof(DWORD64), PAGE_READWRITE, &oldProtect))
-		return false;
-
-	const auto result = Wpm(dst, &src, sizeof src);
-
-	DWORD buffer;
-	if (!VirtualProtectEx(ErectusProcess::handle, reinterpret_cast<void*>(dst), sizeof(DWORD64), oldProtect, &buffer))
-		return false;
-
-	return result;
 }
 
 float Utils::GetDistance(const float *a1, const float *a2)

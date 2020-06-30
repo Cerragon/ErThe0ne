@@ -1,30 +1,40 @@
 #pragma once
-#include <array>
 #include <Windows.h>
+#include "ErectusMemory.h"
 
 class Gui final {
 public:
-	static void ProcessMenu();
-	static void OverlayMenu();
+	static void Render();
 
-	static bool ImGuiInitialize();
-	static void ImGuiCleanup();
+	static bool Init();
+	static void Shutdown();
 
-	inline static std::array<int, 8> alphaCode = { };
-	inline static std::array<int, 8> bravoCode = { };
-	inline static std::array<int, 8> charlieCode = { };
 private:
 	static void ButtonToggle(const char* label, bool* state);
 	static void LargeButtonToggle(const char* label, bool* state);
 	static void SmallButtonToggle(const char* label, bool* state);
 
 	static void OverlayMenuTabEsp();
+	static void OverlayMenuTabInfoBox();
 	static void OverlayMenuTabLoot();
 	static void OverlayMenuTabCombat();
 	static void OverlayMenuTabPlayer();
 	static void OverlayMenuTabUtilities();
 	static void OverlayMenuTabTeleporter();
 	static void OverlayMenuTabBitMsgWriter();
+
+	static void RenderOverlay();
+	static void RenderInfoBox();
+
+	static void RenderNpcs();
+	static void RenderEntities();
+	static void RenderPlayers();
+
+	static void RenderActors(const CustomEntry& entry, const OverlaySettingsA& settings);
+	static void RenderItems(const CustomEntry& entry, const OverlaySettingsB& settings);
+
+	static void ProcessMenu();
+	static void OverlayMenu();
 
 	inline static bool swapperSourceToggle = false;
 	inline static bool swapperDestinationToggle = false;
@@ -33,6 +43,5 @@ private:
 
 	inline static DWORD64 getPtrResult = 0;
 	inline static DWORD64 getAddressResult = 0;
-
 	virtual void __dummy() = 0;
 };

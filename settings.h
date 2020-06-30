@@ -2,6 +2,18 @@
 #include <Windows.h>
 #include <string>
 
+class InfoBoxSettings
+{
+public:
+	bool drawScrapLooterStatus;
+	bool drawItemLooterStatus;
+	bool drawNpcLooterStatus;
+	bool drawContainerLooterStatus;
+	bool drawHarvesterStatus;
+	bool drawPositionSpoofingStatus;
+
+	bool drawNukeCodes;
+};
 class OverlaySettingsA
 {
 public:
@@ -52,7 +64,6 @@ public:
 class ScrapLooterSettings
 {
 public:
-	bool drawStatus;
 	bool keybindEnabled;
 	bool scrapOverrideEnabled;
 	bool autoLootingEnabled;
@@ -67,7 +78,6 @@ public:
 class ItemLooterSettings
 {
 public:
-	bool drawStatus;
 	bool keybindEnabled;
 	bool autoLootingEnabled;
 	int autoLootingSpeedMin;
@@ -147,7 +157,6 @@ public:
 class LocalPlayerSettings
 {
 public:
-	bool drawPositionSpoofingStatus;
 	bool positionSpoofingEnabled;
 	int positionSpoofingHeight;
 	bool noclipEnabled;
@@ -227,9 +236,6 @@ class NukeCodeSettings
 {
 public:
 	bool automaticNukeCodes;
-	bool drawCodeAlpha;
-	bool drawCodeBravo;
-	bool drawCodeCharlie;
 };
 
 class LegendarySettings
@@ -263,7 +269,6 @@ class EntityLooterSettings
 {
 public:
 	bool enabled;
-	bool drawStatus;
 	bool oneStarWeaponsEnabled;
 	bool oneStarArmorEnabled;
 	bool twoStarWeaponsEnabled;
@@ -294,7 +299,6 @@ class HarvesterSettings
 {
 public:
 	bool enabled;
-	bool drawStatus;
 	bool overrideEnabled;
 	bool enabledList[69];
 	DWORD formIdList[69];
@@ -370,10 +374,12 @@ public:
 	static EntityLooterSettings npcLooter;
 	static EntityLooterSettings containerLooter;
 	static HarvesterSettings harvester;
-	static KnownRecipeSettings customKnownRecipeSettings;
+	static KnownRecipeSettings recipes;
 	static MeleeSettings melee;
 	static ChargenSettings characterEditor;
 	static ExtraNpcSettings customExtraNpcSettings;
+
+	inline static InfoBoxSettings infobox = {};
 
 	inline static WeaponSettings defaultWeaponSettings{
 		false, false, false, false, false, false, false, 250, false, 2.0f, false, 500.0f
@@ -382,6 +388,8 @@ public:
 private:
 	static void GetOverlaySettingsB(const std::string& section, OverlaySettingsB* value, const OverlaySettingsB* deflt);
 	static void SetOverlaySettingsB(const std::string& section, OverlaySettingsB* value, const OverlaySettingsB* deflt);
+	static void GetInfoBoxSettings();
+	static void SetInfoBoxSettings();
 	static void GetScrapSettings();
 	static void SetScrapSettings();
 	static void GetItemLooterSettings();

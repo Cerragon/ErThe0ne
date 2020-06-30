@@ -202,7 +202,6 @@ TargetSettings defltTargetSettings
 LocalPlayerSettings defltLocalPlayerSettings
 {
 	false,
-	false,
 	524287,
 	false,
 	0.1f,
@@ -470,7 +469,7 @@ FluxSettings Settings::customFluxSettings = defltFluxSettings;
 EntityLooterSettings Settings::npcLooter = defltEntityLooterSettings;
 EntityLooterSettings Settings::containerLooter = defltEntityLooterSettings;
 HarvesterSettings Settings::harvester = harvesterDefaults;
-KnownRecipeSettings Settings::customKnownRecipeSettings = defltKnownRecipeSettings;
+KnownRecipeSettings Settings::recipes = defltKnownRecipeSettings;
 MeleeSettings Settings::melee = defltMeleeSettings;
 ChargenSettings Settings::characterEditor = characterEditorDefaults;
 ExtraNpcSettings Settings::customExtraNpcSettings = defltExtraNpcSettings;
@@ -753,12 +752,35 @@ void Settings::SetOverlaySettingsB(const std::string& section, OverlaySettingsB*
 	}
 }
 
+void Settings::GetInfoBoxSettings()
+{
+	GetBool("InfoBox", "drawScrapLooterStatus", infobox.drawScrapLooterStatus, false);
+	GetBool("InfoBox", "drawItemLooterStatus", infobox.drawItemLooterStatus, false);
+	GetBool("InfoBox", "drawNpcLooterStatus", infobox.drawNpcLooterStatus, false);
+	GetBool("InfoBox", "drawContainerLooterStatus", infobox.drawContainerLooterStatus, false);
+	GetBool("InfoBox", "drawHarvesterStatus", infobox.drawHarvesterStatus, false);
+
+	GetBool("InfoBox", "drawPositionSpoofingStatus", infobox.drawPositionSpoofingStatus, false);
+	GetBool("InfoBox", "drawNukeCodes", infobox.drawNukeCodes, false);
+}
+
+void Settings::SetInfoBoxSettings()
+{
+	SetBool("InfoBox", "drawScrapLooterStatus", infobox.drawScrapLooterStatus, false);
+	SetBool("InfoBox", "drawItemLooterStatus", infobox.drawItemLooterStatus, false);
+	SetBool("InfoBox", "drawNpcLooterStatus", infobox.drawNpcLooterStatus, false);
+	SetBool("InfoBox", "drawContainerLooterStatus", infobox.drawContainerLooterStatus, false);
+	SetBool("InfoBox", "drawHarvesterStatus", infobox.drawHarvesterStatus, false);
+
+	SetBool("InfoBox", "drawPositionSpoofingStatus", infobox.drawPositionSpoofingStatus, false);
+	SetBool("InfoBox", "drawNukeCodes", infobox.drawNukeCodes, false);
+}
+
 void Settings::GetScrapSettings()
 {
 	GetBool("ScrapSettings", "ScrapKeybindEnabled", scrapLooter.keybindEnabled, defltScrapLooterSettings.keybindEnabled);
 	GetBool("ScrapSettings", "ScrapOverrideEnabled", scrapLooter.scrapOverrideEnabled, defltScrapLooterSettings.scrapOverrideEnabled);
 	GetBool("ScrapSettings", "ScrapAutomaticLootingEnabled", scrapLooter.autoLootingEnabled, defltScrapLooterSettings.autoLootingEnabled);
-	GetBool("ScrapSettings", "ScrapAutomaticStatus", scrapLooter.drawStatus, defltScrapLooterSettings.drawStatus);
 	GetSliderInt("ScrapSettings", "ScrapAutomaticSpeedMin", scrapLooter.autoLootingSpeedMin, defltScrapLooterSettings.autoLootingSpeedMin, 10, 60);
 	GetSliderInt("ScrapSettings", "ScrapAutomaticSpeedMax",scrapLooter.autoLootingSpeedMax, defltScrapLooterSettings.autoLootingSpeedMax, 10, 60);
 	GetSliderInt("ScrapSettings", "ScrapLooterDistance", scrapLooter.maxDistance, defltScrapLooterSettings.maxDistance, 1, 3000);
@@ -779,7 +801,6 @@ void Settings::SetScrapSettings()
 	SetBool("ScrapSettings", "ScrapKeybindEnabled", scrapLooter.keybindEnabled, defltScrapLooterSettings.keybindEnabled);
 	SetBool("ScrapSettings", "ScrapOverrideEnabled", scrapLooter.scrapOverrideEnabled, defltScrapLooterSettings.scrapOverrideEnabled);
 	SetBool("ScrapSettings", "ScrapAutomaticLootingEnabled", scrapLooter.autoLootingEnabled, defltScrapLooterSettings.autoLootingEnabled);
-	SetBool("ScrapSettings", "ScrapAutomaticStatus", scrapLooter.drawStatus, defltScrapLooterSettings.drawStatus);
 	SetSliderInt("ScrapSettings", "ScrapAutomaticSpeedMin", scrapLooter.autoLootingSpeedMin, defltScrapLooterSettings.autoLootingSpeedMin, 10, 60);
 	SetSliderInt("ScrapSettings", "ScrapAutomaticSpeedMax", scrapLooter.autoLootingSpeedMax, defltScrapLooterSettings.autoLootingSpeedMax, 10, 60);
 	SetSliderInt("ScrapSettings", "ScrapLooterDistance", scrapLooter.maxDistance, defltScrapLooterSettings.maxDistance, 1, 3000);
@@ -793,7 +814,7 @@ void Settings::GetItemLooterSettings()
 {
 	GetBool("ItemLooterSettings", "ItemKeybindEnabled", itemLooter.keybindEnabled, defltItemLooterSettings.keybindEnabled);
 	GetBool("ItemLooterSettings", "ItemAutomaticLootingEnabled", itemLooter.autoLootingEnabled, defltItemLooterSettings.autoLootingEnabled);
-	GetBool("ItemLooterSettings", "ItemAutomaticStatus", itemLooter.drawStatus, defltItemLooterSettings.drawStatus);
+
 	GetSliderInt("ItemLooterSettings", "ItemAutomaticSpeedMin", itemLooter.autoLootingSpeedMin, defltItemLooterSettings.autoLootingSpeedMin, 10, 60);
 	GetSliderInt("ItemLooterSettings", "ItemAutomaticSpeedMax", itemLooter.autoLootingSpeedMax, defltItemLooterSettings.autoLootingSpeedMax, 10, 60);
 	GetBool("ItemLooterSettings", "ItemLooterWeaponsEnabled", itemLooter.lootWeaponsEnabled, defltItemLooterSettings.lootWeaponsEnabled);
@@ -843,7 +864,6 @@ void Settings::SetItemLooterSettings()
 
 	SetBool("ItemLooterSettings", "ItemKeybindEnabled", itemLooter.keybindEnabled, defltItemLooterSettings.keybindEnabled);
 	SetBool("ItemLooterSettings", "ItemAutomaticLootingEnabled", itemLooter.autoLootingEnabled, defltItemLooterSettings.autoLootingEnabled);
-	SetBool("ItemLooterSettings", "ItemAutomaticStatus", itemLooter.drawStatus, defltItemLooterSettings.drawStatus);
 	SetSliderInt("ItemLooterSettings", "ItemAutomaticSpeedMin", itemLooter.autoLootingSpeedMin, defltItemLooterSettings.autoLootingSpeedMin, 10, 60);
 	SetSliderInt("ItemLooterSettings", "ItemAutomaticSpeedMax", itemLooter.autoLootingSpeedMax, defltItemLooterSettings.autoLootingSpeedMax, 10, 60);
 	SetBool("ItemLooterSettings", "ItemLooterWeaponsEnabled", itemLooter.lootWeaponsEnabled, defltItemLooterSettings.lootWeaponsEnabled);
@@ -969,7 +989,6 @@ void Settings::SetTargetSettings()
 void Settings::GetLocalPlayerSettings()
 {
 	GetBool("LocalPlayerSettings", "PositionSpoofingEnabled", customLocalPlayerSettings.positionSpoofingEnabled, defltLocalPlayerSettings.positionSpoofingEnabled);
-	GetBool("LocalPlayerSettings", "DrawPositionSpoofingEnabled", customLocalPlayerSettings.drawPositionSpoofingStatus, defltLocalPlayerSettings.drawPositionSpoofingStatus);
 	GetSliderInt("LocalPlayerSettings", "PositionSpoofingHeight", customLocalPlayerSettings.positionSpoofingHeight, defltLocalPlayerSettings.positionSpoofingHeight, -524287, 524287);
 	GetBool("LocalPlayerSettings", "NoclipEnabled", customLocalPlayerSettings.noclipEnabled, defltLocalPlayerSettings.noclipEnabled);
 	GetSliderFloat("LocalPlayerSettings", "NoclipSpeed", customLocalPlayerSettings.noclipSpeed, defltLocalPlayerSettings.noclipSpeed, 0.0f, 2.0f);
@@ -997,7 +1016,6 @@ void Settings::GetLocalPlayerSettings()
 void Settings::SetLocalPlayerSettings()
 {
 	SetBool("LocalPlayerSettings", "PositionSpoofingEnabled", customLocalPlayerSettings.positionSpoofingEnabled, defltLocalPlayerSettings.positionSpoofingEnabled);
-	SetBool("LocalPlayerSettings", "DrawPositionSpoofingEnabled", customLocalPlayerSettings.drawPositionSpoofingStatus, defltLocalPlayerSettings.drawPositionSpoofingStatus);
 	SetSliderInt("LocalPlayerSettings", "PositionSpoofingHeight", customLocalPlayerSettings.positionSpoofingHeight, defltLocalPlayerSettings.positionSpoofingHeight, -524287, 524287);
 	SetBool("LocalPlayerSettings", "NoclipEnabled", customLocalPlayerSettings.noclipEnabled, defltLocalPlayerSettings.noclipEnabled);
 	SetSliderFloat("LocalPlayerSettings", "NoclipSpeed", customLocalPlayerSettings.noclipSpeed, defltLocalPlayerSettings.noclipSpeed, 0.0f, 2.0f);
@@ -1121,17 +1139,11 @@ void Settings::SetTeleportSettings()
 void Settings::GetNukeCodeSettings()
 {
 	GetBool("NukeCodeSettings", "AutomaticNukeCodes", customNukeCodeSettings.automaticNukeCodes, defltNukeCodeSettings.automaticNukeCodes);
-	GetBool("NukeCodeSettings", "DrawCodeAlpha", customNukeCodeSettings.drawCodeAlpha, defltNukeCodeSettings.drawCodeAlpha);
-	GetBool("NukeCodeSettings", "DrawCodeBravo", customNukeCodeSettings.drawCodeBravo, defltNukeCodeSettings.drawCodeBravo);
-	GetBool("NukeCodeSettings", "DrawCodeCharlie", customNukeCodeSettings.drawCodeCharlie, defltNukeCodeSettings.drawCodeCharlie);
 }
 
 void Settings::SetNukeCodeSettings()
 {
 	SetBool("NukeCodeSettings", "AutomaticNukeCodes", customNukeCodeSettings.automaticNukeCodes, defltNukeCodeSettings.automaticNukeCodes);
-	SetBool("NukeCodeSettings", "DrawCodeAlpha", customNukeCodeSettings.drawCodeAlpha, defltNukeCodeSettings.drawCodeAlpha);
-	SetBool("NukeCodeSettings", "DrawCodeBravo", customNukeCodeSettings.drawCodeBravo, defltNukeCodeSettings.drawCodeBravo);
-	SetBool("NukeCodeSettings", "DrawCodeCharlie", customNukeCodeSettings.drawCodeCharlie, defltNukeCodeSettings.drawCodeCharlie);
 }
 
 void Settings::GetLegendarySettings()
@@ -1187,7 +1199,6 @@ void Settings::SetFluxSettings()
 void Settings::GetEntityLooterSettings(const std::string& section, EntityLooterSettings* value, const EntityLooterSettings* deflt)
 {
 	GetBool(section, "EntityLooterEnabled", value->enabled, deflt->enabled);
-	GetBool(section, "EntityLooterStatusEnabled", value->drawStatus, deflt->drawStatus);
 	GetBool(section, "EntityLooterAllWeaponsEnabled", value->allWeaponsEnabled, deflt->allWeaponsEnabled);
 	GetBool(section, "EntityLooterAllArmorEnabled", value->allArmorEnabled, deflt->allArmorEnabled);
 	GetBool(section, "EntityLooterOneStarWeaponsEnabled", value->oneStarWeaponsEnabled, deflt->oneStarWeaponsEnabled);
@@ -1223,7 +1234,6 @@ void Settings::GetEntityLooterSettings(const std::string& section, EntityLooterS
 void Settings::SetEntityLooterSettings(const std::string& section, EntityLooterSettings* value, const EntityLooterSettings* deflt)
 {
 	SetBool(section, "EntityLooterEnabled", value->enabled, deflt->enabled);
-	SetBool(section, "EntityLooterStatusEnabled", value->drawStatus, deflt->drawStatus);
 	SetBool(section, "EntityLooterAllWeaponsEnabled", value->allWeaponsEnabled, deflt->allWeaponsEnabled);
 	SetBool(section, "EntityLooterAllArmorEnabled", value->allArmorEnabled, deflt->allArmorEnabled);
 	SetBool(section, "EntityLooterOneStarWeaponsEnabled", value->oneStarWeaponsEnabled, deflt->oneStarWeaponsEnabled);
@@ -1259,7 +1269,6 @@ void Settings::SetEntityLooterSettings(const std::string& section, EntityLooterS
 void Settings::GetHarvesterSettings()
 {
 	GetBool("HarvesterSettings", "HarvesterEnabled", harvester.enabled, harvesterDefaults.enabled);
-	GetBool("HarvesterSettings", "HarvesterStatusEnabled", harvester.drawStatus, harvesterDefaults.drawStatus);
 	GetBool("HarvesterSettings", "HarvesterOverrideEnabled", harvester.overrideEnabled, harvesterDefaults.overrideEnabled);
 	for (auto i = 0; i < 69; i++)
 	{
@@ -1270,7 +1279,6 @@ void Settings::GetHarvesterSettings()
 void Settings::SetHarvesterSettings()
 {
 	SetBool("HarvesterSettings", "HarvesterEnabled", harvester.enabled, harvesterDefaults.enabled);
-	SetBool("HarvesterSettings", "HarvesterStatusEnabled", harvester.drawStatus, harvesterDefaults.drawStatus);
 	SetBool("HarvesterSettings", "HarvesterOverrideEnabled", harvester.overrideEnabled, harvesterDefaults.overrideEnabled);
 	for (auto i = 0; i < 69; i++)
 	{
@@ -1280,14 +1288,14 @@ void Settings::SetHarvesterSettings()
 
 void Settings::GetKnownRecipeSettings()
 {
-	GetBool("KnownRecipeSettings", "KnownRecipesEnabled", customKnownRecipeSettings.knownRecipesEnabled, defltKnownRecipeSettings.knownRecipesEnabled);
-	GetBool("KnownRecipeSettings", "UnknownRecipesEnabled", customKnownRecipeSettings.unknownRecipesEnabled, defltKnownRecipeSettings.unknownRecipesEnabled);
+	GetBool("KnownRecipeSettings", "KnownRecipesEnabled", recipes.knownRecipesEnabled, defltKnownRecipeSettings.knownRecipesEnabled);
+	GetBool("KnownRecipeSettings", "UnknownRecipesEnabled", recipes.unknownRecipesEnabled, defltKnownRecipeSettings.unknownRecipesEnabled);
 }
 
 void Settings::SetKnownRecipeSettings()
 {
-	SetBool("KnownRecipeSettings", "KnownRecipesEnabled", customKnownRecipeSettings.knownRecipesEnabled, defltKnownRecipeSettings.knownRecipesEnabled);
-	SetBool("KnownRecipeSettings", "UnknownRecipesEnabled", customKnownRecipeSettings.unknownRecipesEnabled, defltKnownRecipeSettings.unknownRecipesEnabled);
+	SetBool("KnownRecipeSettings", "KnownRecipesEnabled", recipes.knownRecipesEnabled, defltKnownRecipeSettings.knownRecipesEnabled);
+	SetBool("KnownRecipeSettings", "UnknownRecipesEnabled", recipes.unknownRecipesEnabled, defltKnownRecipeSettings.unknownRecipesEnabled);
 }
 
 void Settings::GetMeleeSettings()
@@ -1397,6 +1405,9 @@ void Settings::ReadIniSettings()
 	GetMeleeSettings();
 	GetChargenSettings();
 	GetBitMsgWriterSettings();
+
+	GetInfoBoxSettings();
+	
 	file.write(ini, true);
 }
 
@@ -1433,5 +1444,8 @@ void Settings::WriteIniSettings()
 	SetMeleeSettings();
 	SetChargenSettings();
 	SetBitMsgWriterSettings();
+
+	SetInfoBoxSettings();
+	
 	file.write(ini, true);
 }

@@ -26,10 +26,6 @@ private:
 	static void ToggleOverlay();
 	static void Render();
 
-	static void RenderProcessMenu();
-	static void RenderOverlayMenu();
-	static void RenderOverlay();
-
 	inline static HINSTANCE mHInstance = nullptr;
 	inline static int windowTopmostCounter = 0;
 
