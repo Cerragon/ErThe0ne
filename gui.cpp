@@ -41,7 +41,6 @@ void Gui::RenderOverlay()
 	Renderer::d3DxSprite->Begin(D3DXSPRITE_ALPHABLEND);
 
 	RenderEntities();
-	RenderNpcs();
 	RenderPlayers();
 
 	RenderInfoBox();
@@ -70,16 +69,8 @@ void Gui::RenderEntities()
 			RenderItems(entity, Settings::bobbleheadSettings);
 		else if (entity.flag & CUSTOM_ENTRY_FLORA)
 			RenderItems(entity, Settings::floraSettings);
-	}
-}
-
-void Gui::RenderNpcs()
-{
-	auto npcs = ErectusMemory::npcDataBuffer;
-	for (const auto& npc : npcs)
-	{
-		if (npc.flag & CUSTOM_ENTRY_NPC)
-			RenderActors(npc, Settings::npcSettings);
+		else if (entity.flag & CUSTOM_ENTRY_NPC)
+			RenderActors(entity, Settings::npcSettings);
 	}
 }
 
@@ -439,7 +430,7 @@ void Gui::RenderInfoBox()
 		featureText = fmt::format("STASH FormId: {:08x}", localPlayer.stashFormId);
 		infoTexts.emplace_back(featureText, true);
 
-		featureText = fmt::format("Cell FormId: {:08x}}", localPlayer.cellFormId);
+		featureText = fmt::format("Cell FormId: {:08x}", localPlayer.cellFormId);
 		infoTexts.emplace_back(featureText, true);
 
 		featureText = fmt::format("X: {:f}", localPlayer.position[0]);

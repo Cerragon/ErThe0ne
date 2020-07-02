@@ -20,7 +20,6 @@ public:
 
 private:
 	static DWORD __stdcall BufferEntityListThread(LPVOID lpParameter);
-	static DWORD __stdcall BufferNpcListThread(LPVOID lpParameter);
 	static DWORD __stdcall BufferPlayerListThread(LPVOID lpParameter);
 	static DWORD __stdcall WeaponEditorThread(LPVOID lpParameter);
 	static DWORD __stdcall LockingThread(LPVOID lpParameter);
@@ -29,8 +28,7 @@ private:
 	static DWORD __stdcall KnownRecipeThread(LPVOID lpParameter);
 
 	inline static bool bufferEntityListThreadActive = false;
-	inline static bool bufferNpcListThreadActive = false;
-	inline static bool bufferPlayerListThreadActive = false;
+		inline static bool bufferPlayerListThreadActive = false;
 	inline static bool weaponEditorThreadActive = false;
 	inline static bool lockingThreadActive = false;
 	inline static bool multihackThreadActive = false;

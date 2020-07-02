@@ -16,23 +16,23 @@ namespace
 {
 	enum class FormTypes : BYTE
 	{
-		TesObjectArmo = 0x25,
-		TesObjectBook = 0x26,
-		TesObjectCont = 0x27,
-		TesObjectMisc = 0x2B,
-		CurrencyObject = 0x2E,
-		TesFlora = 0x34,
-		TesObjectWeap = 0x36,
-		TesAmmo = 0x37,
-		TesNpc = 0x38,
-		TesKey = 0x3B,
-		AlchemyItem = 0x3C,
-		TesUtilityItem = 0x3D,
-		BgsNote = 0x3F,
-		TesLevItem = 0x47,
-		TesItem = 0x4F,  //used in REFR objects
-		TesActor = 0x50, //used in REFR objects
-		PlayerCharacter = 0xB4 //used in REFR objects
+		TesObjectArmo = 0x26,
+		TesObjectBook = 0x27,
+		TesObjectCont = 0x28,
+		TesObjectMisc = 0x2C,
+		CurrencyObject = 0x2F,
+		TesFlora = 0x35,
+		TesObjectWeap = 0x37,
+		TesAmmo = 0x38,
+		TesNpc = 0x39,
+		TesKey = 0x3C,
+		AlchemyItem = 0x3D,
+		TesUtilityItem = 0x3E,
+		BgsNote = 0x40,
+		TesLevItem = 0x48,
+		TesObjectRefr = 0x50,  //used in REFR objects, ref to item
+		TesActor = 0x51, //used in REFR objects, ref to npc
+		PlayerCharacter = 0xB5 //also used in REFR objects, ref to player
 	};
 
 	DWORD legendaryFormIdArray[]
@@ -228,7 +228,7 @@ DWORD64 ErectusMemory::GetLocalPlayerPtr(const bool checkMainMenu)
 	return localPlayerPtr;
 }
 
-std::vector<DWORD64> ErectusMemory::GetEntityList()
+std::vector<DWORD64> ErectusMemory::GetEntityPtrList()
 {
 	std::vector<DWORD64> result;
 
@@ -275,132 +275,18 @@ std::vector<DWORD64> ErectusMemory::GetEntityList()
 		TesObjectCell cell{};
 		if (!Rpm(cellPtrArray[i], &cell, sizeof TesObjectCell))
 			continue;
-		if (!Utils::Valid(cell.listPtr) || !cell.listSize)
+		if (!Utils::Valid(cell.objectListBeginPtr) || !Utils::Valid(cell.objectListEndPtr))
 			continue;
 
-		auto objectPtrArray = std::make_unique<DWORD64[]>(cell.listSize);
-		if (!Rpm(cell.listPtr, objectPtrArray.get(), cell.listSize * sizeof DWORD64))
+		auto itemArraySize = (cell.objectListEndPtr - cell.objectListBeginPtr) / sizeof(DWORD64);
+		auto objectPtrArray = std::make_unique<DWORD64[]>(itemArraySize);
+		if (!Rpm(cell.objectListBeginPtr, objectPtrArray.get(), itemArraySize * sizeof DWORD64))
 			continue;
 
-		result.insert(result.end(), objectPtrArray.get(), objectPtrArray.get() + cell.listSize);
+		result.insert(result.end(), objectPtrArray.get(), objectPtrArray.get() + itemArraySize);
 	}
 
 	return  result;
-}
-
-std::vector<DWORD64> ErectusMemory::GetNpcPtrList()
-{
-	std::vector<DWORD64> result;
-
-	DWORD64 processListsPtr;
-	if (!Rpm(ErectusProcess::exe + OFFSET_NPC_LIST, &processListsPtr, sizeof processListsPtr))
-		return result;
-	if (!Utils::Valid(processListsPtr))
-		return result;
-
-	ProcessLists processListsData{};
-	if (!Rpm(processListsPtr, &processListsData, sizeof processListsData))
-		return result;
-
-	DWORD64 idArraySize = 0;
-
-	auto useArrayA = false;
-	if (Utils::Valid(processListsData.npcIdArrayPtrA) && processListsData.npcIdArraySizeA)
-	{
-		idArraySize += processListsData.npcIdArraySizeA;
-		useArrayA = true;
-	}
-
-	auto useArrayB = false;
-	if (Utils::Valid(processListsData.npcIdArrayPtrB) && processListsData.npcIdArraySizeB)
-	{
-		idArraySize += processListsData.npcIdArraySizeB;
-		useArrayB = true;
-	}
-
-	if (!idArraySize)
-		return result;
-
-	const auto allocSize = sizeof(ExecutionList) + idArraySize * sizeof(DWORD64) * 2;
-	const auto allocAddress = AllocEx(allocSize);
-	if (allocAddress == 0)
-		return result;
-
-	ExecutionList executionListData = {
-		.function = ErectusProcess::exe + OFFSET_NPC_PTR_FUNCTION,
-		.idArraySize = idArraySize,
-		.idArray = allocAddress + sizeof(ExecutionList),
-		.ptrArray = allocAddress + sizeof(ExecutionList) + idArraySize * sizeof(DWORD64),
-	};
-
-	auto* pageData = new BYTE[allocSize];
-	memset(pageData, 0x00, allocSize);
-	memcpy(pageData, &executionListData, sizeof executionListData);
-
-	auto index = 0;
-
-	if (useArrayA)
-	{
-		for (auto i = 0; i < processListsData.npcIdArraySizeA; i++)
-		{
-			auto idAddress = processListsData.npcIdArrayPtrA + 0x4 * i;
-			memcpy(&pageData[sizeof(ExecutionList) + index * sizeof(DWORD64)], &idAddress, sizeof idAddress);
-			index++;
-		}
-	}
-
-	if (useArrayB)
-	{
-		for (auto i = 0; i < processListsData.npcIdArraySizeB; i++)
-		{
-			auto idAddress = processListsData.npcIdArrayPtrB + 0x4 * i;
-			memcpy(&pageData[sizeof(ExecutionList) + index * sizeof(DWORD64)], &idAddress, sizeof idAddress);
-			index++;
-		}
-	}
-
-	const auto written = Wpm(allocAddress, &*pageData, allocSize);
-
-	delete[]pageData;
-	pageData = nullptr;
-
-	if (!written)
-	{
-		FreeEx(allocAddress);
-		return result;
-	}
-
-	const auto paramAddress = allocAddress + sizeof ExecutionList::ASM;
-	auto* const thread = CreateRemoteThread(ErectusProcess::handle, nullptr, 0, LPTHREAD_START_ROUTINE(allocAddress),
-		LPVOID(paramAddress), 0, nullptr);
-
-	if (thread == nullptr)
-	{
-		FreeEx(allocAddress);
-		return result;
-	}
-
-	const auto threadResult = WaitForSingleObject(thread, 3000);
-	CloseHandle(thread);
-
-	if (threadResult == WAIT_TIMEOUT)
-		return result;
-
-	auto* executedList = new DWORD64[idArraySize];
-	if (!Rpm(allocAddress + sizeof(ExecutionList) + idArraySize * sizeof(DWORD64), &*executedList, idArraySize * sizeof(DWORD64)))
-	{
-		delete[]executedList;
-		executedList = nullptr;
-
-		FreeEx(allocAddress);
-		return result;
-	}
-
-	result.assign(executedList, executedList + idArraySize);
-
-	FreeEx(allocAddress);
-	delete[] executedList;
-	return result;
 }
 
 std::vector<DWORD64> ErectusMemory::GetRecipeArray()
@@ -414,7 +300,7 @@ std::vector<DWORD64> ErectusMemory::GetRecipeArray()
 		return result;
 
 	ReferenceList omodList{};
-	if (!Rpm(dataHandlerPtr + 0xF70, &omodList, sizeof omodList))
+	if (!Rpm(dataHandlerPtr + 0x388, &omodList, sizeof omodList))
 		return result;
 	if (!Utils::Valid(omodList.arrayPtr) || !omodList.arraySize || omodList.arraySize > 0x7FFF)
 		return result;
@@ -610,7 +496,6 @@ bool ErectusMemory::CheckScrapList()
 		if (i)
 			return true;
 	}
-
 
 	return false;
 }
@@ -1229,7 +1114,7 @@ std::string ErectusMemory::GetEntityName(const DWORD64 ptr)
 	std::string result{};
 
 	if (!Utils::Valid(ptr))
-		return nullptr;
+		return result;
 
 	auto nameLength = 0;
 	auto namePtr = ptr;
@@ -1272,7 +1157,7 @@ bool ErectusMemory::UpdateBufferEntityList()
 	if (!Rpm(localPlayerPtr, &localPlayer, sizeof localPlayer))
 		return false;
 
-	auto bufferList = GetEntityList();
+	auto bufferList = GetEntityPtrList();
 	if (bufferList.empty())
 		return false;
 
@@ -1289,10 +1174,11 @@ bool ErectusMemory::UpdateBufferEntityList()
 		if (!Utils::Valid(entityData.referencedItemPtr))
 			continue;
 
+		if (entityData.formType == static_cast<BYTE>(FormTypes::PlayerCharacter))
+			continue;
+		
 		TesItem referenceData{};
 		if (!Rpm(entityData.referencedItemPtr, &referenceData, sizeof referenceData))
-			continue;
-		if (referenceData.formType == static_cast<byte>(FormTypes::TesNpc))
 			continue;
 
 		auto entityFlag = CUSTOM_ENTRY_DEFAULT;
@@ -1312,7 +1198,7 @@ bool ErectusMemory::UpdateBufferEntityList()
 		if (entityName.empty())
 		{
 			entityFlag |= CUSTOM_ENTRY_UNNAMED;
-			entityName = fmt::format("{:x}", entityData.formId);
+			entityName = fmt::format("{0:X} [{1:X}]", entityData.formId, referenceData.formType);
 		}
 
 		CustomEntry entry{
@@ -1329,89 +1215,6 @@ bool ErectusMemory::UpdateBufferEntityList()
 	entityDataBuffer = entities;
 
 	return entityDataBuffer.empty() ? false : true;
-}
-
-bool ErectusMemory::UpdateBufferNpcList()
-{
-	std::vector<CustomEntry> npcs{};
-
-	auto localPlayerPtr = GetLocalPlayerPtr(true);
-	if (!Utils::Valid(localPlayerPtr))
-		return false;
-
-	TesObjectRefr localPlayer{};
-	if (!Rpm(localPlayerPtr, &localPlayer, sizeof localPlayer))
-		return false;
-
-	auto npcPtrs = GetNpcPtrList();
-	if (npcPtrs.empty())
-		return false;
-
-	for (auto npcPtr : npcPtrs)
-	{
-		if (!Utils::Valid(npcPtr))
-			continue;
-		if (npcPtr == localPlayerPtr)
-			continue;
-
-		TesObjectRefr entityData{};
-		if (!Rpm(npcPtr, &entityData, sizeof entityData))
-			continue;
-		if (!Utils::Valid(entityData.referencedItemPtr))
-			continue;
-
-		TesItem referenceData{};
-		if (!Rpm(entityData.referencedItemPtr, &referenceData, sizeof referenceData))
-			continue;
-		if (referenceData.formType != static_cast<BYTE>(FormTypes::TesNpc))
-			continue;
-		if (referenceData.formId == 0x00000007)
-			continue;
-
-		auto entityFlag = CUSTOM_ENTRY_DEFAULT;
-		DWORD64 entityNamePtr = 0;
-		auto enabledDistance = 0;
-
-		GetCustomEntityData(referenceData, &entityFlag, &entityNamePtr, &enabledDistance,
-			Settings::scrapLooter.scrapOverrideEnabled,
-			Settings::harvester.overrideEnabled);
-		if (entityFlag & CUSTOM_ENTRY_INVALID)
-			continue;
-
-		if (BlacklistedNpcFaction(referenceData))
-			continue;
-
-		if (Settings::customExtraNpcSettings.useNpcBlacklist)
-		{
-			if (CheckFormIdArray(referenceData.formId, Settings::customExtraNpcSettings.npcBlacklistEnabled, Settings::customExtraNpcSettings.npcBlacklist, 64))
-				continue;
-		}
-
-		auto distance = Utils::GetDistance(entityData.position, localPlayer.position);
-		auto normalDistance = static_cast<int>(distance * 0.01f);
-		if (normalDistance > enabledDistance)
-			continue;
-
-		auto entityName = GetEntityName(entityNamePtr);
-		if (entityName.empty())
-		{
-			entityFlag |= CUSTOM_ENTRY_UNNAMED;
-			entityName = fmt::format("{:x}", entityData.formId);
-		}
-		CustomEntry entry{
-			.entityPtr = npcPtr,
-			.referencePtr = entityData.referencedItemPtr,
-			.entityFormId = entityData.formId,
-			.referenceFormId = referenceData.formId,
-			.flag = entityFlag,
-			.name = entityName
-		};
-		npcs.push_back(entry);
-	}
-
-	npcDataBuffer = npcs;
-
-	return npcDataBuffer.empty() ? false : true;
 }
 
 std::string ErectusMemory::GetPlayerName(const ClientAccount& clientAccountData)
@@ -1605,8 +1408,8 @@ bool ErectusMemory::MessagePatcher(const bool state)
 	if (!Rpm(ErectusProcess::exe + OFFSET_FAKE_MESSAGE, &fakeMessagesCheck, sizeof fakeMessagesCheck))
 		return false;
 
-	BYTE fakeMessagesEnabled[] = { 0xB0, 0x01 };
-	BYTE fakeMessagesDisabled[] = { 0x32, 0xC0 };
+	BYTE fakeMessagesEnabled[] = { 0xB2, 0x00 };
+	BYTE fakeMessagesDisabled[] = { 0xB2, 0xFF };
 
 	if (!memcmp(fakeMessagesCheck, fakeMessagesEnabled, sizeof fakeMessagesEnabled))
 	{
@@ -1703,7 +1506,7 @@ bool ErectusMemory::LootScrap()
 	if (!Rpm(localPlayerPtr, &localPlayer, sizeof localPlayer))
 		return false;
 
-	auto bufferList = GetEntityList();
+	auto bufferList = GetEntityPtrList();
 	if (bufferList.empty()) return false;
 
 	for (auto item : bufferList)
@@ -1875,7 +1678,7 @@ bool ErectusMemory::LootItems()
 		return false;
 
 
-	auto bufferList = GetEntityList();
+	auto bufferList = GetEntityPtrList();
 	if (bufferList.empty())
 		return false;
 
@@ -1988,7 +1791,7 @@ bool ErectusMemory::UpdateOldWeaponData()
 		return false;
 
 	ReferenceList weaponList{};
-	if (!Rpm(dataHandlerPtr + 0x580, &weaponList, sizeof weaponList))
+	if (!Rpm(dataHandlerPtr + 0x598, &weaponList, sizeof weaponList))
 		return false;
 	if (!Utils::Valid(weaponList.arrayPtr) || !weaponList.arraySize || weaponList.arraySize > 0x7FFF)
 		return false;
@@ -2067,7 +1870,7 @@ bool ErectusMemory::EditWeapon(const int index, const bool revertWeaponData)
 		return false;
 
 	ReferenceList weaponList{};
-	if (!Rpm(dataHandlerPtr + 0x580, &weaponList, sizeof weaponList))
+	if (!Rpm(dataHandlerPtr + 0x598, &weaponList, sizeof weaponList))
 		return false;
 	if (!Utils::Valid(weaponList.arrayPtr) || !weaponList.arraySize || weaponList.arraySize > 0x7FFF)
 		return false;
@@ -4390,7 +4193,7 @@ bool ErectusMemory::Harvester()
 
 	if (useNpcLooter)
 	{
-		auto temporaryNpcList = GetNpcPtrList();
+		auto temporaryNpcList = GetEntityPtrList();
 		if (temporaryNpcList.empty())
 			return false;
 
@@ -4404,6 +4207,10 @@ bool ErectusMemory::Harvester()
 			TesObjectRefr entityData{};
 			if (!Rpm(npcPtr, &entityData, sizeof entityData))
 				continue;
+
+			if (entityData.formType != static_cast<BYTE>(FormTypes::TesActor)) //FIXME: check if correct
+				continue;
+			
 			if (!Utils::Valid(entityData.referencedItemPtr))
 				continue;
 
@@ -4424,7 +4231,7 @@ bool ErectusMemory::Harvester()
 
 	if (useContainerLooter || useFloraHarvester)
 	{
-		auto temporaryEntityList = GetEntityList();
+		auto temporaryEntityList = GetEntityPtrList();
 		if (temporaryEntityList.empty())
 			return false;
 
@@ -4556,78 +4363,6 @@ bool ErectusMemory::ChargenEditing()
 	return true;
 }
 
-bool ErectusMemory::CreateProjectile(const DWORD itemId, const float* position, const float* rotation)
-{
-	if (!MessagePatcher(allowMessages))
-		return false;
-
-	if (!allowMessages)
-		return false;
-
-	const auto allocAddress = AllocEx(sizeof(ExecutionProjectile));
-	if (allocAddress == 0)
-		return false;
-
-	CreateProjectileMessageClient createProjectileMessageClientData{};
-	createProjectileMessageClientData.vtable = ErectusProcess::exe + VTABLE_CREATEPROJECTILEMESSAGECLIENT;
-	createProjectileMessageClientData.positionX = position[0];
-	createProjectileMessageClientData.positionY = position[1];
-	createProjectileMessageClientData.positionZ = position[2];
-	createProjectileMessageClientData.rotationArrayPtr = allocAddress + 0xD0;
-	createProjectileMessageClientData.rotationArrayEnd = allocAddress + 0xD0 + sizeof(float[3]);
-	createProjectileMessageClientData.rotationArrayPad = allocAddress + 0xD0 + sizeof(float[3]);
-	createProjectileMessageClientData.itemId = itemId;
-	createProjectileMessageClientData.unknownA = 0xFFFFFFFF;
-	createProjectileMessageClientData.unknownB = 0xFFFFFFFF;
-	createProjectileMessageClientData.unknownC = 0x00000000;
-	createProjectileMessageClientData.unknownD = 1.0f;
-	createProjectileMessageClientData.unknownE = 0x00000000;
-	createProjectileMessageClientData.unknownArrayPtrA = allocAddress + 0xE0;
-	createProjectileMessageClientData.unknownArrayEndA = allocAddress + 0xE0 + sizeof(WORD[1]);
-	createProjectileMessageClientData.unknownArrayPadA = allocAddress + 0xE0 + sizeof(WORD[1]);
-	createProjectileMessageClientData.unknownF = 0xFF;
-	createProjectileMessageClientData.unknownArrayPtrB = allocAddress + 0xF0;
-	createProjectileMessageClientData.unknownArrayEndB = allocAddress + 0xF0 + sizeof(BYTE[1]);
-	createProjectileMessageClientData.unknownArrayPadB = allocAddress + 0xF0 + sizeof(BYTE[1]);
-	createProjectileMessageClientData.unknownG = 0x00;
-
-	ExecutionProjectile executionProjectileData;
-	executionProjectileData.address = ErectusProcess::exe + OFFSET_MESSAGE_SENDER;
-	executionProjectileData.rcx = allocAddress + 0x40;
-	executionProjectileData.rdx = 0;
-	memcpy(executionProjectileData.message, &createProjectileMessageClientData, sizeof createProjectileMessageClientData);
-	executionProjectileData.rotationX = rotation[0];
-	executionProjectileData.rotationY = rotation[1];
-	executionProjectileData.rotationZ = rotation[2];
-	executionProjectileData.unknownArrayValueA = WORD(Utils::GetRangedInt(999, 9999));
-	executionProjectileData.unknownArrayValueB = 0x01;
-
-	if (!Wpm(allocAddress, &executionProjectileData, sizeof executionProjectileData))
-	{
-		FreeEx(allocAddress);
-		return false;
-	}
-
-	const auto paramAddress = allocAddress + sizeof ExecutionProjectile::ASM;
-	auto* const thread = CreateRemoteThread(ErectusProcess::handle, nullptr, 0, LPTHREAD_START_ROUTINE(allocAddress),
-		LPVOID(paramAddress), 0, nullptr);
-
-	if (thread == nullptr)
-	{
-		FreeEx(allocAddress);
-		return false;
-	}
-
-	const auto threadResult = WaitForSingleObject(thread, 3000);
-	CloseHandle(thread);
-
-	if (threadResult == WAIT_TIMEOUT)
-		return false;
-
-	FreeEx(allocAddress);
-	return true;
-}
-
 Camera ErectusMemory::GetCameraInfo()
 {
 	Camera result = {};
@@ -4639,20 +4374,6 @@ Camera ErectusMemory::GetCameraInfo()
 		return result;
 
 	return result;
-}
-bool ErectusMemory::CreateForwardProjectile(const DWORD itemId)
-{
-	if (itemId == 0)
-		return false;
-
-	auto cameraData = GetCameraInfo();
-
-	float rotation[3];
-	rotation[0] = -atan2f(cameraData.forward[2], sqrtf(powf(cameraData.forward[0], 2.0f) + powf(cameraData.forward[1], 2.0f)));
-	rotation[1] = 0.0f;
-	rotation[2] = -atan2f(-cameraData.forward[0], cameraData.forward[1]);
-
-	return CreateProjectile(itemId, cameraData.origin, rotation);
 }
 
 bool ErectusMemory::Rpm(const DWORD64 src, void* dst, const size_t size)
@@ -4667,7 +4388,15 @@ bool ErectusMemory::Wpm(const DWORD64 dst, void* src, const size_t size)
 
 DWORD64 ErectusMemory::AllocEx(const size_t size)
 {
-	return DWORD64(VirtualAllocEx(ErectusProcess::handle, nullptr, size, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE));
+	return 0;
+
+	//this needs to be split, the game scans for PAGE_EXECUTE_READWRITE regions
+	//1) alloc with PAGE_READWRITE
+	//2) write the data
+	//3) switch to PAGE_EXECUTE_READ
+	//4) create the remote thread
+	//see https://reverseengineering.stackexchange.com/questions/3482/does-code-injected-into-process-memory-always-belong-to-a-page-with-rwx-access
+	//return DWORD64(VirtualAllocEx(ErectusProcess::handle, nullptr, size, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE));
 }
 
 bool ErectusMemory::FreeEx(const DWORD64 src)

@@ -26,7 +26,6 @@ private:
 	static void RenderOverlay();
 	static void RenderInfoBox();
 
-	static void RenderNpcs();
 	static void RenderEntities();
 	static void RenderPlayers();
 

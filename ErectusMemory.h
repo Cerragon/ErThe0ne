@@ -7,6 +7,7 @@
 #include <unordered_set>
 #include <array>
 
+//no change in 1.32.10
 class TesObjectRefr
 {
 public:
@@ -46,6 +47,111 @@ public:
 	BYTE padding019B[0xA89];
 	DWORD formId0C24;//0xC24
 };
+
+class LoadedAreaManager
+{
+public:
+	BYTE padding0000[0x80];
+	DWORD64 interiorCellArrayPtr;//0x80
+	DWORD64 interiorCellArrayPtr2;//0x88
+	BYTE padding0090[0x18];
+	DWORD64 exteriorCellArrayPtr;//0xA8
+	DWORD64 exteriorCellArrayPtr2;//0xB0
+};
+
+class Camera
+{
+public:
+	DWORD64 vtable;//0x0
+	BYTE padding0008[0x68];
+	float forward[3];//0x70
+	BYTE padding007C[0x24];
+	float origin[3];//0xA0
+	BYTE padding00Ac[0x84];
+	float view[16];//0x130
+};
+
+class FalloutMain
+{
+public:
+	DWORD64 vtable;//0x0
+	BYTE padding0008[0x338];
+	DWORD64 platformSessionManagerPtr;//0x340
+};
+
+class PlatformSessionManager
+{
+public:
+	DWORD64 vtable;//0x0
+	BYTE padding0008[0x78];
+	DWORD64 clientAccountManagerPtr;//0x80
+};
+
+class BhkCharProxyController
+{
+public:
+	DWORD64 vtable;//0x0
+	BYTE padding0008[0x4A8];
+	DWORD64 hknpBsCharacterProxyPtr;//0x4B0
+};
+
+class HknpBsCharacterProxy
+{
+public:
+	DWORD64 vtable;//0x0
+	BYTE padding0008[0x48];
+	float rotation[2];//0x50
+	BYTE padding0058[0x18];
+	float position[3];//0x70
+	BYTE padding007C[0x24];
+	float velocityA[4];//0xA0
+	float velocityB[4];//0xB0
+};
+
+class ActorSnapshotComponent
+{
+public:
+	//ActorCoreSnapshotComponent
+	DWORD64 actorCorevtable;//0x0
+	BYTE actorCorePadding0008[0x98];
+	//ActorServerAuthSnapshotData
+	DWORD64 vtable;//0xA0
+	BYTE padding0008[0x33];
+	BYTE isEssential;//0x3B
+	BYTE padding003C[0x34];
+	float maxHealth;//0x70
+	float modifiedHealth;//0x74
+	BYTE padding0078[0x4];
+	float lostHealth;//0x7C
+	BYTE padding0080[0xA0];
+	BYTE epicRank;//0x120
+	BYTE padding0121[0x7];
+};
+
+//changed + fixed
+class TesObjectCell
+{
+public:
+	BYTE padding0000[0xA0];
+	DWORD64 objectListBeginPtr;//0xA0
+	DWORD64 objectListEndPtr;//0xA8
+};
+
+//changed
+
+//unknown
+class ClientAccountManager
+{
+public:
+	DWORD64 vtable;//0x0
+	BYTE padding0008[0x38];
+	DWORD64 clientAccountArrayPtr;//0x40
+	BYTE padding0048[0x8];
+	int clientAccountArraySizeA;//0x50
+	BYTE padding0054[0x4];
+	int clientAccountArraySizeB;//0x58
+};
+
 class TesItem
 {
 public:
@@ -95,6 +201,7 @@ public:
 	BYTE padding00B8[0x9];
 	BYTE listEntryArraySize;//0xC1
 };
+
 class RequestActivateRefMessage
 {
 public:
@@ -103,7 +210,6 @@ public:
 	BYTE choice;//0xC
 	BYTE forceActivate;//0xB
 };
-
 class TransferMessage
 {
 public:
@@ -119,7 +225,6 @@ public:
 	BYTE unknownD;//0x22
 	BYTE unknownE;//0x23
 };
-
 class RequestTeleportMessage
 {
 public:
@@ -132,52 +237,11 @@ public:
 	float rotationZ;//0x1C
 	DWORD64 cellPtr;//0x20
 };
-
 class ClientStateMsg
 {
 public:
 	DWORD64 vtable;//0x0
 	DWORD64 clientState;//0x8
-};
-
-class Camera
-{
-public:
-	DWORD64 vtable;//0x0
-	BYTE padding0008[0x68];
-	float forward[3];//0x70
-	BYTE padding007C[0x24];
-	float origin[3];//0xA0
-	BYTE padding00Ac[0x84];
-	float view[16];//0x130
-};
-
-class FalloutMain
-{
-public:
-	DWORD64 vtable;//0x0
-	BYTE padding0008[0x338];
-	DWORD64 platformSessionManagerPtr;//0x340
-};
-
-class PlatformSessionManager
-{
-public:
-	DWORD64 vtable;//0x0
-	BYTE padding0008[0x78];
-	DWORD64 clientAccountManagerPtr;//0x80
-};
-
-class ClientAccountManager
-{
-public:
-	DWORD64 vtable;//0x0
-	BYTE padding0008[0x38];
-	DWORD64 clientAccountArrayPtr;//0x40
-	BYTE padding0048[0x8];
-	int clientAccountArraySizeA;//0x50
-	BYTE padding0054[0x4];
-	int clientAccountArraySizeB;//0x58
 };
 
 class ClientAccountBuffer
@@ -196,26 +260,6 @@ public:
 	int nameLength;//0x20
 	BYTE padding0024[0x58];
 	DWORD formId;//0x7C
-};
-
-class LoadedAreaManager
-{
-public:
-	BYTE padding0000[0x80];
-	DWORD64 interiorCellArrayPtr;//0x80
-	DWORD64 interiorCellArrayPtr2;//0x88
-	BYTE padding0090[0x18];
-	DWORD64 exteriorCellArrayPtr;//0xA8
-	DWORD64 exteriorCellArrayPtr2;//0xB0
-};
-
-class TesObjectCell
-{
-public:
-	BYTE padding0000[0x88];
-	DWORD64 listPtr;//0x88
-	BYTE padding0088[0x8];
-	int listSize;//0x98
 };
 
 class Component
@@ -272,26 +316,9 @@ public:
 	float sway;//0x64
 };
 
-class BhkCharProxyController
-{
-public:
-	DWORD64 vtable;//0x0
-	BYTE padding0008[0x4A8];
-	DWORD64 hknpBsCharacterProxyPtr;//0x4B0
-};
 
-class HknpBsCharacterProxy
-{
-public:
-	DWORD64 vtable;//0x0
-	BYTE padding0008[0x48];
-	float rotation[2];//0x50
-	BYTE padding0058[0x18];
-	float position[3];//0x70
-	BYTE padding007C[0x24];
-	float velocityA[4];//0xA0
-	float velocityB[4];//0xB0
-};
+
+
 
 class Inventory
 {
@@ -369,26 +396,6 @@ public:
 	DWORD64 codePtr;//0x38
 };
 
-class ActorSnapshotComponent
-{
-public:
-	//ActorCoreSnapshotComponent
-	DWORD64 actorCorevtable;//0x0
-	BYTE actorCorePadding0008[0x98];
-	//ActorServerAuthSnapshotData
-	DWORD64 vtable;//0x0
-	BYTE padding0008[0x33];
-	BYTE isEssential;//0x3B
-	BYTE padding003C[0x34];
-	float maxHealth;//0x70
-	float modifiedHealth;//0x74
-	BYTE padding0078[0x4];
-	float lostHealth;//0x7C
-	BYTE padding0080[0xA0];
-	BYTE epicRank;//0x120
-	BYTE padding0121[0x7];
-};
-
 class ListEntry
 {
 public:
@@ -408,20 +415,6 @@ public:
 	DWORD64 minimumLevelGlobal;//0x50
 	DWORD64 minimumLevelCurveTable;//0x58
 	DWORD64 minimumLevelCurveTablePadding;//0x68
-};
-
-class ProcessLists
-{
-public:
-	DWORD64 vtable;//0x0
-	BYTE padding0008[0x48];
-	DWORD64 npcIdArrayPtrA;//0x50
-	BYTE padding0058[0x8];
-	int npcIdArraySizeA;//0x60
-	BYTE padding0064[0x1C];
-	DWORD64 npcIdArrayPtrB;//0x80
-	BYTE padding0088[0x8];
-	int npcIdArraySizeB;//0x90
 };
 
 class Chargen
@@ -447,34 +440,6 @@ public:
 	DWORD64 modDataPtr;//0x10
 };
 
-class CreateProjectileMessageClient
-{
-public:
-	DWORD64 vtable;//0x0
-	float positionX;//0x8
-	float positionY;//0xC
-	float positionZ;//0x10
-	BYTE padding0014[0x4];
-	DWORD64 rotationArrayPtr;//0x18 (float, XYZ)
-	DWORD64 rotationArrayEnd;//0x20
-	DWORD64 rotationArrayPad;//0x28
-	DWORD itemId;//0x30
-	DWORD unknownA;//0x34 (0xFFFFFFFF)
-	DWORD unknownB;//0x38 (0xFFFFFFFF)
-	DWORD unknownC;//0x3C (0x00000000)
-	float unknownD;//0x40 (1.0f)
-	DWORD unknownE;//0x44 (0x00000000)
-	DWORD64 unknownArrayPtrA;//0x48 (WORD, 0xFFFF)
-	DWORD64 unknownArrayEndA;//0x50
-	DWORD64 unknownArrayPadA;//0x58
-	BYTE unknownF;//0x60 (0xFF)
-	BYTE padding0061[0x7];
-	DWORD64 unknownArrayPtrB;//0x68 (BYTE, 0x01)
-	DWORD64 unknownArrayEndB;//0x70
-	DWORD64 unknownArrayPadB;//0x78
-	BYTE unknownG;//0x80 (0x00)
-	BYTE padding0081[0xF];
-};
 class OldWeapon
 {
 public:
@@ -609,35 +574,6 @@ public:
 	DWORD64 recipeArraySize{};	//0x140 (0x10)
 	DWORD64 recipeArray{};		//0x148 (0x18)
 	DWORD64 learnedRecipeArray{};	//0x150 (0x20)
-};
-
-class ExecutionProjectile
-{
-public:
-	BYTE ASM[0x20]              //0x0
-	{
-		0x48, 0x8B, 0xC1,       //mov rax, rcx
-		0x48, 0x8B, 0x48, 0x08, //mov rcx, [rax + 0x08]
-		0x48, 0x8B, 0x50, 0x10, //mov rdx, [rax + 0x10]
-		0x48, 0x8B, 0x00,       //mov rax, [rax]
-		0xFF, 0xE0,             //jmp rax
-		0xCC, 0xCC, 0xCC, 0xCC, //Padding
-		0xCC, 0xCC, 0xCC, 0xCC, //Padding
-		0xCC, 0xCC, 0xCC, 0xCC, //Padding
-	};
-	DWORD64 address{};            //0x20 (0x0)
-	DWORD64 rcx{};                //0x28 (0x8)
-	DWORD64 rdx{};                //0x30 (0x10)
-	BYTE padding0038[0x8]{};      //0x38
-	BYTE message[0x90]{};         //0x40
-	float rotationX{};            //0xD0
-	float rotationY{};            //0xD4
-	float rotationZ{};            //0xD8
-	BYTE padding00Cc[0x4]{};      //0xDC
-	WORD unknownArrayValueA{};    //0xE0
-	BYTE padding00D2[0xE]{};      //0xE2
-	BYTE unknownArrayValueB{};    //0xF0
-	BYTE padding00E2[0xF]{};      //0xF1
 };
 
 class ExternalFunction
@@ -879,7 +815,6 @@ public:
 	static DWORD GetStashFormId();
 	static void UpdateNukeCodes();
 	static bool UpdateBufferEntityList();
-	static bool UpdateBufferNpcList();
 	static bool UpdateBufferPlayerList();
 
 	static void DeleteOldWeaponList();
@@ -951,7 +886,6 @@ public:
 	inline static bool allowMessages = false;
 
 	inline static std::vector<CustomEntry> entityDataBuffer{};
-	inline static std::vector<CustomEntry> npcDataBuffer{};
 	inline static std::vector<CustomEntry> playerDataBuffer{};
 
 
@@ -961,8 +895,6 @@ public:
 
 private:
 	static std::string GetPlayerName(const ClientAccount& clientAccountData);
-
-
 
 	static bool CheckItemLooterList();
 	static bool CheckItemLooterBlacklist();
@@ -1009,15 +941,11 @@ private:
 	static bool CheckOnlyUseEntityLooterList(const EntityLooterSettings& settings);
 	static bool HarvestFlora(const TesObjectRefr& entityData, const TesItem& referenceData, const TesObjectRefr& localPlayer);
 
-	static bool CreateProjectile(DWORD itemId, const float* position, const float* rotation);
-
 	static bool SendMessageToServer(void* message, size_t size);
-	static bool CreateForwardProjectile(DWORD itemId);
 
 	static DWORD64 GetCameraPtr();
 	static DWORD64 GetLocalPlayerPtr(bool checkMainMenu);
-	static std::vector<DWORD64> GetEntityList();
-	static std::vector<DWORD64> GetNpcPtrList();
+	static std::vector<DWORD64> GetEntityPtrList();
 	static std::vector<DWORD64> GetRecipeArray();
 	static bool CheckWhitelistedFlux(const TesItem& referenceData);
 	static bool FloraLeveledListValid(const LeveledList& leveledListData);

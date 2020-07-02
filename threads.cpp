@@ -32,21 +32,6 @@ DWORD WINAPI Threads::BufferEntityListThread([[maybe_unused]] LPVOID lpParameter
 	return 0xBEEF;
 }
 
-DWORD WINAPI Threads::BufferNpcListThread([[maybe_unused]] LPVOID lpParameter)
-{
-	while (!threadDestructionState)
-	{
-		ErectusMemory::UpdateBufferNpcList();
-		std::this_thread::sleep_for(std::chrono::milliseconds(60 * 16));
-	}
-
-	ErectusMemory::npcDataBuffer.clear();
-
-	bufferNpcListThreadActive = false;
-
-	return 0xFADE;
-}
-
 DWORD WINAPI Threads::BufferPlayerListThread([[maybe_unused]] LPVOID lpParameter)
 {
 	while (!threadDestructionState)
@@ -444,16 +429,6 @@ bool Threads::CreateProcessThreads()
 		}
 	}
 
-	if (!bufferNpcListThreadActive)
-	{
-		bufferNpcListThreadActive = CloseHandle(CreateThread(nullptr, 0, &BufferNpcListThread, nullptr, 0, nullptr));
-		if (!bufferNpcListThreadActive)
-		{
-			threadDestructionQueued = true;
-			return false;
-		}
-	}
-
 	if (!bufferPlayerListThreadActive)
 	{
 		bufferPlayerListThreadActive = CloseHandle(CreateThread(nullptr, 0, &BufferPlayerListThread, nullptr, 0, nullptr));
@@ -522,9 +497,6 @@ bool Threads::ThreadDestruction()
 	threadDestructionState = true;
 
 	if (bufferEntityListThreadActive)
-		return false;
-
-	if (bufferNpcListThreadActive)
 		return false;
 
 	if (bufferPlayerListThreadActive)
