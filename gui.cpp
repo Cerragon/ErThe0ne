@@ -27,7 +27,7 @@ void Gui::Render()
 	OverlayMenu();
 	RenderOverlay();
 
-	
+
 	ImGui::EndFrame();
 	ImGui::Render();
 	ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
@@ -348,13 +348,10 @@ void Gui::RenderItems(const CustomEntry& entry, const OverlaySettingsB& settings
 		if (!Settings::recipes.knownRecipesEnabled && !Settings::recipes.unknownRecipesEnabled)
 			return;
 
-		if (!(entry.flag & CUSTOM_ENTRY_FAILED_RECIPE))
-		{
-			if (!Settings::recipes.knownRecipesEnabled && entry.flag & CUSTOM_ENTRY_KNOWN_RECIPE)
-				return;
-			if (!Settings::recipes.unknownRecipesEnabled && entry.flag & CUSTOM_ENTRY_UNKNOWN_RECIPE)
-				return;
-		}
+		if (!Settings::recipes.knownRecipesEnabled && entry.flag & CUSTOM_ENTRY_KNOWN_RECIPE)
+			return;
+		if (!Settings::recipes.unknownRecipesEnabled && entry.flag & CUSTOM_ENTRY_UNKNOWN_RECIPE)
+			return;
 	}
 
 	auto alpha = 0.f;

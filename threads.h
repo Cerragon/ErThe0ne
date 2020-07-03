@@ -25,15 +25,13 @@ private:
 	static DWORD __stdcall LockingThread(LPVOID lpParameter);
 	static DWORD __stdcall MultihackThread(LPVOID lpParameter);
 	static DWORD __stdcall HarvesterThread(LPVOID lpParameter);
-	static DWORD __stdcall KnownRecipeThread(LPVOID lpParameter);
 
 	inline static bool bufferEntityListThreadActive = false;
-		inline static bool bufferPlayerListThreadActive = false;
+	inline static bool bufferPlayerListThreadActive = false;
 	inline static bool weaponEditorThreadActive = false;
 	inline static bool lockingThreadActive = false;
 	inline static bool multihackThreadActive = false;
 	inline static bool harvesterThreadActive = false;
-	inline static bool knownRecipeThreadActive = false;
 
 	inline static bool threadDestructionState = false;
 

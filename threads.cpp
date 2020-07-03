@@ -396,18 +396,6 @@ DWORD WINAPI Threads::HarvesterThread([[maybe_unused]] LPVOID lpParameter)
 	return 0xDEAF;
 }
 
-DWORD WINAPI Threads::KnownRecipeThread([[maybe_unused]] LPVOID lpParameter)
-{
-	while (!threadDestructionState)
-	{
-		ErectusMemory::UpdateKnownRecipes();
-		std::this_thread::sleep_for(std::chrono::milliseconds(300 * 16));
-	}
-
-	knownRecipeThreadActive = false;
-	return 0xCADE;
-}
-
 bool Threads::CreateProcessThreads()
 {
 	if (threadDestructionQueued)
@@ -479,16 +467,6 @@ bool Threads::CreateProcessThreads()
 		}
 	}
 
-	if (!knownRecipeThreadActive)
-	{
-		knownRecipeThreadActive = CloseHandle(CreateThread(nullptr, 0, &KnownRecipeThread, nullptr, 0, nullptr));
-		if (!knownRecipeThreadActive)
-		{
-			threadDestructionQueued = true;
-			return false;
-		}
-	}
-
 	return true;
 }
 
@@ -512,9 +490,6 @@ bool Threads::ThreadDestruction()
 		return false;
 
 	if (harvesterThreadActive)
-		return false;
-
-	if (knownRecipeThreadActive)
 		return false;
 
 	threadCreationState = false;

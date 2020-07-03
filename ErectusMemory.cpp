@@ -8,6 +8,7 @@
 
 #include "fmt/format.h"
 #include <array>
+#include <set>
 #include <unordered_set>
 
 #include "ErectusProcess.h"
@@ -289,164 +290,50 @@ std::vector<DWORD64> ErectusMemory::GetEntityPtrList()
 	return  result;
 }
 
-std::vector<DWORD64> ErectusMemory::GetRecipeArray()
+bool ErectusMemory::IsRecipeKnown(const DWORD formId)
 {
-	std::vector<DWORD64> result;
-
-	DWORD64 dataHandlerPtr;
-	if (!Rpm(ErectusProcess::exe + OFFSET_DATA_HANDLER, &dataHandlerPtr, sizeof dataHandlerPtr))
-		return result;
-	if (!Utils::Valid(dataHandlerPtr))
-		return result;
-
-	ReferenceList omodList{};
-	if (!Rpm(dataHandlerPtr + 0x388, &omodList, sizeof omodList))
-		return result;
-	if (!Utils::Valid(omodList.arrayPtr) || !omodList.arraySize || omodList.arraySize > 0x7FFF)
-		return result;
-
-	auto* omodPtrArray = new DWORD64[omodList.arraySize];
-	if (!Rpm(omodList.arrayPtr, &*omodPtrArray, omodList.arraySize * sizeof(DWORD64)))
+	//the list of known recipes is implemented as a set / rb-tree at [localplayer + 0xDB0]+0x8.
+	struct SetEntry
 	{
-		delete[]omodPtrArray;
-		omodPtrArray = nullptr;
-		return result;
-	}
+		DWORD64 left; //0x0000
+		DWORD64  parent; //0x0008
+		DWORD64  right; //0x0010
+		char pad0018[1]; //0x0018
+		BYTE isLeaf; //0x0019
+		char pad001A[2]; //0x001A
+		DWORD value; //0x001C
+	} setEntry = {};
 
-	std::unordered_set<DWORD64> uniqueNamePtrs;
-	for (auto i = 0; i < omodList.arraySize; i++)
-	{
-		if (!Utils::Valid(omodPtrArray[i]))
-			continue;
-
-		TesItem referenceData{};
-		if (!Rpm(omodPtrArray[i], &referenceData, sizeof referenceData))
-			continue;
-		if (referenceData.omodFlag != 0x4)
-			continue;
-
-
-		if (!Utils::Valid(referenceData.namePtr00B0))
-			continue;
-
-		auto r = uniqueNamePtrs.insert(referenceData.namePtr00B0);
-		if (r.second) //not inserted -> not unique
-			result.push_back(omodPtrArray[i]);
-	}
-
-	delete[]omodPtrArray;
-	omodPtrArray = nullptr;
-
-	return result;
-}
-
-bool ErectusMemory::UpdateKnownRecipes()
-{
-	const auto localPlayerPtr = GetLocalPlayerPtr(true);
+	auto localPlayerPtr = GetLocalPlayerPtr(true);
 	if (!Utils::Valid(localPlayerPtr))
 		return false;
 
-	auto recipes = GetRecipeArray();
-	if (recipes.empty())
+	DWORD64 setPtr;
+	if (!Rpm(localPlayerPtr + 0xDB0, &setPtr, sizeof setPtr))
 		return false;
 
-	const auto allocSize = sizeof(ExecutionPlan) + (recipes.size() * sizeof(DWORD64) + recipes.size() * sizeof(bool));
-	const auto allocAddress = AllocEx(allocSize);
-	if (allocAddress == 0)
-	{
+	if (!Rpm(setPtr + 0x8, &setPtr, sizeof setPtr))
 		return false;
-	}
 
-	ExecutionPlan executionPlanData = {
-		.function = allocAddress + sizeof ExecutionPlan::ASM,
-		.localPlayerPtr = localPlayerPtr,
-		.recipeArraySize = recipes.size(),
-		.recipeArray = allocAddress + sizeof(ExecutionPlan),
-		.learnedRecipeArray = allocAddress + sizeof(ExecutionPlan) + recipes.size() * sizeof(DWORD64),
-	};
-
-	auto* pageData = new BYTE[allocSize];
-	memset(pageData, 0x00, allocSize);
-	memcpy(pageData, &executionPlanData, sizeof executionPlanData);
-
-	for (auto i = 0; i < recipes.size(); i++)
-	{
-		memcpy(&pageData[sizeof(ExecutionPlan) + i * sizeof(DWORD64)], &recipes[i], sizeof(DWORD64));
-	}
-
-	const auto written = Wpm(allocAddress, &*pageData, allocSize);
-
-	delete[]pageData;
-	pageData = nullptr;
-
-	if (!written)
-	{
-		FreeEx(allocAddress);
+	if (!Rpm(setPtr, &setEntry, sizeof setEntry))
 		return false;
-	}
 
-	const auto paramAddress = allocAddress + sizeof ExecutionPlan::ASM + sizeof ExecutionPlan::rbp;
-	auto* thread = CreateRemoteThread(ErectusProcess::handle, nullptr, 0, LPTHREAD_START_ROUTINE(allocAddress),
-		LPVOID(paramAddress), 0, nullptr);
-
-	if (thread == nullptr)
+	while (!setEntry.isLeaf)
 	{
-		FreeEx(allocAddress);
-		return false;
-	}
-
-	const auto threadResult = WaitForSingleObject(thread, 3000);
-	CloseHandle(thread);
-
-	if (threadResult == WAIT_TIMEOUT)
-	{
-		return false;
-	}
-
-	auto* executedPlan = new bool[recipes.size()];
-	if (!Rpm(allocAddress + sizeof(ExecutionPlan) + recipes.size() * sizeof(DWORD64), &*executedPlan, recipes.size() * sizeof(bool)))
-	{
-		delete[]executedPlan;
-		executedPlan = nullptr;
-
-		FreeEx(allocAddress);
-		return false;
-	}
-
-	for (auto i = 0; i < recipes.size(); i++)
-	{
-		if (executedPlan[i])
+		if (setEntry.value == formId)
+			return true;
+		if (setEntry.value > formId)
 		{
-			DWORD64 buffer;
-			if (Rpm(recipes.at(i) + 0xB0, &buffer, sizeof buffer))
-			{
-				if (Utils::Valid(buffer))
-				{
-					DWORD formId;
-					if (Rpm(buffer + 0x20, &formId, sizeof formId))
-					{
-						knownRecipes.insert(formId);
-					}
-				}
-			}
+			if (!Rpm(setEntry.left, &setEntry, sizeof setEntry))
+				return false;
+		}
+		else
+		{
+			if (!Rpm(setEntry.right, &setEntry, sizeof setEntry))
+				return false;
 		}
 	}
-	delete[]executedPlan;
-	executedPlan = nullptr;
-	FreeEx(allocAddress);
-
-	return true;
-}
-
-BYTE ErectusMemory::IsKnownRecipe(const DWORD formId)
-{
-	if (knownRecipes.empty())
-		return 0x00;
-
-	if (knownRecipes.count(formId))
-		return 0x01;
-
-	return 0x02;
+	return false;
 }
 
 bool ErectusMemory::CheckFormIdArray(const DWORD formId, const bool* enabledArray, const DWORD* formIdArray, const int size)
@@ -962,18 +849,12 @@ void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* e
 		{
 			*entityFlag |= CUSTOM_ENTRY_PLAN;
 			*enabledDistance = Settings::planSettings.enabledDistance;
-			switch (IsKnownRecipe(referenceData.formId))
-			{
-			case 0x01:
+
+			if (IsRecipeKnown(referenceData.formId))
 				*entityFlag |= CUSTOM_ENTRY_KNOWN_RECIPE;
-				break;
-			case 0x02:
+			else
 				*entityFlag |= CUSTOM_ENTRY_UNKNOWN_RECIPE;
-				break;
-			default:
-				*entityFlag |= CUSTOM_ENTRY_FAILED_RECIPE;
-				break;
-			}
+
 			if (CheckFormIdArray(referenceData.formId, Settings::planSettings.whitelisted, Settings::planSettings.whitelist, 32))
 				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
 			else if (!Settings::planSettings.enabled)
@@ -1176,7 +1057,7 @@ bool ErectusMemory::UpdateBufferEntityList()
 
 		if (entityData.formType == static_cast<BYTE>(FormTypes::PlayerCharacter))
 			continue;
-		
+
 		TesItem referenceData{};
 		if (!Rpm(entityData.referencedItemPtr, &referenceData, sizeof referenceData))
 			continue;
@@ -1644,8 +1525,6 @@ bool ErectusMemory::CheckEnabledItem(const DWORD formId, const DWORD64 entityFla
 	if (entityFlag & CUSTOM_ENTRY_KNOWN_RECIPE && normalDistance <= Settings::itemLooter.lootKnownPlansDistance)
 		return Settings::itemLooter.lootKnownPlansEnabled;
 	if (entityFlag & CUSTOM_ENTRY_UNKNOWN_RECIPE && normalDistance <= Settings::itemLooter.lootUnknownPlansDistance)
-		return Settings::itemLooter.lootUnknownPlansEnabled;
-	if (entityFlag & CUSTOM_ENTRY_FAILED_RECIPE && normalDistance <= Settings::itemLooter.lootUnknownPlansDistance)
 		return Settings::itemLooter.lootUnknownPlansEnabled;
 	if (entityFlag & CUSTOM_ENTRY_MISC && normalDistance <= Settings::itemLooter.lootMiscDistance)
 		return Settings::itemLooter.lootMiscEnabled;
@@ -3665,8 +3544,6 @@ bool ErectusMemory::CheckEntityLooterItem(const DWORD formId, const DWORD64 enti
 			return settings.knownPlansEnabled;
 		if (entityFlag & CUSTOM_ENTRY_UNKNOWN_RECIPE)
 			return settings.unknownPlansEnabled;
-		if (entityFlag & CUSTOM_ENTRY_FAILED_RECIPE)
-			return settings.unknownPlansEnabled;
 	}
 	else if (entityFlag & CUSTOM_ENTRY_MISC)
 		return settings.miscEnabled;
@@ -4210,7 +4087,7 @@ bool ErectusMemory::Harvester()
 
 			if (entityData.formType != static_cast<BYTE>(FormTypes::TesActor)) //FIXME: check if correct
 				continue;
-			
+
 			if (!Utils::Valid(entityData.referencedItemPtr))
 				continue;
 
