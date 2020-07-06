@@ -120,7 +120,7 @@ DWORD WINAPI Threads::LockingThread([[maybe_unused]] LPVOID lpParameter)
 
 		auto currentTargetValid = false;
 		DWORD64 closestEntityPtr = 0;
-		float closestEntityDegrees = Settings::targetting.lockingFov;
+		auto closestEntityDegrees = Settings::targetting.lockingFov;
 
 
 		auto cameraData = ErectusMemory::GetCameraInfo();

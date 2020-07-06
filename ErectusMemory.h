@@ -52,11 +52,11 @@ class LoadedAreaManager
 {
 public:
 	BYTE padding0000[0x80];
-	DWORD64 interiorCellArrayPtr;//0x80
-	DWORD64 interiorCellArrayPtr2;//0x88
+	DWORD64 interiorCellArrayBegin;//0x80
+	DWORD64 interiorCellArrayEnd;//0x88
 	BYTE padding0090[0x18];
-	DWORD64 exteriorCellArrayPtr;//0xA8
-	DWORD64 exteriorCellArrayPtr2;//0xB0
+	DWORD64 exteriorCellArrayBegin;//0xA8
+	DWORD64 exteriorCellArrayEnd;//0xB0
 };
 
 class Camera

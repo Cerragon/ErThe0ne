@@ -17,11 +17,18 @@ namespace
 {
 	enum class FormTypes : BYTE
 	{
+		BgsTextureSet = 0x10,
+		TesSound = 0x19,
+		BgsAcousticSpace = 0x1B,
 		TesObjectArmo = 0x26,
 		TesObjectBook = 0x27,
 		TesObjectCont = 0x28,
+		TesObjectLigh = 0x2B,
 		TesObjectMisc = 0x2C,
 		CurrencyObject = 0x2F,
+		TesObjectStat = 0x30,
+		BgsStaticCollection = 0x31,
+		BgsMovableStatic = 0x32,
 		TesFlora = 0x35,
 		TesObjectWeap = 0x37,
 		TesAmmo = 0x38,
@@ -29,7 +36,9 @@ namespace
 		TesKey = 0x3C,
 		AlchemyItem = 0x3D,
 		TesUtilityItem = 0x3E,
+		BgsIdleMarker = 0x3F,
 		BgsNote = 0x40,
+		BgsBendableSpline = 0x43,
 		TesLevItem = 0x48,
 		TesObjectRefr = 0x50,  //used in REFR objects, ref to item
 		TesActor = 0x51, //used in REFR objects, ref to npc
@@ -243,21 +252,21 @@ std::vector<DWORD64> ErectusMemory::GetEntityPtrList()
 	LoadedAreaManager manager{};
 	if (!Rpm(entityListTypePtr, &manager, sizeof manager))
 		return result;
-	if (!Utils::Valid(manager.interiorCellArrayPtr) || !Utils::Valid(manager.interiorCellArrayPtr2) || !Utils::Valid(manager.exteriorCellArrayPtr) || !Utils::Valid(manager.exteriorCellArrayPtr2))
+	if (!Utils::Valid(manager.interiorCellArrayBegin) || !Utils::Valid(manager.interiorCellArrayEnd) || !Utils::Valid(manager.exteriorCellArrayBegin) || !Utils::Valid(manager.exteriorCellArrayEnd))
 		return result;
 
 	DWORD64 cellPtrArrayPtr;
 	int cellPtrArraySize;
 
 	//2) Select  interior or exterior objectlist
-	if (manager.interiorCellArrayPtr != manager.interiorCellArrayPtr2)
+	if (manager.interiorCellArrayBegin != manager.interiorCellArrayEnd)
 	{
-		cellPtrArrayPtr = manager.interiorCellArrayPtr;
+		cellPtrArrayPtr = manager.interiorCellArrayBegin;
 		cellPtrArraySize = 2;
 	}
-	else if (manager.exteriorCellArrayPtr != manager.exteriorCellArrayPtr2)
+	else if (manager.exteriorCellArrayBegin != manager.exteriorCellArrayEnd)
 	{
-		cellPtrArrayPtr = manager.exteriorCellArrayPtr;
+		cellPtrArrayPtr = manager.exteriorCellArrayBegin;
 		cellPtrArraySize = 50;
 	}
 	else return result; // sthg went wrong
@@ -268,9 +277,10 @@ std::vector<DWORD64> ErectusMemory::GetEntityPtrList()
 		return result;
 
 	//4) Read each cell and push object pointers into objectPtrs
+	//this is actually a linked list presenting as an array, odd entires are just pointers to 'next' element, so we skip them
 	for (auto i = 0; i < cellPtrArraySize; i++)
 	{
-		if (i % 2 == 0)
+		if (i % 2 != 0)
 			continue;
 
 		TesObjectCell cell{};
@@ -776,6 +786,17 @@ void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* e
 {
 	switch (referenceData.formType)
 	{
+	case (static_cast<byte>(FormTypes::BgsIdleMarker)):
+	case (static_cast<byte>(FormTypes::BgsStaticCollection)):
+	case (static_cast<byte>(FormTypes::TesObjectLigh)):
+	case (static_cast<byte>(FormTypes::TesObjectStat)):
+	case (static_cast<byte>(FormTypes::BgsMovableStatic)):
+	case (static_cast<byte>(FormTypes::TesSound)):
+	case (static_cast<byte>(FormTypes::BgsTextureSet)):
+	case (static_cast<byte>(FormTypes::BgsBendableSpline)):
+	case (static_cast<byte>(FormTypes::BgsAcousticSpace)):
+		*entityFlag |= CUSTOM_ENTRY_INVALID;
+		break;
 	case (static_cast<byte>(FormTypes::TesNpc)):
 		*entityFlag |= CUSTOM_ENTRY_NPC;
 		*entityNamePtr = referenceData.namePtr0160;
@@ -2496,16 +2517,16 @@ bool ErectusMemory::InsideInteriorCell()
 	LoadedAreaManager entityListTypeData{};
 	if (!Rpm(entityListTypePtr, &entityListTypeData, sizeof entityListTypeData))
 		return false;
-	if (!Utils::Valid(entityListTypeData.interiorCellArrayPtr))
+	if (!Utils::Valid(entityListTypeData.interiorCellArrayBegin))
 		return false;
-	if (!Utils::Valid(entityListTypeData.interiorCellArrayPtr2))
+	if (!Utils::Valid(entityListTypeData.interiorCellArrayEnd))
 		return false;
-	if (!Utils::Valid(entityListTypeData.exteriorCellArrayPtr))
+	if (!Utils::Valid(entityListTypeData.exteriorCellArrayBegin))
 		return false;
-	if (!Utils::Valid(entityListTypeData.exteriorCellArrayPtr2))
+	if (!Utils::Valid(entityListTypeData.exteriorCellArrayEnd))
 		return false;
 
-	if (entityListTypeData.interiorCellArrayPtr != entityListTypeData.interiorCellArrayPtr2)
+	if (entityListTypeData.interiorCellArrayBegin != entityListTypeData.interiorCellArrayEnd)
 		return true;
 
 	return false;
