@@ -1,11 +1,40 @@
 #pragma once
-#include "settings.h"
 
 #include <Windows.h>
 
 #include <unordered_map>
 #include <unordered_set>
 #include <array>
+
+enum class FormTypes : BYTE
+{
+	BgsTextureSet = 0x10,
+	TesSound = 0x19,
+	BgsAcousticSpace = 0x1B,
+	TesObjectArmo = 0x26,
+	TesObjectBook = 0x27,
+	TesObjectCont = 0x28,
+	TesObjectLigh = 0x2B,
+	TesObjectMisc = 0x2C,
+	CurrencyObject = 0x2F,
+	TesObjectStat = 0x30,
+	BgsStaticCollection = 0x31,
+	BgsMovableStatic = 0x32,
+	TesFlora = 0x35,
+	TesObjectWeap = 0x37,
+	TesAmmo = 0x38,
+	TesNpc = 0x39,
+	TesKey = 0x3C,
+	AlchemyItem = 0x3D,
+	TesUtilityItem = 0x3E,
+	BgsIdleMarker = 0x3F,
+	BgsNote = 0x40,
+	BgsBendableSpline = 0x43,
+	TesLevItem = 0x48,
+	TesObjectRefr = 0x50,  //used in REFR objects, ref to item
+	TesActor = 0x51, //used in REFR objects, ref to npc
+	PlayerCharacter = 0xB5 //also used in REFR objects, ref to player
+};
 
 //no change in 1.32.10
 class TesObjectRefr
@@ -730,8 +759,6 @@ public:
 	static void DeleteOldWeaponList();
 	static bool UpdateOldWeaponData();
 
-	static bool CheckScrapList();
-	static bool CheckItemLooterSettings();
 	static bool CheckItemTransferList();
 
 	static bool TransferItems(DWORD sourceFormId, DWORD destinationFormId);
@@ -763,8 +790,6 @@ public:
 	static bool MeleeAttack();
 	static bool ChargenEditing();
 
-	static void Looter();
-
 	static bool InsideInteriorCell();
 	static LocalPlayerInfo GetLocalPlayerInfo();
 	static Camera GetCameraInfo();
@@ -773,8 +798,6 @@ public:
 	static bool GetActorSnapshotComponentData(const TesObjectRefr& entityData, ActorSnapshotComponent* actorSnapshotComponentData);
 	static bool TargetValid(const TesObjectRefr& entityData);
 
-	static void RequestLootItems() { lootItemsRequested = true; }
-	static void RequestLootScrap() { lootScrapRequested = true; }
 	
 	inline static bool oldWeaponListUpdated = false;
 	inline static int oldWeaponListCounter = 0;
@@ -793,22 +816,22 @@ public:
 	inline static std::array<int, 8> bravoCode = { };
 	inline static std::array<int, 8> charlieCode = { };
 
+	static DWORD64 GetLocalPlayerPtr(bool checkMainMenu);
+	static std::vector<DWORD64> GetEntityPtrList();
+	static bool FloraValid(const TesItem& referenceData);
+	static void GetCustomEntityData(const TesItem& referenceData, DWORD64* entityFlag, DWORD64* entityNamePtr, int* enabledDistance, bool checkScrap, bool checkIngredient);
+	static bool CheckFormIdArray(DWORD formId, const bool* enabledArray, const DWORD* formIdArray, int size);
+	static DWORD64 RttiGetNamePtr(DWORD64 vtable);
+	
 private:
 	static bool GetNukeCode(DWORD formId, std::array<int, 8>& nukeCode);
 	static std::string GetPlayerName(const ClientAccount& clientAccountData);
 
-	static bool CheckItemLooterList();
-	static bool CheckItemLooterBlacklist();
-	static bool CheckEntityLooterList(const EntityLooterSettings& settings);
-	static bool CheckEntityLooterBlacklist(const EntityLooterSettings& settings);
-	static bool CheckIngredientList();
 	static bool CheckJunkPileEnabled();
 	static bool CheckComponentArray(const TesItem& referenceData);
 	static bool CheckReferenceKeywordBook(const TesItem& referenceData, DWORD formId);
 	static bool CheckReferenceKeywordMisc(const TesItem& referenceData, DWORD formId);
-	static bool CheckOnlyUseItemLooterList();
-	static bool CheckEnabledItem(DWORD formId, DWORD64 entityFlag, int normalDistance);
-	static bool CheckFormIdArray(DWORD formId, const bool* enabledArray, const DWORD* formIdArray, int size);
+
 	static bool CheckReferenceJunk(const TesItem& referenceData);
 	static bool CheckReferenceMod(const TesItem& referenceData);
 	static bool CheckReferencePlan(const TesItem& referenceData);
@@ -826,45 +849,22 @@ private:
 	static DWORD GetEntityId(const TesObjectRefr& entityData);
 	static bool SendHitsToServer(Hits* hitsData, size_t hitsDataSize);
 	static DWORD64 GetNukeCodePtr(DWORD formId);
-	static DWORD64 RttiGetNamePtr(DWORD64 vtable);
 	static std::string GetInstancedItemName(DWORD64 displayPtr);
-	static bool EntityInventoryValid(const TesObjectRefr& entityData);
-	static bool AllowLegendaryWeapons(const EntityLooterSettings& settings);
-	static bool AllowLegendaryArmor(const EntityLooterSettings& settings);
-	static bool CheckEntityLooterItem(DWORD formId, DWORD64 entityFlag, const EntityLooterSettings& settings, bool legendaryWeaponsEnabled, bool legendaryArmorEnabled);
-	static bool IsLegendaryFormId(DWORD formId);
-	static BYTE GetLegendaryRank(DWORD64 displayPtr);
-	static bool ValidLegendary(BYTE legendaryRank, DWORD64 entityFlag, const EntityLooterSettings& customEntityLooterSettings, bool legendaryWeaponsEnabled, bool legendaryArmorEnabled);
-	static bool TransferEntityItems(const TesObjectRefr& entityData, const TesItem& referenceData, const TesObjectRefr& localPlayer, bool onlyUseEntityLooterList, bool useEntityLooterBlacklist);
-	static bool ContainerValid(const TesItem& referenceData);
-	static bool LootEntity(const TesObjectRefr& entityData, const TesItem& referenceData, const TesObjectRefr& localPlayer, bool onlyUseEntityLooterList, bool useEntityLooterBlacklist);
-	static bool CheckEntityLooterSettings(const EntityLooterSettings& settings);
-	static bool CheckOnlyUseEntityLooterList(const EntityLooterSettings& settings);
-	static bool HarvestFlora(const TesObjectRefr& entityData, const TesItem& referenceData, const TesObjectRefr& localPlayer);
-	static bool LootItemScrap(const TesObjectRefr& entityData, const TesItem& referenceData, const TesObjectRefr& localPlayer);
-	static bool LootItem(const TesObjectRefr& entityData, const TesItem& referenceData, const TesObjectRefr& localPlayer);
-
+	
 	static DWORD64 GetCameraPtr();
-	static DWORD64 GetLocalPlayerPtr(bool checkMainMenu);
-	static std::vector<DWORD64> GetEntityPtrList();
+
 	static bool CheckWhitelistedFlux(const TesItem& referenceData);
 	static bool FloraLeveledListValid(const LeveledList& leveledListData);
-	static bool FloraValid(const TesItem& referenceData);
 	static bool IsTreasureMap(DWORD formId);
 	static bool CheckFactionFormId(DWORD formId);
 	static bool BlacklistedNpcFaction(const TesItem& referenceData);
 	static bool CheckReferenceItem(const TesItem& referenceData);
-	static void GetCustomEntityData(const TesItem& referenceData, DWORD64* entityFlag, DWORD64* entityNamePtr, int* enabledDistance, bool checkScrap, bool checkIngredient);
 
 	static std::string GetEntityName(DWORD64 ptr);
 
 	static bool VtableSwap(DWORD64 dst, DWORD64 src);
 	
 	inline static OldWeapon* oldWeaponList = nullptr;
-
-
-	inline static bool lootItemsRequested = false;
-	inline static bool lootScrapRequested = false;
 
 	virtual void __dummy() = 0;
 

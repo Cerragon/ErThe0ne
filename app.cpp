@@ -14,6 +14,7 @@
 
 #include "ErectusMemory.h"
 #include "ErectusProcess.h"
+#include "Looter.h"
 
 
 // ReSharper disable once CppInconsistentNaming
@@ -78,11 +79,11 @@ void App::OnHotkey(const WPARAM hotkeyId)
 		break;
 	case (static_cast<int>(HotKeys::LootItems)):
 		if (Settings::itemLooter.keybindEnabled)
-			ErectusMemory::RequestLootItems();
+			Looter::RequestLootItems();
 		break;
 	case (static_cast<int>(HotKeys::LootScrap)):
 		if (Settings::scrapLooter.keybindEnabled)
-			ErectusMemory::RequestLootScrap();
+			Looter::RequestLootScrap();
 		break;
 	case (static_cast<int>(HotKeys::ToggleOverlay)):
 		ToggleOverlay();

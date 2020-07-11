@@ -1,6 +1,7 @@
 #pragma once
 #include <Windows.h>
 #include "ErectusMemory.h"
+#include "settings.h"
 
 class Gui final {
 public:

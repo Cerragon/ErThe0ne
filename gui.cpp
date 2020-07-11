@@ -7,6 +7,7 @@
 
 #include "ErectusProcess.h"
 #include "ErectusMemory.h"
+#include "Looter.h"
 #include "threads.h"
 #include "utils.h"
 
@@ -1304,25 +1305,12 @@ void Gui::OverlayMenuTabLoot()
 	{
 		if (ImGui::CollapsingHeader("Scrap Looter"))
 		{
-			if (ErectusMemory::CheckScrapList())
-			{
-				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 1.0f, 0.0f, 0.3f));
-				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 1.0f, 0.0f, 0.4f));
-				ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 1.0f, 0.0f, 0.5f));
-				if (ImGui::Button("Loot Scrap (Keybind: CTRL+E)###LootSelectedScrapEnabled", ImVec2(224.0f, 0.0f)))
-					ErectusMemory::RequestLootScrap();
-				ImGui::PopStyleColor(3);
-			}
-			else
-			{
-				ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(1.0f, 0.0f, 0.0f, 0.3f));
-				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 0.0f, 0.0f, 0.4f));
-				ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(1.0f, 0.0f, 0.0f, 0.5f));
-				ImGui::Button("Loot Scrap (Keybind: CTRL+E)###LootSelectedScrapDisabled", ImVec2(224.0f, 0.0f));
-				ImGui::PopStyleColor(3);
-				ImGui::PopItemFlag();
-			}
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 1.0f, 0.0f, 0.3f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 1.0f, 0.0f, 0.4f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 1.0f, 0.0f, 0.5f));
+			if (ImGui::Button("Loot Scrap (Keybind: CTRL+E)###LootSelectedScrapEnabled", ImVec2(224.0f, 0.0f)))
+				Looter::RequestLootScrap();
+			ImGui::PopStyleColor(3);
 
 			ImGui::SameLine(235.0f);
 			ButtonToggle("Scrap Looter Keybind Enabled", &Settings::scrapLooter.keybindEnabled);
@@ -1371,25 +1359,12 @@ void Gui::OverlayMenuTabLoot()
 
 		if (ImGui::CollapsingHeader("Item Looter"))
 		{
-			if (ErectusMemory::CheckItemLooterSettings())
-			{
-				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 1.0f, 0.0f, 0.3f));
-				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 1.0f, 0.0f, 0.4f));
-				ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 1.0f, 0.0f, 0.5f));
-				if (ImGui::Button("Loot Items (Keybind: CTRL+R)###LootSelectedItemsEnabled", ImVec2(224.0f, 0.0f)))
-					ErectusMemory::RequestLootItems();
-				ImGui::PopStyleColor(3);
-			}
-			else
-			{
-				ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(1.0f, 0.0f, 0.0f, 0.3f));
-				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 0.0f, 0.0f, 0.4f));
-				ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(1.0f, 0.0f, 0.0f, 0.5f));
-				ImGui::Button("Loot Items (Keybind: CTRL+R)###LootSelectedItemsDisabled", ImVec2(224.0f, 0.0f));
-				ImGui::PopStyleColor(3);
-				ImGui::PopItemFlag();
-			}
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 1.0f, 0.0f, 0.3f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 1.0f, 0.0f, 0.4f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 1.0f, 0.0f, 0.5f));
+			if (ImGui::Button("Loot Items (Keybind: CTRL+R)###LootSelectedItemsEnabled", ImVec2(224.0f, 0.0f)))
+				Looter::RequestLootItems();
+			ImGui::PopStyleColor(3);
 
 			ImGui::SameLine(235.0f);
 			ButtonToggle("Item Looter Keybind Enabled", &Settings::itemLooter.keybindEnabled);

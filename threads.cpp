@@ -7,6 +7,7 @@
 
 #include "ErectusMemory.h"
 #include "ErectusProcess.h"
+#include "Looter.h"
 
 DWORD WINAPI Threads::BufferEntityListThread([[maybe_unused]] LPVOID lpParameter)
 {
@@ -330,7 +331,7 @@ DWORD WINAPI Threads::Looter([[maybe_unused]] LPVOID lpParameter)
 {
 	while (!threadDestructionState)
 	{
-		ErectusMemory::Looter();
+		Looter::Loot();
 		std::this_thread::sleep_for(std::chrono::milliseconds(Utils::GetRangedInt(12, 36) * 16));
 	}
 
