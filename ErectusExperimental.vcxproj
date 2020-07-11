@@ -132,6 +132,7 @@
     <ClCompile Include="imgui\imgui_impl_win32.cpp" />
     <ClCompile Include="imgui\imgui_stdlib.cpp" />
     <ClCompile Include="imgui\imgui_widgets.cpp" />
+    <ClCompile Include="MsgSender.cpp" />
     <ClCompile Include="utils.cpp" />
     <ClCompile Include="renderer.cpp" />
     <ClCompile Include="gui.cpp" />
@@ -167,6 +168,7 @@
     <ClInclude Include="imgui\imstb_textedit.h" />
     <ClInclude Include="imgui\imstb_truetype.h" />
     <ClInclude Include="ini.h" />
+    <ClInclude Include="MsgSender.h" />
     <ClInclude Include="renderer.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="settings.h" />

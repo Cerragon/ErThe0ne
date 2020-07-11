@@ -78,11 +78,11 @@ void App::OnHotkey(const WPARAM hotkeyId)
 		break;
 	case (static_cast<int>(HotKeys::LootItems)):
 		if (Settings::itemLooter.keybindEnabled)
-			Threads::RequestLootItems();
+			ErectusMemory::RequestLootItems();
 		break;
 	case (static_cast<int>(HotKeys::LootScrap)):
 		if (Settings::scrapLooter.keybindEnabled)
-			Threads::RequestLootScrap();
+			ErectusMemory::RequestLootScrap();
 		break;
 	case (static_cast<int>(HotKeys::ToggleOverlay)):
 		ToggleOverlay();
@@ -124,8 +124,6 @@ void App::Render() {
 	Gui::Render();
 
 	Renderer::EndScene();
-
-	
 
 	if (ErectusProcess::processSelected)
 	{

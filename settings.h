@@ -341,6 +341,11 @@ public:
 	DWORD npcBlacklist[64];
 };
 
+class MessageWriterSettings
+{
+public:
+	bool enabled;
+};
 
 class Settings final {
 public:
@@ -380,6 +385,7 @@ public:
 	static ExtraNpcSettings customExtraNpcSettings;
 
 	inline static InfoBoxSettings infobox = {};
+	inline static MessageWriterSettings msgWriter = {};
 
 	inline static WeaponSettings defaultWeaponSettings{
 		false, false, false, false, false, false, false, 250, false, 2.0f, false, 500.0f

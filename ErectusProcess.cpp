@@ -7,6 +7,7 @@
 
 #include "ErectusProcess.h"
 #include "ErectusMemory.h"
+#include "MsgSender.h"
 
 
 void ErectusProcess::SetProcessMenu()
@@ -98,7 +99,7 @@ void ErectusProcess::ResetProcessData()
 		}
 
 		if (!areThreadsActive)
-			ErectusMemory::MessagePatcher(false);
+			MsgSender::Patcher(false);
 	}
 
 	pid = 0;
@@ -132,6 +133,32 @@ std::vector<DWORD> ErectusProcess::GetProcesses()
 	CloseHandle(hSnapshot);
 
 	return result;
+}
+
+bool ErectusProcess::Rpm(const DWORD64 src, void* dst, const size_t size)
+{
+	return ReadProcessMemory(handle, reinterpret_cast<void*>(src), dst, size, nullptr);
+}
+
+bool ErectusProcess::Wpm(const DWORD64 dst, void* src, const size_t size)
+{
+	return WriteProcessMemory(handle, reinterpret_cast<void*>(dst), src, size, nullptr);
+}
+
+DWORD64 ErectusProcess::AllocEx(const size_t size)
+{
+	//this needs to be split, the game scans for PAGE_EXECUTE_READWRITE regions
+	//1) alloc with PAGE_READWRITE
+	//2) write the data
+	//3) switch to PAGE_EXECUTE_READ
+	//4) create the remote thread
+	//see https://reverseengineering.stackexchange.com/questions/3482/does-code-injected-into-process-memory-always-belong-to-a-page-with-rwx-access
+	return DWORD64(VirtualAllocEx(handle, nullptr, size, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE));
+}
+
+bool ErectusProcess::FreeEx(const DWORD64 src)
+{
+	return VirtualFreeEx(handle, reinterpret_cast<void*>(src), 0, MEM_RELEASE);
 }
 
 BOOL ErectusProcess::HwndEnumFunc(const HWND hwnd, const LPARAM lParam)

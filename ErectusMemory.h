@@ -132,9 +132,29 @@ public:
 class TesObjectCell
 {
 public:
-	BYTE padding0000[0xA0];
+	BYTE padding0000[0x68];
+	DWORD64 isInterior;
+	BYTE loadedState;
+	BYTE padding0071[0x2F];
 	DWORD64 objectListBeginPtr;//0xA0
 	DWORD64 objectListEndPtr;//0xA8
+};
+
+class TransferMessage
+{
+public:
+	DWORD64 vtable;//0x0
+	DWORD sourceEntityId;//0x8
+	DWORD playerEntityId;//0xC
+	BYTE bShouldSendResult;//0x10
+	BYTE padding0X11[3];
+	DWORD destEntityId;//0x14
+	DWORD itemServerHandleId;//0x18
+	DWORD stashAccessEntityId;//0x1C
+	BYTE bCreateIfMissing;//0x20
+	BYTE bIsExpectingResult;//0x21
+	BYTE padding0X22[2];//0x22
+	int count;//0x24
 };
 
 //changed
@@ -201,6 +221,7 @@ public:
 	BYTE padding00B8[0x9];
 	BYTE listEntryArraySize;//0xC1
 };
+
 class RequestActivateRefMessage
 {
 public:
@@ -209,21 +230,7 @@ public:
 	BYTE choice;//0xC
 	BYTE forceActivate;//0xB
 };
-class TransferMessage
-{
-public:
-	DWORD64 vtable;//0x0
-	DWORD srcFormId;//0x8
-	DWORD unknownId;//0xC
-	DWORD dstFormId;//0x10
-	DWORD itemId;//0x14
-	int count;//0x18
-	DWORD unknownA;//0x1C
-	BYTE unknownB;//0x20
-	BYTE unknownC;//0x21
-	BYTE unknownD;//0x22
-	BYTE unknownE;//0x23
-};
+
 class RequestTeleportMessage
 {
 public:
@@ -236,6 +243,7 @@ public:
 	float rotationZ;//0x1C
 	DWORD64 cellPtr;//0x20
 };
+
 class ClientStateMsg
 {
 public:
@@ -723,17 +731,12 @@ public:
 	static bool UpdateOldWeaponData();
 
 	static bool CheckScrapList();
-	static bool LootScrap();
-
 	static bool CheckItemLooterSettings();
-	static bool LootItems();
-
 	static bool CheckItemTransferList();
-	static bool TransferItems(DWORD sourceFormId, DWORD destinationFormId);
 
+	static bool TransferItems(DWORD sourceFormId, DWORD destinationFormId);
 	static bool ReferenceSwap(DWORD& sourceFormId, DWORD& destinationFormId);
 
-	static bool GetNukeCode(DWORD formId, std::array<int, 8>& nukeCode);
 	static bool GetTeleportPosition(int index);
 	static bool RequestTeleport(int index);
 
@@ -760,9 +763,8 @@ public:
 	static bool MeleeAttack();
 	static bool ChargenEditing();
 
-	static bool Harvester();
+	static void Looter();
 
-	static bool MessagePatcher(bool state);
 	static bool InsideInteriorCell();
 	static LocalPlayerInfo GetLocalPlayerInfo();
 	static Camera GetCameraInfo();
@@ -771,8 +773,8 @@ public:
 	static bool GetActorSnapshotComponentData(const TesObjectRefr& entityData, ActorSnapshotComponent* actorSnapshotComponentData);
 	static bool TargetValid(const TesObjectRefr& entityData);
 
-	static bool Rpm(DWORD64 src, void* dst, size_t size);
-	static bool FreeEx(DWORD64 src);
+	static void RequestLootItems() { lootItemsRequested = true; }
+	static void RequestLootScrap() { lootScrapRequested = true; }
 	
 	inline static bool oldWeaponListUpdated = false;
 	inline static int oldWeaponListCounter = 0;
@@ -783,8 +785,6 @@ public:
 
 	inline static bool targetLockingKeyPressed = false;
 
-	inline static bool allowMessages = false;
-
 	inline static std::vector<CustomEntry> entityDataBuffer{};
 	inline static std::vector<CustomEntry> playerDataBuffer{};
 
@@ -794,6 +794,7 @@ public:
 	inline static std::array<int, 8> charlieCode = { };
 
 private:
+	static bool GetNukeCode(DWORD formId, std::array<int, 8>& nukeCode);
 	static std::string GetPlayerName(const ClientAccount& clientAccountData);
 
 	static bool CheckItemLooterList();
@@ -840,8 +841,8 @@ private:
 	static bool CheckEntityLooterSettings(const EntityLooterSettings& settings);
 	static bool CheckOnlyUseEntityLooterList(const EntityLooterSettings& settings);
 	static bool HarvestFlora(const TesObjectRefr& entityData, const TesItem& referenceData, const TesObjectRefr& localPlayer);
-
-	static bool SendMessageToServer(void* message, size_t size);
+	static bool LootItemScrap(const TesObjectRefr& entityData, const TesItem& referenceData, const TesObjectRefr& localPlayer);
+	static bool LootItem(const TesObjectRefr& entityData, const TesItem& referenceData, const TesObjectRefr& localPlayer);
 
 	static DWORD64 GetCameraPtr();
 	static DWORD64 GetLocalPlayerPtr(bool checkMainMenu);
@@ -857,12 +858,13 @@ private:
 
 	static std::string GetEntityName(DWORD64 ptr);
 
-	static bool Wpm(DWORD64 dst, void* src, size_t size);
-	static DWORD64 AllocEx(size_t size);
-
 	static bool VtableSwap(DWORD64 dst, DWORD64 src);
 	
 	inline static OldWeapon* oldWeaponList = nullptr;
+
+
+	inline static bool lootItemsRequested = false;
+	inline static bool lootScrapRequested = false;
 
 	virtual void __dummy() = 0;
 

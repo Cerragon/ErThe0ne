@@ -1364,12 +1364,12 @@ void Settings::SetExtraNpcSettings()
 
 void Settings::GetBitMsgWriterSettings()
 {
-	GetBool("BitMsgWriter", "AllowMessages", ErectusMemory::allowMessages, false);
+	GetBool("BitMsgWriter", "AllowMessages", msgWriter.enabled, false);
 }
 
 void Settings::SetBitMsgWriterSettings()
 {
-	SetBool("BitMsgWriter", "AllowMessages", ErectusMemory::allowMessages, false);
+	SetBool("BitMsgWriter", "AllowMessages", msgWriter.enabled, false);
 }
 
 void Settings::ReadIniSettings()

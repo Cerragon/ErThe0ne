@@ -6,16 +6,7 @@
 #include <thread>
 
 #include "ErectusMemory.h"
-
-void Threads::RequestLootItems()
-{
-	lootItemsRequested = true;
-}
-
-void Threads::RequestLootScrap()
-{
-	lootScrapRequested = true;
-}
+#include "ErectusProcess.h"
 
 DWORD WINAPI Threads::BufferEntityListThread([[maybe_unused]] LPVOID lpParameter)
 {
@@ -131,7 +122,7 @@ DWORD WINAPI Threads::LockingThread([[maybe_unused]] LPVOID lpParameter)
 				continue;
 
 			TesObjectRefr entityData{};
-			if (!ErectusMemory::Rpm(entity.entityPtr, &entityData, sizeof entityData))
+			if (!ErectusProcess::Rpm(entity.entityPtr, &entityData, sizeof entityData))
 				continue;
 
 			if (!ErectusMemory::TargetValid(entityData))
@@ -227,7 +218,7 @@ DWORD WINAPI Threads::LockingThread([[maybe_unused]] LPVOID lpParameter)
 	ErectusMemory::DamageRedirection(&targetingPage, &targetingPageValid, true, false);
 
 	if (targetingPage)
-		ErectusMemory::FreeEx(targetingPage);
+		ErectusProcess::FreeEx(targetingPage);
 
 	lockingThreadActive = false;
 
@@ -245,12 +236,6 @@ DWORD WINAPI Threads::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 	DWORD64 freezeApPage = 0;
 	auto freezeApPageValid = false;
 
-	auto lootScrapCounter = 0;
-	auto lootScrapThreshold = 0;
-
-	auto lootItemsCounter = 0;
-	auto lootItemsThreshold = 0;
-
 	auto loopCount = -1;
 	while (!threadDestructionState)
 	{
@@ -261,16 +246,6 @@ DWORD WINAPI Threads::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 
 		if (noclipToggle && Settings::customLocalPlayerSettings.noclipEnabled && Settings::customLocalPlayerSettings.clientState)
 			ErectusMemory::SetClientState(2);
-
-		if (lootScrapRequested) {
-			ErectusMemory::LootScrap();
-			lootScrapRequested = false;
-		}
-
-		if (lootItemsRequested) {
-			ErectusMemory::LootItems();
-			lootItemsRequested = false;
-		}
 
 		if ((positionSpoofingToggle || noclipToggle) && Settings::customLocalPlayerSettings.automaticClientState)
 		{
@@ -312,40 +287,8 @@ DWORD WINAPI Threads::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 		{
 			if (loopCount % 300 == 0) { //every 300 loops
 				ErectusMemory::UpdateNukeCodes();
-
 			}
 		}
-
-		if (Settings::scrapLooter.autoLootingEnabled)
-		{
-			lootScrapCounter++;
-			if (lootScrapCounter > lootScrapThreshold)
-			{
-				lootScrapCounter = 0;
-				lootScrapThreshold = Utils::GetRangedInt(Settings::scrapLooter.autoLootingSpeedMin, Settings::scrapLooter.autoLootingSpeedMax);
-				if (ErectusMemory::CheckScrapList())
-				{
-					ErectusMemory::LootScrap();
-				}
-			}
-		}
-		else
-			lootScrapThreshold = 0;
-
-		if (Settings::itemLooter.autoLootingEnabled)
-		{
-			lootItemsCounter++;
-			if (lootItemsCounter > lootItemsThreshold)
-			{
-				lootItemsCounter = 0;
-				lootItemsThreshold = Utils::GetRangedInt(Settings::itemLooter.autoLootingSpeedMin, Settings::itemLooter.autoLootingSpeedMax);
-				if (ErectusMemory::CheckItemLooterSettings())
-					ErectusMemory::LootItems();
-			}
-		}
-		else
-			lootItemsThreshold = 0;
-
 
 		if (loopCount % 10 == 0) //every 10 loops
 			ErectusMemory::ChargenEditing();
@@ -358,7 +301,7 @@ DWORD WINAPI Threads::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 	ErectusMemory::ActorValue(&actorValuePage, &actorValuePageValid, false);
 
 	if (actorValuePage)
-		ErectusMemory::FreeEx(actorValuePage);
+		ErectusProcess::FreeEx(actorValuePage);
 
 	ErectusMemory::SetActorValueMaximum(0x000002C2, 100.0f, static_cast<float>(Settings::customLocalPlayerSettings.strength), false);
 	ErectusMemory::SetActorValueMaximum(0x000002C3, 100.0f, static_cast<float>(Settings::customLocalPlayerSettings.perception), false);
@@ -371,23 +314,23 @@ DWORD WINAPI Threads::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 	ErectusMemory::OnePositionKill(&opkPage, &opkPageValid, false);
 
 	if (opkPage)
-		ErectusMemory::FreeEx(opkPage);
+		ErectusProcess::FreeEx(opkPage);
 
 	ErectusMemory::FreezeActionPoints(&freezeApPage, &freezeApPageValid, false);
 
 	if (freezeApPage)
-		ErectusMemory::FreeEx(freezeApPage);
+		ErectusProcess::FreeEx(freezeApPage);
 
 	multihackThreadActive = false;
 
 	return 0xBEAD;
 }
 
-DWORD WINAPI Threads::HarvesterThread([[maybe_unused]] LPVOID lpParameter)
+DWORD WINAPI Threads::Looter([[maybe_unused]] LPVOID lpParameter)
 {
 	while (!threadDestructionState)
 	{
-		ErectusMemory::Harvester();
+		ErectusMemory::Looter();
 		std::this_thread::sleep_for(std::chrono::milliseconds(Utils::GetRangedInt(12, 36) * 16));
 	}
 
@@ -459,7 +402,7 @@ bool Threads::CreateProcessThreads()
 
 	if (!harvesterThreadActive)
 	{
-		harvesterThreadActive = CloseHandle(CreateThread(nullptr, 0, &HarvesterThread, nullptr, 0, nullptr));
+		harvesterThreadActive = CloseHandle(CreateThread(nullptr, 0, &Looter, nullptr, 0, nullptr));
 		if (!harvesterThreadActive)
 		{
 			threadDestructionQueued = true;

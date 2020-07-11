@@ -78,6 +78,9 @@
     <ClCompile Include="app.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="MsgSender.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Image Include="Erectus.ico">
@@ -157,6 +160,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="common.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MsgSender.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

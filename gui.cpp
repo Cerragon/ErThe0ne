@@ -91,7 +91,7 @@ void Gui::RenderActors(const CustomEntry& entry, const OverlaySettingsA& setting
 	if (entry.flag & CUSTOM_ENTRY_NPC)
 	{
 		TesObjectRefr npcData{};
-		if (!ErectusMemory::Rpm(entry.entityPtr, &npcData, sizeof npcData))
+		if (!ErectusProcess::Rpm(entry.entityPtr, &npcData, sizeof npcData))
 			return;
 
 		ActorSnapshotComponent actorSnapshotComponentData{};
@@ -140,7 +140,7 @@ void Gui::RenderActors(const CustomEntry& entry, const OverlaySettingsA& setting
 		return;
 
 	TesObjectRefr entityData{};
-	if (!ErectusMemory::Rpm(entry.entityPtr, &entityData, sizeof entityData))
+	if (!ErectusProcess::Rpm(entry.entityPtr, &entityData, sizeof entityData))
 		return;
 
 	if (entry.flag & CUSTOM_ENTRY_PLAYER)
@@ -332,7 +332,7 @@ void Gui::RenderItems(const CustomEntry& entry, const OverlaySettingsB& settings
 		return;
 
 	TesObjectRefr entityData{};
-	if (!ErectusMemory::Rpm(entry.entityPtr, &entityData, sizeof entityData))
+	if (!ErectusProcess::Rpm(entry.entityPtr, &entityData, sizeof entityData))
 		return;
 
 	if (entry.flag & CUSTOM_ENTRY_UNNAMED)
@@ -1310,7 +1310,7 @@ void Gui::OverlayMenuTabLoot()
 				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 1.0f, 0.0f, 0.4f));
 				ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 1.0f, 0.0f, 0.5f));
 				if (ImGui::Button("Loot Scrap (Keybind: CTRL+E)###LootSelectedScrapEnabled", ImVec2(224.0f, 0.0f)))
-					ErectusMemory::LootScrap();
+					ErectusMemory::RequestLootScrap();
 				ImGui::PopStyleColor(3);
 			}
 			else
@@ -1377,7 +1377,7 @@ void Gui::OverlayMenuTabLoot()
 				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 1.0f, 0.0f, 0.4f));
 				ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 1.0f, 0.0f, 0.5f));
 				if (ImGui::Button("Loot Items (Keybind: CTRL+R)###LootSelectedItemsEnabled", ImVec2(224.0f, 0.0f)))
-					ErectusMemory::LootItems();
+					ErectusMemory::RequestLootItems();
 				ImGui::PopStyleColor(3);
 			}
 			else
@@ -2375,7 +2375,7 @@ void Gui::OverlayMenuTabBitMsgWriter()
 {
 	if (ImGui::BeginTabItem("BitMsgWriter###BitMsgWriterTab"))
 	{
-		LargeButtonToggle("Message Sender Enabled", &ErectusMemory::allowMessages);
+		LargeButtonToggle("Message Sender Enabled", &Settings::msgWriter.enabled);
 
 		ImGui::EndTabItem();
 	}
