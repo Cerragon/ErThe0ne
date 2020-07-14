@@ -10,6 +10,7 @@
 mINI::INIFile file("Erectus.ini");
 mINI::INIStructure ini;
 
+//esp
 OverlaySettingsA defltPlayerSettings
 {
 	true,					//Enabled
@@ -35,7 +36,6 @@ OverlaySettingsA defltPlayerSettings
 	true,					//TextShadowed;
 	true,					//TextCentered;
 };
-
 OverlaySettingsA defltNpcSettings
 {
 	true,					//Enabled
@@ -61,7 +61,6 @@ OverlaySettingsA defltNpcSettings
 	true,					//TextShadowed;
 	true,					//TextCentered;
 };
-
 OverlaySettingsB defltOverlaySettingsB
 {
 	false,					//Enabled
@@ -80,116 +79,36 @@ OverlaySettingsB defltOverlaySettingsB
 	{},						//Whitelisted
 	{},				//Whitelist
 };
-
-ScrapLooterSettings defltScrapLooterSettings
+LegendarySettings defltLegendarySettings
 {
-	.autoLootingSpeedMin = 30,
-	.autoLootingSpeedMax = 60,
-	.maxDistance = 3000,
-	.formIdList = {
-		0x00017DE8,//Black Titanium
-		0x00017DE9,//Ultracite
-		0x0001FA8C,//Acid
-		0x0001FA91,//Aluminum
-		0x0001FA94,//Ballistic Fiber
-		0x0001FA96,//Antiseptic
-		0x0001FA97,//Asbestos
-		0x0001FA98,//Bone
-		0x0001FA9A,//Ceramic
-		0x0001FA9B,//Circuitry
-		0x0001FA9C,//Copper
-		0x0001FA9D,//Cork
-		0x0001FA9F,//Crystal
-		0x0001FAA0,//Fiber Optics
-		0x0001FAA1,//Fiberglass
-		0x0001FAA4,//Glass
-		0x0001FAA5,//Adhesive
-		0x0001FAA6,//Gold
-		0x0001FAAD,//Lead
-		0x0001FAAE,//Leather
-		0x0001FAB0,//Gear
-		0x0001FAB3,//Nuclear Material
-		0x0001FAB4,//Oil
-		0x0001FAB7,//Plastic
-		0x0001FAB9,//Rubber
-		0x0001FABB,//Silver
-		0x0001FABC,//Spring
-		0x0001FABD,//Steel
-		0x0001FAC2,//Wood
-		0x0003D294,//Screw
-		0x0005A0C4,//Concrete
-		0x0005A0C7,//Fertilizer
-		0x001223C7,//Cloth
-		0x002B9178,//Pure Cobalt Flux
-		0x002B917A,//Pure Fluorescent Flux
-		0x002B917C,//Pure Violet Flux
-		0x002B917E,//Pure Crimson Flux
-		0x002B9180,//Pure Yellowcake Flux
-		0x0031C09A,//Coal
-		0x0054E4FA,//Vault 94 Steel
-	},
-	.nameList = {
-		"Black Titanium",//0x00017DE8
-		"Ultracite",//0x00017DE9
-		"Acid",//0x0001FA8C
-		"Aluminum",//0x0001FA91
-		"Ballistic Fiber",//0x0001FA94
-		"Antiseptic",//0x0001FA96
-		"Asbestos",//0x0001FA97
-		"Bone",//0x0001FA98
-		"Ceramic",//0x0001FA9A
-		"Circuitry",//0x0001FA9B
-		"Copper",//0x0001FA9C
-		"Cork",//0x0001FA9D
-		"Crystal",//0x0001FA9F
-		"Fiber Optics",//0x0001FAA0
-		"Fiberglass",//0x0001FAA1
-		"Glass",//0x0001FAA4
-		"Adhesive",//0x0001FAA5
-		"Gold",//0x0001FAA6
-		"Lead",//0x0001FAAD
-		"Leather",//0x0001FAAE
-		"Gear",//0x0001FAB0
-		"Nuclear Material",//0x0001FAB3
-		"Oil",//0x0001FAB4
-		"Plastic",//0x0001FAB7
-		"Rubber",//0x0001FAB9
-		"Silver",//0x0001FABB
-		"Spring",//0x0001FABC
-		"Steel",//0x0001FABD
-		"Wood",//0x0001FAC2
-		"Screw",//0x0003D294
-		"Concrete",//0x0005A0C4
-		"Fertilizer",//0x0005A0C7
-		"Cloth",//0x001223C7
-		"Pure Cobalt Flux",//0x002B9178
-		"Pure Fluorescent Flux",//0x002B917A
-		"Pure Violet Flux",//0x002B917C
-		"Pure Crimson Flux",//0x002B917E
-		"Pure Yellowcake Flux",//0x002B9180
-		"Coal",//0x0031C09A
-		"Vault 94 Steel",//0x0054E4FA
-	},
+	true,
+	{ 0.7f, 1.0f, 0.7f },
+	true,
+	{ 1.0f, 0.5f, 0.5f },
+	true,
+	{ 0.7f, 1.0f, 0.7f },
+	true,
+	{ 1.0f, 0.5f, 0.5f },
+	true,
+	{ 0.7f, 1.0f, 0.7f },
+	true,
+	{ 1.0f, 0.5f, 0.5f },
 };
 
-ItemLooterSettings defltItemLooterSettings
-{
-	.autoLootingSpeedMin = 30,
-	.autoLootingSpeedMax = 60,
-	.lootWeaponsDistance = 3000,
-	.lootArmorDistance = 3000,
-	.lootAmmoDistance = 3000,
-	.lootModsDistance = 3000,
-	.lootMagazinesDistance = 3000,
-	.lootBobbleheadsDistance = 3000,
-	.lootAidDistance = 3000,
-	.lootKnownPlansDistance = 3000,
-	.lootUnknownPlansDistance = 3000,
-	.lootMiscDistance = 3000,
-	.lootUnlistedDistance = 3000,
-	.lootListDistance = 3000,
-};
+OverlaySettingsA Settings::playerSettings = defltPlayerSettings;
+OverlaySettingsA Settings::npcSettings = defltNpcSettings;
+OverlaySettingsB Settings::containerSettings = defltOverlaySettingsB;
+OverlaySettingsB Settings::junkSettings = defltOverlaySettingsB;
+OverlaySettingsB Settings::planSettings = defltOverlaySettingsB;
+OverlaySettingsB Settings::magazineSettings = defltOverlaySettingsB;
+OverlaySettingsB Settings::bobbleheadSettings = defltOverlaySettingsB;
+OverlaySettingsB Settings::itemSettings = defltOverlaySettingsB;
+OverlaySettingsB Settings::floraSettings = defltOverlaySettingsB;
+OverlaySettingsB Settings::entitySettings = defltOverlaySettingsB;
+LegendarySettings Settings::customLegendarySettings = defltLegendarySettings;
+FluxSettings Settings::customFluxSettings = {};
 
+//utils
 TargetSettings defltTargetSettings
 {
 	.lockingFov = 20.0f,
@@ -198,7 +117,6 @@ TargetSettings defltTargetSettings
 	.sendDamageMax = 1,
 	.favoriteIndex = 12,
 };
-
 LocalPlayerSettings defltLocalPlayerSettings
 {
 	false,
@@ -225,10 +143,6 @@ LocalPlayerSettings defltLocalPlayerSettings
 	false,
 	9001,
 };
-
-OpkSettings defltOpkSettings = {};
-UtilitySettings defltUtilitySettings = {};
-SwapperSettings defltSwapperSettings = {};
 TransferSettings defltTransferSettings
 {
 	0x00000000,
@@ -251,228 +165,20 @@ TransferSettings defltTransferSettings
 	},
 };
 
-TeleportSettings defltTeleportSettings = {};
-
-NukeCodeSettings defltNukeCodeSettings = {};
-
-LegendarySettings defltLegendarySettings
-{
-	true,
-	{ 0.7f, 1.0f, 0.7f },
-	true,
-	{ 1.0f, 0.5f, 0.5f },
-	true,
-	{ 0.7f, 1.0f, 0.7f },
-	true,
-	{ 1.0f, 0.5f, 0.5f },
-	true,
-	{ 0.7f, 1.0f, 0.7f },
-	true,
-	{ 1.0f, 0.5f, 0.5f },
-};
-
-FluxSettings defltFluxSettings = {};
-EntityLooterSettings defltEntityLooterSettings = {};
-
-HarvesterSettings harvesterDefaults
-{
-	.formIdList = {
-		0x002DDD45,//Raw Crimson Flux
-		0x002DDD46,//Raw Cobalt Flux
-		0x002DDD49,//Raw Yellowcake Flux
-		0x002DDD4B,//Raw Fluorescent Flux
-		0x002DDD4D,//Raw Violet Flux
-		0x00017F81,//Black Titanium Ore
-		0x00019D29,//Aluminum Ore
-		0x00019E36,//Gold Ore
-		0x00019E51,//Copper Ore
-		0x00065304,//Iron Ore
-		0x00065324,//Lead Ore
-		0x00065328,//Silver Ore
-		0x00065338,//Uranium Ore
-		0x00139013,//Ultracite Ore
-		0x00058AA8,//Coal
-		0x0016FAD8,//Unrefined Coal
-		0x0056AAD2,//Irradiated Ore
-		0x0000BAEF,//Wild Blackberry
-		0x000F742E,//Carrot
-		0x000330F8,//Corn
-		0x000EF24D,//Gourd
-		0x000FAFEB,//Melon
-		0x00033102,//Mutfruit
-		0x000E0043,//Razorgrain
-		0x0009DCC4,//Tato
-		0x000183C6,//Junk Pile
-		0x000731A3,//Wood Scraps
-		0x00106D99,//Concrete Scrap
-		0x001BF732,//Waste Oil
-		0x001BF72D,//Waste Acid
-		0x00015C61,//Raw Crystal
-		0x001BF730,//Raw Fertilizer
-		0x0010D90E,//Cranberries
-		0x001FABC2,//Diseased Cranberries
-		0x000D981D,//Tarberry
-		0x0012C48E,//Firecracker Berry
-		0x001F24B6,//Melon Blossom
-		0x001C400D,//Tato Flower
-		0x001C4013,//Carrot Flower
-		0x001C4011,//Gourd Blossom
-		0x001C0FC2,//Brain Fungus
-		0x001C0FC3,//Glowing Fungus
-		0x001C25EE,//Bloodleaf
-		0x001BE2AB,//Silt Bean
-		0x001C3FDC,//Soot Flower
-		0x003C51E0,//Toxic Soot Flower
-		0x0009F24B,//Thistle
-		0x00525644,//Rhododendron Flower
-		0x00064AF0,//Firecap
-		0x003C51DF,//Snaptail Reed
-		0x00384D8C,//Starlight Berries
-		0x000E34E9,//Mutated Fern Flower
-		0x00111346,//Lure Weed
-		0x00110A12,//Aster
-		0x00111345,//Blight
-		0x00113106,//Fever Blossom
-		0x003FFADB,//Kaleidopore Flower
-		0x0011C0C2,//Ash Rose
-		0x00412186,//Gut Shroom
-		0x00088C3C,//Pumpkin
-		0x004EE5D2,//Ginseng Root
-		0x003B90A2,//Digested Goo
-		0x00081FDB,//Strangler Bloom
-		0x00050DC9,//Strangler Pod
-		0x003D7496,//Swamp Plant
-		0x003D202D,//Bleach Dogwood
-		0x00142950,//Megasloth Mushroom
-		0x000933EA,//Glowing Resin
-		0x0008E922,//Mothman Egg
-	},
-	.nameList = {
-		"Raw Crimson Flux",
-		"Raw Cobalt Flux",
-		"Raw Yellowcake Flux",
-		"Raw Fluorescent Flux",
-		"Raw Violet Flux",
-		"Black Titanium Ore",
-		"Aluminum Ore",
-		"Gold Ore",
-		"Copper Ore",
-		"Iron Ore",
-		"Lead Ore",
-		"Silver Ore",
-		"Uranium Ore",
-		"Ultracite Ore",
-		"Coal",
-		"Unrefined Coal",
-		"Irradiated Ore",
-		"Wild Blackberry",
-		"Carrot",
-		"Corn",
-		"Gourd",
-		"Melon",
-		"Mutfruit",
-		"Razorgrain",
-		"Tato",
-		"Junk Pile",
-		"Wood Scraps",
-		"Concrete Scrap",
-		"Waste Oil",
-		"Waste Acid",
-		"Raw Crystal",
-		"Raw Fertilizer",
-		"Cranberries",
-		"Diseased Cranberries",
-		"Tarberry",
-		"Firecracker Berry",
-		"Melon Blossom",
-		"Tato Flower",
-		"Carrot Flower",
-		"Gourd Blossom",
-		"Brain Fungus",
-		"Glowing Fungus",
-		"Bloodleaf",
-		"Silt Bean",
-		"Soot Flower",
-		"Toxic Soot Flower",
-		"Thistle",
-		"Rhododendron Flower",
-		"Firecap",
-		"Snaptail Reed",
-		"Starlight Berries",
-		"Mutated Fern Flower",
-		"Lure Weed",
-		"Aster",
-		"Blight",
-		"Fever Blossom",
-		"Kaleidopore Flower",
-		"Ash Rose",
-		"Gut Shroom",
-		"Pumpkin",
-		"Ginseng Root",
-		"Digested Goo",
-		"Strangler Bloom",
-		"Strangler Pod",
-		"Swamp Plant",
-		"Bleach Dogwood",
-		"Megasloth Mushroom",
-		"Glowing Resin",
-		"Mothman Egg",
-	},
-};
-
-KnownRecipeSettings defltKnownRecipeSettings
-{
-	true,
-	true,
-};
-
-MeleeSettings defltMeleeSettings
-{
-	false,
-	10,
-	20,
-};
-
-ChargenSettings characterEditorDefaults
-{
-	false,
-	0.33f,
-	0.33f,
-	0.33f,
-};
-
-ExtraNpcSettings defltExtraNpcSettings = {};
-
-OverlaySettingsA Settings::playerSettings = defltPlayerSettings;
-OverlaySettingsA Settings::npcSettings = defltNpcSettings;
-OverlaySettingsB Settings::containerSettings = defltOverlaySettingsB;
-OverlaySettingsB Settings::junkSettings = defltOverlaySettingsB;
-OverlaySettingsB Settings::planSettings = defltOverlaySettingsB;
-OverlaySettingsB Settings::magazineSettings = defltOverlaySettingsB;
-OverlaySettingsB Settings::bobbleheadSettings = defltOverlaySettingsB;
-OverlaySettingsB Settings::itemSettings = defltOverlaySettingsB;
-OverlaySettingsB Settings::floraSettings = defltOverlaySettingsB;
-OverlaySettingsB Settings::entitySettings = defltOverlaySettingsB;
-ScrapLooterSettings Settings::scrapLooter = defltScrapLooterSettings;
-ItemLooterSettings Settings::itemLooter = defltItemLooterSettings;
 WeaponSettings Settings::weapons = defaultWeaponSettings;
 TargetSettings Settings::targetting = defltTargetSettings;
 LocalPlayerSettings Settings::customLocalPlayerSettings = defltLocalPlayerSettings;
-OpkSettings Settings::opk = defltOpkSettings;
-UtilitySettings Settings::utilities = defltUtilitySettings;
-SwapperSettings Settings::swapper = defltSwapperSettings;
+OpkSettings Settings::opk = {};
+UtilitySettings Settings::utilities = {};
+SwapperSettings Settings::swapper = {};
 TransferSettings Settings::customTransferSettings = defltTransferSettings;
-TeleportSettings Settings::teleporter = defltTeleportSettings;
-NukeCodeSettings Settings::customNukeCodeSettings = defltNukeCodeSettings;
-LegendarySettings Settings::customLegendarySettings = defltLegendarySettings;
-FluxSettings Settings::customFluxSettings = defltFluxSettings;
-EntityLooterSettings Settings::npcLooter = defltEntityLooterSettings;
-EntityLooterSettings Settings::containerLooter = defltEntityLooterSettings;
-HarvesterSettings Settings::harvester = harvesterDefaults;
-KnownRecipeSettings Settings::recipes = defltKnownRecipeSettings;
-MeleeSettings Settings::melee = defltMeleeSettings;
-ChargenSettings Settings::characterEditor = characterEditorDefaults;
-ExtraNpcSettings Settings::customExtraNpcSettings = defltExtraNpcSettings;
+TeleportSettings Settings::teleporter = {};
+NukeCodeSettings Settings::customNukeCodeSettings = {};
+MeleeSettings Settings::melee = {false,10,20 };
+ChargenSettings Settings::characterEditor = { false,0.33f,0.33f,0.33f };
+ExtraNpcSettings Settings::customExtraNpcSettings = {};
+KnownRecipeSettings Settings::recipes = { true, true };
+
 
 void Settings::GetDword(const std::string& section, const std::string& key, DWORD& value, const DWORD deflt)
 {
@@ -622,10 +328,10 @@ void Settings::GetQuadFloat(const std::string& section, const std::string& key, 
 	auto keyZ = fmt::format("{}Z", key);
 	auto keyW = fmt::format("{}W", key);
 
-	GetFloat(section, keyX, value[0], deflt[0]);
-	GetFloat(section, keyY, value[1], deflt[1]);
-	GetFloat(section, keyZ, value[2], deflt[2]);
-	GetFloat(section, keyW, value[3], deflt[3]);
+	GetFloat(section, keyX, value[0], deflt == nullptr ? 0 : deflt[0]);
+	GetFloat(section, keyY, value[1], deflt == nullptr ? 0 : deflt[1]);
+	GetFloat(section, keyZ, value[2], deflt == nullptr ? 0 : deflt[2]);
+	GetFloat(section, keyW, value[3], deflt == nullptr ? 0 : deflt[3]);
 }
 
 void Settings::SetQuadFloat(const std::string& section, const std::string& key, float* value, const float* deflt)
@@ -635,10 +341,10 @@ void Settings::SetQuadFloat(const std::string& section, const std::string& key, 
 	auto keyZ = fmt::format("{}Z", key);
 	auto keyW = fmt::format("{}W", key);
 
-	SetFloat(section, keyX, value[0], deflt[0]);
-	SetFloat(section, keyY, value[1], deflt[1]);
-	SetFloat(section, keyZ, value[2], deflt[2]);
-	SetFloat(section, keyW, value[3], deflt[3]);
+	SetFloat(section, keyX, value[0], deflt == nullptr ? 0 : deflt[0]);
+	SetFloat(section, keyY, value[1], deflt == nullptr ? 0 : deflt[1]);
+	SetFloat(section, keyZ, value[2], deflt == nullptr ? 0 : deflt[2]);
+	SetFloat(section, keyW, value[3], deflt == nullptr ? 0 : deflt[3]);
 }
 
 void Settings::GetBool(const std::string& section, const std::string& key, bool& value, const bool deflt)
@@ -776,42 +482,9 @@ void Settings::SetInfoBoxSettings()
 	SetBool("InfoBox", "drawNukeCodes", infobox.drawNukeCodes, false);
 }
 
-void Settings::GetScrapSettings()
-{
-	GetBool("ScrapSettings", "ScrapKeybindEnabled", scrapLooter.keybindEnabled, defltScrapLooterSettings.keybindEnabled);
-	GetBool("ScrapSettings", "ScrapOverrideEnabled", scrapLooter.scrapOverrideEnabled, defltScrapLooterSettings.scrapOverrideEnabled);
-	GetBool("ScrapSettings", "ScrapAutomaticLootingEnabled", scrapLooter.autoLootingEnabled, defltScrapLooterSettings.autoLootingEnabled);
-	GetSliderInt("ScrapSettings", "ScrapAutomaticSpeedMin", scrapLooter.autoLootingSpeedMin, defltScrapLooterSettings.autoLootingSpeedMin, 10, 60);
-	GetSliderInt("ScrapSettings", "ScrapAutomaticSpeedMax",scrapLooter.autoLootingSpeedMax, defltScrapLooterSettings.autoLootingSpeedMax, 10, 60);
-	GetSliderInt("ScrapSettings", "ScrapLooterDistance", scrapLooter.maxDistance, defltScrapLooterSettings.maxDistance, 1, 3000);
-	for (auto i = 0; i < 40; i++)
-	{
-		GetBool("ScrapSettings", fmt::format("ScrapEnabled{:d}", i), scrapLooter.enabledList[i], defltScrapLooterSettings.enabledList[i]);
-	}
-	
-	if (scrapLooter.autoLootingSpeedMax < scrapLooter.autoLootingSpeedMin)
-		scrapLooter.autoLootingSpeedMax = scrapLooter.autoLootingSpeedMin;
-}
-
-void Settings::SetScrapSettings()
-{
-	if (scrapLooter.autoLootingSpeedMax < scrapLooter.autoLootingSpeedMin)
-		scrapLooter.autoLootingSpeedMax = scrapLooter.autoLootingSpeedMin;
-	
-	SetBool("ScrapSettings", "ScrapKeybindEnabled", scrapLooter.keybindEnabled, defltScrapLooterSettings.keybindEnabled);
-	SetBool("ScrapSettings", "ScrapOverrideEnabled", scrapLooter.scrapOverrideEnabled, defltScrapLooterSettings.scrapOverrideEnabled);
-	SetBool("ScrapSettings", "ScrapAutomaticLootingEnabled", scrapLooter.autoLootingEnabled, defltScrapLooterSettings.autoLootingEnabled);
-	SetSliderInt("ScrapSettings", "ScrapAutomaticSpeedMin", scrapLooter.autoLootingSpeedMin, defltScrapLooterSettings.autoLootingSpeedMin, 10, 60);
-	SetSliderInt("ScrapSettings", "ScrapAutomaticSpeedMax", scrapLooter.autoLootingSpeedMax, defltScrapLooterSettings.autoLootingSpeedMax, 10, 60);
-	SetSliderInt("ScrapSettings", "ScrapLooterDistance", scrapLooter.maxDistance, defltScrapLooterSettings.maxDistance, 1, 3000);
-	for (auto i = 0; i < 40; i++)
-	{
-		SetBool("ScrapSettings", fmt::format("ScrapEnabled{:d}", i), scrapLooter.enabledList[i], defltScrapLooterSettings.enabledList[i]);
-	}
-}
-
 void Settings::GetItemLooterSettings()
 {
+	/*
 	GetBool("ItemLooterSettings", "ItemKeybindEnabled", itemLooter.keybindEnabled, defltItemLooterSettings.keybindEnabled);
 	GetBool("ItemLooterSettings", "ItemAutomaticLootingEnabled", itemLooter.autoLootingEnabled, defltItemLooterSettings.autoLootingEnabled);
 
@@ -852,55 +525,53 @@ void Settings::GetItemLooterSettings()
 		GetBool("ItemLooterSettings", fmt::format("ItemLooterBlacklistEnabled{:d}", i), itemLooter.blacklistEnabled[i], defltItemLooterSettings.blacklistEnabled[i]);
 		GetDword("ItemLooterSettings", fmt::format("ItemLooterBlacklist{:d}", i), itemLooter.blacklist[i], defltItemLooterSettings.blacklist[i]);
 	}
-	
-	if (itemLooter.autoLootingSpeedMax < itemLooter.autoLootingSpeedMin)
-		itemLooter.autoLootingSpeedMax = itemLooter.autoLootingSpeedMin;
+
+*/
 }
 
 void Settings::SetItemLooterSettings()
 {
-	if (itemLooter.autoLootingSpeedMax < itemLooter.autoLootingSpeedMin)
-		itemLooter.autoLootingSpeedMax = itemLooter.autoLootingSpeedMin;
-
-	SetBool("ItemLooterSettings", "ItemKeybindEnabled", itemLooter.keybindEnabled, defltItemLooterSettings.keybindEnabled);
-	SetBool("ItemLooterSettings", "ItemAutomaticLootingEnabled", itemLooter.autoLootingEnabled, defltItemLooterSettings.autoLootingEnabled);
-	SetSliderInt("ItemLooterSettings", "ItemAutomaticSpeedMin", itemLooter.autoLootingSpeedMin, defltItemLooterSettings.autoLootingSpeedMin, 10, 60);
-	SetSliderInt("ItemLooterSettings", "ItemAutomaticSpeedMax", itemLooter.autoLootingSpeedMax, defltItemLooterSettings.autoLootingSpeedMax, 10, 60);
-	SetBool("ItemLooterSettings", "ItemLooterWeaponsEnabled", itemLooter.lootWeaponsEnabled, defltItemLooterSettings.lootWeaponsEnabled);
-	SetSliderInt("ItemLooterSettings", "ItemLooterWeaponsDistance", itemLooter.lootWeaponsDistance, defltItemLooterSettings.lootWeaponsDistance, 0, 3000);
-	SetBool("ItemLooterSettings", "ItemLooterArmorEnabled", itemLooter.lootArmorEnabled, defltItemLooterSettings.lootArmorEnabled);
-	SetSliderInt("ItemLooterSettings", "ItemLooterArmorDistance", itemLooter.lootArmorDistance, defltItemLooterSettings.lootArmorDistance, 0, 3000);
-	SetBool("ItemLooterSettings", "ItemLooterAmmoEnabled", itemLooter.lootAmmoEnabled, defltItemLooterSettings.lootAmmoEnabled);
-	SetSliderInt("ItemLooterSettings", "ItemLooterAmmoDistance", itemLooter.lootAmmoDistance, defltItemLooterSettings.lootAmmoDistance, 0, 3000);
-	SetBool("ItemLooterSettings", "ItemLooterModsEnabled", itemLooter.lootModsEnabled, defltItemLooterSettings.lootModsEnabled);
-	SetSliderInt("ItemLooterSettings", "ItemLooterModsDistance", itemLooter.lootModsDistance, defltItemLooterSettings.lootModsDistance, 0, 3000);
-	SetBool("ItemLooterSettings", "ItemLooterMagazinesEnabled", itemLooter.lootMagazinesEnabled, defltItemLooterSettings.lootMagazinesEnabled);
-	SetSliderInt("ItemLooterSettings", "ItemLooterMagazinesDistance", itemLooter.lootMagazinesDistance, defltItemLooterSettings.lootMagazinesDistance, 0, 3000);
-	SetBool("ItemLooterSettings", "ItemLooterBobbleheadsEnabled", itemLooter.lootBobbleheadsEnabled, defltItemLooterSettings.lootBobbleheadsEnabled);
-	SetSliderInt("ItemLooterSettings", "ItemLooterBobbleheadsDistance", itemLooter.lootBobbleheadsDistance, defltItemLooterSettings.lootBobbleheadsDistance, 0, 3000);
-	SetBool("ItemLooterSettings", "ItemLooterAidEnabled", itemLooter.lootAidEnabled, defltItemLooterSettings.lootAidEnabled);
-	SetSliderInt("ItemLooterSettings", "ItemLooterAidDistance", itemLooter.lootAidDistance, defltItemLooterSettings.lootAidDistance, 0, 3000);
-	SetBool("ItemLooterSettings", "ItemLooterKnownPlansEnabled", itemLooter.lootKnownPlansEnabled, defltItemLooterSettings.lootKnownPlansEnabled);
-	SetSliderInt("ItemLooterSettings", "ItemLooterKnownPlansDistance", itemLooter.lootKnownPlansDistance, defltItemLooterSettings.lootKnownPlansDistance, 0, 3000);
-	SetBool("ItemLooterSettings", "ItemLooterUnknownPlansEnabled", itemLooter.lootUnknownPlansEnabled, defltItemLooterSettings.lootUnknownPlansEnabled);
-	SetSliderInt("ItemLooterSettings", "ItemLooterUnknownPlansDistance", itemLooter.lootUnknownPlansDistance, defltItemLooterSettings.lootUnknownPlansDistance, 0, 3000);
-	SetBool("ItemLooterSettings", "ItemLooterMiscEnabled", itemLooter.lootMiscEnabled, defltItemLooterSettings.lootMiscEnabled);
-	SetSliderInt("ItemLooterSettings", "ItemLooterMiscDistance", itemLooter.lootMiscDistance, defltItemLooterSettings.lootMiscDistance, 0, 3000);
-	SetBool("ItemLooterSettings", "ItemLooterUnlistedEnabled", itemLooter.lootUnlistedEnabled, defltItemLooterSettings.lootUnlistedEnabled);
-	SetSliderInt("ItemLooterSettings", "ItemLooterUnlistedDistance", itemLooter.lootUnlistedDistance, defltItemLooterSettings.lootUnlistedDistance, 0, 3000);
-	SetBool("ItemLooterSettings", "ItemLooterListEnabled", itemLooter.lootListEnabled, defltItemLooterSettings.lootListEnabled);
-	SetSliderInt("ItemLooterSettings", "ItemLooterListDistance", itemLooter.lootListDistance, defltItemLooterSettings.lootListDistance, 0, 3000);
-	SetBool("ItemLooterSettings", "ItemLooterBlacklistToggle", itemLooter.blacklistToggle, defltItemLooterSettings.blacklistToggle);
-	for (auto i = 0; i < 100; i++)
-	{
-		SetBool("ItemLooterSettings", fmt::format("ItemLooterEnabled{:d}", i), itemLooter.enabledList[i], defltItemLooterSettings.enabledList[i]);
-		SetDword("ItemLooterSettings", fmt::format("ItemLooterList{:d}", i), itemLooter.formIdList[i], defltItemLooterSettings.formIdList[i]);
-	}
-	for (auto i = 0; i < 64; i++)
-	{
-		SetBool("ItemLooterSettings", fmt::format("ItemLooterBlacklistEnabled{:d}", i), itemLooter.blacklistEnabled[i], defltItemLooterSettings.blacklistEnabled[i]);
-		SetDword("ItemLooterSettings", fmt::format("ItemLooterBlacklist{:d}", i), itemLooter.blacklist[i], defltItemLooterSettings.blacklist[i]);
-	}
+	/*
+		SetBool("ItemLooterSettings", "ItemKeybindEnabled", itemLooter.keybindEnabled, defltItemLooterSettings.keybindEnabled);
+		SetBool("ItemLooterSettings", "ItemAutomaticLootingEnabled", itemLooter.autoLootingEnabled, defltItemLooterSettings.autoLootingEnabled);
+		SetSliderInt("ItemLooterSettings", "ItemAutomaticSpeedMin", itemLooter.autoLootingSpeedMin, defltItemLooterSettings.autoLootingSpeedMin, 10, 60);
+		SetSliderInt("ItemLooterSettings", "ItemAutomaticSpeedMax", itemLooter.autoLootingSpeedMax, defltItemLooterSettings.autoLootingSpeedMax, 10, 60);
+		SetBool("ItemLooterSettings", "ItemLooterWeaponsEnabled", itemLooter.lootWeaponsEnabled, defltItemLooterSettings.lootWeaponsEnabled);
+		SetSliderInt("ItemLooterSettings", "ItemLooterWeaponsDistance", itemLooter.lootWeaponsDistance, defltItemLooterSettings.lootWeaponsDistance, 0, 3000);
+		SetBool("ItemLooterSettings", "ItemLooterArmorEnabled", itemLooter.lootArmorEnabled, defltItemLooterSettings.lootArmorEnabled);
+		SetSliderInt("ItemLooterSettings", "ItemLooterArmorDistance", itemLooter.lootArmorDistance, defltItemLooterSettings.lootArmorDistance, 0, 3000);
+		SetBool("ItemLooterSettings", "ItemLooterAmmoEnabled", itemLooter.lootAmmoEnabled, defltItemLooterSettings.lootAmmoEnabled);
+		SetSliderInt("ItemLooterSettings", "ItemLooterAmmoDistance", itemLooter.lootAmmoDistance, defltItemLooterSettings.lootAmmoDistance, 0, 3000);
+		SetBool("ItemLooterSettings", "ItemLooterModsEnabled", itemLooter.lootModsEnabled, defltItemLooterSettings.lootModsEnabled);
+		SetSliderInt("ItemLooterSettings", "ItemLooterModsDistance", itemLooter.lootModsDistance, defltItemLooterSettings.lootModsDistance, 0, 3000);
+		SetBool("ItemLooterSettings", "ItemLooterMagazinesEnabled", itemLooter.lootMagazinesEnabled, defltItemLooterSettings.lootMagazinesEnabled);
+		SetSliderInt("ItemLooterSettings", "ItemLooterMagazinesDistance", itemLooter.lootMagazinesDistance, defltItemLooterSettings.lootMagazinesDistance, 0, 3000);
+		SetBool("ItemLooterSettings", "ItemLooterBobbleheadsEnabled", itemLooter.lootBobbleheadsEnabled, defltItemLooterSettings.lootBobbleheadsEnabled);
+		SetSliderInt("ItemLooterSettings", "ItemLooterBobbleheadsDistance", itemLooter.lootBobbleheadsDistance, defltItemLooterSettings.lootBobbleheadsDistance, 0, 3000);
+		SetBool("ItemLooterSettings", "ItemLooterAidEnabled", itemLooter.lootAidEnabled, defltItemLooterSettings.lootAidEnabled);
+		SetSliderInt("ItemLooterSettings", "ItemLooterAidDistance", itemLooter.lootAidDistance, defltItemLooterSettings.lootAidDistance, 0, 3000);
+		SetBool("ItemLooterSettings", "ItemLooterKnownPlansEnabled", itemLooter.lootKnownPlansEnabled, defltItemLooterSettings.lootKnownPlansEnabled);
+		SetSliderInt("ItemLooterSettings", "ItemLooterKnownPlansDistance", itemLooter.lootKnownPlansDistance, defltItemLooterSettings.lootKnownPlansDistance, 0, 3000);
+		SetBool("ItemLooterSettings", "ItemLooterUnknownPlansEnabled", itemLooter.lootUnknownPlansEnabled, defltItemLooterSettings.lootUnknownPlansEnabled);
+		SetSliderInt("ItemLooterSettings", "ItemLooterUnknownPlansDistance", itemLooter.lootUnknownPlansDistance, defltItemLooterSettings.lootUnknownPlansDistance, 0, 3000);
+		SetBool("ItemLooterSettings", "ItemLooterMiscEnabled", itemLooter.lootMiscEnabled, defltItemLooterSettings.lootMiscEnabled);
+		SetSliderInt("ItemLooterSettings", "ItemLooterMiscDistance", itemLooter.lootMiscDistance, defltItemLooterSettings.lootMiscDistance, 0, 3000);
+		SetBool("ItemLooterSettings", "ItemLooterUnlistedEnabled", itemLooter.lootUnlistedEnabled, defltItemLooterSettings.lootUnlistedEnabled);
+		SetSliderInt("ItemLooterSettings", "ItemLooterUnlistedDistance", itemLooter.lootUnlistedDistance, defltItemLooterSettings.lootUnlistedDistance, 0, 3000);
+		SetBool("ItemLooterSettings", "ItemLooterListEnabled", itemLooter.lootListEnabled, defltItemLooterSettings.lootListEnabled);
+		SetSliderInt("ItemLooterSettings", "ItemLooterListDistance", itemLooter.lootListDistance, defltItemLooterSettings.lootListDistance, 0, 3000);
+		SetBool("ItemLooterSettings", "ItemLooterBlacklistToggle", itemLooter.blacklistToggle, defltItemLooterSettings.blacklistToggle);
+		for (auto i = 0; i < 100; i++)
+		{
+			SetBool("ItemLooterSettings", fmt::format("ItemLooterEnabled{:d}", i), itemLooter.enabledList[i], defltItemLooterSettings.enabledList[i]);
+			SetDword("ItemLooterSettings", fmt::format("ItemLooterList{:d}", i), itemLooter.formIdList[i], defltItemLooterSettings.formIdList[i]);
+		}
+		for (auto i = 0; i < 64; i++)
+		{
+			SetBool("ItemLooterSettings", fmt::format("ItemLooterBlacklistEnabled{:d}", i), itemLooter.blacklistEnabled[i], defltItemLooterSettings.blacklistEnabled[i]);
+			SetDword("ItemLooterSettings", fmt::format("ItemLooterBlacklist{:d}", i), itemLooter.blacklist[i], defltItemLooterSettings.blacklist[i]);
+		}
+		*/
 }
 
 void Settings::GetWeaponSettings()
@@ -1042,42 +713,42 @@ void Settings::SetLocalPlayerSettings()
 
 void Settings::GetOpkSettings()
 {
-	GetBool("OpkSettings", "OpkPlayersEnabled", opk.playersEnabled, defltOpkSettings.playersEnabled);
-	GetBool("OpkSettings", "OpkNpcsEnabled", opk.npcsEnabled, defltOpkSettings.npcsEnabled);
+	GetBool("OpkSettings", "OpkPlayersEnabled", opk.playersEnabled, false);
+	GetBool("OpkSettings", "OpkNpcsEnabled", opk.npcsEnabled, false);
 }
 
 void Settings::SetOpkSettings()
 {
-	SetBool("OpkSettings", "OpkPlayersEnabled", opk.playersEnabled, defltOpkSettings.playersEnabled);
-	SetBool("OpkSettings", "OpkNpcsEnabled", opk.npcsEnabled, defltOpkSettings.npcsEnabled);
+	SetBool("OpkSettings", "OpkPlayersEnabled", opk.playersEnabled, false);
+	SetBool("OpkSettings", "OpkNpcsEnabled", opk.npcsEnabled, false);
 }
 
 void Settings::GetUtilitySettings()
 {
-	GetBool("UtilitySettings", "DebugPlayer", utilities.debugPlayer, defltUtilitySettings.debugPlayer);
-	GetBool("UtilitySettings", "DebugEsp", utilities.debugEsp, defltUtilitySettings.debugEsp);
-	GetDword("UtilitySettings", "PtrFormId", utilities.ptrFormId, defltUtilitySettings.ptrFormId);
-	GetDword("UtilitySettings", "AddressFormId", utilities.addressFormId, defltUtilitySettings.addressFormId);
+	GetBool("UtilitySettings", "DebugPlayer", utilities.debugPlayer, false);
+	GetBool("UtilitySettings", "DebugEsp", utilities.debugEsp, false);
+	GetDword("UtilitySettings", "PtrFormId", utilities.ptrFormId, 0);
+	GetDword("UtilitySettings", "AddressFormId", utilities.addressFormId, 0);
 }
 
 void Settings::SetUtilitySettings()
 {
-	SetBool("UtilitySettings", "DebugPlayer", utilities.debugPlayer, defltUtilitySettings.debugPlayer);
-	SetBool("UtilitySettings", "DebugEsp", utilities.debugEsp, defltUtilitySettings.debugEsp);
-	SetDword("UtilitySettings", "PtrFormId", utilities.ptrFormId, defltUtilitySettings.ptrFormId);
-	SetDword("UtilitySettings", "AddressFormId", utilities.addressFormId, defltUtilitySettings.addressFormId);
+	SetBool("UtilitySettings", "DebugPlayer", utilities.debugPlayer, false);
+	SetBool("UtilitySettings", "DebugEsp", utilities.debugEsp, false);
+	SetDword("UtilitySettings", "PtrFormId", utilities.ptrFormId, 0);
+	SetDword("UtilitySettings", "AddressFormId", utilities.addressFormId, 0);
 }
 
 void Settings::GetSwapperSettings()
 {
-	GetDword("SwapperSettings", "SourceFormId", swapper.sourceFormId, defltSwapperSettings.sourceFormId);
-	GetDword("SwapperSettings", "DestinationFormId", swapper.destinationFormId, defltSwapperSettings.destinationFormId);
+	GetDword("SwapperSettings", "SourceFormId", swapper.sourceFormId, 0);
+	GetDword("SwapperSettings", "DestinationFormId", swapper.destinationFormId, 0);
 }
 
 void Settings::SetSwapperSettings()
 {
-	SetDword("SwapperSettings", "SourceFormId", swapper.sourceFormId, defltSwapperSettings.sourceFormId);
-	SetDword("SwapperSettings", "DestinationFormId", swapper.destinationFormId, defltSwapperSettings.destinationFormId);
+	SetDword("SwapperSettings", "SourceFormId", swapper.sourceFormId, 0);
+	SetDword("SwapperSettings", "DestinationFormId", swapper.destinationFormId, 0);
 }
 
 void Settings::GetTransferSettings()
@@ -1120,9 +791,9 @@ void Settings::GetTeleportSettings()
 {
 	for (auto i = 0; i < 16; i++)
 	{
-		GetQuadFloat("TeleportSettings", fmt::format("Destination{:d}", i), teleporter.entries[i].destination, defltTeleportSettings.entries[i].destination);
-		GetDword("TeleportSettings", fmt::format("CellFormId{:d}", i), teleporter.entries[i].cellFormId, defltTeleportSettings.entries[i].cellFormId);
-		GetBool("TeleportSettings", fmt::format("DisableSaving{:d}", i), teleporter.entries[i].disableSaving, defltTeleportSettings.entries[i].disableSaving);
+		GetQuadFloat("TeleportSettings", fmt::format("Destination{:d}", i), teleporter.entries[i].destination, nullptr);
+		GetDword("TeleportSettings", fmt::format("CellFormId{:d}", i), teleporter.entries[i].cellFormId, 0);
+		GetBool("TeleportSettings", fmt::format("DisableSaving{:d}", i), teleporter.entries[i].disableSaving, false);
 	}
 }
 
@@ -1130,20 +801,20 @@ void Settings::SetTeleportSettings()
 {
 	for (auto i = 0; i < 16; i++)
 	{
-		SetQuadFloat("TeleportSettings", fmt::format("Destination{:d}", i), teleporter.entries[i].destination, defltTeleportSettings.entries[i].destination);
-		SetDword("TeleportSettings", fmt::format("CellFormId{:d}", i), teleporter.entries[i].cellFormId, defltTeleportSettings.entries[i].cellFormId);
-		SetBool("TeleportSettings", fmt::format("DisableSaving{:d}", i), teleporter.entries[i].disableSaving, defltTeleportSettings.entries[i].disableSaving);
+		SetQuadFloat("TeleportSettings", fmt::format("Destination{:d}", i), teleporter.entries[i].destination, nullptr);
+		SetDword("TeleportSettings", fmt::format("CellFormId{:d}", i), teleporter.entries[i].cellFormId, 0);
+		SetBool("TeleportSettings", fmt::format("DisableSaving{:d}", i), teleporter.entries[i].disableSaving, false);
 	}
 }
 
 void Settings::GetNukeCodeSettings()
 {
-	GetBool("NukeCodeSettings", "AutomaticNukeCodes", customNukeCodeSettings.automaticNukeCodes, defltNukeCodeSettings.automaticNukeCodes);
+	GetBool("NukeCodeSettings", "AutomaticNukeCodes", customNukeCodeSettings.automaticNukeCodes, false);
 }
 
 void Settings::SetNukeCodeSettings()
 {
-	SetBool("NukeCodeSettings", "AutomaticNukeCodes", customNukeCodeSettings.automaticNukeCodes, defltNukeCodeSettings.automaticNukeCodes);
+	SetBool("NukeCodeSettings", "AutomaticNukeCodes", customNukeCodeSettings.automaticNukeCodes, false);
 }
 
 void Settings::GetLegendarySettings()
@@ -1180,129 +851,39 @@ void Settings::SetLegendarySettings()
 
 void Settings::GetFluxSettings()
 {
-	GetBool("FluxSettings", "CrimsonFluxEnabled", customFluxSettings.crimsonFluxEnabled, defltFluxSettings.crimsonFluxEnabled);
-	GetBool("FluxSettings", "CobaltFluxEnabled", customFluxSettings.cobaltFluxEnabled, defltFluxSettings.cobaltFluxEnabled);
-	GetBool("FluxSettings", "YellowcakeFluxEnabled", customFluxSettings.yellowcakeFluxEnabled, defltFluxSettings.yellowcakeFluxEnabled);
-	GetBool("FluxSettings", "FluorescentFluxEnabled", customFluxSettings.fluorescentFluxEnabled, defltFluxSettings.fluorescentFluxEnabled);
-	GetBool("FluxSettings", "VioletFluxEnabled", customFluxSettings.violetFluxEnabled, defltFluxSettings.violetFluxEnabled);
+	GetBool("FluxSettings", "CrimsonFluxEnabled", customFluxSettings.crimsonFluxEnabled, false);
+	GetBool("FluxSettings", "CobaltFluxEnabled", customFluxSettings.cobaltFluxEnabled, false);
+	GetBool("FluxSettings", "YellowcakeFluxEnabled", customFluxSettings.yellowcakeFluxEnabled, false);
+	GetBool("FluxSettings", "FluorescentFluxEnabled", customFluxSettings.fluorescentFluxEnabled, false);
+	GetBool("FluxSettings", "VioletFluxEnabled", customFluxSettings.violetFluxEnabled, false);
 }
 
 void Settings::SetFluxSettings()
 {
-	SetBool("FluxSettings", "CrimsonFluxEnabled", customFluxSettings.crimsonFluxEnabled, defltFluxSettings.crimsonFluxEnabled);
-	SetBool("FluxSettings", "CobaltFluxEnabled", customFluxSettings.cobaltFluxEnabled, defltFluxSettings.cobaltFluxEnabled);
-	SetBool("FluxSettings", "YellowcakeFluxEnabled", customFluxSettings.yellowcakeFluxEnabled, defltFluxSettings.yellowcakeFluxEnabled);
-	SetBool("FluxSettings", "FluorescentFluxEnabled", customFluxSettings.fluorescentFluxEnabled, defltFluxSettings.fluorescentFluxEnabled);
-	SetBool("FluxSettings", "VioletFluxEnabled", customFluxSettings.violetFluxEnabled, defltFluxSettings.violetFluxEnabled);
-}
-
-void Settings::GetEntityLooterSettings(const std::string& section, EntityLooterSettings* value, const EntityLooterSettings* deflt)
-{
-	GetBool(section, "EntityLooterEnabled", value->enabled, deflt->enabled);
-	GetBool(section, "EntityLooterAllWeaponsEnabled", value->allWeaponsEnabled, deflt->allWeaponsEnabled);
-	GetBool(section, "EntityLooterAllArmorEnabled", value->allArmorEnabled, deflt->allArmorEnabled);
-	GetBool(section, "EntityLooterOneStarWeaponsEnabled", value->oneStarWeaponsEnabled, deflt->oneStarWeaponsEnabled);
-	GetBool(section, "EntityLooterOneStarArmorEnabled", value->oneStarArmorEnabled, deflt->oneStarArmorEnabled);
-	GetBool(section, "EntityLooterTwoStarWeaponsEnabled", value->twoStarWeaponsEnabled, deflt->twoStarWeaponsEnabled);
-	GetBool(section, "EntityLooterTwoStarArmorEnabled", value->twoStarArmorEnabled, deflt->twoStarArmorEnabled);
-	GetBool(section, "EntityLooterThreeStarWeaponsEnabled", value->threeStarWeaponsEnabled, deflt->threeStarWeaponsEnabled);
-	GetBool(section, "EntityLooterThreeStarArmorEnabled", value->threeStarArmorEnabled, deflt->threeStarArmorEnabled);
-	GetBool(section, "EntityLooterAmmoEnabled", value->ammoEnabled, deflt->ammoEnabled);
-	GetBool(section, "EntityLooterModsEnabled", value->modsEnabled, deflt->modsEnabled);
-	GetBool(section, "EntityLooterCapsEnabled", value->capsEnabled, deflt->capsEnabled);
-	GetBool(section, "EntityLooterJunkEnabled", value->junkEnabled, deflt->junkEnabled);
-	GetBool(section, "EntityLooterAidEnabled", value->aidEnabled, deflt->aidEnabled);
-	GetBool(section, "EntityLooterTreasureMapsEnabled", value->treasureMapsEnabled, deflt->treasureMapsEnabled);
-	GetBool(section, "EntityLooterKnownPlansEnabled", value->knownPlansEnabled, deflt->knownPlansEnabled);
-	GetBool(section, "EntityLooterUnknownPlansEnabled", value->unknownPlansEnabled, deflt->unknownPlansEnabled);
-	GetBool(section, "EntityLooterMiscEnabled", value->miscEnabled, deflt->miscEnabled);
-	GetBool(section, "EntityLooterUnlistedEnabled", value->unlistedEnabled, deflt->unlistedEnabled);
-	GetBool(section, "EntityLooterListEnabled", value->listEnabled, deflt->listEnabled);
-	GetBool(section, "EntityLooterBlacklistToggle", value->blacklistToggle, deflt->blacklistToggle);
-	for (auto i = 0; i < 100; i++)
-	{
-		GetBool(section, fmt::format("EntityLooterEnabled{:d}", i), value->enabledList[i], deflt->enabledList[i]);
-		GetDword(section, fmt::format("EntityLooterList{:d}", i), value->formIdList[i], deflt->formIdList[i]);
-	}
-	for (auto i = 0; i < 64; i++)
-	{
-		GetBool(section, fmt::format("EntityLooterBlacklistEnabled{:d}", i), value->blacklistEnabled[i], deflt->blacklistEnabled[i]);
-		GetDword(section, fmt::format("EntityLooterBlacklist{:d}", i), value->blacklist[i], deflt->blacklist[i]);
-	}
-}
-
-void Settings::SetEntityLooterSettings(const std::string& section, EntityLooterSettings* value, const EntityLooterSettings* deflt)
-{
-	SetBool(section, "EntityLooterEnabled", value->enabled, deflt->enabled);
-	SetBool(section, "EntityLooterAllWeaponsEnabled", value->allWeaponsEnabled, deflt->allWeaponsEnabled);
-	SetBool(section, "EntityLooterAllArmorEnabled", value->allArmorEnabled, deflt->allArmorEnabled);
-	SetBool(section, "EntityLooterOneStarWeaponsEnabled", value->oneStarWeaponsEnabled, deflt->oneStarWeaponsEnabled);
-	SetBool(section, "EntityLooterOneStarArmorEnabled", value->oneStarArmorEnabled, deflt->oneStarArmorEnabled);
-	SetBool(section, "EntityLooterTwoStarWeaponsEnabled", value->twoStarWeaponsEnabled, deflt->twoStarWeaponsEnabled);
-	SetBool(section, "EntityLooterTwoStarArmorEnabled", value->twoStarArmorEnabled, deflt->twoStarArmorEnabled);
-	SetBool(section, "EntityLooterThreeStarWeaponsEnabled", value->threeStarWeaponsEnabled, deflt->threeStarWeaponsEnabled);
-	SetBool(section, "EntityLooterThreeStarArmorEnabled", value->threeStarArmorEnabled, deflt->threeStarArmorEnabled);
-	SetBool(section, "EntityLooterAmmoEnabled", value->ammoEnabled, deflt->ammoEnabled);
-	SetBool(section, "EntityLooterModsEnabled", value->modsEnabled, deflt->modsEnabled);
-	SetBool(section, "EntityLooterCapsEnabled", value->capsEnabled, deflt->capsEnabled);
-	SetBool(section, "EntityLooterJunkEnabled", value->junkEnabled, deflt->junkEnabled);
-	SetBool(section, "EntityLooterAidEnabled", value->aidEnabled, deflt->aidEnabled);
-	SetBool(section, "EntityLooterTreasureMapsEnabled", value->treasureMapsEnabled, deflt->treasureMapsEnabled);
-	SetBool(section, "EntityLooterKnownPlansEnabled", value->knownPlansEnabled, deflt->knownPlansEnabled);
-	SetBool(section, "EntityLooterUnknownPlansEnabled", value->unknownPlansEnabled, deflt->unknownPlansEnabled);
-	SetBool(section, "EntityLooterMiscEnabled", value->miscEnabled, deflt->miscEnabled);
-	SetBool(section, "EntityLooterUnlistedEnabled", value->unlistedEnabled, deflt->unlistedEnabled);
-	SetBool(section, "EntityLooterListEnabled", value->listEnabled, deflt->listEnabled);
-	SetBool(section, "EntityLooterBlacklistToggle", value->blacklistToggle, deflt->blacklistToggle);
-	for (auto i = 0; i < 100; i++)
-	{
-		SetBool(section, fmt::format("EntityLooterEnabled{:d}", i), &value->enabledList[i], deflt->enabledList[i]);
-		SetDword(section, fmt::format("EntityLooterList{:d}", i), value->formIdList[i], deflt->formIdList[i]);
-	}
-	for (auto i = 0; i < 64; i++)
-	{
-		SetBool(section, fmt::format("EntityLooterBlacklistEnabled{:d}", i), &value->blacklistEnabled[i], deflt->blacklistEnabled[i]);
-		SetDword(section, fmt::format("EntityLooterBlacklist{:d}", i), value->blacklist[i], deflt->blacklist[i]);
-	}
-}
-
-void Settings::GetHarvesterSettings()
-{
-	GetBool("HarvesterSettings", "HarvesterEnabled", harvester.enabled, harvesterDefaults.enabled);
-	GetBool("HarvesterSettings", "HarvesterOverrideEnabled", harvester.overrideEnabled, harvesterDefaults.overrideEnabled);
-	for (auto i = 0; i < 69; i++)
-	{
-		GetBool("HarvesterSettings", fmt::format("HarvesterEnabled{:d}", i), harvester.enabledList[i], harvesterDefaults.enabledList[i]);
-	}
-}
-
-void Settings::SetHarvesterSettings()
-{
-	SetBool("HarvesterSettings", "HarvesterEnabled", harvester.enabled, harvesterDefaults.enabled);
-	SetBool("HarvesterSettings", "HarvesterOverrideEnabled", harvester.overrideEnabled, harvesterDefaults.overrideEnabled);
-	for (auto i = 0; i < 69; i++)
-	{
-		SetBool("HarvesterSettings", fmt::format("HarvesterEnabled{:d}", i), harvester.enabledList[i], harvesterDefaults.enabledList[i]);
-	}
+	SetBool("FluxSettings", "CrimsonFluxEnabled", customFluxSettings.crimsonFluxEnabled, false);
+	SetBool("FluxSettings", "CobaltFluxEnabled", customFluxSettings.cobaltFluxEnabled, false);
+	SetBool("FluxSettings", "YellowcakeFluxEnabled", customFluxSettings.yellowcakeFluxEnabled, false);
+	SetBool("FluxSettings", "FluorescentFluxEnabled", customFluxSettings.fluorescentFluxEnabled, false);
+	SetBool("FluxSettings", "VioletFluxEnabled", customFluxSettings.violetFluxEnabled, false);
 }
 
 void Settings::GetKnownRecipeSettings()
 {
-	GetBool("KnownRecipeSettings", "KnownRecipesEnabled", recipes.knownRecipesEnabled, defltKnownRecipeSettings.knownRecipesEnabled);
-	GetBool("KnownRecipeSettings", "UnknownRecipesEnabled", recipes.unknownRecipesEnabled, defltKnownRecipeSettings.unknownRecipesEnabled);
+	GetBool("KnownRecipeSettings", "KnownRecipesEnabled", recipes.knownRecipesEnabled, false);
+	GetBool("KnownRecipeSettings", "UnknownRecipesEnabled", recipes.unknownRecipesEnabled, false);
 }
 
 void Settings::SetKnownRecipeSettings()
 {
-	SetBool("KnownRecipeSettings", "KnownRecipesEnabled", recipes.knownRecipesEnabled, defltKnownRecipeSettings.knownRecipesEnabled);
-	SetBool("KnownRecipeSettings", "UnknownRecipesEnabled", recipes.unknownRecipesEnabled, defltKnownRecipeSettings.unknownRecipesEnabled);
+	SetBool("KnownRecipeSettings", "KnownRecipesEnabled", recipes.knownRecipesEnabled, false);
+	SetBool("KnownRecipeSettings", "UnknownRecipesEnabled", recipes.unknownRecipesEnabled, false);
 }
 
 void Settings::GetMeleeSettings()
 {
-	GetBool("MeleeSettings", "MeleeEnabled", melee.enabled, defltMeleeSettings.enabled);
-	GetSliderInt("MeleeSettings", "MeleeSpeedMin", melee.speedMin, defltMeleeSettings.speedMin, 1, 60);
-	GetSliderInt("MeleeSettings", "MeleeSpeedMax", melee.speedMax, defltMeleeSettings.speedMax, 1, 60);
+	GetBool("MeleeSettings", "MeleeEnabled", melee.enabled, false);
+	GetSliderInt("MeleeSettings", "MeleeSpeedMin", melee.speedMin, 60, 1, 60);
+	GetSliderInt("MeleeSettings", "MeleeSpeedMax", melee.speedMax, 60, 1, 60);
 
 	if (melee.speedMax < melee.speedMin)
 		melee.speedMax = melee.speedMin;
@@ -1313,52 +894,42 @@ void Settings::SetMeleeSettings()
 	if (melee.speedMax < melee.speedMin)
 		melee.speedMax = melee.speedMin;
 
-	SetBool("MeleeSettings", "MeleeEnabled", melee.enabled, defltMeleeSettings.enabled);
-	SetSliderInt("MeleeSettings", "MeleeSpeedMin", melee.speedMin, defltMeleeSettings.speedMin, 1, 60);
-	SetSliderInt("MeleeSettings", "MeleeSpeedMax", melee.speedMax, defltMeleeSettings.speedMax, 1, 60);
+	SetBool("MeleeSettings", "MeleeEnabled", melee.enabled, false);
+	SetSliderInt("MeleeSettings", "MeleeSpeedMin", melee.speedMin, 60, 1, 60);
+	SetSliderInt("MeleeSettings", "MeleeSpeedMax", melee.speedMax, 60, 1, 60);
 }
 
 void Settings::GetChargenSettings()
 {
-	GetBool("ChargenSettings", "ChargenEditingEnabled", characterEditor.enabled, characterEditorDefaults.enabled);
-	GetSliderFloat("ChargenSettings", "Thin", characterEditor.thin, characterEditorDefaults.thin, 0.0f, 1.0f);
-	GetSliderFloat("ChargenSettings", "Muscular", characterEditor.muscular, characterEditorDefaults.muscular, 0.0f, 1.0f);
-	GetSliderFloat("ChargenSettings", "Large", characterEditor.large, characterEditorDefaults.large, 0.0f, 1.0f);
+	GetBool("ChargenSettings", "ChargenEditingEnabled", characterEditor.enabled, false);
+	GetSliderFloat("ChargenSettings", "Thin", characterEditor.thin, 0, 0.0f, 1.0f);
+	GetSliderFloat("ChargenSettings", "Muscular", characterEditor.muscular, 0, 0.0f, 1.0f);
+	GetSliderFloat("ChargenSettings", "Large", characterEditor.large, 0, 0.0f, 1.0f);
 }
 
 void Settings::SetChargenSettings()
 {
-	SetBool("ChargenSettings", "ChargenEditingEnabled", characterEditor.enabled, characterEditorDefaults.enabled);
-	SetSliderFloat("ChargenSettings", "Thin", characterEditor.thin, characterEditorDefaults.thin, 0.0f, 1.0f);
-	SetSliderFloat("ChargenSettings", "Muscular", characterEditor.muscular, characterEditorDefaults.muscular, 0.0f, 1.0f);
-	SetSliderFloat("ChargenSettings", "Large", characterEditor.large, characterEditorDefaults.large, 0.0f, 1.0f);
+	SetBool("ChargenSettings", "ChargenEditingEnabled", characterEditor.enabled, false);
+	SetSliderFloat("ChargenSettings", "Thin", characterEditor.thin, 0, 0.0f, 1.0f);
+	SetSliderFloat("ChargenSettings", "Muscular", characterEditor.muscular, 0, 0.0f, 1.0f);
+	SetSliderFloat("ChargenSettings", "Large", characterEditor.large, 0, 0.0f, 1.0f);
 }
 
 void Settings::GetExtraNpcSettings()
 {
-	GetBool("ExtraNPCSettings", "HideSettlerFaction", customExtraNpcSettings.hideSettlerFaction, defltExtraNpcSettings.hideSettlerFaction);
-	GetBool("ExtraNPCSettings", "HideCraterRaiderFaction", customExtraNpcSettings.hideCraterRaiderFaction, defltExtraNpcSettings.hideCraterRaiderFaction);
-	GetBool("ExtraNPCSettings", "HideDieHardFaction", customExtraNpcSettings.hideDieHardFaction, defltExtraNpcSettings.hideDieHardFaction);
-	GetBool("ExtraNPCSettings", "HideSecretServiceFaction", customExtraNpcSettings.hideSecretServiceFaction, defltExtraNpcSettings.hideSecretServiceFaction);
-	GetBool("ExtraNPCSettings", "UseNPCBlacklist", customExtraNpcSettings.useNpcBlacklist, defltExtraNpcSettings.useNpcBlacklist);
 	for (auto i = 0; i < 64; i++)
 	{
-		GetBool("ExtraNPCSettings", fmt::format("NPCBlacklistEnabled{:d}", i), customExtraNpcSettings.npcBlacklistEnabled[i], defltExtraNpcSettings.npcBlacklistEnabled[i]);
-		GetDword("ExtraNPCSettings", fmt::format("NPCBlacklist{:d}", i), customExtraNpcSettings.npcBlacklist[i], defltExtraNpcSettings.npcBlacklist[i]);
+		GetBool("ExtraNPCSettings", fmt::format("NPCBlacklistEnabled{:d}", i), customExtraNpcSettings.npcBlacklistEnabled[i], false);
+		GetDword("ExtraNPCSettings", fmt::format("NPCBlacklist{:d}", i), customExtraNpcSettings.npcBlacklist[i], 0);
 	}
 }
 
 void Settings::SetExtraNpcSettings()
 {
-	SetBool("ExtraNPCSettings", "HideSettlerFaction", customExtraNpcSettings.hideSettlerFaction, defltExtraNpcSettings.hideSettlerFaction);
-	SetBool("ExtraNPCSettings", "HideCraterRaiderFaction", customExtraNpcSettings.hideCraterRaiderFaction, defltExtraNpcSettings.hideCraterRaiderFaction);
-	SetBool("ExtraNPCSettings", "HideDieHardFaction", customExtraNpcSettings.hideDieHardFaction, defltExtraNpcSettings.hideDieHardFaction);
-	SetBool("ExtraNPCSettings", "HideSecretServiceFaction", customExtraNpcSettings.hideSecretServiceFaction, defltExtraNpcSettings.hideSecretServiceFaction);
-	SetBool("ExtraNPCSettings", "UseNPCBlacklist", customExtraNpcSettings.useNpcBlacklist, defltExtraNpcSettings.useNpcBlacklist);
 	for (auto i = 0; i < 64; i++)
 	{
-		SetBool("ExtraNPCSettings", fmt::format("NPCBlacklistEnabled{:d}", i), customExtraNpcSettings.npcBlacklistEnabled[i], defltExtraNpcSettings.npcBlacklistEnabled[i]);
-		SetDword("ExtraNPCSettings", fmt::format("NPCBlacklist{:d}", i), customExtraNpcSettings.npcBlacklist[i], defltExtraNpcSettings.npcBlacklist[i]);
+		SetBool("ExtraNPCSettings", fmt::format("NPCBlacklistEnabled{:d}", i), customExtraNpcSettings.npcBlacklistEnabled[i], false);
+		SetDword("ExtraNPCSettings", fmt::format("NPCBlacklist{:d}", i), customExtraNpcSettings.npcBlacklist[i], 0);
 	}
 }
 
@@ -1389,11 +960,6 @@ void Settings::ReadIniSettings()
 	GetOverlaySettingsB("FloraSettings", &floraSettings, &floraSettings);
 	GetFluxSettings();
 	GetOverlaySettingsB("EntitySettings", &entitySettings, &defltOverlaySettingsB);
-	GetScrapSettings();
-	GetItemLooterSettings();
-	GetEntityLooterSettings("NPCLooterSettings", &npcLooter, &defltEntityLooterSettings);
-	GetEntityLooterSettings("ContainerLooterSettings", &containerLooter, &defltEntityLooterSettings);
-	GetHarvesterSettings();
 	GetWeaponSettings();
 	GetTargetSettings();
 	GetLocalPlayerSettings();
@@ -1407,7 +973,7 @@ void Settings::ReadIniSettings()
 	GetBitMsgWriterSettings();
 
 	GetInfoBoxSettings();
-	
+
 	file.write(ini, true);
 }
 
@@ -1428,11 +994,6 @@ void Settings::WriteIniSettings()
 	SetOverlaySettingsB("FloraSettings", &floraSettings, &floraSettings);
 	SetFluxSettings();
 	SetOverlaySettingsB("EntitySettings", &entitySettings, &defltOverlaySettingsB);
-	SetScrapSettings();
-	SetItemLooterSettings();
-	SetEntityLooterSettings("NPCLooterSettings", &npcLooter, &defltEntityLooterSettings);
-	SetEntityLooterSettings("ContainerLooterSettings", &containerLooter, &defltEntityLooterSettings);
-	SetHarvesterSettings();
 	SetWeaponSettings();
 	SetTargetSettings();
 	SetLocalPlayerSettings();
@@ -1446,6 +1007,6 @@ void Settings::WriteIniSettings()
 	SetBitMsgWriterSettings();
 
 	SetInfoBoxSettings();
-	
+
 	file.write(ini, true);
 }

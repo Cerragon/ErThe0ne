@@ -66,7 +66,7 @@ public:
 	BYTE padding0098[0x10];
 	DWORD64 cellPtr;//0xA8
 	DWORD64 skeletonPtr;//0xB0
-	DWORD64 referencedItemPtr;//0xB8
+	DWORD64 baseObjectPtr;//0xB8
 	BYTE padding00C0[0xE];
 	BYTE spawnFlag;//0xCE
 	BYTE padding00Cf[0xC9];
@@ -357,11 +357,11 @@ class Inventory
 public:
 	DWORD64 vtable;//0x0
 	BYTE padding0008[0x58];
-	DWORD64 itemArrayPtr;//0x60
-	DWORD64 itemArrayEnd;//0x68
+	DWORD64 entryArrayBegin;//0x60
+	DWORD64 entryArrayEnd;//0x68
 };
 
-class Item
+class InventoryEntry
 {
 public:
 	DWORD64 referencePtr;//0x0
@@ -739,6 +739,45 @@ struct LocalPlayerInfo
 	float currentHealth;
 };
 
+enum class ItemTypes
+{
+	Invalid,
+	Other,
+
+	Npc,
+	Container,
+	Flora,
+	
+	Weapons,
+	Apparel,
+	
+	Misc,
+
+	Aid,
+	AidBobblehead,
+	AidMagazine,
+	
+	NotesKnownPlan,
+	NotesUnknownPlan,
+	NotesTreasureMap,
+	Notes,
+
+	Mod,
+	Junk,
+	Ammo,
+	Currency,
+};
+
+struct ItemInfo
+{
+	ItemTypes type;
+	
+	DWORD64 namePtr;
+	TesObjectRefr refr;
+	TesItem base;
+
+	std::string GetName();
+};
 
 class ErectusMemory final {
 public:
@@ -818,23 +857,23 @@ public:
 
 	static DWORD64 GetLocalPlayerPtr(bool checkMainMenu);
 	static std::vector<DWORD64> GetEntityPtrList();
-	static bool FloraValid(const TesItem& referenceData);
 	static void GetCustomEntityData(const TesItem& referenceData, DWORD64* entityFlag, DWORD64* entityNamePtr, int* enabledDistance, bool checkScrap, bool checkIngredient);
 	static bool CheckFormIdArray(DWORD formId, const bool* enabledArray, const DWORD* formIdArray, int size);
 	static DWORD64 RttiGetNamePtr(DWORD64 vtable);
-	
+	static bool IsBobblehead(const TesItem& tesItem);
+	static bool IsMagazine(const TesItem& tesItem);
+	static ItemInfo GetItemInfo(const TesObjectRefr& entity, const TesItem& base);
+
 private:
 	static bool GetNukeCode(DWORD formId, std::array<int, 8>& nukeCode);
 	static std::string GetPlayerName(const ClientAccount& clientAccountData);
 
-	static bool CheckJunkPileEnabled();
-	static bool CheckComponentArray(const TesItem& referenceData);
 	static bool CheckReferenceKeywordBook(const TesItem& referenceData, DWORD formId);
 	static bool CheckReferenceKeywordMisc(const TesItem& referenceData, DWORD formId);
 
-	static bool CheckReferenceJunk(const TesItem& referenceData);
-	static bool CheckReferenceMod(const TesItem& referenceData);
-	static bool CheckReferencePlan(const TesItem& referenceData);
+	static bool IsJunk(const TesItem& referenceData);
+	static bool IsMod(const TesItem& referenceData);
+	static bool IsPlan(const TesItem& referenceData);
 
 	static int GetOldWeaponIndex(DWORD formId);
 
@@ -854,8 +893,7 @@ private:
 	static DWORD64 GetCameraPtr();
 
 	static bool CheckWhitelistedFlux(const TesItem& referenceData);
-	static bool FloraLeveledListValid(const LeveledList& leveledListData);
-	static bool IsTreasureMap(DWORD formId);
+	static bool IsTreasureMap(const TesItem& referenceData);
 	static bool CheckFactionFormId(DWORD formId);
 	static bool BlacklistedNpcFaction(const TesItem& referenceData);
 	static bool CheckReferenceItem(const TesItem& referenceData);
@@ -866,6 +904,5 @@ private:
 	
 	inline static OldWeapon* oldWeaponList = nullptr;
 
-	virtual void __dummy() = 0;
-
+	virtual void __dummy();
 };

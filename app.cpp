@@ -52,15 +52,6 @@ void App::OnHotkey(const WPARAM hotkeyId)
 {
 	switch (hotkeyId)
 	{
-	case (static_cast<int>(HotKeys::ContainerLooterToggle)):
-		Settings::containerLooter.enabled = !Settings::containerLooter.enabled;
-		break;
-	case (static_cast<int>(HotKeys::NpcLooterToggle)):
-		Settings::npcLooter.enabled = !Settings::npcLooter.enabled;
-		break;
-	case (static_cast<int>(HotKeys::HarvesterToggle)):
-		Settings::harvester.enabled = !Settings::harvester.enabled;
-		break;
 	case (static_cast<int>(HotKeys::PositionSpoofingToggle)):
 		if (Settings::customLocalPlayerSettings.positionSpoofingEnabled)
 			Threads::positionSpoofingToggle = !Threads::positionSpoofingToggle;
@@ -77,13 +68,9 @@ void App::OnHotkey(const WPARAM hotkeyId)
 		if (Settings::opk.npcsEnabled)
 			Threads::opkNpcsToggle = !Threads::opkNpcsToggle;
 		break;
-	case (static_cast<int>(HotKeys::LootItems)):
-		if (Settings::itemLooter.keybindEnabled)
+	case (static_cast<int>(HotKeys::Loot)):
+		if (Settings::looter.mode == LooterSettings::Mode::Keybind)
 			Looter::RequestLootItems();
-		break;
-	case (static_cast<int>(HotKeys::LootScrap)):
-		if (Settings::scrapLooter.keybindEnabled)
-			Looter::RequestLootScrap();
 		break;
 	case (static_cast<int>(HotKeys::ToggleOverlay)):
 		ToggleOverlay();

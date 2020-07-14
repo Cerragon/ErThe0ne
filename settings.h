@@ -1,6 +1,11 @@
 #pragma once
+#include <array>
+#include <map>
 #include <Windows.h>
 #include <string>
+#include <unordered_map>
+
+#include "common.h"
 
 class InfoBoxSettings
 {
@@ -14,6 +19,136 @@ public:
 
 	bool drawNukeCodes;
 };
+struct LooterSettings
+{
+	enum class Mode
+	{
+		Disabled,
+		Auto,
+		Keybind,
+	} mode{};
+
+	struct Looters {
+		bool npcs;
+		bool items;
+		bool containers;
+		bool flora;
+	} looters{};
+
+	struct Selection {
+		struct WeaponsAndArmor
+		{
+			bool all;
+			bool oneStar;
+			bool twoStar;
+			bool threeStar;
+
+			bool IsEnabled() const { return all || oneStar || twoStar || threeStar; }
+		} weapons{}, apparel{};
+
+		struct Aid
+		{
+			bool all;
+			bool magazines;
+			bool bobbleheads;
+
+			bool IsEnabled() const { return all || magazines || bobbleheads; }
+		} aid{};
+
+		struct Misc
+		{
+			bool all;
+
+			bool IsEnabled() const { return all; }
+		} misc{};
+
+		struct Holo
+		{
+			bool all;
+
+			bool IsEnabled() const { return all; }
+		} holo{};
+
+		struct Notes
+		{
+			bool all;
+			bool treasureMaps;
+			bool plansKnown;
+			bool plansUnknown;
+
+			bool IsEnabled() const { return all || treasureMaps || plansKnown || plansUnknown; }
+		} notes{};
+
+		struct Junk
+		{
+			bool all;
+
+			std::unordered_map<DWORD, bool>	components = []() {
+				std::unordered_map<DWORD, bool> result(JUNK_COMPONENT_NAMES.size());
+				for (const auto& component : JUNK_COMPONENT_NAMES)
+					result.emplace(component.first, false);
+				return result;
+			}();
+
+			[[nodiscard]] bool IsEnabled() const { return all || std::find_if(components.begin(), components.end(), [](const auto& element) { return element.second == true; }) != components.end(); }
+		} junk{};
+
+		struct Flora
+		{
+			bool all;
+
+			std::unordered_map<DWORD, bool>	components = []() {
+				std::unordered_map<DWORD, bool> result(FLORA_COMPONENT_NAMES.size());
+				for (const auto& component : FLORA_COMPONENT_NAMES)
+					result.emplace(component.first, false);
+				return result;
+			}();
+
+			[[nodiscard]] bool IsEnabled() const { return all || std::find_if(components.begin(), components.end(), [](const auto& element) { return element.second == true; }) != components.end(); }
+		} flora{};
+
+		struct Mods
+		{
+			bool all;
+
+			[[nodiscard]] bool IsEnabled() const { return all; }
+		} mods{};
+
+		struct Ammo
+		{
+			bool all;
+
+			[[nodiscard]] bool IsEnabled() const { return all; }
+		} ammo{};
+
+		struct Other
+		{
+			bool caps;
+
+			[[nodiscard]] bool IsEnabled() const { return caps; }
+		} other{};
+
+		std::map<DWORD, bool> whitelist, blacklist;
+
+		[[nodiscard]] bool IsEnabled() const {
+			return weapons.IsEnabled()
+				|| apparel.IsEnabled()
+				|| aid.IsEnabled()
+				|| misc.IsEnabled()
+				|| holo.IsEnabled()
+				|| notes.IsEnabled()
+				|| junk.IsEnabled()
+				|| flora.IsEnabled()
+				|| mods.IsEnabled()
+				|| ammo.IsEnabled()
+				|| other.IsEnabled()
+				|| std::find_if(whitelist.begin(), whitelist.end(), [](const auto& element) { return element.second == true; }) != whitelist.end()
+				|| std::find_if(blacklist.begin(), blacklist.end(), [](const auto& element) { return element.second == true; }) != blacklist.end();
+		}
+	} selection;
+};
+
+//esp
 class OverlaySettingsA
 {
 public:
@@ -40,7 +175,6 @@ public:
 	bool textCentered;
 	bool textShadowed;
 };
-
 class OverlaySettingsB
 {
 public:
@@ -60,59 +194,46 @@ public:
 	bool whitelisted[32];
 	DWORD whitelist[32];
 };
-
-class ScrapLooterSettings
+class LegendarySettings
 {
 public:
-	bool keybindEnabled;
-	bool scrapOverrideEnabled;
-	bool autoLootingEnabled;
-	int autoLootingSpeedMin;
-	int autoLootingSpeedMax;
-	int maxDistance;
-	bool enabledList[40];
-	DWORD formIdList[40];
-	const char* nameList[40];
+	bool overrideLivingOneStar;
+	float livingOneStarColor[3];
+	bool overrideDeadOneStar;
+	float deadOneStarColor[3];
+	bool overrideLivingTwoStar;
+	float livingTwoStarColor[3];
+	bool overrideDeadTwoStar;
+	float deadTwoStarColor[3];
+	bool overrideLivingThreeStar;
+	float livingThreeStarColor[3];
+	bool overrideDeadThreeStar;
+	float deadThreeStarColor[3];
 };
-
-class ItemLooterSettings
+class FluxSettings
 {
 public:
-	bool keybindEnabled;
-	bool autoLootingEnabled;
-	int autoLootingSpeedMin;
-	int autoLootingSpeedMax;
-	bool lootWeaponsEnabled;
-	int lootWeaponsDistance;
-	bool lootArmorEnabled;
-	int lootArmorDistance;
-	bool lootAmmoEnabled;
-	int lootAmmoDistance;
-	bool lootModsEnabled;
-	int lootModsDistance;
-	bool lootMagazinesEnabled;
-	int lootMagazinesDistance;
-	bool lootBobbleheadsEnabled;
-	int lootBobbleheadsDistance;
-	bool lootAidEnabled;
-	int lootAidDistance;
-	bool lootKnownPlansEnabled;
-	int lootKnownPlansDistance;
-	bool lootUnknownPlansEnabled;
-	int lootUnknownPlansDistance;
-	bool lootMiscEnabled;
-	int lootMiscDistance;
-	bool lootUnlistedEnabled;
-	int lootUnlistedDistance;
-	bool lootListEnabled;
-	int lootListDistance;
-	bool blacklistToggle;
-	bool enabledList[100];
-	DWORD formIdList[100];
-	bool blacklistEnabled[64];
-	DWORD blacklist[64];
+	bool crimsonFluxEnabled;
+	bool cobaltFluxEnabled;
+	bool yellowcakeFluxEnabled;
+	bool fluorescentFluxEnabled;
+	bool violetFluxEnabled;
+};
+class KnownRecipeSettings
+{
+public:
+	bool knownRecipesEnabled;
+	bool unknownRecipesEnabled;
+};
+class ExtraNpcSettings
+{
+public:
+	bool useNpcBlacklist;
+	bool npcBlacklistEnabled[64];
+	DWORD npcBlacklist[64];
 };
 
+//utils
 class WeaponSettings
 {
 public:
@@ -129,7 +250,6 @@ public:
 	bool reachEnabled;
 	float reach;
 };
-
 class TargetSettings
 {
 public:
@@ -153,7 +273,6 @@ public:
 	int sendDamageMax;
 	int favoriteIndex;
 };
-
 class LocalPlayerSettings
 {
 public:
@@ -181,14 +300,12 @@ public:
 	bool luckEnabled;
 	int luck;
 };
-
 class OpkSettings
 {
 public:
 	bool playersEnabled;
 	bool npcsEnabled;
 };
-
 class UtilitySettings
 {
 public:
@@ -197,14 +314,12 @@ public:
 	DWORD ptrFormId;
 	DWORD addressFormId;
 };
-
 class SwapperSettings
 {
 public:
 	DWORD sourceFormId;
 	DWORD destinationFormId;
 };
-
 class TransferSettings
 {
 public:
@@ -217,7 +332,6 @@ public:
 	bool blacklisted[32];
 	DWORD blacklist[32];
 };
-
 class TeleportEntry
 {
 public:
@@ -225,93 +339,16 @@ public:
 	DWORD cellFormId;
 	bool disableSaving;
 };
-
 class TeleportSettings
 {
 public:
 	TeleportEntry entries[16];
 };
-
 class NukeCodeSettings
 {
 public:
 	bool automaticNukeCodes;
 };
-
-class LegendarySettings
-{
-public:
-	bool overrideLivingOneStar;
-	float livingOneStarColor[3];
-	bool overrideDeadOneStar;
-	float deadOneStarColor[3];
-	bool overrideLivingTwoStar;
-	float livingTwoStarColor[3];
-	bool overrideDeadTwoStar;
-	float deadTwoStarColor[3];
-	bool overrideLivingThreeStar;
-	float livingThreeStarColor[3];
-	bool overrideDeadThreeStar;
-	float deadThreeStarColor[3];
-};
-
-class FluxSettings
-{
-public:
-	bool crimsonFluxEnabled;
-	bool cobaltFluxEnabled;
-	bool yellowcakeFluxEnabled;
-	bool fluorescentFluxEnabled;
-	bool violetFluxEnabled;
-};
-
-class EntityLooterSettings
-{
-public:
-	bool enabled;
-	bool oneStarWeaponsEnabled;
-	bool oneStarArmorEnabled;
-	bool twoStarWeaponsEnabled;
-	bool twoStarArmorEnabled;
-	bool threeStarWeaponsEnabled;
-	bool threeStarArmorEnabled;
-	bool allWeaponsEnabled;
-	bool allArmorEnabled;
-	bool ammoEnabled;
-	bool modsEnabled;
-	bool capsEnabled;
-	bool junkEnabled;
-	bool aidEnabled;
-	bool treasureMapsEnabled;
-	bool knownPlansEnabled;
-	bool unknownPlansEnabled;
-	bool miscEnabled;
-	bool unlistedEnabled;
-	bool listEnabled;
-	bool blacklistToggle;
-	bool enabledList[100];
-	DWORD formIdList[100];
-	bool blacklistEnabled[64];
-	DWORD blacklist[64];
-};
-
-class HarvesterSettings
-{
-public:
-	bool enabled;
-	bool overrideEnabled;
-	bool enabledList[69];
-	DWORD formIdList[69];
-	const char* nameList[69];
-};
-
-class KnownRecipeSettings
-{
-public:
-	bool knownRecipesEnabled;
-	bool unknownRecipesEnabled;
-};
-
 class MeleeSettings
 {
 public:
@@ -319,7 +356,6 @@ public:
 	int speedMin;
 	int speedMax;
 };
-
 class ChargenSettings
 {
 public:
@@ -327,18 +363,6 @@ public:
 	float thin;
 	float muscular;
 	float large;
-};
-
-class ExtraNpcSettings
-{
-public:
-	bool hideSettlerFaction;
-	bool hideCraterRaiderFaction;
-	bool hideDieHardFaction;
-	bool hideSecretServiceFaction;
-	bool useNpcBlacklist;
-	bool npcBlacklistEnabled[64];
-	DWORD npcBlacklist[64];
 };
 
 class MessageWriterSettings
@@ -352,6 +376,11 @@ public:
 	static void ReadIniSettings();
 	static void WriteIniSettings();
 
+	inline static LooterSettings looter = {};
+	inline static InfoBoxSettings infobox = {};
+	inline static MessageWriterSettings msgWriter = {};
+	
+	//esp
 	static OverlaySettingsA playerSettings;
 	static OverlaySettingsB junkSettings;
 	static OverlaySettingsA npcSettings;
@@ -362,9 +391,12 @@ public:
 	static OverlaySettingsB itemSettings;
 	static OverlaySettingsB floraSettings;
 	static OverlaySettingsB entitySettings;
+	static FluxSettings customFluxSettings;
+	static LegendarySettings customLegendarySettings;
+	static KnownRecipeSettings recipes;
+	static ExtraNpcSettings customExtraNpcSettings;
 
-	static ScrapLooterSettings scrapLooter;
-	static ItemLooterSettings itemLooter;
+	//utils
 	static WeaponSettings weapons;
 	static TargetSettings targetting;
 	static LocalPlayerSettings customLocalPlayerSettings;
@@ -374,19 +406,8 @@ public:
 	static TransferSettings customTransferSettings;
 	static TeleportSettings teleporter;
 	static NukeCodeSettings customNukeCodeSettings;
-	static LegendarySettings customLegendarySettings;
-	static FluxSettings customFluxSettings;
-	static EntityLooterSettings npcLooter;
-	static EntityLooterSettings containerLooter;
-	static HarvesterSettings harvester;
-	static KnownRecipeSettings recipes;
 	static MeleeSettings melee;
 	static ChargenSettings characterEditor;
-	static ExtraNpcSettings customExtraNpcSettings;
-
-	inline static InfoBoxSettings infobox = {};
-	inline static MessageWriterSettings msgWriter = {};
-
 	inline static WeaponSettings defaultWeaponSettings{
 		false, false, false, false, false, false, false, 250, false, 2.0f, false, 500.0f
 	};
@@ -396,8 +417,6 @@ private:
 	static void SetOverlaySettingsB(const std::string& section, OverlaySettingsB* value, const OverlaySettingsB* deflt);
 	static void GetInfoBoxSettings();
 	static void SetInfoBoxSettings();
-	static void GetScrapSettings();
-	static void SetScrapSettings();
 	static void GetItemLooterSettings();
 	static void SetItemLooterSettings();
 	static void GetWeaponSettings();
@@ -422,10 +441,6 @@ private:
 	static void SetLegendarySettings();
 	static void GetFluxSettings();
 	static void SetFluxSettings();
-	static void GetEntityLooterSettings(const std::string& section, EntityLooterSettings* value, const EntityLooterSettings* deflt);
-	static void SetEntityLooterSettings(const std::string& section, EntityLooterSettings* value, const EntityLooterSettings* deflt);
-	static void GetHarvesterSettings();
-	static void SetHarvesterSettings();
 	static void GetKnownRecipeSettings();
 	static void SetKnownRecipeSettings();
 	static void GetMeleeSettings();

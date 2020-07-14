@@ -450,41 +450,6 @@ void Gui::RenderInfoBox()
 		infoTexts.emplace_back(featureText, true);
 	}
 
-	if (Settings::infobox.drawScrapLooterStatus)
-	{
-		featureText = fmt::format("Scrap Looter (Automatic): {:d}", static_cast<int>(Settings::scrapLooter.autoLootingEnabled));
-		featureState = Settings::scrapLooter.autoLootingEnabled;
-		infoTexts.emplace_back(featureText, featureState);
-	}
-
-	if (Settings::infobox.drawItemLooterStatus)
-	{
-		featureText = fmt::format("Item Looter (Automatic): {:d}", static_cast<int>(Settings::itemLooter.autoLootingEnabled));
-		featureState = Settings::itemLooter.autoLootingEnabled;
-		infoTexts.emplace_back(featureText, featureState);
-	}
-
-	if (Settings::infobox.drawNpcLooterStatus)
-	{
-		featureText = fmt::format("NPC Looter (76m Distance Limit): {:d}", static_cast<int>(Settings::npcLooter.enabled));
-		featureState = Settings::npcLooter.enabled;
-		infoTexts.emplace_back(featureText, featureState);
-	}
-
-	if (Settings::infobox.drawContainerLooterStatus)
-	{
-		featureText = fmt::format("Container Looter (6m Distance Limit): {:d}", static_cast<int>(Settings::containerLooter.enabled));
-		featureState = Settings::containerLooter.enabled;
-		infoTexts.emplace_back(featureText, featureState);
-	}
-
-	if (Settings::infobox.drawHarvesterStatus)
-	{
-		featureText = fmt::format("Flora Harvester (6m Distance Limit): {:d}", static_cast<int>(Settings::harvester.enabled));
-		featureState = Settings::harvester.enabled;
-		infoTexts.emplace_back(featureText, featureState);
-	}
-
 	if (Settings::infobox.drawPositionSpoofingStatus)
 	{
 		featureText = fmt::format("Position Spoofing (Active): {0:d} (Height: {1:d})", static_cast<int>(Threads::positionSpoofingToggle), Settings::customLocalPlayerSettings.positionSpoofingHeight);
@@ -516,7 +481,6 @@ void Gui::RenderInfoBox()
 		spacing++;
 	}
 }
-
 
 void Gui::ProcessMenu()
 {
@@ -625,15 +589,15 @@ void Gui::ProcessMenu()
 	ImGui::End();
 }
 
-void Gui::ButtonToggle(const char* label, bool* state)
+void Gui::ButtonToggle(const char* label, bool& state)
 {
-	if (*state)
+	if (state)
 	{
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 1.0f, 0.0f, 0.3f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 1.0f, 0.0f, 0.4f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 1.0f, 0.0f, 0.5f));
-		if (ImGui::Button(label, ImVec2(224.0f, 0.0f)))
-			*state = false;
+		if (ImGui::Button(label, ImVec2(ImGui::GetContentRegionAvail().x / 2, 0)))
+			state = false;
 		ImGui::PopStyleColor(3);
 	}
 	else
@@ -641,21 +605,21 @@ void Gui::ButtonToggle(const char* label, bool* state)
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(1.0f, 0.0f, 0.0f, 0.3f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 0.0f, 0.0f, 0.4f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(1.0f, 0.0f, 0.0f, 0.5f));
-		if (ImGui::Button(label, ImVec2(224.0f, 0.0f)))
-			*state = true;
+		if (ImGui::Button(label, ImVec2(ImGui::GetContentRegionAvail().x / 2, 0.0f)))
+			state = true;
 		ImGui::PopStyleColor(3);
 	}
 }
 
-void Gui::LargeButtonToggle(const char* label, bool* state)
+void Gui::LargeButtonToggle(const char* label, bool& state)
 {
-	if (*state)
+	if (state)
 	{
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 1.0f, 0.0f, 0.3f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 1.0f, 0.0f, 0.4f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 1.0f, 0.0f, 0.5f));
-		if (ImGui::Button(label, ImVec2(451.0f, 0.0f)))
-			*state = false;
+		if (ImGui::Button(label, ImVec2(ImGui::GetContentRegionAvail().x + 1.f, 0)))
+			state = false;
 		ImGui::PopStyleColor(3);
 	}
 	else
@@ -663,21 +627,21 @@ void Gui::LargeButtonToggle(const char* label, bool* state)
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(1.0f, 0.0f, 0.0f, 0.3f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 0.0f, 0.0f, 0.4f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(1.0f, 0.0f, 0.0f, 0.5f));
-		if (ImGui::Button(label, ImVec2(451.0f, 0.0f)))
-			*state = true;
+		if (ImGui::Button(label, ImVec2(ImGui::GetContentRegionAvail().x + 1.f, 0)))
+			state = true;
 		ImGui::PopStyleColor(3);
 	}
 }
 
-void Gui::SmallButtonToggle(const char* label, bool* state)
+void Gui::SmallButtonToggle(const char* label, bool& state)
 {
-	if (*state)
+	if (state)
 	{
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 1.0f, 0.0f, 0.3f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 1.0f, 0.0f, 0.4f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 1.0f, 0.0f, 0.5f));
 		if (ImGui::Button(label, ImVec2(110.0f, 0.0f)))
-			*state = false;
+			state = false;
 		ImGui::PopStyleColor(3);
 	}
 	else
@@ -686,7 +650,7 @@ void Gui::SmallButtonToggle(const char* label, bool* state)
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 0.0f, 0.0f, 0.4f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(1.0f, 0.0f, 0.0f, 0.5f));
 		if (ImGui::Button(label, ImVec2(110.0f, 0.0f)))
-			*state = true;
+			state = true;
 		ImGui::PopStyleColor(3);
 	}
 }
@@ -697,167 +661,162 @@ void Gui::OverlayMenuTabEsp()
 	{
 		if (ImGui::CollapsingHeader("Player ESP Settings"))
 		{
-			ButtonToggle("Player ESP Enabled", &Settings::playerSettings.enabled);
+			ButtonToggle("Player ESP Enabled", Settings::playerSettings.enabled);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::SliderInt("###PlayerSettingsEnabledDistance", &Settings::playerSettings.enabledDistance, 0, 3000, "Distance: %d");
 
-			ButtonToggle("Draw Living Players", &Settings::playerSettings.drawAlive);
+			ButtonToggle("Draw Living Players", Settings::playerSettings.drawAlive);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::ColorEdit3("###PlayerSettingsAliveColor", Settings::playerSettings.aliveColor);
 			Utils::ValidateRgb(Settings::playerSettings.aliveColor);
 
-			ButtonToggle("Draw Downed Players", &Settings::playerSettings.drawDowned);
+			ButtonToggle("Draw Downed Players", Settings::playerSettings.drawDowned);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::ColorEdit3("###PlayerSettingsDownedColor", Settings::playerSettings.downedColor);
 			Utils::ValidateRgb(Settings::playerSettings.downedColor);
 
-			ButtonToggle("Draw Dead Players", &Settings::playerSettings.drawDead);
+			ButtonToggle("Draw Dead Players", Settings::playerSettings.drawDead);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::ColorEdit3("###PlayerSettingsDeadColor", Settings::playerSettings.deadColor);
 			Utils::ValidateRgb(Settings::playerSettings.deadColor);
 
-			ButtonToggle("Draw Unknown Players", &Settings::playerSettings.drawUnknown);
+			ButtonToggle("Draw Unknown Players", Settings::playerSettings.drawUnknown);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::ColorEdit3("###PlayerSettingsUnknownColor", Settings::playerSettings.unknownColor);
 			Utils::ValidateRgb(Settings::playerSettings.unknownColor);
 
-			ButtonToggle("Draw Enabled Players", &Settings::playerSettings.drawEnabled);
+			ButtonToggle("Draw Enabled Players", Settings::playerSettings.drawEnabled);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::SliderFloat("###PlayerSettingsEnabledAlpha", &Settings::playerSettings.enabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
 
-			ButtonToggle("Draw Disabled Players", &Settings::playerSettings.drawDisabled);
+			ButtonToggle("Draw Disabled Players", Settings::playerSettings.drawDisabled);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::SliderFloat("###PlayerSettingsDisabledAlpha", &Settings::playerSettings.disabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
 
-			ButtonToggle("Draw Named Players", &Settings::playerSettings.drawNamed);
+			ButtonToggle("Draw Named Players", Settings::playerSettings.drawNamed);
 			ImGui::SameLine(235.0f);
-			ButtonToggle("Draw Unnamed Players", &Settings::playerSettings.drawUnnamed);
+			ButtonToggle("Draw Unnamed Players", Settings::playerSettings.drawUnnamed);
 
-			ButtonToggle("Show Player Name", &Settings::playerSettings.showName);
+			ButtonToggle("Show Player Name", Settings::playerSettings.showName);
 			ImGui::SameLine(235.0f);
-			ButtonToggle("Show Player Distance", &Settings::playerSettings.showDistance);
+			ButtonToggle("Show Player Distance", Settings::playerSettings.showDistance);
 
-			ButtonToggle("Show Player Health", &Settings::playerSettings.showHealth);
+			ButtonToggle("Show Player Health", Settings::playerSettings.showHealth);
 			ImGui::SameLine(235.0f);
-			ButtonToggle("Show Dead Player Health", &Settings::playerSettings.showDeadHealth);
+			ButtonToggle("Show Dead Player Health", Settings::playerSettings.showDeadHealth);
 
-			ButtonToggle("Player Text Shadowed", &Settings::playerSettings.textShadowed);
+			ButtonToggle("Player Text Shadowed", Settings::playerSettings.textShadowed);
 			ImGui::SameLine(235.0f);
-			ButtonToggle("Player Text Centered", &Settings::playerSettings.textCentered);
+			ButtonToggle("Player Text Centered", Settings::playerSettings.textCentered);
 		}
 
 		if (ImGui::CollapsingHeader("NPC ESP Settings"))
 		{
-			ButtonToggle("NPC ESP Enabled", &Settings::npcSettings.enabled);
+			ButtonToggle("NPC ESP Enabled", Settings::npcSettings.enabled);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::SliderInt("###NpcSettingsEnabledDistance", &Settings::npcSettings.enabledDistance, 0, 3000, "Distance: %d");
 
-			ButtonToggle("Draw Living NPCs", &Settings::npcSettings.drawAlive);
+			ButtonToggle("Draw Living NPCs", Settings::npcSettings.drawAlive);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::ColorEdit3("###NpcSettingsAliveColor", Settings::npcSettings.aliveColor);
 			Utils::ValidateRgb(Settings::npcSettings.aliveColor);
 
-			ButtonToggle("Draw Downed NPCs", &Settings::npcSettings.drawDowned);
+			ButtonToggle("Draw Downed NPCs", Settings::npcSettings.drawDowned);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::ColorEdit3("###NpcSettingsDownedColor", Settings::npcSettings.downedColor);
 			Utils::ValidateRgb(Settings::npcSettings.downedColor);
 
-			ButtonToggle("Draw Dead NPCs", &Settings::npcSettings.drawDead);
+			ButtonToggle("Draw Dead NPCs", Settings::npcSettings.drawDead);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::ColorEdit3("###NpcSettingsDeadColor", Settings::npcSettings.deadColor);
 			Utils::ValidateRgb(Settings::npcSettings.deadColor);
 
-			ButtonToggle("Draw Unknown NPCs", &Settings::npcSettings.drawUnknown);
+			ButtonToggle("Draw Unknown NPCs", Settings::npcSettings.drawUnknown);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::ColorEdit3("###NpcSettingsUnknownColor", Settings::npcSettings.unknownColor);
 			Utils::ValidateRgb(Settings::npcSettings.unknownColor);
 
-			ButtonToggle("Draw Enabled NPCs", &Settings::npcSettings.drawEnabled);
+			ButtonToggle("Draw Enabled NPCs", Settings::npcSettings.drawEnabled);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::SliderFloat("###NpcSettingsEnabledAlpha", &Settings::npcSettings.enabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
 
-			ButtonToggle("Draw Disabled NPCs", &Settings::npcSettings.drawDisabled);
+			ButtonToggle("Draw Disabled NPCs", Settings::npcSettings.drawDisabled);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::SliderFloat("###NpcSettingsDisabledAlpha", &Settings::npcSettings.disabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
 
-			ButtonToggle("Draw Named NPCs", &Settings::npcSettings.drawNamed);
+			ButtonToggle("Draw Named NPCs", Settings::npcSettings.drawNamed);
 			ImGui::SameLine(235.0f);
-			ButtonToggle("Draw Unnamed NPCs", &Settings::npcSettings.drawUnnamed);
+			ButtonToggle("Draw Unnamed NPCs", Settings::npcSettings.drawUnnamed);
 
-			ButtonToggle("Show NPC Name", &Settings::npcSettings.showName);
+			ButtonToggle("Show NPC Name", Settings::npcSettings.showName);
 			ImGui::SameLine(235.0f);
-			ButtonToggle("Show NPC Distance", &Settings::npcSettings.showDistance);
+			ButtonToggle("Show NPC Distance", Settings::npcSettings.showDistance);
 
-			ButtonToggle("Show NPC Health", &Settings::npcSettings.showHealth);
+			ButtonToggle("Show NPC Health", Settings::npcSettings.showHealth);
 			ImGui::SameLine(235.0f);
-			ButtonToggle("Show Dead NPC Health", &Settings::npcSettings.showDeadHealth);
+			ButtonToggle("Show Dead NPC Health", Settings::npcSettings.showDeadHealth);
 
-			ButtonToggle("NPC Text Shadowed", &Settings::npcSettings.textShadowed);
+			ButtonToggle("NPC Text Shadowed", Settings::npcSettings.textShadowed);
 			ImGui::SameLine(235.0f);
-			ButtonToggle("NPC Text Centered", &Settings::npcSettings.textCentered);
+			ButtonToggle("NPC Text Centered", Settings::npcSettings.textCentered);
 
-			ButtonToggle("Always Draw Living 1* NPCs", &Settings::customLegendarySettings.overrideLivingOneStar);
+			ButtonToggle("Always Draw Living 1* NPCs", Settings::customLegendarySettings.overrideLivingOneStar);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::ColorEdit3("###LivingOneStarColor", Settings::customLegendarySettings.livingOneStarColor);
 			Utils::ValidateRgb(Settings::customLegendarySettings.livingOneStarColor);
 
-			ButtonToggle("Always Draw Dead 1* NPCs", &Settings::customLegendarySettings.overrideDeadOneStar);
+			ButtonToggle("Always Draw Dead 1* NPCs", Settings::customLegendarySettings.overrideDeadOneStar);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::ColorEdit3("###DeadOneStarColor", Settings::customLegendarySettings.deadOneStarColor);
 			Utils::ValidateRgb(Settings::customLegendarySettings.deadOneStarColor);
 
-			ButtonToggle("Always Draw Living 2* NPCs", &Settings::customLegendarySettings.overrideLivingTwoStar);
+			ButtonToggle("Always Draw Living 2* NPCs", Settings::customLegendarySettings.overrideLivingTwoStar);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::ColorEdit3("###LivingTwoStarColor", Settings::customLegendarySettings.livingTwoStarColor);
 			Utils::ValidateRgb(Settings::customLegendarySettings.livingTwoStarColor);
 
-			ButtonToggle("Always Draw Dead 2* NPCs", &Settings::customLegendarySettings.overrideDeadTwoStar);
+			ButtonToggle("Always Draw Dead 2* NPCs", Settings::customLegendarySettings.overrideDeadTwoStar);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::ColorEdit3("###DeadTwoStarColor", Settings::customLegendarySettings.deadTwoStarColor);
 			Utils::ValidateRgb(Settings::customLegendarySettings.deadTwoStarColor);
 
-			ButtonToggle("Always Draw Living 3* NPCs", &Settings::customLegendarySettings.overrideLivingThreeStar);
+			ButtonToggle("Always Draw Living 3* NPCs", Settings::customLegendarySettings.overrideLivingThreeStar);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::ColorEdit3("###LivingThreeStarColor", Settings::customLegendarySettings.livingThreeStarColor);
 			Utils::ValidateRgb(Settings::customLegendarySettings.livingThreeStarColor);
 
-			ButtonToggle("Always Draw Dead 3* NPCs", &Settings::customLegendarySettings.overrideDeadThreeStar);
+			ButtonToggle("Always Draw Dead 3* NPCs", Settings::customLegendarySettings.overrideDeadThreeStar);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::ColorEdit3("###DeadThreeStarColor", Settings::customLegendarySettings.deadThreeStarColor);
 			Utils::ValidateRgb(Settings::customLegendarySettings.deadThreeStarColor);
 
-			LargeButtonToggle("Hide NPCs in the Settler Faction", &Settings::customExtraNpcSettings.hideSettlerFaction);
-			LargeButtonToggle("Hide NPCs in the Crater Raider Faction", &Settings::customExtraNpcSettings.hideCraterRaiderFaction);
-			LargeButtonToggle("Hide NPCs in the Diehards Faction", &Settings::customExtraNpcSettings.hideDieHardFaction);
-			LargeButtonToggle("Hide NPCs in the Secret Service Faction", &Settings::customExtraNpcSettings.hideSecretServiceFaction);
-
-			LargeButtonToggle("NPC Blacklist Enabled", &Settings::customExtraNpcSettings.useNpcBlacklist);
+			LargeButtonToggle("NPC Blacklist Enabled", Settings::customExtraNpcSettings.useNpcBlacklist);
 			if (ImGui::CollapsingHeader("NPC Blacklist"))
 			{
 				for (auto i = 0; i < 64; i++)
 				{
 					auto toggleLabel = fmt::format("NPC Blacklist: {:d}", i);
-					ButtonToggle(toggleLabel.c_str(), &Settings::customExtraNpcSettings.npcBlacklistEnabled[i]);
+					ButtonToggle(toggleLabel.c_str(), Settings::customExtraNpcSettings.npcBlacklistEnabled[i]);
 
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
@@ -871,7 +830,7 @@ void Gui::OverlayMenuTabEsp()
 
 		if (ImGui::CollapsingHeader("Container ESP Settings"))
 		{
-			ButtonToggle("Container ESP Enabled", &Settings::containerSettings.enabled);
+			ButtonToggle("Container ESP Enabled", Settings::containerSettings.enabled);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::SliderInt("###ContainerSettingsEnabledDistance", &Settings::containerSettings.enabledDistance, 0, 3000, "Distance: %d");
@@ -880,34 +839,34 @@ void Gui::OverlayMenuTabEsp()
 			ImGui::ColorEdit3("###ContainerSettingsColor", Settings::containerSettings.color);
 			Utils::ValidateRgb(Settings::containerSettings.color);
 
-			ButtonToggle("Draw Enabled Containers", &Settings::containerSettings.drawEnabled);
+			ButtonToggle("Draw Enabled Containers", Settings::containerSettings.drawEnabled);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::SliderFloat("###ContainerSettingsEnabledAlpha", &Settings::containerSettings.enabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
 
-			ButtonToggle("Draw Disabled Containers", &Settings::containerSettings.drawDisabled);
+			ButtonToggle("Draw Disabled Containers", Settings::containerSettings.drawDisabled);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::SliderFloat("###ContainerSettingsDisabledAlpha", &Settings::containerSettings.disabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
 
-			ButtonToggle("Draw Named Containers", &Settings::containerSettings.drawNamed);
+			ButtonToggle("Draw Named Containers", Settings::containerSettings.drawNamed);
 			ImGui::SameLine(235.0f);
-			ButtonToggle("Draw Unnamed Containers", &Settings::containerSettings.drawUnnamed);
+			ButtonToggle("Draw Unnamed Containers", Settings::containerSettings.drawUnnamed);
 
-			ButtonToggle("Show Container Name", &Settings::containerSettings.showName);
+			ButtonToggle("Show Container Name", Settings::containerSettings.showName);
 			ImGui::SameLine(235.0f);
-			ButtonToggle("Show Container Distance", &Settings::containerSettings.showDistance);
+			ButtonToggle("Show Container Distance", Settings::containerSettings.showDistance);
 
-			ButtonToggle("Container Text Shadowed", &Settings::containerSettings.textShadowed);
+			ButtonToggle("Container Text Shadowed", Settings::containerSettings.textShadowed);
 			ImGui::SameLine(235.0f);
-			ButtonToggle("Container Text Centered", &Settings::containerSettings.textCentered);
+			ButtonToggle("Container Text Centered", Settings::containerSettings.textCentered);
 
 			if (ImGui::CollapsingHeader("Container Whitelist Settings"))
 			{
 				for (auto i = 0; i < 32; i++)
 				{
 					auto toggleLabel = fmt::format("Container Whitelist Slot: {0:d}", i);
-					ButtonToggle(toggleLabel.c_str(), &Settings::containerSettings.whitelisted[i]);
+					ButtonToggle(toggleLabel.c_str(), Settings::containerSettings.whitelisted[i]);
 
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
@@ -921,7 +880,7 @@ void Gui::OverlayMenuTabEsp()
 
 		if (ImGui::CollapsingHeader("Junk ESP Settings"))
 		{
-			ButtonToggle("Junk ESP Enabled", &Settings::junkSettings.enabled);
+			ButtonToggle("Junk ESP Enabled", Settings::junkSettings.enabled);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::SliderInt("###JunkSettingsEnabledDistance", &Settings::junkSettings.enabledDistance, 0, 3000, "Distance: %d");
@@ -930,36 +889,36 @@ void Gui::OverlayMenuTabEsp()
 			ImGui::ColorEdit3("###JunkSettingsColor", Settings::junkSettings.color);
 			Utils::ValidateRgb(Settings::junkSettings.color);
 
-			ButtonToggle("Draw Enabled Junk", &Settings::junkSettings.drawEnabled);
+			ButtonToggle("Draw Enabled Junk", Settings::junkSettings.drawEnabled);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::SliderFloat("###JunkSettingsEnabledAlpha", &Settings::junkSettings.enabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
 
 			Utils::ValidateFloat(Settings::junkSettings.enabledAlpha, 0.0f, 1.0f);
 
-			ButtonToggle("Draw Disabled Junk", &Settings::junkSettings.drawDisabled);
+			ButtonToggle("Draw Disabled Junk", Settings::junkSettings.drawDisabled);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::SliderFloat("###JunkSettingsDisabledAlpha", &Settings::junkSettings.disabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
 
-			ButtonToggle("Draw Named Junk", &Settings::junkSettings.drawNamed);
+			ButtonToggle("Draw Named Junk", Settings::junkSettings.drawNamed);
 			ImGui::SameLine(235.0f);
-			ButtonToggle("Draw Unnamed Junk", &Settings::junkSettings.drawUnnamed);
+			ButtonToggle("Draw Unnamed Junk", Settings::junkSettings.drawUnnamed);
 
-			ButtonToggle("Show Junk Name", &Settings::junkSettings.showName);
+			ButtonToggle("Show Junk Name", Settings::junkSettings.showName);
 			ImGui::SameLine(235.0f);
-			ButtonToggle("Show Junk Distance", &Settings::junkSettings.showDistance);
+			ButtonToggle("Show Junk Distance", Settings::junkSettings.showDistance);
 
-			ButtonToggle("Junk Text Shadowed", &Settings::junkSettings.textShadowed);
+			ButtonToggle("Junk Text Shadowed", Settings::junkSettings.textShadowed);
 			ImGui::SameLine(235.0f);
-			ButtonToggle("Junk Text Centered", &Settings::junkSettings.textCentered);
+			ButtonToggle("Junk Text Centered", Settings::junkSettings.textCentered);
 
 			if (ImGui::CollapsingHeader("Junk Whitelist Settings"))
 			{
 				for (auto i = 0; i < 32; i++)
 				{
 					auto toggleLabel = fmt::format("Junk Whitelist Slot: {0:d}", i);
-					ButtonToggle(toggleLabel.c_str(), &Settings::junkSettings.whitelisted[i]);
+					ButtonToggle(toggleLabel.c_str(), Settings::junkSettings.whitelisted[i]);
 
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
@@ -973,7 +932,7 @@ void Gui::OverlayMenuTabEsp()
 
 		if (ImGui::CollapsingHeader("Plan ESP Settings"))
 		{
-			ButtonToggle("Plan ESP Enabled", &Settings::planSettings.enabled);
+			ButtonToggle("Plan ESP Enabled", Settings::planSettings.enabled);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::SliderInt("###PlanSettingsEnabledDistance", &Settings::planSettings.enabledDistance, 0, 3000, "Distance: %d");
@@ -982,38 +941,38 @@ void Gui::OverlayMenuTabEsp()
 			ImGui::ColorEdit3("###PlanSettingsColor", Settings::planSettings.color);
 			Utils::ValidateRgb(Settings::planSettings.color);
 
-			ButtonToggle("Draw Enabled Plans", &Settings::planSettings.drawEnabled);
+			ButtonToggle("Draw Enabled Plans", Settings::planSettings.drawEnabled);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::SliderFloat("###PlanSettingsEnabledAlpha", &Settings::planSettings.enabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
 
-			ButtonToggle("Draw Disabled Plans", &Settings::planSettings.drawDisabled);
+			ButtonToggle("Draw Disabled Plans", Settings::planSettings.drawDisabled);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::SliderFloat("###PlanSettingsDisabledAlpha", &Settings::planSettings.disabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
 
-			ButtonToggle("Draw Known Plans", &Settings::recipes.knownRecipesEnabled);
+			ButtonToggle("Draw Known Plans", Settings::recipes.knownRecipesEnabled);
 			ImGui::SameLine(235.0f);
-			ButtonToggle("Draw Unknown Plans", &Settings::recipes.unknownRecipesEnabled);
+			ButtonToggle("Draw Unknown Plans", Settings::recipes.unknownRecipesEnabled);
 
-			ButtonToggle("Draw Named Plans", &Settings::planSettings.drawNamed);
+			ButtonToggle("Draw Named Plans", Settings::planSettings.drawNamed);
 			ImGui::SameLine(235.0f);
-			ButtonToggle("Draw Unnamed Plans", &Settings::planSettings.drawUnnamed);
+			ButtonToggle("Draw Unnamed Plans", Settings::planSettings.drawUnnamed);
 
-			ButtonToggle("Show Plan Name", &Settings::planSettings.showName);
+			ButtonToggle("Show Plan Name", Settings::planSettings.showName);
 			ImGui::SameLine(235.0f);
-			ButtonToggle("Show Plan Distance", &Settings::planSettings.showDistance);
+			ButtonToggle("Show Plan Distance", Settings::planSettings.showDistance);
 
-			ButtonToggle("Plan Text Shadowed", &Settings::planSettings.textShadowed);
+			ButtonToggle("Plan Text Shadowed", Settings::planSettings.textShadowed);
 			ImGui::SameLine(235.0f);
-			ButtonToggle("Plan Text Centered", &Settings::planSettings.textCentered);
+			ButtonToggle("Plan Text Centered", Settings::planSettings.textCentered);
 
 			if (ImGui::CollapsingHeader("Plan Whitelist Settings"))
 			{
 				for (auto i = 0; i < 32; i++)
 				{
 					auto toggleLabel = fmt::format("Plan Whitelist Slot: {0:d}", i);
-					ButtonToggle(toggleLabel.c_str(), &Settings::planSettings.whitelisted[i]);
+					ButtonToggle(toggleLabel.c_str(), Settings::planSettings.whitelisted[i]);
 
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
@@ -1027,7 +986,7 @@ void Gui::OverlayMenuTabEsp()
 
 		if (ImGui::CollapsingHeader("Magazine ESP Settings"))
 		{
-			ButtonToggle("Magazine ESP Enabled", &Settings::magazineSettings.enabled);
+			ButtonToggle("Magazine ESP Enabled", Settings::magazineSettings.enabled);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::SliderInt("###MagazineSettingsEnabledDistance", &Settings::magazineSettings.enabledDistance, 0, 3000, "Distance: %d");
@@ -1036,34 +995,34 @@ void Gui::OverlayMenuTabEsp()
 			ImGui::ColorEdit3("###MagazineSettingsColor", Settings::magazineSettings.color);
 			Utils::ValidateRgb(Settings::magazineSettings.color);
 
-			ButtonToggle("Draw Enabled Magazines", &Settings::magazineSettings.drawEnabled);
+			ButtonToggle("Draw Enabled Magazines", Settings::magazineSettings.drawEnabled);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::SliderFloat("###MagazineSettingsEnabledAlpha", &Settings::magazineSettings.enabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
 
-			ButtonToggle("Draw Disabled Magazines", &Settings::magazineSettings.drawDisabled);
+			ButtonToggle("Draw Disabled Magazines", Settings::magazineSettings.drawDisabled);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::SliderFloat("###MagazineSettingsDisabledAlpha", &Settings::magazineSettings.disabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
 
-			ButtonToggle("Draw Named Magazines", &Settings::magazineSettings.drawNamed);
+			ButtonToggle("Draw Named Magazines", Settings::magazineSettings.drawNamed);
 			ImGui::SameLine(235.0f);
-			ButtonToggle("Draw Unnamed Magazines", &Settings::magazineSettings.drawUnnamed);
+			ButtonToggle("Draw Unnamed Magazines", Settings::magazineSettings.drawUnnamed);
 
-			ButtonToggle("Show Magazine Name", &Settings::magazineSettings.showName);
+			ButtonToggle("Show Magazine Name", Settings::magazineSettings.showName);
 			ImGui::SameLine(235.0f);
-			ButtonToggle("Show Magazine Distance", &Settings::magazineSettings.showDistance);
+			ButtonToggle("Show Magazine Distance", Settings::magazineSettings.showDistance);
 
-			ButtonToggle("Magazine Text Shadowed", &Settings::magazineSettings.textShadowed);
+			ButtonToggle("Magazine Text Shadowed", Settings::magazineSettings.textShadowed);
 			ImGui::SameLine(235.0f);
-			ButtonToggle("Magazine Text Centered", &Settings::magazineSettings.textCentered);
+			ButtonToggle("Magazine Text Centered", Settings::magazineSettings.textCentered);
 
 			if (ImGui::CollapsingHeader("Magazine Whitelist Settings"))
 			{
 				for (auto i = 0; i < 32; i++)
 				{
 					auto toggleLabel = fmt::format("Magazine Whitelist Slot: {0:d}", i);
-					ButtonToggle(toggleLabel.c_str(), &Settings::magazineSettings.whitelisted[i]);
+					ButtonToggle(toggleLabel.c_str(), Settings::magazineSettings.whitelisted[i]);
 
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
@@ -1077,7 +1036,7 @@ void Gui::OverlayMenuTabEsp()
 
 		if (ImGui::CollapsingHeader("Bobblehead ESP Settings"))
 		{
-			ButtonToggle("Bobblehead ESP Enabled", &Settings::bobbleheadSettings.enabled);
+			ButtonToggle("Bobblehead ESP Enabled", Settings::bobbleheadSettings.enabled);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::SliderInt("###BobbleheadSettingsEnabledDistance", &Settings::bobbleheadSettings.enabledDistance, 0, 3000, "Distance: %d");
@@ -1086,34 +1045,34 @@ void Gui::OverlayMenuTabEsp()
 			ImGui::ColorEdit3("###BobbleheadSettingsColor", Settings::bobbleheadSettings.color);
 			Utils::ValidateRgb(Settings::bobbleheadSettings.color);
 
-			ButtonToggle("Draw Enabled Bobbleheads", &Settings::bobbleheadSettings.drawEnabled);
+			ButtonToggle("Draw Enabled Bobbleheads", Settings::bobbleheadSettings.drawEnabled);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::SliderFloat("###BobbleheadSettingsEnabledAlpha", &Settings::bobbleheadSettings.enabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
 
-			ButtonToggle("Draw Disabled Bobbleheads", &Settings::bobbleheadSettings.drawDisabled);
+			ButtonToggle("Draw Disabled Bobbleheads", Settings::bobbleheadSettings.drawDisabled);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::SliderFloat("###BobbleheadSettingsDisabledAlpha", &Settings::bobbleheadSettings.disabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
 
-			ButtonToggle("Draw Named Bobbleheads", &Settings::bobbleheadSettings.drawNamed);
+			ButtonToggle("Draw Named Bobbleheads", Settings::bobbleheadSettings.drawNamed);
 			ImGui::SameLine(235.0f);
-			ButtonToggle("Draw Unnamed Bobbleheads", &Settings::bobbleheadSettings.drawUnnamed);
+			ButtonToggle("Draw Unnamed Bobbleheads", Settings::bobbleheadSettings.drawUnnamed);
 
-			ButtonToggle("Show Bobblehead Name", &Settings::bobbleheadSettings.showName);
+			ButtonToggle("Show Bobblehead Name", Settings::bobbleheadSettings.showName);
 			ImGui::SameLine(235.0f);
-			ButtonToggle("Show Bobblehead Distance", &Settings::bobbleheadSettings.showDistance);
+			ButtonToggle("Show Bobblehead Distance", Settings::bobbleheadSettings.showDistance);
 
-			ButtonToggle("Bobblehead Text Shadowed", &Settings::bobbleheadSettings.textShadowed);
+			ButtonToggle("Bobblehead Text Shadowed", Settings::bobbleheadSettings.textShadowed);
 			ImGui::SameLine(235.0f);
-			ButtonToggle("Bobblehead Text Centered", &Settings::bobbleheadSettings.textCentered);
+			ButtonToggle("Bobblehead Text Centered", Settings::bobbleheadSettings.textCentered);
 
 			if (ImGui::CollapsingHeader("Bobblehead Whitelist Settings"))
 			{
 				for (auto i = 0; i < 32; i++)
 				{
 					auto toggleLabel = fmt::format("Bobblehead Whitelist Slot: {0:d}", i);
-					ButtonToggle(toggleLabel.c_str(), &Settings::bobbleheadSettings.whitelisted[i]);
+					ButtonToggle(toggleLabel.c_str(), Settings::bobbleheadSettings.whitelisted[i]);
 
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
@@ -1127,7 +1086,7 @@ void Gui::OverlayMenuTabEsp()
 
 		if (ImGui::CollapsingHeader("Item ESP Settings"))
 		{
-			ButtonToggle("Item ESP Enabled", &Settings::itemSettings.enabled);
+			ButtonToggle("Item ESP Enabled", Settings::itemSettings.enabled);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::SliderInt("###ItemSettingsEnabledDistance", &Settings::itemSettings.enabledDistance, 0, 3000, "Distance: %d");
@@ -1136,34 +1095,34 @@ void Gui::OverlayMenuTabEsp()
 			ImGui::ColorEdit3("###ItemSettingsColor", Settings::itemSettings.color);
 			Utils::ValidateRgb(Settings::itemSettings.color);
 
-			ButtonToggle("Draw Enabled Items", &Settings::itemSettings.drawEnabled);
+			ButtonToggle("Draw Enabled Items", Settings::itemSettings.drawEnabled);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::SliderFloat("###ItemSettingsEnabledAlpha", &Settings::itemSettings.enabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
 
-			ButtonToggle("Draw Disabled Items", &Settings::itemSettings.drawDisabled);
+			ButtonToggle("Draw Disabled Items", Settings::itemSettings.drawDisabled);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::SliderFloat("###ItemSettingsDisabledAlpha", &Settings::itemSettings.disabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
 
-			ButtonToggle("Draw Named Items", &Settings::itemSettings.drawNamed);
+			ButtonToggle("Draw Named Items", Settings::itemSettings.drawNamed);
 			ImGui::SameLine(235.0f);
-			ButtonToggle("Draw Unnamed Items", &Settings::itemSettings.drawUnnamed);
+			ButtonToggle("Draw Unnamed Items", Settings::itemSettings.drawUnnamed);
 
-			ButtonToggle("Show Item Name", &Settings::itemSettings.showName);
+			ButtonToggle("Show Item Name", Settings::itemSettings.showName);
 			ImGui::SameLine(235.0f);
-			ButtonToggle("Show Item Distance", &Settings::itemSettings.showDistance);
+			ButtonToggle("Show Item Distance", Settings::itemSettings.showDistance);
 
-			ButtonToggle("Item Text Shadowed", &Settings::itemSettings.textShadowed);
+			ButtonToggle("Item Text Shadowed", Settings::itemSettings.textShadowed);
 			ImGui::SameLine(235.0f);
-			ButtonToggle("Item Text Centered", &Settings::itemSettings.textCentered);
+			ButtonToggle("Item Text Centered", Settings::itemSettings.textCentered);
 
 			if (ImGui::CollapsingHeader("Item Whitelist Settings"))
 			{
 				for (auto i = 0; i < 32; i++)
 				{
 					auto toggleLabel = fmt::format("Item Whitelist Slot: {0:d}", i);
-					ButtonToggle(toggleLabel.c_str(), &Settings::itemSettings.whitelisted[i]);
+					ButtonToggle(toggleLabel.c_str(), Settings::itemSettings.whitelisted[i]);
 
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
@@ -1177,7 +1136,7 @@ void Gui::OverlayMenuTabEsp()
 
 		if (ImGui::CollapsingHeader("Flora ESP Settings"))
 		{
-			ButtonToggle("Flora ESP Enabled", &Settings::floraSettings.enabled);
+			ButtonToggle("Flora ESP Enabled", Settings::floraSettings.enabled);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::SliderInt("###FloraSettingsEnabledDistance", &Settings::floraSettings.enabledDistance, 0, 3000, "Distance: %d");
@@ -1186,40 +1145,40 @@ void Gui::OverlayMenuTabEsp()
 			ImGui::ColorEdit3("###FloraSettingsColor", Settings::floraSettings.color);
 			Utils::ValidateRgb(Settings::floraSettings.color);
 
-			ButtonToggle("Draw Enabled Flora", &Settings::floraSettings.drawEnabled);
+			ButtonToggle("Draw Enabled Flora", Settings::floraSettings.drawEnabled);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::SliderFloat("###FloraSettingsEnabledAlpha", &Settings::floraSettings.enabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
 
-			ButtonToggle("Draw Disabled Flora", &Settings::floraSettings.drawDisabled);
+			ButtonToggle("Draw Disabled Flora", Settings::floraSettings.drawDisabled);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::SliderFloat("###FloraSettingsDisabledAlpha", &Settings::floraSettings.disabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
 
-			ButtonToggle("Draw Named Flora", &Settings::floraSettings.drawNamed);
+			ButtonToggle("Draw Named Flora", Settings::floraSettings.drawNamed);
 			ImGui::SameLine(235.0f);
-			ButtonToggle("Draw Unnamed Flora", &Settings::floraSettings.drawUnnamed);
+			ButtonToggle("Draw Unnamed Flora", Settings::floraSettings.drawUnnamed);
 
-			LargeButtonToggle("Draw Raw Crimson Flux Yielding Flora", &Settings::customFluxSettings.crimsonFluxEnabled);
-			LargeButtonToggle("Draw Raw Cobalt Flux Yielding Flora", &Settings::customFluxSettings.cobaltFluxEnabled);
-			LargeButtonToggle("Draw Raw Yellowcake Flux Yielding Flora", &Settings::customFluxSettings.yellowcakeFluxEnabled);
-			LargeButtonToggle("Draw Raw Fluorescent Flux Yielding Flora", &Settings::customFluxSettings.fluorescentFluxEnabled);
-			LargeButtonToggle("Draw Raw Violet Flux Yielding Flora", &Settings::customFluxSettings.violetFluxEnabled);
+			LargeButtonToggle("Draw Raw Crimson Flux Yielding Flora", Settings::customFluxSettings.crimsonFluxEnabled);
+			LargeButtonToggle("Draw Raw Cobalt Flux Yielding Flora", Settings::customFluxSettings.cobaltFluxEnabled);
+			LargeButtonToggle("Draw Raw Yellowcake Flux Yielding Flora", Settings::customFluxSettings.yellowcakeFluxEnabled);
+			LargeButtonToggle("Draw Raw Fluorescent Flux Yielding Flora", Settings::customFluxSettings.fluorescentFluxEnabled);
+			LargeButtonToggle("Draw Raw Violet Flux Yielding Flora", Settings::customFluxSettings.violetFluxEnabled);
 
-			ButtonToggle("Show Flora Name", &Settings::floraSettings.showName);
+			ButtonToggle("Show Flora Name", Settings::floraSettings.showName);
 			ImGui::SameLine(235.0f);
-			ButtonToggle("Show Flora Distance", &Settings::floraSettings.showDistance);
+			ButtonToggle("Show Flora Distance", Settings::floraSettings.showDistance);
 
-			ButtonToggle("Flora Text Shadowed", &Settings::floraSettings.textShadowed);
+			ButtonToggle("Flora Text Shadowed", Settings::floraSettings.textShadowed);
 			ImGui::SameLine(235.0f);
-			ButtonToggle("Flora Text Centered", &Settings::floraSettings.textCentered);
+			ButtonToggle("Flora Text Centered", Settings::floraSettings.textCentered);
 
 			if (ImGui::CollapsingHeader("Flora Whitelist Settings"))
 			{
 				for (auto i = 0; i < 32; i++)
 				{
 					auto toggleLabel = fmt::format("Flora Whitelist Slot: {0:d}", i);
-					ButtonToggle(toggleLabel.c_str(), &Settings::floraSettings.whitelisted[i]);
+					ButtonToggle(toggleLabel.c_str(), Settings::floraSettings.whitelisted[i]);
 
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
@@ -1233,7 +1192,7 @@ void Gui::OverlayMenuTabEsp()
 
 		if (ImGui::CollapsingHeader("Entity ESP Settings"))
 		{
-			ButtonToggle("Entity ESP Enabled", &Settings::entitySettings.enabled);
+			ButtonToggle("Entity ESP Enabled", Settings::entitySettings.enabled);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::SliderInt("###EntitySettingsEnabledDistance", &Settings::entitySettings.enabledDistance, 0, 3000, "Distance: %d");
@@ -1242,34 +1201,34 @@ void Gui::OverlayMenuTabEsp()
 			ImGui::ColorEdit3("###EntitySettingsColor", Settings::entitySettings.color);
 			Utils::ValidateRgb(Settings::entitySettings.color);
 
-			ButtonToggle("Draw Enabled Entities", &Settings::entitySettings.drawEnabled);
+			ButtonToggle("Draw Enabled Entities", Settings::entitySettings.drawEnabled);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::SliderFloat("###EntitySettingsEnabledAlpha", &Settings::entitySettings.enabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
 
-			ButtonToggle("Draw Disabled Entities", &Settings::entitySettings.drawDisabled);
+			ButtonToggle("Draw Disabled Entities", Settings::entitySettings.drawDisabled);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::SliderFloat("###EntitySettingsDisabledAlpha", &Settings::entitySettings.disabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
 
-			ButtonToggle("Draw Named Entities", &Settings::entitySettings.drawNamed);
+			ButtonToggle("Draw Named Entities", Settings::entitySettings.drawNamed);
 			ImGui::SameLine(235.0f);
-			ButtonToggle("Draw Unnamed Entities", &Settings::entitySettings.drawUnnamed);
+			ButtonToggle("Draw Unnamed Entities", Settings::entitySettings.drawUnnamed);
 
-			ButtonToggle("Show Entity Name", &Settings::entitySettings.showName);
+			ButtonToggle("Show Entity Name", Settings::entitySettings.showName);
 			ImGui::SameLine(235.0f);
-			ButtonToggle("Show Entity Distance", &Settings::entitySettings.showDistance);
+			ButtonToggle("Show Entity Distance", Settings::entitySettings.showDistance);
 
-			ButtonToggle("Entity Text Shadowed", &Settings::entitySettings.textShadowed);
+			ButtonToggle("Entity Text Shadowed", Settings::entitySettings.textShadowed);
 			ImGui::SameLine(235.0f);
-			ButtonToggle("Entity Text Centered", &Settings::entitySettings.textCentered);
+			ButtonToggle("Entity Text Centered", Settings::entitySettings.textCentered);
 
 			if (ImGui::CollapsingHeader("Entity Whitelist Settings"))
 			{
 				for (auto i = 0; i < 32; i++)
 				{
 					auto toggleLabel = fmt::format("Entity Whitelist Slot: {0:d}", i);
-					ButtonToggle(toggleLabel.c_str(), &Settings::floraSettings.whitelisted[i]);
+					ButtonToggle(toggleLabel.c_str(), Settings::floraSettings.whitelisted[i]);
 
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
@@ -1288,376 +1247,214 @@ void Gui::OverlayMenuTabInfoBox()
 {
 	if (ImGui::BeginTabItem("InfoBox###InfoBoxTab"))
 	{
-		LargeButtonToggle("Draw Automatic Scrap Looter Status", &Settings::infobox.drawScrapLooterStatus);
-		LargeButtonToggle("Draw Automatic Item Looter Status", &Settings::infobox.drawItemLooterStatus);
-		LargeButtonToggle("Draw NPC Looter Status", &Settings::infobox.drawNpcLooterStatus);
-		LargeButtonToggle("Draw Container Looter Status", &Settings::infobox.drawContainerLooterStatus);
-		LargeButtonToggle("Draw Flora Harvester Status", &Settings::infobox.drawHarvesterStatus);
-		LargeButtonToggle("Draw Position Status", &Settings::infobox.drawPositionSpoofingStatus);
-		LargeButtonToggle("Draw Nuke Codes", &Settings::infobox.drawNukeCodes);
+		LargeButtonToggle("Draw Automatic Scrap Looter Status", Settings::infobox.drawScrapLooterStatus);
+		LargeButtonToggle("Draw Automatic Item Looter Status", Settings::infobox.drawItemLooterStatus);
+		LargeButtonToggle("Draw NPC Looter Status", Settings::infobox.drawNpcLooterStatus);
+		LargeButtonToggle("Draw Container Looter Status", Settings::infobox.drawContainerLooterStatus);
+		LargeButtonToggle("Draw Flora Harvester Status", Settings::infobox.drawHarvesterStatus);
+		LargeButtonToggle("Draw Position Status", Settings::infobox.drawPositionSpoofingStatus);
+		LargeButtonToggle("Draw Nuke Codes", Settings::infobox.drawNukeCodes);
 
 		ImGui::EndTabItem();
 	}
 }
-void Gui::OverlayMenuTabLoot()
+
+void Gui::OverlayMenuLooter()
 {
-	if (ImGui::BeginTabItem("Loot###LootTab"))
+	if (ImGui::BeginTabItem("Looter"))
 	{
-		if (ImGui::CollapsingHeader("Scrap Looter"))
+		if (ImGui::CollapsingHeader("Mode"))
 		{
-			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 1.0f, 0.0f, 0.3f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 1.0f, 0.0f, 0.4f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 1.0f, 0.0f, 0.5f));
-			if (ImGui::Button("Loot Scrap (Keybind: CTRL+E)###LootSelectedScrapEnabled", ImVec2(224.0f, 0.0f)))
-				Looter::RequestLootScrap();
-			ImGui::PopStyleColor(3);
-
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Scrap Looter Keybind Enabled", &Settings::scrapLooter.keybindEnabled);
-
-			LargeButtonToggle("Scrap Looter ESP Override (Uses Junk ESP Settings)", &Settings::scrapLooter.scrapOverrideEnabled);
-
-			ButtonToggle("Automatic Looting Enabled###ScrapAutomaticLootingEnabled", &Settings::scrapLooter.autoLootingEnabled);
-
-			{
-				ImGui::SetNextItemWidth(224.0f);
-				auto sliderText = fmt::format("Speed (Min): {0:d} ({1:d} ms)", Settings::scrapLooter.autoLootingSpeedMin, Settings::scrapLooter.autoLootingSpeedMin * 16);
-				if (ImGui::SliderInt("###ScrapAutomaticSpeedMin", &Settings::scrapLooter.autoLootingSpeedMin, 10, 60, sliderText.c_str()))
-				{
-					if (Settings::scrapLooter.autoLootingSpeedMax < Settings::scrapLooter.autoLootingSpeedMin)
-						Settings::scrapLooter.autoLootingSpeedMax = Settings::scrapLooter.autoLootingSpeedMin;
-				}
-			}
-
-			ImGui::SameLine(235.0f);
-
-			{
-				ImGui::SetNextItemWidth(224.0f);
-				auto sliderText = fmt::format("Speed (Max): {0:d} ({1:d} ms)", Settings::scrapLooter.autoLootingSpeedMax, Settings::scrapLooter.autoLootingSpeedMax * 16);
-				if (ImGui::SliderInt("###ScrapAutomaticSpeedMax", &Settings::scrapLooter.autoLootingSpeedMax, 10, 60, sliderText.c_str()))
-				{
-					if (Settings::scrapLooter.autoLootingSpeedMax < Settings::scrapLooter.autoLootingSpeedMin)
-						Settings::scrapLooter.autoLootingSpeedMin = Settings::scrapLooter.autoLootingSpeedMax;
-				}
-			}
-
-			ImGui::SetNextItemWidth(451.0f);
-			ImGui::SliderInt("###ScrapLooterDistance", &Settings::scrapLooter.maxDistance, 1, 3000, "Scrap Looter Distance: %d");
-
-			for (auto i = 0; i < 40; i++)
-			{
-				ButtonToggle(Settings::scrapLooter.nameList[i], &Settings::scrapLooter.enabledList[i]);
-
-				ImGui::SameLine(235.0f);
-				ImGui::SetNextItemWidth(224.0f);
-
-				auto inputLabel = fmt::format("###ScrapReadOnly{:d}", i);
-				auto inputText = fmt::format("{:08X}", Settings::scrapLooter.formIdList[i]);
-				ImGui::InputText(inputLabel.c_str(), &inputText, ImGuiInputTextFlags_ReadOnly);
-			}
+			if (ImGui::RadioButton("Disabled", Settings::looter.mode == LooterSettings::Mode::Disabled))
+				Settings::looter.mode = LooterSettings::Mode::Disabled;
+			if (ImGui::RadioButton("Automatic looting", Settings::looter.mode == LooterSettings::Mode::Auto))
+				Settings::looter.mode = LooterSettings::Mode::Auto;
+			if (ImGui::RadioButton("Keybind (CTRL + R)", Settings::looter.mode == LooterSettings::Mode::Keybind))
+				Settings::looter.mode = LooterSettings::Mode::Keybind;
 		}
 
-		if (ImGui::CollapsingHeader("Item Looter"))
+		if (ImGui::CollapsingHeader("Looters"))
 		{
-			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 1.0f, 0.0f, 0.3f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 1.0f, 0.0f, 0.4f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 1.0f, 0.0f, 0.5f));
-			if (ImGui::Button("Loot Items (Keybind: CTRL+R)###LootSelectedItemsEnabled", ImVec2(224.0f, 0.0f)))
-				Looter::RequestLootItems();
-			ImGui::PopStyleColor(3);
-
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Item Looter Keybind Enabled", &Settings::itemLooter.keybindEnabled);
-
-			ButtonToggle("Automatic Looting Enabled###ItemAutomaticLootingEnabled", &Settings::itemLooter.autoLootingEnabled);
-			{
-				ImGui::SetNextItemWidth(224.0f);
-				auto sliderText = fmt::format("Speed (Min): {0:d} ({1:d} ms)", Settings::itemLooter.autoLootingSpeedMin, Settings::itemLooter.autoLootingSpeedMin * 16);
-				if (ImGui::SliderInt("###ItemAutomaticSpeedMin", &Settings::itemLooter.autoLootingSpeedMin, 10, 60, sliderText.c_str()))
-				{
-					if (Settings::itemLooter.autoLootingSpeedMax < Settings::itemLooter.autoLootingSpeedMin)
-						Settings::itemLooter.autoLootingSpeedMax = Settings::itemLooter.autoLootingSpeedMin;
-				}
-			}
-
-			ImGui::SameLine(235.0f);
-
-			{
-				ImGui::SetNextItemWidth(224.0f);
-				auto sliderText = fmt::format("Speed (Max): {0:d} ({1:d} ms)", Settings::itemLooter.autoLootingSpeedMax, Settings::itemLooter.autoLootingSpeedMax * 16);
-				if (ImGui::SliderInt("###ItemAutomaticSpeedMax", &Settings::itemLooter.autoLootingSpeedMax, 10, 60, sliderText.c_str()))
-				{
-					if (Settings::itemLooter.autoLootingSpeedMax < Settings::itemLooter.autoLootingSpeedMin)
-						Settings::itemLooter.autoLootingSpeedMin = Settings::itemLooter.autoLootingSpeedMax;
-				}
-			}
-
-			ButtonToggle("Weapons Enabled###ItemLooterWeaponsEnabled", &Settings::itemLooter.lootWeaponsEnabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::SliderInt("###ItemLooterWeaponsDistance", &Settings::itemLooter.lootWeaponsDistance, 0, 3000, "Distance: %d");
-
-			ButtonToggle("Armor Enabled###ItemLooterArmorEnabled", &Settings::itemLooter.lootArmorEnabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::SliderInt("###ItemLooterArmorDistance", &Settings::itemLooter.lootArmorDistance, 0, 3000, "Distance: %d");
-
-			ButtonToggle("Ammo Enabled###ItemLooterAmmoEnabled", &Settings::itemLooter.lootAmmoEnabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::SliderInt("###ItemLooterAmmoDistance", &Settings::itemLooter.lootAmmoDistance, 0, 3000, "Distance: %d");
-
-			ButtonToggle("Mods Enabled###ItemLooterModsEnabled", &Settings::itemLooter.lootModsEnabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::SliderInt("###ItemLooterModsDistance", &Settings::itemLooter.lootModsDistance, 0, 3000, "Distance: %d");
-
-			ButtonToggle("Magazines Enabled###ItemLooterMagazinesEnabled", &Settings::itemLooter.lootMagazinesEnabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::SliderInt("###ItemLooterMagazinesDistance", &Settings::itemLooter.lootMagazinesDistance, 0, 3000, "Distance: %d");
-
-			ButtonToggle("Bobbleheads Enabled###ItemLooterBobbleheadsEnabled", &Settings::itemLooter.lootBobbleheadsEnabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::SliderInt("###ItemLooterBobbleheadsDistance", &Settings::itemLooter.lootBobbleheadsDistance, 0, 3000, "Distance: %d");
-
-			ButtonToggle("Aid Enabled###ItemLooterAidEnabled", &Settings::itemLooter.lootAidEnabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::SliderInt("###ItemLooterAidDistance", &Settings::itemLooter.lootAidDistance, 0, 3000, "Distance: %d");
-
-			ButtonToggle("Known Plans Enabled###ItemLooterKnownPlansEnabled", &Settings::itemLooter.lootKnownPlansEnabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::SliderInt("###ItemLooterKnownPlansDistance", &Settings::itemLooter.lootKnownPlansDistance, 0, 3000, "Distance: %d");
-
-			ButtonToggle("Unknown Plans Enabled###ItemLooterUnknownPlansEnabled", &Settings::itemLooter.lootUnknownPlansEnabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::SliderInt("###ItemLooterUnknownPlansDistance", &Settings::itemLooter.lootUnknownPlansDistance, 0, 3000, "Distance: %d");
-
-			ButtonToggle("Misc Enabled###ItemLooterMiscEnabled", &Settings::itemLooter.lootMiscEnabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::SliderInt("###ItemLooterMiscDistance", &Settings::itemLooter.lootMiscDistance, 0, 3000, "Distance: %d");
-
-			ButtonToggle("Other Enabled###ItemLooterUnlistedEnabled", &Settings::itemLooter.lootUnlistedEnabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::SliderInt("###ItemLooterUnlistedDistance", &Settings::itemLooter.lootUnlistedDistance, 0, 3000, "Distance: %d");
-
-			ButtonToggle("Item FormId List Enabled###ItemLooterListEnabled", &Settings::itemLooter.lootListEnabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::SliderInt("###ItemLooterListDistance", &Settings::itemLooter.lootListDistance, 0, 3000, "Distance: %d");
-
-			LargeButtonToggle("Item Looter Blacklist Enabled###ItemLooterBlacklistToggle", &Settings::itemLooter.blacklistToggle);
-
-			if (ImGui::CollapsingHeader("Item Looter FormId List"))
-			{
-				for (auto i = 0; i < 100; i++)
-				{
-					auto toggleLabel = fmt::format("Item Looter Slot: {0:d}", i);
-					ButtonToggle(toggleLabel.c_str(), &Settings::itemLooter.enabledList[i]);
-
-					ImGui::SameLine(235.0f);
-					ImGui::SetNextItemWidth(224.0f);
-
-					auto inputLabel = fmt::format("###ItemLooterList{:d}", i);
-					ImGui::InputScalar(inputLabel.c_str(), ImGuiDataType_U32, &Settings::itemLooter.formIdList[i],
-						nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal);
-				}
-			}
-
-			if (ImGui::CollapsingHeader("Item Looter Blacklist"))
-			{
-				for (auto i = 0; i < 64; i++)
-				{
-					auto toggleLabel = fmt::format("Item Looter Blacklist: {0:d}", i);
-					ButtonToggle(toggleLabel.c_str(), &Settings::itemLooter.blacklistEnabled[i]);
-
-					ImGui::SameLine(235.0f);
-					ImGui::SetNextItemWidth(224.0f);
-
-					auto inputLabel = fmt::format("###ItemLooterBlacklist{:d}", i);
-					ImGui::InputScalar(inputLabel.c_str(), ImGuiDataType_U32, &Settings::itemLooter.blacklist[i],
-						nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal);
-				}
-			}
+			LargeButtonToggle("Loot NPCs (76m)", Settings::looter.looters.npcs);
+			LargeButtonToggle("Loot Items (76m)", Settings::looter.looters.items);
+			LargeButtonToggle("Loot Containers (6m)", Settings::looter.looters.containers);
+			LargeButtonToggle("Harvest Flora (6m)", Settings::looter.looters.flora);
 		}
 
-		if (ImGui::CollapsingHeader("NPC Looter (76m Distance Limit)"))
-		{
-			LargeButtonToggle("Automatic NPC Looting Enabled (Keybind: CTRL+COMMA)###NPCLooterEnabled", &Settings::npcLooter.enabled);
+		if (ImGui::TreeNodeEx("Selection", ImGuiTreeNodeFlags_Framed)) {
 
-			ButtonToggle("All Weapons Enabled###NPCLooterAllWeaponsEnabled", &Settings::npcLooter.allWeaponsEnabled);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("All Armor Enabled###NPCLooterAllArmorEnabled", &Settings::npcLooter.allArmorEnabled);
-
-			ButtonToggle("1* Weapons Enabled###NPCLooterOneStarWeaponsEnabled", &Settings::npcLooter.oneStarWeaponsEnabled);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("1* Armor Enabled###NPCLooterOneStarArmorEnabled", &Settings::npcLooter.oneStarArmorEnabled);
-
-			ButtonToggle("2* Weapons Enabled###NPCLooterTwoStarWeaponsEnabled", &Settings::npcLooter.twoStarWeaponsEnabled);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("2* Armor Enabled###NPCLooterTwoStarArmorEnabled", &Settings::npcLooter.twoStarArmorEnabled);
-
-			ButtonToggle("3* Weapons Enabled###NPCLooterThreeStarWeaponsEnabled", &Settings::npcLooter.threeStarWeaponsEnabled);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("3* Armor Enabled###NPCLooterThreeStarArmorEnabled", &Settings::npcLooter.threeStarArmorEnabled);
-
-			ButtonToggle("Ammo Enabled###NPCLooterAmmoEnabled", &Settings::npcLooter.ammoEnabled);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Mods Enabled###NPCLooterModsEnabled", &Settings::npcLooter.modsEnabled);
-
-			ButtonToggle("Caps Enabled###NPCLooterCapsEnabled", &Settings::npcLooter.capsEnabled);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Junk Enabled###NPCLooterJunkEnabled", &Settings::npcLooter.junkEnabled);
-
-			ButtonToggle("Aid Enabled###NPCLooterAidEnabled", &Settings::npcLooter.aidEnabled);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Treasure Maps Enabled###NPCLooterTreasureMapsEnabled", &Settings::npcLooter.treasureMapsEnabled);
-
-			ButtonToggle("Known Plans Enabled###NPCLooterKnownPlansEnabled", &Settings::npcLooter.knownPlansEnabled);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Unknown Plans Enabled###NPCLooterUnknownPlansEnabled", &Settings::npcLooter.unknownPlansEnabled);
-
-			ButtonToggle("Misc Enabled###NPCLooterMiscEnabled", &Settings::npcLooter.miscEnabled);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Other Enabled###NPCLooterUnlistedEnabled", &Settings::npcLooter.unlistedEnabled);
-
-			LargeButtonToggle("NPC Looter FormId List Enabled###NPCLooterListEnabled", &Settings::npcLooter.listEnabled);
-			LargeButtonToggle("NPC Looter Blacklist Enabled###NPCLooterBlacklistToggle", &Settings::npcLooter.blacklistToggle);
-
-			if (ImGui::CollapsingHeader("NPC Looter FormId List"))
+			if (ImGui::CollapsingHeader("Weapons"))
 			{
-				for (auto i = 0; i < 100; i++)
-				{
-					auto toggleLabel = fmt::format("NPC Looter Slot: {0:d}", i);
-					ButtonToggle(toggleLabel.c_str(), &Settings::npcLooter.enabledList[i]);
-
-					ImGui::SameLine(235.0f);
-					ImGui::SetNextItemWidth(224.0f);
-
-					auto inputLabel = fmt::format("###NPCLooterList{:d}", i);
-					ImGui::InputScalar(inputLabel.c_str(), ImGuiDataType_U32, &Settings::npcLooter.formIdList[i],
-						nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal);
-				}
+				LargeButtonToggle("All##weapons", Settings::looter.selection.weapons.all);
+				LargeButtonToggle("1*##weapons", Settings::looter.selection.weapons.oneStar);
+				LargeButtonToggle("2*##weapons", Settings::looter.selection.weapons.twoStar);
+				LargeButtonToggle("3*##weapons", Settings::looter.selection.weapons.threeStar);
 			}
 
-			if (ImGui::CollapsingHeader("NPC Looter Blacklist"))
+			if (ImGui::CollapsingHeader("Apparel"))
 			{
-				for (auto i = 0; i < 64; i++)
-				{
-					auto toggleLabel = fmt::format("NPC Looter Blacklist: {0:d}", i);
-					ButtonToggle(toggleLabel.c_str(), &Settings::npcLooter.blacklistEnabled[i]);
-
-					ImGui::SameLine(235.0f);
-					ImGui::SetNextItemWidth(224.0f);
-
-					auto inputLabel = fmt::format("###NPCLooterBlacklist{:d}", i);
-					ImGui::InputScalar(inputLabel.c_str(), ImGuiDataType_U32, &Settings::npcLooter.blacklist[i],
-						nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal);
-				}
+				LargeButtonToggle("All##apparel", Settings::looter.selection.apparel.all);
+				LargeButtonToggle("1*##apparel", Settings::looter.selection.apparel.oneStar);
+				LargeButtonToggle("2*##apparel", Settings::looter.selection.apparel.twoStar);
+				LargeButtonToggle("3*##apparel", Settings::looter.selection.apparel.threeStar);
 			}
+
+			if (ImGui::CollapsingHeader("Aid"))
+			{
+				LargeButtonToggle("All##aid", Settings::looter.selection.aid.all);
+				LargeButtonToggle("Bobbleheads##aid", Settings::looter.selection.aid.bobbleheads);
+				LargeButtonToggle("Magazines##aid", Settings::looter.selection.aid.magazines);
+			}
+
+			if (ImGui::CollapsingHeader("Misc"))
+			{
+				LargeButtonToggle("All##misc", Settings::looter.selection.misc.all);
+			}
+
+			if (ImGui::CollapsingHeader("Holotapes"))
+			{
+				LargeButtonToggle("All##holo", Settings::looter.selection.holo.all);
+			}
+
+			if (ImGui::CollapsingHeader("Notes"))
+			{
+				LargeButtonToggle("All##notes", Settings::looter.selection.notes.all);
+				LargeButtonToggle("Known Plans##notes", Settings::looter.selection.notes.plansKnown);
+				LargeButtonToggle("Unknown Plans##notes", Settings::looter.selection.notes.plansUnknown);
+				LargeButtonToggle("Treasure Maps##notes", Settings::looter.selection.notes.treasureMaps);
+			}
+
+			if (ImGui::CollapsingHeader("Junk"))
+			{
+				LargeButtonToggle("All##junk", Settings::looter.selection.junk.all);
+
+				ImGui::Columns(2, nullptr, false);
+				for(auto& component : Settings::looter.selection.junk.components)
+				{
+					auto label = fmt::format("{}##junk", JUNK_COMPONENT_NAMES.find(component.first)->second);
+					LargeButtonToggle(label.c_str(), component.second);
+
+					ImGui::NextColumn();
+				}
+				ImGui::Columns();
+			}
+
+			if (ImGui::CollapsingHeader("Flora"))
+			{
+				LargeButtonToggle("All##flora", Settings::looter.selection.flora.all);
+
+				ImGui::Columns(2, nullptr, false);
+				for (auto& component : Settings::looter.selection.flora.components)
+				{
+					auto label = fmt::format("{}##flora", FLORA_COMPONENT_NAMES.find(component.first)->second);
+					LargeButtonToggle(label.c_str(), component.second);
+
+					ImGui::NextColumn();
+				}
+				ImGui::Columns();
+			}
+
+			if (ImGui::CollapsingHeader("Mods"))
+			{
+				LargeButtonToggle("All##mods", Settings::looter.selection.mods.all);
+			}
+
+			if (ImGui::CollapsingHeader("Ammo"))
+			{
+				LargeButtonToggle("All##ammo", Settings::looter.selection.ammo.all);
+			}
+
+			if (ImGui::CollapsingHeader("Other"))
+			{
+				LargeButtonToggle("Caps##other", Settings::looter.selection.other.caps);
+			}
+
+			if (ImGui::CollapsingHeader("Whitelist"))
+			{
+				ImGui::Columns(2, nullptr, false);
+				
+				for (auto& item : Settings::looter.selection.whitelist)
+				{
+					auto toggleLabel = fmt::format("Enabled##whiteList{0:x}Enabled", item.first);
+					LargeButtonToggle(toggleLabel.c_str(), item.second);
+
+					ImGui::NextColumn();
+
+					auto inputLabel = fmt::format("##whiteList{0:x}Item", item.first);
+					auto key = item.first;
+					auto value = item.second;
+					if(ImGui::InputScalar(inputLabel.c_str(), ImGuiDataType_U32, &key, nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_EnterReturnsTrue))
+					{
+						Settings::looter.selection.whitelist.erase(item.first);
+						if(key)
+							Settings::looter.selection.whitelist.try_emplace(key, value);
+					};
+
+					ImGui::NextColumn();
+				}
+				//this is for inserting new records into the map
+				{
+					DWORD key = 0;
+					auto value = false;
+
+					LargeButtonToggle("Enabled##whiteListNewEnabled", value);
+
+					ImGui::NextColumn();
+
+					if (ImGui::InputScalar("##whiteListNewItem", ImGuiDataType_U32, &key, nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_EnterReturnsTrue))
+					{
+						if (key)
+							Settings::looter.selection.whitelist.try_emplace(key, value);
+					};
+				}
+			
+				ImGui::Columns();
+			}
+			
+			if (ImGui::CollapsingHeader("Blacklist"))
+			{
+				ImGui::Columns(2, nullptr, false);
+
+				for (auto& item : Settings::looter.selection.blacklist)
+				{
+					auto toggleLabel = fmt::format("Enabled##blackList{0:x}Enabled", item.first);
+					LargeButtonToggle(toggleLabel.c_str(), item.second);
+
+					ImGui::NextColumn();
+
+					auto inputLabel = fmt::format("##blackList{0:x}Item", item.first);
+					auto key = item.first;
+					auto value = item.second;
+					if (ImGui::InputScalar(inputLabel.c_str(), ImGuiDataType_U32, &key, nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_EnterReturnsTrue))
+					{
+						Settings::looter.selection.blacklist.erase(item.first);
+						if (key)
+							Settings::looter.selection.blacklist.try_emplace(key, value);
+					};
+
+					ImGui::NextColumn();
+				}
+				//this is for inserting new records into the map
+				{
+					DWORD key = 0;
+					auto value = false;
+
+					LargeButtonToggle("Enabled##blackListNewEnabled", value);
+
+					ImGui::NextColumn();
+
+					if (ImGui::InputScalar("##blackListNewItem", ImGuiDataType_U32, &key, nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_EnterReturnsTrue))
+					{
+						if (key)
+							Settings::looter.selection.blacklist.try_emplace(key, value);
+					};
+				}
+
+				ImGui::Columns();
+			}
+
+			ImGui::TreePop();
 		}
-
-		if (ImGui::CollapsingHeader("Container Looter (6m Distance Limit)"))
-		{
-			LargeButtonToggle("Automatic Container Looting Enabled (Keybind: CTRL+PERIOD)###ContainerLooterEnabled", &Settings::containerLooter.enabled);
-
-			ButtonToggle("All Weapons Enabled###ContainerLooterAllWeaponsEnabled", &Settings::containerLooter.allWeaponsEnabled);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("All Armor Enabled###ContainerLooterAllArmorEnabled", &Settings::containerLooter.allArmorEnabled);
-
-			ButtonToggle("1* Weapons Enabled###ContainerLooterOneStarWeaponsEnabled", &Settings::containerLooter.oneStarWeaponsEnabled);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("1* Armor Enabled###ContainerLooterOneStarArmorEnabled", &Settings::containerLooter.oneStarArmorEnabled);
-
-			ButtonToggle("2* Weapons Enabled###ContainerLooterTwoStarWeaponsEnabled", &Settings::containerLooter.twoStarWeaponsEnabled);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("2* Armor Enabled###ContainerLooterTwoStarArmorEnabled", &Settings::containerLooter.twoStarArmorEnabled);
-
-			ButtonToggle("3* Weapons Enabled###ContainerLooterThreeStarWeaponsEnabled", &Settings::containerLooter.threeStarWeaponsEnabled);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("3* Armor Enabled###ContainerLooterThreeStarArmorEnabled", &Settings::containerLooter.threeStarArmorEnabled);
-
-			ButtonToggle("Ammo Enabled###ContainerLooterAmmoEnabled", &Settings::containerLooter.ammoEnabled);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Mods Enabled###ContainerLooterModsEnabled", &Settings::containerLooter.modsEnabled);
-
-			ButtonToggle("Caps Enabled###ContainerLooterCapsEnabled", &Settings::containerLooter.capsEnabled);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Junk Enabled###ContainerLooterJunkEnabled", &Settings::containerLooter.junkEnabled);
-
-			ButtonToggle("Aid Enabled###ContainerLooterAidEnabled", &Settings::containerLooter.aidEnabled);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Treasure Maps Enabled###ContainerLooterTreasureMapsEnabled", &Settings::containerLooter.treasureMapsEnabled);
-
-			ButtonToggle("Known Plans Enabled###ContainerLooterKnownPlansEnabled", &Settings::containerLooter.knownPlansEnabled);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Unknown Plans Enabled###ContainerLooterUnknownPlansEnabled", &Settings::containerLooter.unknownPlansEnabled);
-
-			ButtonToggle("Misc Enabled###ContainerLooterMiscEnabled", &Settings::containerLooter.miscEnabled);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Other Enabled###ContainerLooterUnlistedEnabled", &Settings::containerLooter.unlistedEnabled);
-
-			LargeButtonToggle("Container Looter FormId List Enabled###ContainerLooterListEnabled", &Settings::containerLooter.listEnabled);
-
-			LargeButtonToggle("Container Looter Blacklist Enabled###ContainerLooterBlacklistToggle", &Settings::containerLooter.blacklistToggle);
-
-			if (ImGui::CollapsingHeader("Container Looter FormId List"))
-			{
-				for (auto i = 0; i < 100; i++)
-				{
-					auto toggleLabel = fmt::format("Container Looter Slot: {0:d}", i);
-					ButtonToggle(toggleLabel.c_str(), &Settings::containerLooter.enabledList[i]);
-
-					ImGui::SameLine(235.0f);
-					ImGui::SetNextItemWidth(224.0f);
-
-					auto inputLabel = fmt::format("###ContainerLooterList{:d}", i);
-					ImGui::InputScalar(inputLabel.c_str(), ImGuiDataType_U32, &Settings::containerLooter.formIdList[i],
-						nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal);
-				}
-			}
-
-			if (ImGui::CollapsingHeader("Container Looter Blacklist"))
-			{
-				for (auto i = 0; i < 64; i++)
-				{
-					auto toggleLabel = fmt::format("Container Looter Blacklist: {0:d}", i);
-					ButtonToggle(toggleLabel.c_str(), &Settings::containerLooter.blacklistEnabled[i]);
-
-					ImGui::SameLine(235.0f);
-					ImGui::SetNextItemWidth(224.0f);
-
-					auto inputLabel = fmt::format("###ContainerLooterBlacklist{:d}", i);
-					ImGui::InputScalar(inputLabel.c_str(), ImGuiDataType_U32, &Settings::containerLooter.blacklist[i],
-						nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal);
-				}
-			}
-		}
-
-		if (ImGui::CollapsingHeader("Flora Harvester (6m Distance Limit)"))
-		{
-			LargeButtonToggle("Automatic Flora Harvesting Enabled (Keybind: CTRL+P])###HarvesterEnabled", &Settings::harvester.enabled);
-			LargeButtonToggle("Flora Harvester ESP Override (Uses Flora ESP Settings)", &Settings::harvester.overrideEnabled);
-
-			for (auto i = 0; i < 69; i++)
-			{
-				ButtonToggle(Settings::harvester.nameList[i], &Settings::harvester.enabledList[i]);
-
-				ImGui::SameLine(235.0f);
-				ImGui::SetNextItemWidth(224.0f);
-
-				auto inputLabel = fmt::format("###HarvesterReadOnly{:d}", i);
-				auto inputText = fmt::format("{:08X}", Settings::harvester.formIdList[i]);
-				ImGui::InputText(inputLabel.c_str(), &inputText, ImGuiInputTextFlags_ReadOnly);
-			}
-		}
-
 		ImGui::EndTabItem();
 	}
 }
@@ -1668,29 +1465,29 @@ void Gui::OverlayMenuTabCombat()
 	{
 		if (ImGui::CollapsingHeader("Weapon Editor"))
 		{
-			ButtonToggle("No Recoil", &Settings::weapons.noRecoil);
+			ButtonToggle("No Recoil", Settings::weapons.noRecoil);
 			ImGui::SameLine(235.0f);
-			ButtonToggle("Infinite Ammo", &Settings::weapons.infiniteAmmo);
+			ButtonToggle("Infinite Ammo", Settings::weapons.infiniteAmmo);
 
-			ButtonToggle("No Spread", &Settings::weapons.noSpread);
+			ButtonToggle("No Spread", Settings::weapons.noSpread);
 			ImGui::SameLine(235.0f);
-			ButtonToggle("Instant Reload", &Settings::weapons.instantReload);
+			ButtonToggle("Instant Reload", Settings::weapons.instantReload);
 
-			ButtonToggle("No Sway", &Settings::weapons.noSway);
+			ButtonToggle("No Sway", Settings::weapons.noSway);
 			ImGui::SameLine(235.0f);
-			ButtonToggle("Automatic Flag###WeaponAutomatic", &Settings::weapons.automaticflag);
+			ButtonToggle("Automatic Flag###WeaponAutomatic", Settings::weapons.automaticflag);
 
-			ButtonToggle("Capacity###WeaponCapacityEnabled", &Settings::weapons.capacityEnabled);
+			ButtonToggle("Capacity###WeaponCapacityEnabled", Settings::weapons.capacityEnabled);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::SliderInt("###WeaponCapacity", &Settings::weapons.capacity, 0, 999, "Capacity: %d");
 
-			ButtonToggle("Speed###WeaponSpeedEnabled", &Settings::weapons.speedEnabled);
+			ButtonToggle("Speed###WeaponSpeedEnabled", Settings::weapons.speedEnabled);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::SliderFloat("###WeaponSpeed", &Settings::weapons.speed, 0.0f, 100.0f, "Speed: %.2f");
 
-			ButtonToggle("Reach###WeaponReachEnabled", &Settings::weapons.reachEnabled);
+			ButtonToggle("Reach###WeaponReachEnabled", Settings::weapons.reachEnabled);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::SliderFloat("###WeaponReach", &Settings::weapons.reach, 0.0f, 999.0f, "Reach: %.2f");
@@ -1698,38 +1495,38 @@ void Gui::OverlayMenuTabCombat()
 
 		if (ImGui::CollapsingHeader("Targeting Settings"))
 		{
-			ButtonToggle("Player Targeting (Keybind: T)", &Settings::targetting.lockPlayers);
+			ButtonToggle("Player Targeting (Keybind: T)", Settings::targetting.lockPlayers);
 			ImGui::SameLine(235.0f);
-			ButtonToggle("NPC Targeting (Keybind: T)", &Settings::targetting.lockNpCs);
+			ButtonToggle("NPC Targeting (Keybind: T)", Settings::targetting.lockNpCs);
 
-			ButtonToggle("Damage Redirection (Players)", &Settings::targetting.indirectPlayers);
+			ButtonToggle("Damage Redirection (Players)", Settings::targetting.indirectPlayers);
 			ImGui::SameLine(235.0f);
-			ButtonToggle("Damage Redirection (NPCs)", &Settings::targetting.indirectNpCs);
+			ButtonToggle("Damage Redirection (NPCs)", Settings::targetting.indirectNpCs);
 
-			ButtonToggle("Send Damage (Players)", &Settings::targetting.directPlayers);
+			ButtonToggle("Send Damage (Players)", Settings::targetting.directPlayers);
 			ImGui::SameLine(235.0f);
-			ButtonToggle("Send Damage (NPCs)", &Settings::targetting.directNpCs);
+			ButtonToggle("Send Damage (NPCs)", Settings::targetting.directNpCs);
 
-			SmallButtonToggle("Living###TargetLiving", &Settings::targetting.targetLiving);
+			SmallButtonToggle("Living###TargetLiving", Settings::targetting.targetLiving);
 			ImGui::SameLine(122.0f);
-			SmallButtonToggle("Downed###TargetDowned", &Settings::targetting.targetDowned);
+			SmallButtonToggle("Downed###TargetDowned", Settings::targetting.targetDowned);
 			ImGui::SameLine(235.0f);
-			SmallButtonToggle("Dead###TargetDead", &Settings::targetting.targetDead);
+			SmallButtonToggle("Dead###TargetDead", Settings::targetting.targetDead);
 			ImGui::SameLine(349.0f);
-			SmallButtonToggle("Unknown###TargetUnknown", &Settings::targetting.targetUnknown);
+			SmallButtonToggle("Unknown###TargetUnknown", Settings::targetting.targetUnknown);
 
-			ButtonToggle("Ignore Render Distance###IgnoreRenderDistance", &Settings::targetting.ignoreRenderDistance);
+			ButtonToggle("Ignore Render Distance###IgnoreRenderDistance", Settings::targetting.ignoreRenderDistance);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::SliderFloat("###TargetLockingFOV", &Settings::targetting.lockingFov, 5.0f, 40.0f, "Targeting FOV: %.2f");
 
-			ButtonToggle("Ignore Essential NPCs###IgnoreEssentialNPCs", &Settings::targetting.ignoreEssentialNpCs);
+			ButtonToggle("Ignore Essential NPCs###IgnoreEssentialNPCs", Settings::targetting.ignoreEssentialNpCs);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::ColorEdit3("###TargetLockingColor", Settings::targetting.lockingColor);
 			Utils::ValidateRgb(Settings::playerSettings.unknownColor);
 
-			ButtonToggle("Automatic Retargeting###TargetLockingRetargeting", &Settings::targetting.retargeting);
+			ButtonToggle("Automatic Retargeting###TargetLockingRetargeting", Settings::targetting.retargeting);
 
 			ImGui::SameLine(235.0f);
 
@@ -1794,7 +1591,7 @@ void Gui::OverlayMenuTabCombat()
 
 		if (ImGui::CollapsingHeader("Melee Settings"))
 		{
-			LargeButtonToggle("Melee Enabled (Keybind: U)", &Settings::melee.enabled);
+			LargeButtonToggle("Melee Enabled (Keybind: U)", Settings::melee.enabled);
 
 			{
 				ImGui::SetNextItemWidth(224.0f);
@@ -1821,8 +1618,8 @@ void Gui::OverlayMenuTabCombat()
 
 		if (ImGui::CollapsingHeader("One Position Kill"))
 		{
-			LargeButtonToggle("OPK Players (Keybind: CTRL+B)", &Settings::opk.playersEnabled);
-			LargeButtonToggle("OPK NPCs (Keybind: CTRL+N)", &Settings::opk.npcsEnabled);
+			LargeButtonToggle("OPK Players (Keybind: CTRL+B)", Settings::opk.playersEnabled);
+			LargeButtonToggle("OPK NPCs (Keybind: CTRL+N)", Settings::opk.npcsEnabled);
 		}
 
 		ImGui::EndTabItem();
@@ -1835,81 +1632,81 @@ void Gui::OverlayMenuTabPlayer()
 	{
 		if (ImGui::CollapsingHeader("Local Player Settings"))
 		{
-			LargeButtonToggle("Position Spoofing (Keybind CTRL+L)##LocalPlayerPositionSpoofingEnabled", &Settings::customLocalPlayerSettings.positionSpoofingEnabled);
+			LargeButtonToggle("Position Spoofing (Keybind CTRL+L)##LocalPlayerPositionSpoofingEnabled", Settings::customLocalPlayerSettings.positionSpoofingEnabled);
 
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 
 			ImGui::SliderInt("###LocalPlayerPositionSpoofingHeight", &Settings::customLocalPlayerSettings.positionSpoofingHeight, -524287, 524287, "Spoofed Height: %d");
 
-			ButtonToggle("Noclip (Keybind CTRL+Y)###NoclipEnabled", &Settings::customLocalPlayerSettings.noclipEnabled);
+			ButtonToggle("Noclip (Keybind CTRL+Y)###NoclipEnabled", Settings::customLocalPlayerSettings.noclipEnabled);
 
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 
 			ImGui::SliderFloat("###NoclipSpeed", &Settings::customLocalPlayerSettings.noclipSpeed, 0.0f, 2.0f, "Speed: %.5f");
 
-			ButtonToggle("Client State", &Settings::customLocalPlayerSettings.clientState);
+			ButtonToggle("Client State", Settings::customLocalPlayerSettings.clientState);
 			ImGui::SameLine(235.0f);
-			ButtonToggle("Automatic Client State", &Settings::customLocalPlayerSettings.automaticClientState);
+			ButtonToggle("Automatic Client State", Settings::customLocalPlayerSettings.automaticClientState);
 
-			LargeButtonToggle("Freeze Action Points###LocalPlayerFreezeApEnabled", &Settings::customLocalPlayerSettings.freezeApEnabled);
+			LargeButtonToggle("Freeze Action Points###LocalPlayerFreezeApEnabled", Settings::customLocalPlayerSettings.freezeApEnabled);
 
-			ButtonToggle("Action Points###LocalPlayerAPEnabled", &Settings::customLocalPlayerSettings.actionPointsEnabled);
+			ButtonToggle("Action Points###LocalPlayerAPEnabled", Settings::customLocalPlayerSettings.actionPointsEnabled);
 
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 
 			ImGui::SliderInt("###LocalPlayerAP", &Settings::customLocalPlayerSettings.actionPoints, 0, 99999, "Action Points: %d");
 
-			ButtonToggle("Strength###LocalPlayerStrengthEnabled", &Settings::customLocalPlayerSettings.strengthEnabled);
+			ButtonToggle("Strength###LocalPlayerStrengthEnabled", Settings::customLocalPlayerSettings.strengthEnabled);
 
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 
 			ImGui::SliderInt("###LocalPlayerStrength", &Settings::customLocalPlayerSettings.strength, 0, 99999, "Strength: %d");
 
-			ButtonToggle("Perception###LocalPlayerPerceptionEnabled", &Settings::customLocalPlayerSettings.perceptionEnabled);
+			ButtonToggle("Perception###LocalPlayerPerceptionEnabled", Settings::customLocalPlayerSettings.perceptionEnabled);
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::SliderInt("###LocalPlayerPerception", &Settings::customLocalPlayerSettings.perception, 0, 99999, "Perception: %d");
 
-			ButtonToggle("Endurance###LocalPlayerEnduranceEnabled", &Settings::customLocalPlayerSettings.enduranceEnabled);
+			ButtonToggle("Endurance###LocalPlayerEnduranceEnabled", Settings::customLocalPlayerSettings.enduranceEnabled);
 
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 
 			ImGui::SliderInt("###LocalPlayerEndurance", &Settings::customLocalPlayerSettings.endurance, 0, 99999, "Endurance: %d");
 
-			ButtonToggle("Charisma###LocalPlayerCharismaEnabled", &Settings::customLocalPlayerSettings.charismaEnabled);
+			ButtonToggle("Charisma###LocalPlayerCharismaEnabled", Settings::customLocalPlayerSettings.charismaEnabled);
 
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 
 			ImGui::SliderInt("###LocalPlayerCharisma", &Settings::customLocalPlayerSettings.charisma, 0, 99999, "Charisma: %d");
 
-			ButtonToggle("Intelligence###LocalPlayerIntelligenceEnabled", &Settings::customLocalPlayerSettings.intelligenceEnabled);
+			ButtonToggle("Intelligence###LocalPlayerIntelligenceEnabled", Settings::customLocalPlayerSettings.intelligenceEnabled);
 
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 
 			ImGui::SliderInt("###LocalPlayerIntelligence", &Settings::customLocalPlayerSettings.intelligence, 0, 99999, "Intelligence: %d");
 
-			ButtonToggle("Agility###LocalPlayerAgilityEnabled", &Settings::customLocalPlayerSettings.agilityEnabled);
+			ButtonToggle("Agility###LocalPlayerAgilityEnabled", Settings::customLocalPlayerSettings.agilityEnabled);
 
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 
 			ImGui::SliderInt("###LocalPlayerAgility", &Settings::customLocalPlayerSettings.agility, 0, 99999, "Agility: %d");
 
-			ButtonToggle("Luck###LocalPlayerLuckEnabled", &Settings::customLocalPlayerSettings.luckEnabled);					ImGui::SameLine(235.0f);
+			ButtonToggle("Luck###LocalPlayerLuckEnabled", Settings::customLocalPlayerSettings.luckEnabled);					ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::SliderInt("###LocalPlayerLuck", &Settings::customLocalPlayerSettings.luck, 0, 99999, "Luck: %d");
 		}
 
 		if (ImGui::CollapsingHeader("Character Settings"))
 		{
-			LargeButtonToggle("Character Appearance Editing Enabled###ChargenEditingEnabled", &Settings::characterEditor.enabled);
+			LargeButtonToggle("Character Appearance Editing Enabled###ChargenEditingEnabled", Settings::characterEditor.enabled);
 			ImGui::SetNextItemWidth(451.0f);
 			ImGui::SliderFloat("###ChargenThin", &Settings::characterEditor.thin, 0.0f, 1.0f, "Character Appearance (Thin): %f");
 
@@ -1929,11 +1726,11 @@ void Gui::OverlayMenuTabUtilities()
 	{
 		if (ImGui::CollapsingHeader("Utility"))
 		{
-			ButtonToggle("Draw Local Player Data", &Settings::utilities.debugPlayer);
+			ButtonToggle("Draw Local Player Data", Settings::utilities.debugPlayer);
 
 			ImGui::SameLine(235.0f);
 
-			ButtonToggle("ESP Debug Mode", &Settings::utilities.debugEsp);
+			ButtonToggle("ESP Debug Mode", Settings::utilities.debugEsp);
 
 			{
 				if (Settings::utilities.ptrFormId)
@@ -2026,7 +1823,7 @@ void Gui::OverlayMenuTabUtilities()
 
 		if (ImGui::CollapsingHeader("Reference Editor"))
 		{
-			ButtonToggle("Source FormId###SwapperSourceFormIdToggle", &swapperSourceToggle);
+			ButtonToggle("Source FormId###SwapperSourceFormIdToggle", swapperSourceToggle);
 
 			ImGui::SameLine(235.0f);
 
@@ -2036,7 +1833,7 @@ void Gui::OverlayMenuTabUtilities()
 					nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal);
 			}
 
-			ButtonToggle("Destination FormId###SwapperDestinationFormIdToggle", &swapperDestinationToggle);
+			ButtonToggle("Destination FormId###SwapperDestinationFormIdToggle", swapperDestinationToggle);
 
 			ImGui::SameLine(235.0f);
 
@@ -2080,7 +1877,7 @@ void Gui::OverlayMenuTabUtilities()
 
 		if (ImGui::CollapsingHeader("Item Transferring"))
 		{
-			SmallButtonToggle("Source###TransferSourceFormIdToggle", &transferSourceToggle);
+			SmallButtonToggle("Source###TransferSourceFormIdToggle", transferSourceToggle);
 
 			ImGui::SameLine(122.0f);
 
@@ -2108,7 +1905,7 @@ void Gui::OverlayMenuTabUtilities()
 				ImGui::PopStyleColor(3);
 			}
 
-			SmallButtonToggle("Destination###TransferDestinationFormIdToggle", &transferDestinationToggle);
+			SmallButtonToggle("Destination###TransferDestinationFormIdToggle", transferDestinationToggle);
 
 			ImGui::SameLine(122.0f);
 
@@ -2166,15 +1963,15 @@ void Gui::OverlayMenuTabUtilities()
 				ImGui::PopStyleColor(3);
 			}
 
-			LargeButtonToggle("Use Item Transfer Whitelist", &Settings::customTransferSettings.useWhitelist);
-			LargeButtonToggle("Use Item Transfer Blacklist", &Settings::customTransferSettings.useBlacklist);
+			LargeButtonToggle("Use Item Transfer Whitelist", Settings::customTransferSettings.useWhitelist);
+			LargeButtonToggle("Use Item Transfer Blacklist", Settings::customTransferSettings.useBlacklist);
 
 			if (ImGui::CollapsingHeader("Item Transfer Whitelist Settings"))
 			{
 				for (auto i = 0; i < 32; i++)
 				{
 					auto toggleLabel = fmt::format("Transfer Whitelist Slot: {0:d}", i);
-					ButtonToggle(toggleLabel.c_str(), &Settings::customTransferSettings.whitelisted[i]);
+					ButtonToggle(toggleLabel.c_str(), Settings::customTransferSettings.whitelisted[i]);
 
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
@@ -2190,7 +1987,7 @@ void Gui::OverlayMenuTabUtilities()
 				for (auto i = 0; i < 32; i++)
 				{
 					auto toggleLabel = fmt::format("Transfer Blacklist Slot: {0:d}", i);
-					ButtonToggle(toggleLabel.c_str(), &Settings::customTransferSettings.blacklisted[i]);
+					ButtonToggle(toggleLabel.c_str(), Settings::customTransferSettings.blacklisted[i]);
 
 					ImGui::SameLine(235.0f);
 					ImGui::SetNextItemWidth(224.0f);
@@ -2204,7 +2001,7 @@ void Gui::OverlayMenuTabUtilities()
 
 		if (ImGui::CollapsingHeader("Nuke Codes"))
 		{
-			ButtonToggle("Automatic Nuke Codes", &Settings::customNukeCodeSettings.automaticNukeCodes);
+			ButtonToggle("Automatic Nuke Codes", Settings::customNukeCodeSettings.automaticNukeCodes);
 
 			ImGui::SameLine(235.0f);
 
@@ -2312,7 +2109,7 @@ void Gui::OverlayMenuTabTeleporter()
 
 				{
 					auto buttonLabel = fmt::format("Lock###DisableSaving{:d}", i);
-					SmallButtonToggle(buttonLabel.c_str(), &Settings::teleporter.entries[i].disableSaving);
+					SmallButtonToggle(buttonLabel.c_str(), Settings::teleporter.entries[i].disableSaving);
 				}
 
 				ImGui::SameLine(349.0f);
@@ -2350,7 +2147,7 @@ void Gui::OverlayMenuTabBitMsgWriter()
 {
 	if (ImGui::BeginTabItem("BitMsgWriter###BitMsgWriterTab"))
 	{
-		LargeButtonToggle("Message Sender Enabled", &Settings::msgWriter.enabled);
+		LargeButtonToggle("Message Sender Enabled", Settings::msgWriter.enabled);
 
 		ImGui::EndTabItem();
 	}
@@ -2388,13 +2185,14 @@ void Gui::OverlayMenu()
 		if (ImGui::BeginTabBar("###OverlayMenuTabBar", ImGuiTabBarFlags_None))
 		{
 			OverlayMenuTabEsp();
-			OverlayMenuTabLoot();
 			OverlayMenuTabCombat();
 			OverlayMenuTabPlayer();
 			OverlayMenuTabInfoBox();
 			OverlayMenuTabUtilities();
 			OverlayMenuTabTeleporter();
 			OverlayMenuTabBitMsgWriter();
+
+			OverlayMenuLooter();
 
 			ImGui::EndTabBar();
 		}
