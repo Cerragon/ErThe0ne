@@ -11,31 +11,8 @@ mINI::INIFile file("Erectus.ini");
 mINI::INIStructure ini;
 
 //esp
-OverlaySettingsA Settings::playerSettings = {
-	true,					//Enabled
-	1500,					//EnabledDistance
-	true,					//DrawAlive
-	{ 0.0f, 1.0f, 0.0f },	//AliveColor
-	true,					//DrawDowned
-	{ 1.0f, 1.0f, 0.0f },	//DownedColor
-	false,					//DrawDead
-	{ 1.0f, 0.0f, 0.0f },	//DeadColor
-	false,					//DrawUnknown
-	{ 1.0f, 0.5f, 0.0f },	//UnknownColor
-	true,					//DrawEnabled;
-	1.0f,					//EnabledAlpha;
-	false,					//DrawDisabled;
-	0.5f,					//DisabledAlpha;
-	true,					//DrawNamed;
-	false,					//DrawUnnamed;
-	true,					//ShowName;
-	true,					//ShowDistance;
-	true,					//ShowHealth
-	false,					//ShowDeadHealth
-	true,					//TextShadowed;
-	true,					//TextCentered;
-};
-OverlaySettingsA Settings::npcSettings = {
+/*
+EspSettings Settings::esp.npcs = {
 		true,					//Enabled
 	1500,					//EnabledDistance
 	true,					//DrawAlive
@@ -59,101 +36,11 @@ OverlaySettingsA Settings::npcSettings = {
 	true,					//TextShadowed;
 	true,					//TextCentered;
 };
+*/
 
-OverlaySettingsB defltOverlaySettingsB = {
-	false,					//Enabled
-	1500,					//EnabledDistance
-	{ 1.0f, 1.0f, 1.0f },	//Color
-	true,					//DrawEnabled
-	1.0f,					//EnabledAlpha
-	false,					//DrawDisabled
-	0.5f,					//DisabledAlpha
-	true,					//DrawNamed
-	false,					//DrawUnnamed
-	true,					//ShowName
-	true,					//ShowDistance
-	true,					//TextCentered
-	true,					//TextShadowed
-	{},						//Whitelisted
-	{},				//Whitelist
-};
-OverlaySettingsB Settings::containerSettings = defltOverlaySettingsB;
-OverlaySettingsB Settings::junkSettings = defltOverlaySettingsB;
-OverlaySettingsB Settings::planSettings = defltOverlaySettingsB;
-OverlaySettingsB Settings::magazineSettings = defltOverlaySettingsB;
-OverlaySettingsB Settings::bobbleheadSettings = defltOverlaySettingsB;
-OverlaySettingsB Settings::itemSettings = defltOverlaySettingsB;
-OverlaySettingsB Settings::floraSettings = defltOverlaySettingsB;
-OverlaySettingsB Settings::entitySettings = defltOverlaySettingsB;
-LegendarySettings Settings::customLegendarySettings = {
-	true,
-	{ 0.7f, 1.0f, 0.7f },
-	true,
-	{ 1.0f, 0.5f, 0.5f },
-	true,
-	{ 0.7f, 1.0f, 0.7f },
-	true,
-	{ 1.0f, 0.5f, 0.5f },
-	true,
-	{ 0.7f, 1.0f, 0.7f },
-	true,
-	{ 1.0f, 0.5f, 0.5f },
-};
 
 //utils
 WeaponSettings Settings::weapons = defaultWeaponSettings;
-TargetSettings Settings::targetting = {
-	.lockingFov = 20.0f,
-	.lockingColor = { 1.0f, 0.0f, 1.0f },
-	.sendDamageMin = 1,
-	.sendDamageMax = 1,
-	.favoriteIndex = 12,
-};
-LocalPlayerSettings Settings::localPlayer = {
-	false,
-	524287,
-	false,
-	0.1f,
-	false,
-	false,
-	false,
-	false,
-	90001,
-	false,
-	9001,
-	false,
-	9001,
-	false,
-	9001,
-	false,
-	9001,
-	false,
-	9001,
-	false,
-	9001,
-	false,
-	9001,
-};
-TransferSettings Settings::customTransferSettings = {
-	0x00000000,
-	0x00000000,
-	true,
-	true,
-	{},
-	{},
-	{
-		true, false, false, false, false, false, false, false,
-		false, false, false, false, false, false, false, false,
-		false, false, false, false, false, false, false, false,
-		false, false, false, false, false, false, false, false,
-	},
-	{
-		0x00021B3B, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
-		0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
-		0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
-		0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
-	},
-};
 
 void Settings::GetDword(const std::string& section, const std::string& key, DWORD& value, const DWORD deflt)
 {
@@ -337,104 +224,105 @@ void Settings::SetBool(const std::string& section, const std::string& key, const
 	SetSliderInt(section, key, bufferValue, bufferdeflt, 0, 1);
 }
 
-void Settings::GetOverlaySettingsA(const std::string& section, OverlaySettingsA* value, const OverlaySettingsA* deflt)
+void Settings::GetActorSettings(const std::string& section, EspSettings::Actors& value, const EspSettings::Actors& deflt)
 {
-	GetBool(section, "Enabled", value->enabled, deflt->enabled);
-	GetSliderInt(section, "EnabledDistance", value->enabledDistance, deflt->enabledDistance, 0, 3000);
-	GetBool(section, "DrawAlive", value->drawAlive, deflt->drawAlive);
-	GetRgb(section, "AliveColor", value->aliveColor, deflt->aliveColor);
-	GetBool(section, "DrawDowned", value->drawDowned, deflt->drawDowned);
-	GetRgb(section, "DownedColor", value->downedColor, deflt->downedColor);
-	GetBool(section, "DrawDead", value->drawDead, deflt->drawDead);
-	GetRgb(section, "DeadColor", value->deadColor, deflt->deadColor);
-	GetBool(section, "DrawUnknown", value->drawUnknown, deflt->drawUnknown);
-	GetRgb(section, "UnknownColor", value->unknownColor, deflt->unknownColor);
-	GetBool(section, "DrawEnabled", value->drawEnabled, deflt->drawEnabled);
-	GetSliderFloat(section, "EnabledAlpha", value->enabledAlpha, deflt->enabledAlpha, 0.0f, 1.0f);
-	GetBool(section, "DrawDisabled", value->drawDisabled, deflt->drawDisabled);
-	GetSliderFloat(section, "DisabledAlpha", value->disabledAlpha, deflt->disabledAlpha, 0.0f, 1.0f);
-	GetBool(section, "DrawNamed", value->drawNamed, deflt->drawNamed);
-	GetBool(section, "DrawUnnamed", value->drawUnnamed, deflt->drawUnnamed);
-	GetBool(section, "ShowName", value->showName, deflt->showName);
-	GetBool(section, "ShowDistance", value->showDistance, deflt->showDistance);
-	GetBool(section, "ShowHealth", value->showHealth, deflt->showHealth);
-	GetBool(section, "ShowDeadHealth", value->showDeadHealth, deflt->showDeadHealth);
-	GetBool(section, "TextShadowed", value->textShadowed, deflt->textShadowed);
-	GetBool(section, "TextCentered", value->textCentered, deflt->textCentered);
+	GetBool(section, "Enabled", value.enabled, deflt.enabled);
+	GetSliderInt(section, "EnabledDistance", value.enabledDistance, deflt.enabledDistance, 0, 3000);
+	GetBool(section, "DrawAlive", value.drawAlive, deflt.drawAlive);
+	GetRgb(section, "AliveColor", value.aliveColor, deflt.aliveColor);
+	GetBool(section, "DrawDowned", value.drawDowned, deflt.drawDowned);
+	GetRgb(section, "DownedColor", value.downedColor, deflt.downedColor);
+	GetBool(section, "DrawDead", value.drawDead, deflt.drawDead);
+	GetRgb(section, "DeadColor", value.deadColor, deflt.deadColor);
+	GetBool(section, "DrawUnknown", value.drawUnknown, deflt.drawUnknown);
+	GetRgb(section, "UnknownColor", value.unknownColor, deflt.unknownColor);
+	GetBool(section, "DrawEnabled", value.drawEnabled, deflt.drawEnabled);
+	GetSliderFloat(section, "EnabledAlpha", value.enabledAlpha, deflt.enabledAlpha, 0.0f, 1.0f);
+	GetBool(section, "DrawDisabled", value.drawDisabled, deflt.drawDisabled);
+	GetSliderFloat(section, "DisabledAlpha", value.disabledAlpha, deflt.disabledAlpha, 0.0f, 1.0f);
+	GetBool(section, "DrawNamed", value.drawNamed, deflt.drawNamed);
+	GetBool(section, "DrawUnnamed", value.drawUnnamed, deflt.drawUnnamed);
+	GetBool(section, "ShowName", value.showName, deflt.showName);
+	GetBool(section, "ShowDistance", value.showDistance, deflt.showDistance);
+	GetBool(section, "ShowHealth", value.showHealth, deflt.showHealth);
+	GetBool(section, "ShowDeadHealth", value.showDeadHealth, deflt.showDeadHealth);
+	GetBool(section, "TextShadowed", value.textShadowed, deflt.textShadowed);
+	GetBool(section, "TextCentered", value.textCentered, deflt.textCentered);
 }
 
-void Settings::SetOverlaySettingsA(const std::string& section, OverlaySettingsA* value, const OverlaySettingsA* deflt)
+void Settings::SetActorSettings(const std::string& section, EspSettings::Actors& value, const EspSettings::Actors& deflt)
 {
-	SetBool(section, "Enabled", value->enabled, deflt->enabled);
-	SetSliderInt(section, "EnabledDistance", value->enabledDistance, deflt->enabledDistance, 0, 3000);
-	SetBool(section, "DrawAlive", value->drawAlive, deflt->drawAlive);
-	SetRgb(section, "AliveColor", value->aliveColor, deflt->aliveColor);
-	SetBool(section, "DrawDowned", value->drawDowned, deflt->drawDowned);
-	SetRgb(section, "DownedColor", value->downedColor, deflt->downedColor);
-	SetBool(section, "DrawDead", value->drawDead, deflt->drawDead);
-	SetRgb(section, "DeadColor", value->deadColor, deflt->deadColor);
-	SetBool(section, "DrawUnknown", value->drawUnknown, deflt->drawUnknown);
-	SetRgb(section, "UnknownColor", value->unknownColor, deflt->unknownColor);
-	SetBool(section, "DrawEnabled", value->drawEnabled, deflt->drawEnabled);
-	SetSliderFloat(section, "EnabledAlpha", value->enabledAlpha, deflt->enabledAlpha, 0.0f, 1.0f);
-	SetBool(section, "DrawDisabled", value->drawDisabled, deflt->drawDisabled);
-	SetSliderFloat(section, "DisabledAlpha", value->disabledAlpha, deflt->disabledAlpha, 0.0f, 1.0f);
-	SetBool(section, "DrawNamed", value->drawNamed, deflt->drawNamed);
-	SetBool(section, "DrawUnnamed", value->drawUnnamed, deflt->drawUnnamed);
-	SetBool(section, "ShowName", value->showName, deflt->showName);
-	SetBool(section, "ShowDistance", value->showDistance, deflt->showDistance);
-	SetBool(section, "ShowHealth", value->showHealth, deflt->showHealth);
-	SetBool(section, "ShowDeadHealth", value->showDeadHealth, deflt->showDeadHealth);
-	SetBool(section, "TextShadowed", value->textShadowed, deflt->textShadowed);
-	SetBool(section, "TextCentered", value->textCentered, deflt->textCentered);
+	SetBool(section, "Enabled", value.enabled, deflt.enabled);
+	SetSliderInt(section, "EnabledDistance", value.enabledDistance, deflt.enabledDistance, 0, 3000);
+	SetBool(section, "DrawAlive", value.drawAlive, deflt.drawAlive);
+	SetRgb(section, "AliveColor", value.aliveColor, deflt.aliveColor);
+	SetBool(section, "DrawDowned", value.drawDowned, deflt.drawDowned);
+	SetRgb(section, "DownedColor", value.downedColor, deflt.downedColor);
+	SetBool(section, "DrawDead", value.drawDead, deflt.drawDead);
+	SetRgb(section, "DeadColor", value.deadColor, deflt.deadColor);
+	SetBool(section, "DrawUnknown", value.drawUnknown, deflt.drawUnknown);
+	SetRgb(section, "UnknownColor", value.unknownColor, deflt.unknownColor);
+	SetBool(section, "DrawEnabled", value.drawEnabled, deflt.drawEnabled);
+	SetSliderFloat(section, "EnabledAlpha", value.enabledAlpha, deflt.enabledAlpha, 0.0f, 1.0f);
+	SetBool(section, "DrawDisabled", value.drawDisabled, deflt.drawDisabled);
+	SetSliderFloat(section, "DisabledAlpha", value.disabledAlpha, deflt.disabledAlpha, 0.0f, 1.0f);
+	SetBool(section, "DrawNamed", value.drawNamed, deflt.drawNamed);
+	SetBool(section, "DrawUnnamed", value.drawUnnamed, deflt.drawUnnamed);
+	SetBool(section, "ShowName", value.showName, deflt.showName);
+	SetBool(section, "ShowDistance", value.showDistance, deflt.showDistance);
+	SetBool(section, "ShowHealth", value.showHealth, deflt.showHealth);
+	SetBool(section, "ShowDeadHealth", value.showDeadHealth, deflt.showDeadHealth);
+	SetBool(section, "TextShadowed", value.textShadowed, deflt.textShadowed);
+	SetBool(section, "TextCentered", value.textCentered, deflt.textCentered);
 }
 
-void Settings::GetOverlaySettingsB(const std::string& section, OverlaySettingsB* value, const OverlaySettingsB* deflt)
+void Settings::GetItemSettings(const std::string& section, EspSettings::Items& value, const EspSettings::Items& deflt)
 {
-	GetBool(section, "Enabled", value->enabled, deflt->enabled);
-	GetSliderInt(section, "EnabledDistance", value->enabledDistance, deflt->enabledDistance, 0, 3000);
-	GetRgb(section, "Color", value->color, deflt->color);
-	GetBool(section, "DrawEnabled", value->drawEnabled, deflt->drawEnabled);
-	GetSliderFloat(section, "EnabledAlpha", value->enabledAlpha, deflt->enabledAlpha, 0.0f, 1.0f);
-	GetBool(section, "DrawDisabled", value->drawDisabled, deflt->drawDisabled);
-	GetSliderFloat(section, "DisabledAlpha", value->disabledAlpha, deflt->disabledAlpha, 0.0f, 1.0f);
-	GetBool(section, "DrawNamed", value->drawNamed, deflt->drawNamed);
-	GetBool(section, "DrawUnnamed", value->drawUnnamed, deflt->drawUnnamed);
-	GetBool(section, "ShowName", value->showName, deflt->showName);
-	GetBool(section, "ShowDistance", value->showDistance, deflt->showDistance);
-	GetBool(section, "TextShadowed", value->textShadowed, deflt->textShadowed);
-	GetBool(section, "TextCentered", value->textCentered, deflt->textCentered);
+	GetBool(section, "Enabled", value.enabled, deflt.enabled);
+	GetSliderInt(section, "EnabledDistance", value.enabledDistance, deflt.enabledDistance, 0, 3000);
+	GetRgb(section, "Color", value.color, deflt.color);
+	GetBool(section, "DrawEnabled", value.drawEnabled, deflt.drawEnabled);
+	GetSliderFloat(section, "EnabledAlpha", value.enabledAlpha, deflt.enabledAlpha, 0.0f, 1.0f);
+	GetBool(section, "DrawDisabled", value.drawDisabled, deflt.drawDisabled);
+	GetSliderFloat(section, "DisabledAlpha", value.disabledAlpha, deflt.disabledAlpha, 0.0f, 1.0f);
+	GetBool(section, "DrawNamed", value.drawNamed, deflt.drawNamed);
+	GetBool(section, "DrawUnnamed", value.drawUnnamed, deflt.drawUnnamed);
+	GetBool(section, "ShowName", value.showName, deflt.showName);
+	GetBool(section, "ShowDistance", value.showDistance, deflt.showDistance);
+	GetBool(section, "TextShadowed", value.textShadowed, deflt.textShadowed);
+	GetBool(section, "TextCentered", value.textCentered, deflt.textCentered);
 	for (auto i = 0; i < 32; i++)
 	{
-		GetBool(section, fmt::format("Whitelisted{:d}", i), value->whitelisted[i], deflt->whitelisted[i]);
-		GetDword(section, fmt::format("Whitelist{:d}", i), value->whitelist[i], deflt->whitelist[i]);
+		GetBool(section, fmt::format("Whitelisted{:d}", i), value.whitelisted[i], deflt.whitelisted[i]);
+		GetDword(section, fmt::format("Whitelist{:d}", i), value.whitelist[i], deflt.whitelist[i]);
 	}
 }
 
-void Settings::SetOverlaySettingsB(const std::string& section, OverlaySettingsB* value, const OverlaySettingsB* deflt)
+void Settings::SetItemSettings(const std::string& section, EspSettings::Items& value, const EspSettings::Items& deflt)
 {
-	SetBool(section, "Enabled", value->enabled, deflt->enabled);
-	SetSliderInt(section, "EnabledDistance", value->enabledDistance, deflt->enabledDistance, 0, 3000);
-	SetRgb(section, "Color", value->color, deflt->color);
-	SetBool(section, "DrawEnabled", value->drawEnabled, deflt->drawEnabled);
-	SetSliderFloat(section, "EnabledAlpha", value->enabledAlpha, deflt->enabledAlpha, 0.0f, 1.0f);
-	SetBool(section, "DrawDisabled", value->drawDisabled, deflt->drawDisabled);
-	SetSliderFloat(section, "DisabledAlpha", value->disabledAlpha, deflt->disabledAlpha, 0.0f, 1.0f);
-	SetBool(section, "DrawNamed", value->drawNamed, deflt->drawNamed);
-	SetBool(section, "DrawUnnamed", value->drawUnnamed, deflt->drawUnnamed);
-	SetBool(section, "ShowName", value->showName, deflt->showName);
-	SetBool(section, "ShowDistance", value->showDistance, deflt->showDistance);
-	SetBool(section, "TextShadowed", value->textShadowed, deflt->textShadowed);
-	SetBool(section, "TextCentered", value->textCentered, deflt->textCentered);
+	SetBool(section, "Enabled", value.enabled, deflt.enabled);
+	SetSliderInt(section, "EnabledDistance", value.enabledDistance, deflt.enabledDistance, 0, 3000);
+	SetRgb(section, "Color", value.color, deflt.color);
+	SetBool(section, "DrawEnabled", value.drawEnabled, deflt.drawEnabled);
+	SetSliderFloat(section, "EnabledAlpha", value.enabledAlpha, deflt.enabledAlpha, 0.0f, 1.0f);
+	SetBool(section, "DrawDisabled", value.drawDisabled, deflt.drawDisabled);
+	SetSliderFloat(section, "DisabledAlpha", value.disabledAlpha, deflt.disabledAlpha, 0.0f, 1.0f);
+	SetBool(section, "DrawNamed", value.drawNamed, deflt.drawNamed);
+	SetBool(section, "DrawUnnamed", value.drawUnnamed, deflt.drawUnnamed);
+	SetBool(section, "ShowName", value.showName, deflt.showName);
+	SetBool(section, "ShowDistance", value.showDistance, deflt.showDistance);
+	SetBool(section, "TextShadowed", value.textShadowed, deflt.textShadowed);
+	SetBool(section, "TextCentered", value.textCentered, deflt.textCentered);
 	for (auto i = 0; i < 32; i++)
 	{
-		SetBool(section, fmt::format("Whitelisted{:d}", i), value->whitelisted[i], deflt->whitelisted[i]);
-		SetDword(section, fmt::format("Whitelist{:d}", i), value->whitelist[i], deflt->whitelist[i]);
+		SetBool(section, fmt::format("Whitelisted{:d}", i), value.whitelisted[i], deflt.whitelisted[i]);
+		SetDword(section, fmt::format("Whitelist{:d}", i), value.whitelist[i], deflt.whitelist[i]);
 	}
 }
 
 void Settings::GetInfoBoxSettings()
 {
+	GetBool("InfoBox", "drawLocalPlayerInfo", infobox.drawLocalPlayerInfo, false);
 	GetBool("InfoBox", "drawScrapLooterStatus", infobox.drawScrapLooterStatus, false);
 	GetBool("InfoBox", "drawItemLooterStatus", infobox.drawItemLooterStatus, false);
 	GetBool("InfoBox", "drawNpcLooterStatus", infobox.drawNpcLooterStatus, false);
@@ -573,6 +461,7 @@ void Settings::SetLooterSettings()
 
 void Settings::SetInfoBoxSettings()
 {
+	SetBool("InfoBox", "drawLocalPlayerInfo", infobox.drawLocalPlayerInfo, false);
 	SetBool("InfoBox", "drawScrapLooterStatus", infobox.drawScrapLooterStatus, false);
 	SetBool("InfoBox", "drawItemLooterStatus", infobox.drawItemLooterStatus, false);
 	SetBool("InfoBox", "drawNpcLooterStatus", infobox.drawNpcLooterStatus, false);
@@ -734,7 +623,6 @@ void Settings::SetOpkSettings()
 
 void Settings::GetUtilitySettings()
 {
-	GetBool("UtilitySettings", "DebugPlayer", utilities.debugPlayer, false);
 	GetBool("UtilitySettings", "DebugEsp", utilities.debugEsp, false);
 	GetDword("UtilitySettings", "PtrFormId", utilities.ptrFormId, 0);
 	GetDword("UtilitySettings", "AddressFormId", utilities.addressFormId, 0);
@@ -742,7 +630,6 @@ void Settings::GetUtilitySettings()
 
 void Settings::SetUtilitySettings()
 {
-	SetBool("UtilitySettings", "DebugPlayer", utilities.debugPlayer, false);
 	SetBool("UtilitySettings", "DebugEsp", utilities.debugEsp, false);
 	SetDword("UtilitySettings", "PtrFormId", utilities.ptrFormId, 0);
 	SetDword("UtilitySettings", "AddressFormId", utilities.addressFormId, 0);
@@ -828,64 +715,64 @@ void Settings::SetNukeCodeSettings()
 
 void Settings::GetLegendarySettings()
 {
-	GetBool("LegendarySettings", "OverrideLivingOneStar", customLegendarySettings.overrideLivingOneStar, customLegendarySettings.overrideLivingOneStar);
-	GetRgb("LegendarySettings", "LivingOneStarColor", customLegendarySettings.livingOneStarColor, customLegendarySettings.livingOneStarColor);
-	GetBool("LegendarySettings", "OverrideDeadOneStar", customLegendarySettings.overrideDeadOneStar, customLegendarySettings.overrideDeadOneStar);
-	GetRgb("LegendarySettings", "DeadOneStarColor", customLegendarySettings.deadOneStarColor, customLegendarySettings.deadOneStarColor);
-	GetBool("LegendarySettings", "OverrideLivingTwoStar", customLegendarySettings.overrideLivingTwoStar, customLegendarySettings.overrideLivingTwoStar);
-	GetRgb("LegendarySettings", "LivingTwoStarColor", customLegendarySettings.livingTwoStarColor, customLegendarySettings.livingTwoStarColor);
-	GetBool("LegendarySettings", "OverrideDeadTwoStar", customLegendarySettings.overrideDeadTwoStar, customLegendarySettings.overrideDeadTwoStar);
-	GetRgb("LegendarySettings", "DeadTwoStarColor", customLegendarySettings.deadTwoStarColor, customLegendarySettings.deadTwoStarColor);
-	GetBool("LegendarySettings", "OverrideLivingThreeStar", customLegendarySettings.overrideLivingThreeStar, customLegendarySettings.overrideLivingThreeStar);
-	GetRgb("LegendarySettings", "LivingThreeStarColor", customLegendarySettings.livingThreeStarColor, customLegendarySettings.livingThreeStarColor);
-	GetBool("LegendarySettings", "OverrideDeadThreeStar", customLegendarySettings.overrideDeadThreeStar, customLegendarySettings.overrideDeadThreeStar);
-	GetRgb("LegendarySettings", "DeadThreeStarColor", customLegendarySettings.deadThreeStarColor, customLegendarySettings.deadThreeStarColor);
+	GetBool("LegendarySettings", "OverrideLivingOneStar", esp.legendaryNpcs.overrideLivingOneStar, esp.legendaryNpcs.overrideLivingOneStar);
+	GetRgb("LegendarySettings", "LivingOneStarColor", esp.legendaryNpcs.livingOneStarColor, esp.legendaryNpcs.livingOneStarColor);
+	GetBool("LegendarySettings", "OverrideDeadOneStar", esp.legendaryNpcs.overrideDeadOneStar, esp.legendaryNpcs.overrideDeadOneStar);
+	GetRgb("LegendarySettings", "DeadOneStarColor", esp.legendaryNpcs.deadOneStarColor, esp.legendaryNpcs.deadOneStarColor);
+	GetBool("LegendarySettings", "OverrideLivingTwoStar", esp.legendaryNpcs.overrideLivingTwoStar, esp.legendaryNpcs.overrideLivingTwoStar);
+	GetRgb("LegendarySettings", "LivingTwoStarColor", esp.legendaryNpcs.livingTwoStarColor, esp.legendaryNpcs.livingTwoStarColor);
+	GetBool("LegendarySettings", "OverrideDeadTwoStar", esp.legendaryNpcs.overrideDeadTwoStar, esp.legendaryNpcs.overrideDeadTwoStar);
+	GetRgb("LegendarySettings", "DeadTwoStarColor", esp.legendaryNpcs.deadTwoStarColor, esp.legendaryNpcs.deadTwoStarColor);
+	GetBool("LegendarySettings", "OverrideLivingThreeStar", esp.legendaryNpcs.overrideLivingThreeStar, esp.legendaryNpcs.overrideLivingThreeStar);
+	GetRgb("LegendarySettings", "LivingThreeStarColor", esp.legendaryNpcs.livingThreeStarColor, esp.legendaryNpcs.livingThreeStarColor);
+	GetBool("LegendarySettings", "OverrideDeadThreeStar", esp.legendaryNpcs.overrideDeadThreeStar, esp.legendaryNpcs.overrideDeadThreeStar);
+	GetRgb("LegendarySettings", "DeadThreeStarColor", esp.legendaryNpcs.deadThreeStarColor, esp.legendaryNpcs.deadThreeStarColor);
 }
 
 void Settings::SetLegendarySettings()
 {
-	SetBool("LegendarySettings", "OverrideLivingOneStar", customLegendarySettings.overrideLivingOneStar, customLegendarySettings.overrideLivingOneStar);
-	SetRgb("LegendarySettings", "LivingOneStarColor", customLegendarySettings.livingOneStarColor, customLegendarySettings.livingOneStarColor);
-	SetBool("LegendarySettings", "OverrideDeadOneStar", customLegendarySettings.overrideDeadOneStar, customLegendarySettings.overrideDeadOneStar);
-	SetRgb("LegendarySettings", "DeadOneStarColor", customLegendarySettings.deadOneStarColor, customLegendarySettings.deadOneStarColor);
-	SetBool("LegendarySettings", "OverrideLivingTwoStar", customLegendarySettings.overrideLivingTwoStar, customLegendarySettings.overrideLivingTwoStar);
-	SetRgb("LegendarySettings", "LivingTwoStarColor", customLegendarySettings.livingTwoStarColor, customLegendarySettings.livingTwoStarColor);
-	SetBool("LegendarySettings", "OverrideDeadTwoStar", customLegendarySettings.overrideDeadTwoStar, customLegendarySettings.overrideDeadTwoStar);
-	SetRgb("LegendarySettings", "DeadTwoStarColor", customLegendarySettings.deadTwoStarColor, customLegendarySettings.deadTwoStarColor);
-	SetBool("LegendarySettings", "OverrideLivingThreeStar", customLegendarySettings.overrideLivingThreeStar, customLegendarySettings.overrideLivingThreeStar);
-	SetRgb("LegendarySettings", "LivingThreeStarColor", customLegendarySettings.livingThreeStarColor, customLegendarySettings.livingThreeStarColor);
-	SetBool("LegendarySettings", "OverrideDeadThreeStar", customLegendarySettings.overrideDeadThreeStar, customLegendarySettings.overrideDeadThreeStar);
-	SetRgb("LegendarySettings", "DeadThreeStarColor", customLegendarySettings.deadThreeStarColor, customLegendarySettings.deadThreeStarColor);
+	SetBool("LegendarySettings", "OverrideLivingOneStar", esp.legendaryNpcs.overrideLivingOneStar, esp.legendaryNpcs.overrideLivingOneStar);
+	SetRgb("LegendarySettings", "LivingOneStarColor", esp.legendaryNpcs.livingOneStarColor, esp.legendaryNpcs.livingOneStarColor);
+	SetBool("LegendarySettings", "OverrideDeadOneStar", esp.legendaryNpcs.overrideDeadOneStar, esp.legendaryNpcs.overrideDeadOneStar);
+	SetRgb("LegendarySettings", "DeadOneStarColor", esp.legendaryNpcs.deadOneStarColor, esp.legendaryNpcs.deadOneStarColor);
+	SetBool("LegendarySettings", "OverrideLivingTwoStar", esp.legendaryNpcs.overrideLivingTwoStar, esp.legendaryNpcs.overrideLivingTwoStar);
+	SetRgb("LegendarySettings", "LivingTwoStarColor", esp.legendaryNpcs.livingTwoStarColor, esp.legendaryNpcs.livingTwoStarColor);
+	SetBool("LegendarySettings", "OverrideDeadTwoStar", esp.legendaryNpcs.overrideDeadTwoStar, esp.legendaryNpcs.overrideDeadTwoStar);
+	SetRgb("LegendarySettings", "DeadTwoStarColor", esp.legendaryNpcs.deadTwoStarColor, esp.legendaryNpcs.deadTwoStarColor);
+	SetBool("LegendarySettings", "OverrideLivingThreeStar", esp.legendaryNpcs.overrideLivingThreeStar, esp.legendaryNpcs.overrideLivingThreeStar);
+	SetRgb("LegendarySettings", "LivingThreeStarColor", esp.legendaryNpcs.livingThreeStarColor, esp.legendaryNpcs.livingThreeStarColor);
+	SetBool("LegendarySettings", "OverrideDeadThreeStar", esp.legendaryNpcs.overrideDeadThreeStar, esp.legendaryNpcs.overrideDeadThreeStar);
+	SetRgb("LegendarySettings", "DeadThreeStarColor", esp.legendaryNpcs.deadThreeStarColor, esp.legendaryNpcs.deadThreeStarColor);
 }
 
 void Settings::GetFluxSettings()
 {
-	GetBool("FluxSettings", "CrimsonFluxEnabled", customFluxSettings.crimsonFluxEnabled, false);
-	GetBool("FluxSettings", "CobaltFluxEnabled", customFluxSettings.cobaltFluxEnabled, false);
-	GetBool("FluxSettings", "YellowcakeFluxEnabled", customFluxSettings.yellowcakeFluxEnabled, false);
-	GetBool("FluxSettings", "FluorescentFluxEnabled", customFluxSettings.fluorescentFluxEnabled, false);
-	GetBool("FluxSettings", "VioletFluxEnabled", customFluxSettings.violetFluxEnabled, false);
+	GetBool("FluxSettings", "CrimsonFluxEnabled", esp.flux.crimsonFluxEnabled, false);
+	GetBool("FluxSettings", "CobaltFluxEnabled", esp.flux.cobaltFluxEnabled, false);
+	GetBool("FluxSettings", "YellowcakeFluxEnabled", esp.flux.yellowcakeFluxEnabled, false);
+	GetBool("FluxSettings", "FluorescentFluxEnabled", esp.flux.fluorescentFluxEnabled, false);
+	GetBool("FluxSettings", "VioletFluxEnabled", esp.flux.violetFluxEnabled, false);
 }
 
 void Settings::SetFluxSettings()
 {
-	SetBool("FluxSettings", "CrimsonFluxEnabled", customFluxSettings.crimsonFluxEnabled, false);
-	SetBool("FluxSettings", "CobaltFluxEnabled", customFluxSettings.cobaltFluxEnabled, false);
-	SetBool("FluxSettings", "YellowcakeFluxEnabled", customFluxSettings.yellowcakeFluxEnabled, false);
-	SetBool("FluxSettings", "FluorescentFluxEnabled", customFluxSettings.fluorescentFluxEnabled, false);
-	SetBool("FluxSettings", "VioletFluxEnabled", customFluxSettings.violetFluxEnabled, false);
+	SetBool("FluxSettings", "CrimsonFluxEnabled", esp.flux.crimsonFluxEnabled, false);
+	SetBool("FluxSettings", "CobaltFluxEnabled", esp.flux.cobaltFluxEnabled, false);
+	SetBool("FluxSettings", "YellowcakeFluxEnabled", esp.flux.yellowcakeFluxEnabled, false);
+	SetBool("FluxSettings", "FluorescentFluxEnabled", esp.flux.fluorescentFluxEnabled, false);
+	SetBool("FluxSettings", "VioletFluxEnabled", esp.flux.violetFluxEnabled, false);
 }
 
 void Settings::GetKnownRecipeSettings()
 {
-	GetBool("KnownRecipeSettings", "KnownRecipesEnabled", recipes.knownRecipesEnabled, false);
-	GetBool("KnownRecipeSettings", "UnknownRecipesEnabled", recipes.unknownRecipesEnabled, false);
+	GetBool("KnownRecipeSettings", "KnownRecipesEnabled", esp.recipes.knownRecipesEnabled, false);
+	GetBool("KnownRecipeSettings", "UnknownRecipesEnabled", esp.recipes.unknownRecipesEnabled, false);
 }
 
 void Settings::SetKnownRecipeSettings()
 {
-	SetBool("KnownRecipeSettings", "KnownRecipesEnabled", recipes.knownRecipesEnabled, false);
-	SetBool("KnownRecipeSettings", "UnknownRecipesEnabled", recipes.unknownRecipesEnabled, false);
+	SetBool("KnownRecipeSettings", "KnownRecipesEnabled", esp.recipes.knownRecipesEnabled, false);
+	SetBool("KnownRecipeSettings", "UnknownRecipesEnabled", esp.recipes.unknownRecipesEnabled, false);
 }
 
 void Settings::GetMeleeSettings()
@@ -924,24 +811,6 @@ void Settings::SetChargenSettings()
 	SetSliderFloat("ChargenSettings", "Large", characterEditor.large, 0, 0.0f, 1.0f);
 }
 
-void Settings::GetExtraNpcSettings()
-{
-	for (auto i = 0; i < 64; i++)
-	{
-		GetBool("ExtraNPCSettings", fmt::format("NPCBlacklistEnabled{:d}", i), customExtraNpcSettings.npcBlacklistEnabled[i], false);
-		GetDword("ExtraNPCSettings", fmt::format("NPCBlacklist{:d}", i), customExtraNpcSettings.npcBlacklist[i], 0);
-	}
-}
-
-void Settings::SetExtraNpcSettings()
-{
-	for (auto i = 0; i < 64; i++)
-	{
-		SetBool("ExtraNPCSettings", fmt::format("NPCBlacklistEnabled{:d}", i), customExtraNpcSettings.npcBlacklistEnabled[i], false);
-		SetDword("ExtraNPCSettings", fmt::format("NPCBlacklist{:d}", i), customExtraNpcSettings.npcBlacklist[i], 0);
-	}
-}
-
 void Settings::GetBitMsgWriterSettings()
 {
 	GetBool("BitMsgWriter", "AllowMessages", msgWriter.enabled, false);
@@ -952,23 +821,22 @@ void Settings::SetBitMsgWriterSettings()
 	SetBool("BitMsgWriter", "AllowMessages", msgWriter.enabled, false);
 }
 
-void Settings::ReadIniSettings()
+void Settings::Read()
 {
 	file.read(ini);
-	GetOverlaySettingsA("PlayerSettings", &playerSettings, &playerSettings);
-	GetOverlaySettingsA("NpcSettings", &npcSettings, &npcSettings);
+	GetActorSettings("esp.players", esp.players, EspSettings::Actors());
+	GetActorSettings("esp.npcs", esp.npcs, EspSettings::Actors());
 	GetLegendarySettings();
-	GetExtraNpcSettings();
-	GetOverlaySettingsB("ContainerSettings", &containerSettings, &defltOverlaySettingsB);
-	GetOverlaySettingsB("JunkSettings", &junkSettings, &defltOverlaySettingsB);
-	GetOverlaySettingsB("PlanSettings", &planSettings, &defltOverlaySettingsB);
+	GetItemSettings("esp.containers", esp.containers, EspSettings::Items());
+	GetItemSettings("esp.junk", esp.junk, EspSettings::Items());
+	GetItemSettings("esp.plans", esp.plans, EspSettings::Items());
 	GetKnownRecipeSettings();
-	GetOverlaySettingsB("MagazineSettings", &magazineSettings, &defltOverlaySettingsB);
-	GetOverlaySettingsB("BobbleheadSettings", &bobbleheadSettings, &defltOverlaySettingsB);
-	GetOverlaySettingsB("ItemSettings", &itemSettings, &defltOverlaySettingsB);
-	GetOverlaySettingsB("FloraSettings", &floraSettings, &floraSettings);
+	GetItemSettings("esp.magazines", esp.magazines, EspSettings::Items());
+	GetItemSettings("esp.bobbleheads", esp.bobbleheads, EspSettings::Items());
+	GetItemSettings("esp.items", esp.items, EspSettings::Items());
+	GetItemSettings("esp.flora", esp.flora, EspSettings::Items());
 	GetFluxSettings();
-	GetOverlaySettingsB("EntitySettings", &entitySettings, &defltOverlaySettingsB);
+	GetItemSettings("EntitySettings", esp.entities, EspSettings::Items());
 	GetWeaponSettings();
 	GetTargetSettings();
 	GetLocalPlayerSettings();
@@ -987,23 +855,22 @@ void Settings::ReadIniSettings()
 	file.write(ini, true);
 }
 
-void Settings::WriteIniSettings()
+void Settings::Write()
 {
 	file.read(ini);
-	SetOverlaySettingsA("PlayerSettings", &playerSettings, &playerSettings);
-	SetOverlaySettingsA("NpcSettings", &npcSettings, &npcSettings);
+	SetActorSettings("esp.players", esp.players, EspSettings::Actors());
+	SetActorSettings("esp.npcs", esp.npcs, EspSettings::Actors());
 	SetLegendarySettings();
-	SetExtraNpcSettings();
-	SetOverlaySettingsB("ContainerSettings", &containerSettings, &defltOverlaySettingsB);
-	SetOverlaySettingsB("JunkSettings", &junkSettings, &defltOverlaySettingsB);
-	SetOverlaySettingsB("PlanSettings", &planSettings, &defltOverlaySettingsB);
+	SetItemSettings("esp.containers", esp.containers, EspSettings::Items());
+	SetItemSettings("esp.junk", esp.junk, EspSettings::Items());
+	SetItemSettings("esp.plans", esp.plans, EspSettings::Items());
 	SetKnownRecipeSettings();
-	SetOverlaySettingsB("MagazineSettings", &magazineSettings, &defltOverlaySettingsB);
-	SetOverlaySettingsB("BobbleheadSettings", &bobbleheadSettings, &defltOverlaySettingsB);
-	SetOverlaySettingsB("ItemSettings", &itemSettings, &defltOverlaySettingsB);
-	SetOverlaySettingsB("FloraSettings", &floraSettings, &floraSettings);
+	SetItemSettings("esp.magazines", esp.magazines, EspSettings::Items());
+	SetItemSettings("esp.bobbleheads", esp.bobbleheads, EspSettings::Items());
+	SetItemSettings("esp.items", esp.items, EspSettings::Items());
+	SetItemSettings("esp.flora", esp.flora, EspSettings::Items());
 	SetFluxSettings();
-	SetOverlaySettingsB("EntitySettings", &entitySettings, &defltOverlaySettingsB);
+	SetItemSettings("EntitySettings", esp.entities, EspSettings::Items());
 	SetWeaponSettings();
 	SetTargetSettings();
 	SetLocalPlayerSettings();

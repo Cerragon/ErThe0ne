@@ -7,6 +7,6 @@ public:
 	static bool Patcher(bool state);
 
 private:
-	virtual void __dummy() = 0;
+	virtual void Dummy() = 0;
 };
 

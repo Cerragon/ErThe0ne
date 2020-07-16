@@ -28,5 +28,5 @@ private:
 	inline static bool deviceResetState = false;
 	inline static int deviceResetCounter = 0;
 
-	virtual void __dummy() = 0;
+	virtual void Dummy() = 0;
 };

@@ -82,7 +82,7 @@ void App::RegisterHotkeys()
 {
 	for (auto item : HOTKEYS)
 	{
-		::RegisterHotKey(appHwnd, static_cast<int>(item.first), item.second.modifiers, item.second.vk);
+		RegisterHotKey(appHwnd, static_cast<int>(item.first), item.second.modifiers, item.second.vk);
 	}
 }
 

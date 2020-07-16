@@ -13,7 +13,7 @@ namespace {
 		Renderer::Cleanup();
 		Gui::Shutdown();
 
-		Settings::WriteIniSettings();
+		Settings::Write();
 
 		App::CloseWnd();
 	}
@@ -35,7 +35,7 @@ namespace {
 			return 4;
 		}
 
-		Settings::ReadIniSettings();
+		Settings::Read();
 
 		ErectusProcess::SetProcessMenu();
 		return 0;

@@ -32,5 +32,5 @@ private:
 
 	inline static bool threadDestructionState = false;
 
-	virtual void __dummy() = 0;
+	virtual void Dummy() = 0;
 };

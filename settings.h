@@ -7,16 +7,15 @@
 
 #include "common.h"
 
-class InfoBoxSettings
+struct InfoBoxSettings
 {
-public:
+	bool drawLocalPlayerInfo;
 	bool drawScrapLooterStatus;
 	bool drawItemLooterStatus;
 	bool drawNpcLooterStatus;
 	bool drawContainerLooterStatus;
 	bool drawHarvesterStatus;
 	bool drawPositionSpoofingStatus;
-
 	bool drawNukeCodes;
 };
 struct LooterSettings
@@ -147,90 +146,83 @@ struct LooterSettings
 		}
 	} selection;
 };
+struct EspSettings
+{
+	struct Actors
+	{
+		bool enabled = true;
+		int enabledDistance = 1500;
+		bool drawAlive = true;
+		float aliveColor[3] = { 0.0f, 1.0f, 0.0f };
+		bool drawDowned = true;
+		float downedColor[3] = { 1.0f, 1.0f, 0.0f };
+		bool drawDead = false;
+		float deadColor[3] = { 1.0f, 0.0f, 0.0f };
+		bool drawUnknown = false;
+		float unknownColor[3] = { 1.0f, 0.5f, 0.0f };
+		bool drawEnabled = true;
+		float enabledAlpha = 1.f;
+		bool drawDisabled = false;
+		float disabledAlpha = 0.5f;
+		bool drawNamed = true;
+		bool drawUnnamed = false;
+		bool showName = true;
+		bool showDistance = true;
+		bool showHealth = true;
+		bool showDeadHealth = false;
+		bool textCentered = true;
+		bool textShadowed = true;
+	} players, npcs;
 
-//esp
-class OverlaySettingsA
-{
-public:
-	bool enabled;
-	int enabledDistance;
-	bool drawAlive;
-	float aliveColor[3];
-	bool drawDowned;
-	float downedColor[3];
-	bool drawDead;
-	float deadColor[3];
-	bool drawUnknown;
-	float unknownColor[3];
-	bool drawEnabled;
-	float enabledAlpha;
-	bool drawDisabled;
-	float disabledAlpha;
-	bool drawNamed;
-	bool drawUnnamed;
-	bool showName;
-	bool showDistance;
-	bool showHealth;
-	bool showDeadHealth;
-	bool textCentered;
-	bool textShadowed;
-};
-class OverlaySettingsB
-{
-public:
-	bool enabled;
-	int enabledDistance;
-	float color[3];
-	bool drawEnabled;
-	float enabledAlpha;
-	bool drawDisabled;
-	float disabledAlpha;
-	bool drawNamed;
-	bool drawUnnamed;
-	bool showName;
-	bool showDistance;
-	bool textCentered;
-	bool textShadowed;
-	bool whitelisted[32];
-	DWORD whitelist[32];
-};
-class LegendarySettings
-{
-public:
-	bool overrideLivingOneStar;
-	float livingOneStarColor[3];
-	bool overrideDeadOneStar;
-	float deadOneStarColor[3];
-	bool overrideLivingTwoStar;
-	float livingTwoStarColor[3];
-	bool overrideDeadTwoStar;
-	float deadTwoStarColor[3];
-	bool overrideLivingThreeStar;
-	float livingThreeStarColor[3];
-	bool overrideDeadThreeStar;
-	float deadThreeStarColor[3];
-};
-class FluxSettings
-{
-public:
-	bool crimsonFluxEnabled;
-	bool cobaltFluxEnabled;
-	bool yellowcakeFluxEnabled;
-	bool fluorescentFluxEnabled;
-	bool violetFluxEnabled;
-};
-class KnownRecipeSettings
-{
-public:
-	bool knownRecipesEnabled;
-	bool unknownRecipesEnabled;
-};
-class ExtraNpcSettings
-{
-public:
-	bool useNpcBlacklist;
-	bool npcBlacklistEnabled[64];
-	DWORD npcBlacklist[64];
+	struct Items
+	{
+		bool enabled = false;
+		int enabledDistance = 1500;
+		float color[3] = { 1.0f, 1.0f, 1.0f };
+		bool drawEnabled = true;
+		float enabledAlpha = 1.f;
+		bool drawDisabled = false;
+		float disabledAlpha = 0.5f;
+		bool drawNamed = true;
+		bool drawUnnamed = false;
+		bool showName = true;
+		bool showDistance = true;
+		bool textCentered = true;
+		bool textShadowed = true;
+		bool whitelisted[32] = {};
+		DWORD whitelist[32] = {};
+	} junk, containers, plans, magazines, bobbleheads, items, flora, entities;
+
+	struct LegendaryNpcs
+	{
+		bool overrideLivingOneStar = true;
+		float livingOneStarColor[3] = { 0.7f, 1.0f, 0.7f };
+		bool overrideDeadOneStar = true;
+		float deadOneStarColor[3] = { 1.0f, 0.5f, 0.5f };
+		bool overrideLivingTwoStar = true;
+		float livingTwoStarColor[3] = { 0.7f, 1.0f, 0.7f };
+		bool overrideDeadTwoStar = true;
+		float deadTwoStarColor[3] = { 1.0f, 0.5f, 0.5f };
+		bool overrideLivingThreeStar = true;
+		float livingThreeStarColor[3] = { 0.7f, 1.0f, 0.7f };
+		bool overrideDeadThreeStar = true;
+		float deadThreeStarColor[3] = { 1.0f, 0.5f, 0.5f };
+	} legendaryNpcs;
+
+	struct FluxSettings
+	{
+		bool crimsonFluxEnabled = true;
+		bool cobaltFluxEnabled = true;
+		bool yellowcakeFluxEnabled = true;
+		bool fluorescentFluxEnabled = true;
+		bool violetFluxEnabled = true;
+	} flux{};
+
+	struct KnownRecipeSettings
+	{
+		bool knownRecipesEnabled = true;
+		bool unknownRecipesEnabled = true;
+	} recipes;
 };
 
 //utils
@@ -253,52 +245,52 @@ public:
 class TargetSettings
 {
 public:
-	bool lockPlayers;
-	bool lockNpCs;
-	bool indirectPlayers;
-	bool indirectNpCs;
-	bool directPlayers;
-	bool directNpCs;
-	bool targetLiving;
-	bool targetDowned;
-	bool targetDead;
-	bool targetUnknown;
-	bool ignoreRenderDistance;
-	float lockingFov;
-	bool ignoreEssentialNpCs;
-	float lockingColor[3];
-	bool retargeting;
-	int cooldown;
-	int sendDamageMin;
-	int sendDamageMax;
-	int favoriteIndex;
+	bool lockPlayers = false;
+	bool lockNpCs = true;
+	bool indirectPlayers = false;
+	bool indirectNpCs = true;
+	bool directPlayers = false;
+	bool directNpCs = true;
+	bool targetLiving = false;
+	bool targetDowned = false;
+	bool targetDead = false;
+	bool targetUnknown = false;
+	bool ignoreRenderDistance = false;
+	float lockingFov = 20.0f;
+	bool ignoreEssentialNpCs = true;
+	float lockingColor[3] = { 1.0f, 0.0f, 1.0f };
+	bool retargeting = false;
+	int cooldown = 1;
+	int sendDamageMin = 1;
+	int sendDamageMax = 1;
+	int favoriteIndex = 12;
 };
 class LocalPlayerSettings
 {
 public:
-	bool positionSpoofingEnabled;
-	int positionSpoofingHeight;
-	bool noclipEnabled;
-	float noclipSpeed;
-	bool clientState;
-	bool automaticClientState;
-	bool freezeApEnabled;
-	bool actionPointsEnabled;
-	int actionPoints;
-	bool strengthEnabled;
-	int strength;
-	bool perceptionEnabled;
-	int perception;
-	bool enduranceEnabled;
-	int endurance;
-	bool charismaEnabled;
-	int charisma;
-	bool intelligenceEnabled;
-	int intelligence;
-	bool agilityEnabled;
-	int agility;
-	bool luckEnabled;
-	int luck;
+	bool positionSpoofingEnabled = false;
+	int positionSpoofingHeight = 524287;
+	bool noclipEnabled = false;
+	float noclipSpeed = 0.1f;
+	bool clientState = false;
+	bool automaticClientState = false;
+	bool freezeApEnabled = false;
+	bool actionPointsEnabled = false;
+	int actionPoints = 9001;
+	bool strengthEnabled = false;
+	int strength = 9001;
+	bool perceptionEnabled = false;
+	int perception = 9001;
+	bool enduranceEnabled = false;
+	int endurance = 9001;
+	bool charismaEnabled = false;
+	int charisma = 9001;
+	bool intelligenceEnabled = false;
+	int intelligence = 9001;
+	bool agilityEnabled = false;
+	int agility = 9001;
+	bool luckEnabled = false;
+	int luck = 9001;
 };
 class OpkSettings
 {
@@ -309,7 +301,6 @@ public:
 class UtilitySettings
 {
 public:
-	bool debugPlayer;
 	bool debugEsp;
 	DWORD ptrFormId;
 	DWORD addressFormId;
@@ -323,14 +314,24 @@ public:
 class TransferSettings
 {
 public:
-	DWORD sourceFormId;
-	DWORD destinationFormId;
-	bool useWhitelist;
-	bool useBlacklist;
-	bool whitelisted[32];
-	DWORD whitelist[32];
-	bool blacklisted[32];
-	DWORD blacklist[32];
+	DWORD sourceFormId = 0;
+	DWORD destinationFormId = 0;
+	bool useWhitelist = true;
+	bool useBlacklist = true;
+	bool whitelisted[32] = {};
+	DWORD whitelist[32] = {};
+	bool blacklisted[32] = {
+		true, false, false, false, false, false, false, false,
+		false, false, false, false, false, false, false, false,
+		false, false, false, false, false, false, false, false,
+		false, false, false, false, false, false, false, false,
+	};
+	DWORD blacklist[32] = {
+		0x00021B3B, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+		0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+		0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+		0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	};
 };
 class TeleportEntry
 {
@@ -364,7 +365,6 @@ public:
 	float muscular;
 	float large;
 };
-
 class MessageWriterSettings
 {
 public:
@@ -373,48 +373,33 @@ public:
 
 class Settings final {
 public:
-	static void ReadIniSettings();
-	static void WriteIniSettings();
+	static void Read();
+	static void Write();
 
+	inline static EspSettings esp = {};
 	inline static LooterSettings looter = {};
 	inline static InfoBoxSettings infobox = {};
 	inline static MessageWriterSettings msgWriter = {};
-	
-	//esp
-	static OverlaySettingsA playerSettings;
-	static OverlaySettingsB junkSettings;
-	static OverlaySettingsA npcSettings;
-	static OverlaySettingsB containerSettings;
-	static OverlaySettingsB planSettings;
-	static OverlaySettingsB magazineSettings;
-	static OverlaySettingsB bobbleheadSettings;
-	static OverlaySettingsB itemSettings;
-	static OverlaySettingsB floraSettings;
-	static OverlaySettingsB entitySettings;
-	inline static FluxSettings customFluxSettings = {};
-	static LegendarySettings customLegendarySettings;
-	inline static KnownRecipeSettings recipes = { true, true };
-	inline static ExtraNpcSettings customExtraNpcSettings = {};
 
 	//utils
 	static WeaponSettings weapons;
-	static TargetSettings targetting;
-	static LocalPlayerSettings localPlayer;
+	inline static TargetSettings targetting = {};
+	inline static LocalPlayerSettings localPlayer = {};
 	inline static OpkSettings opk = {};
 	inline static UtilitySettings utilities = {};
 	inline static SwapperSettings swapper = {};
-	static TransferSettings customTransferSettings;
+	inline static TransferSettings customTransferSettings = {};
 	inline static TeleportSettings teleporter = {};
 	inline static NukeCodeSettings customNukeCodeSettings = {};
-	inline static MeleeSettings melee = { false,10,20 };;
-	inline static ChargenSettings characterEditor = { false,0.33f,0.33f,0.33f };;
+	inline static MeleeSettings melee = { false,10,20 };
+	inline static ChargenSettings characterEditor = { false,0.33f,0.33f,0.33f };
 	inline static WeaponSettings defaultWeaponSettings{
 		false, false, false, false, false, false, false, 250, false, 2.0f, false, 500.0f
 	};
 
 private:
-	static void GetOverlaySettingsB(const std::string& section, OverlaySettingsB* value, const OverlaySettingsB* deflt);
-	static void SetOverlaySettingsB(const std::string& section, OverlaySettingsB* value, const OverlaySettingsB* deflt);
+	static void GetItemSettings(const std::string& section, EspSettings::Items& value, const EspSettings::Items& deflt);
+	static void SetItemSettings(const std::string& section, EspSettings::Items& value, const EspSettings::Items& deflt);
 	static void GetInfoBoxSettings();
 	static void SetInfoBoxSettings();
 	static void GetWeaponSettings();
@@ -445,10 +430,10 @@ private:
 	static void SetMeleeSettings();
 	static void GetChargenSettings();
 	static void SetChargenSettings();
-	static void GetExtraNpcSettings();
-	static void SetExtraNpcSettings();
 	static void GetBitMsgWriterSettings();
 	static void SetBitMsgWriterSettings();
+	static void GetLooterSettings();
+	static void SetLooterSettings();
 
 	static void GetDword(const std::string& section, const std::string& key, DWORD& value, DWORD deflt);
 	static void SetDword(const std::string& section, const std::string& key, DWORD value, DWORD deflt);
@@ -466,11 +451,8 @@ private:
 	static void SetQuadFloat(const std::string& section, const std::string& key, float* value, const float* deflt);
 	static void GetBool(const std::string& section, const std::string& key, bool& value, bool deflt);
 	static void SetBool(const std::string& section, const std::string& key, const bool& value, bool deflt);
-	static void GetOverlaySettingsA(const std::string& section, OverlaySettingsA* value, const OverlaySettingsA* deflt);
-	static void SetOverlaySettingsA(const std::string& section, OverlaySettingsA* value, const OverlaySettingsA* deflt);
+	static void GetActorSettings(const std::string& section, EspSettings::Actors& value, const EspSettings::Actors& deflt);
+	static void SetActorSettings(const std::string& section, EspSettings::Actors& value, const EspSettings::Actors& deflt);
 
-	static void GetLooterSettings();
-	static void SetLooterSettings();
-
-	virtual void __dummy() = 0;
+	virtual void Dummy() = 0;
 };

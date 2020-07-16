@@ -288,8 +288,6 @@ void Looter::Loot()
 		return;
 	if (!Settings::looter.selection.IsEnabled())
 		return;
-	if (!ErectusMemory::GetLocalPlayerPtr(true))
-		return;
 
 	auto localPlayerPtr = ErectusMemory::GetLocalPlayerPtr(true);
 	if (!Utils::Valid(localPlayerPtr))

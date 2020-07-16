@@ -29,5 +29,5 @@ private:
 	inline static HINSTANCE mHInstance = nullptr;
 	inline static int windowTopmostCounter = 0;
 
-	virtual void __dummy() = 0;
+	virtual void Dummy() = 0;
 };

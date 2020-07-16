@@ -30,8 +30,8 @@ private:
 	static void RenderEntities();
 	static void RenderPlayers();
 
-	static void RenderActors(const CustomEntry& entry, const OverlaySettingsA& settings);
-	static void RenderItems(const CustomEntry& entry, const OverlaySettingsB& settings);
+	static void RenderActors(const CustomEntry& entry, const EspSettings::Actors& settings);
+	static void RenderItems(const CustomEntry& entry, const EspSettings::Items& settings);
 
 	static void ProcessMenu();
 	static void OverlayMenu();
@@ -44,5 +44,5 @@ private:
 	inline static DWORD64 getPtrResult = 0;
 	inline static DWORD64 getAddressResult = 0;
 	
-	virtual void __dummy() = 0;
+	virtual void Dummy() = 0;
 };

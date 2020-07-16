@@ -54,10 +54,10 @@ DWORD64 ErectusMemory::GetAddress(const DWORD formId)
 	if (!Utils::Valid(v1))
 		return 0;
 
-	DWORD _capacity;
-	if (!ErectusProcess::Rpm(v1 + 32, &_capacity, sizeof _capacity))
+	DWORD capacity;
+	if (!ErectusProcess::Rpm(v1 + 32, &capacity, sizeof capacity))
 		return 0;
-	if (!_capacity)
+	if (!capacity)
 		return 0;
 
 	//hash = crc32hash(formId)
@@ -73,7 +73,7 @@ DWORD64 ErectusMemory::GetAddress(const DWORD formId)
 		hash = hash >> 0x8 ^ v5;
 	}
 
-	auto _index = hash & _capacity - 1;
+	auto index = hash & capacity - 1;
 
 	DWORD64 entries;
 
@@ -85,35 +85,35 @@ DWORD64 ErectusMemory::GetAddress(const DWORD formId)
 
 	//check item->next != -1
 	DWORD next;
-	if (!ErectusProcess::Rpm(entries + _index * 24 + 16, &next, sizeof next))
+	if (!ErectusProcess::Rpm(entries + index * 24 + 16, &next, sizeof next))
 		return 0;
 	if (next == 0xFFFFFFFF)
 		return 0;
 
-	auto v9 = _capacity;
+	auto v9 = capacity;
 
 
 	for (auto i = 0; i < 100; i++)
 	{
 		DWORD v10;
-		if (!ErectusProcess::Rpm(entries + _index * 24, &v10, sizeof v10)) //item->value.first
+		if (!ErectusProcess::Rpm(entries + index * 24, &v10, sizeof v10)) //item->value.first
 			return 0;
 		if (v10 == formId)
 		{
-			v9 = _index; //item->value
-			if (v9 != _capacity)
+			v9 = index; //item->value
+			if (v9 != capacity)
 				break;
 		}
 		else
 		{
-			if (!ErectusProcess::Rpm(entries + _index * 24 + 16, &_index, sizeof _index)) //item = item->next
+			if (!ErectusProcess::Rpm(entries + index * 24 + 16, &index, sizeof index)) //item = item->next
 				return 0;
-			if (_index == _capacity)
+			if (index == capacity)
 				break;
 		}
 	}
 
-	if (v9 == _capacity) return 0;
+	if (v9 == capacity) return 0;
 
 	return entries + v9 * 24 + 8; //item->value.second
 }
@@ -410,15 +410,15 @@ bool ErectusMemory::CheckWhitelistedFlux(const TesItem& referenceData)
 	switch (formIdCheck)
 	{
 	case 0x002DDD45: //Raw Crimson Flux
-		return Settings::customFluxSettings.crimsonFluxEnabled;
+		return Settings::esp.flux.crimsonFluxEnabled;
 	case 0x002DDD46: //Raw Cobalt Flux
-		return Settings::customFluxSettings.cobaltFluxEnabled;
+		return Settings::esp.flux.cobaltFluxEnabled;
 	case 0x002DDD49: //Raw Yellowcake Flux
-		return Settings::customFluxSettings.yellowcakeFluxEnabled;
+		return Settings::esp.flux.yellowcakeFluxEnabled;
 	case 0x002DDD4B: //Raw Fluorescent Flux
-		return Settings::customFluxSettings.fluorescentFluxEnabled;
+		return Settings::esp.flux.fluorescentFluxEnabled;
 	case 0x002DDD4D: //Raw Violet Flux
-		return Settings::customFluxSettings.violetFluxEnabled;
+		return Settings::esp.flux.violetFluxEnabled;
 	default:
 		return false;
 	}
@@ -622,15 +622,15 @@ void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* e
 	case (static_cast<byte>(FormTypes::TesNpc)):
 		*entityFlag |= CUSTOM_ENTRY_NPC;
 		*entityNamePtr = referenceData.namePtr0160;
-		*enabledDistance = Settings::npcSettings.enabledDistance;
+		*enabledDistance = Settings::esp.npcs.enabledDistance;
 		break;
 	case (static_cast<byte>(FormTypes::TesObjectCont)):
 		*entityFlag |= CUSTOM_ENTRY_CONTAINER;
 		*entityNamePtr = referenceData.namePtr00B0;
-		*enabledDistance = Settings::containerSettings.enabledDistance;
-		if (CheckFormIdArray(referenceData.formId, Settings::containerSettings.whitelisted, Settings::containerSettings.whitelist, 32))
+		*enabledDistance = Settings::esp.containers.enabledDistance;
+		if (CheckFormIdArray(referenceData.formId, Settings::esp.containers.whitelisted, Settings::esp.containers.whitelist, 32))
 			*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-		else if (!Settings::containerSettings.enabled)
+		else if (!Settings::esp.containers.enabled)
 			*entityFlag |= CUSTOM_ENTRY_INVALID;
 		break;
 	case (static_cast<byte>(FormTypes::TesObjectMisc)):
@@ -639,39 +639,39 @@ void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* e
 		if (IsJunk(referenceData))
 		{
 			*entityFlag |= CUSTOM_ENTRY_JUNK;
-			*enabledDistance = Settings::junkSettings.enabledDistance;
-			if (CheckFormIdArray(referenceData.formId, Settings::junkSettings.whitelisted, Settings::junkSettings.whitelist, 32))
+			*enabledDistance = Settings::esp.junk.enabledDistance;
+			if (CheckFormIdArray(referenceData.formId, Settings::esp.junk.whitelisted, Settings::esp.junk.whitelist, 32))
 				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-			else if (!Settings::junkSettings.enabled)
+			else if (!Settings::esp.junk.enabled)
 				*entityFlag |= CUSTOM_ENTRY_INVALID;
 		}
 		else if (IsMod(referenceData))
 		{
 			*entityFlag |= CUSTOM_ENTRY_MOD;
 			*entityFlag |= CUSTOM_ENTRY_ITEM;
-			*enabledDistance = Settings::itemSettings.enabledDistance;
-			if (CheckFormIdArray(referenceData.formId, Settings::itemSettings.whitelisted, Settings::itemSettings.whitelist, 32))
+			*enabledDistance = Settings::esp.items.enabledDistance;
+			if (CheckFormIdArray(referenceData.formId, Settings::esp.items.whitelisted, Settings::esp.items.whitelist, 32))
 				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-			else if (!Settings::itemSettings.enabled)
+			else if (!Settings::esp.items.enabled)
 				*entityFlag |= CUSTOM_ENTRY_INVALID;
 		}
 		else if (IsBobblehead(referenceData))
 		{
 			*entityFlag |= CUSTOM_ENTRY_BOBBLEHEAD;
-			*enabledDistance = Settings::bobbleheadSettings.enabledDistance;
-			if (CheckFormIdArray(referenceData.formId, Settings::bobbleheadSettings.whitelisted, Settings::bobbleheadSettings.whitelist, 32))
+			*enabledDistance = Settings::esp.bobbleheads.enabledDistance;
+			if (CheckFormIdArray(referenceData.formId, Settings::esp.bobbleheads.whitelisted, Settings::esp.bobbleheads.whitelist, 32))
 				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-			else if (!Settings::bobbleheadSettings.enabled)
+			else if (!Settings::esp.bobbleheads.enabled)
 				*entityFlag |= CUSTOM_ENTRY_INVALID;
 		}
 		else
 		{
 			*entityFlag |= CUSTOM_ENTRY_MISC;
 			*entityFlag |= CUSTOM_ENTRY_ITEM;
-			*enabledDistance = Settings::itemSettings.enabledDistance;
-			if (CheckFormIdArray(referenceData.formId, Settings::itemSettings.whitelisted, Settings::itemSettings.whitelist, 32))
+			*enabledDistance = Settings::esp.items.enabledDistance;
+			if (CheckFormIdArray(referenceData.formId, Settings::esp.items.whitelisted, Settings::esp.items.whitelist, 32))
 				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-			else if (!Settings::itemSettings.enabled)
+			else if (!Settings::esp.items.enabled)
 				*entityFlag |= CUSTOM_ENTRY_INVALID;
 		}
 		break;
@@ -681,47 +681,47 @@ void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* e
 		if (IsPlan(referenceData))
 		{
 			*entityFlag |= CUSTOM_ENTRY_PLAN;
-			*enabledDistance = Settings::planSettings.enabledDistance;
+			*enabledDistance = Settings::esp.plans.enabledDistance;
 
 			if (IsRecipeKnown(referenceData.formId))
 				*entityFlag |= CUSTOM_ENTRY_KNOWN_RECIPE;
 			else
 				*entityFlag |= CUSTOM_ENTRY_UNKNOWN_RECIPE;
 
-			if (CheckFormIdArray(referenceData.formId, Settings::planSettings.whitelisted, Settings::planSettings.whitelist, 32))
+			if (CheckFormIdArray(referenceData.formId, Settings::esp.plans.whitelisted, Settings::esp.plans.whitelist, 32))
 				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-			else if (!Settings::planSettings.enabled)
+			else if (!Settings::esp.plans.enabled)
 				*entityFlag |= CUSTOM_ENTRY_INVALID;
 		}
 		else if (IsMagazine(referenceData))
 		{
 			*entityFlag |= CUSTOM_ENTRY_MAGAZINE;
-			*enabledDistance = Settings::magazineSettings.enabledDistance;
-			if (CheckFormIdArray(referenceData.formId, Settings::magazineSettings.whitelisted, Settings::magazineSettings.whitelist, 32))
+			*enabledDistance = Settings::esp.magazines.enabledDistance;
+			if (CheckFormIdArray(referenceData.formId, Settings::esp.magazines.whitelisted, Settings::esp.magazines.whitelist, 32))
 				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-			else if (!Settings::magazineSettings.enabled)
+			else if (!Settings::esp.magazines.enabled)
 				*entityFlag |= CUSTOM_ENTRY_INVALID;
 		}
 		else
 		{
 			*entityFlag |= CUSTOM_ENTRY_ITEM;
-			*enabledDistance = Settings::itemSettings.enabledDistance;
+			*enabledDistance = Settings::esp.items.enabledDistance;
 			if (IsTreasureMap(referenceData))
 				*entityFlag |= CUSTOM_ENTRY_TREASURE_MAP;
-			if (CheckFormIdArray(referenceData.formId, Settings::itemSettings.whitelisted, Settings::itemSettings.whitelist, 32))
+			if (CheckFormIdArray(referenceData.formId, Settings::esp.items.whitelisted, Settings::esp.items.whitelist, 32))
 				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-			else if (!Settings::itemSettings.enabled)
+			else if (!Settings::esp.items.enabled)
 				*entityFlag |= CUSTOM_ENTRY_INVALID;
 		}
 		break;
 	case (static_cast<byte>(FormTypes::TesFlora)):
 		*entityFlag |= CUSTOM_ENTRY_FLORA;
 		*entityNamePtr = referenceData.namePtr0098;
-		*enabledDistance = Settings::floraSettings.enabledDistance;
+		*enabledDistance = Settings::esp.flora.enabledDistance;
 
-		if (CheckWhitelistedFlux(referenceData) || CheckFormIdArray(referenceData.formId, Settings::floraSettings.whitelisted, Settings::floraSettings.whitelist, 32))
+		if (CheckWhitelistedFlux(referenceData) || CheckFormIdArray(referenceData.formId, Settings::esp.flora.whitelisted, Settings::esp.flora.whitelist, 32))
 			*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-		else if (!Settings::floraSettings.enabled)
+		else if (!Settings::esp.flora.enabled)
 			*entityFlag |= CUSTOM_ENTRY_INVALID;
 
 		break;
@@ -730,10 +730,10 @@ void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* e
 		*entityFlag |= CUSTOM_ENTRY_ITEM;
 		*entityFlag |= CUSTOM_ENTRY_VALID_ITEM;
 		*entityNamePtr = referenceData.namePtr0098;
-		*enabledDistance = Settings::itemSettings.enabledDistance;
-		if (CheckFormIdArray(referenceData.formId, Settings::itemSettings.whitelisted, Settings::itemSettings.whitelist, 32))
+		*enabledDistance = Settings::esp.items.enabledDistance;
+		if (CheckFormIdArray(referenceData.formId, Settings::esp.items.whitelisted, Settings::esp.items.whitelist, 32))
 			*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-		else if (!Settings::itemSettings.enabled)
+		else if (!Settings::esp.items.enabled)
 			*entityFlag |= CUSTOM_ENTRY_INVALID;
 		break;
 	case (static_cast<byte>(FormTypes::TesObjectArmo)):
@@ -741,10 +741,10 @@ void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* e
 		*entityFlag |= CUSTOM_ENTRY_ITEM;
 		*entityFlag |= CUSTOM_ENTRY_VALID_ITEM;
 		*entityNamePtr = referenceData.namePtr0098;
-		*enabledDistance = Settings::itemSettings.enabledDistance;
-		if (CheckFormIdArray(referenceData.formId, Settings::itemSettings.whitelisted, Settings::itemSettings.whitelist, 32))
+		*enabledDistance = Settings::esp.items.enabledDistance;
+		if (CheckFormIdArray(referenceData.formId, Settings::esp.items.whitelisted, Settings::esp.items.whitelist, 32))
 			*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-		else if (!Settings::itemSettings.enabled)
+		else if (!Settings::esp.items.enabled)
 			*entityFlag |= CUSTOM_ENTRY_INVALID;
 		break;
 	case (static_cast<byte>(FormTypes::TesAmmo)):
@@ -752,10 +752,10 @@ void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* e
 		*entityFlag |= CUSTOM_ENTRY_ITEM;
 		*entityFlag |= CUSTOM_ENTRY_VALID_ITEM;
 		*entityNamePtr = referenceData.namePtr0098;
-		*enabledDistance = Settings::itemSettings.enabledDistance;
-		if (CheckFormIdArray(referenceData.formId, Settings::itemSettings.whitelisted, Settings::itemSettings.whitelist, 32))
+		*enabledDistance = Settings::esp.items.enabledDistance;
+		if (CheckFormIdArray(referenceData.formId, Settings::esp.items.whitelisted, Settings::esp.items.whitelist, 32))
 			*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-		else if (!Settings::itemSettings.enabled)
+		else if (!Settings::esp.items.enabled)
 			*entityFlag |= CUSTOM_ENTRY_INVALID;
 		break;
 	case (static_cast<byte>(FormTypes::AlchemyItem)):
@@ -763,10 +763,10 @@ void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* e
 		*entityFlag |= CUSTOM_ENTRY_ITEM;
 		*entityFlag |= CUSTOM_ENTRY_VALID_ITEM;
 		*entityNamePtr = referenceData.namePtr0098;
-		*enabledDistance = Settings::itemSettings.enabledDistance;
-		if (CheckFormIdArray(referenceData.formId, Settings::itemSettings.whitelisted, Settings::itemSettings.whitelist, 32))
+		*enabledDistance = Settings::esp.items.enabledDistance;
+		if (CheckFormIdArray(referenceData.formId, Settings::esp.items.whitelisted, Settings::esp.items.whitelist, 32))
 			*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-		else if (!Settings::itemSettings.enabled)
+		else if (!Settings::esp.items.enabled)
 			*entityFlag |= CUSTOM_ENTRY_INVALID;
 		break;
 	default:
@@ -775,20 +775,20 @@ void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* e
 			*entityFlag |= CUSTOM_ENTRY_ITEM;
 			*entityFlag |= CUSTOM_ENTRY_VALID_ITEM;
 			*entityNamePtr = referenceData.namePtr0098;
-			*enabledDistance = Settings::itemSettings.enabledDistance;
-			if (CheckFormIdArray(referenceData.formId, Settings::itemSettings.whitelisted, Settings::itemSettings.whitelist, 32))
+			*enabledDistance = Settings::esp.items.enabledDistance;
+			if (CheckFormIdArray(referenceData.formId, Settings::esp.items.whitelisted, Settings::esp.items.whitelist, 32))
 				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-			else if (!Settings::itemSettings.enabled)
+			else if (!Settings::esp.items.enabled)
 				*entityFlag |= CUSTOM_ENTRY_INVALID;
 		}
 		else
 		{
 			*entityFlag |= CUSTOM_ENTRY_ENTITY;
 			*entityNamePtr = 0;
-			*enabledDistance = Settings::entitySettings.enabledDistance;
-			if (CheckFormIdArray(referenceData.formId, Settings::entitySettings.whitelisted, Settings::entitySettings.whitelist, 32))
+			*enabledDistance = Settings::esp.entities.enabledDistance;
+			if (CheckFormIdArray(referenceData.formId, Settings::esp.entities.whitelisted, Settings::esp.entities.whitelist, 32))
 				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-			else if (!Settings::entitySettings.enabled || !Settings::entitySettings.drawUnnamed)
+			else if (!Settings::esp.entities.enabled || !Settings::esp.entities.drawUnnamed)
 				*entityFlag |= CUSTOM_ENTRY_INVALID;
 		}
 		break;
