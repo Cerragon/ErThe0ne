@@ -11,8 +11,6 @@
 #include <dwmapi.h>
 #pragma comment(lib, "dwmapi.lib")
 
-
-#include "ErectusMemory.h"
 #include "ErectusProcess.h"
 #include "Looter.h"
 
@@ -53,11 +51,11 @@ void App::OnHotkey(const WPARAM hotkeyId)
 	switch (hotkeyId)
 	{
 	case (static_cast<int>(HotKeys::PositionSpoofingToggle)):
-		if (Settings::customLocalPlayerSettings.positionSpoofingEnabled)
+		if (Settings::localPlayer.positionSpoofingEnabled)
 			Threads::positionSpoofingToggle = !Threads::positionSpoofingToggle;
 		break;
 	case (static_cast<int>(HotKeys::NoclipToggle)):
-		if (Settings::customLocalPlayerSettings.noclipEnabled)
+		if (Settings::localPlayer.noclipEnabled)
 			Threads::noclipToggle = !Threads::noclipToggle;
 		break;
 	case (static_cast<int>(HotKeys::OpkPlayersToggle)):

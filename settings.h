@@ -43,7 +43,7 @@ struct LooterSettings
 			bool twoStar;
 			bool threeStar;
 
-			bool IsEnabled() const { return all || oneStar || twoStar || threeStar; }
+			[[nodiscard]] bool IsEnabled() const { return all || oneStar || twoStar || threeStar; }
 		} weapons{}, apparel{};
 
 		struct Aid
@@ -52,21 +52,21 @@ struct LooterSettings
 			bool magazines;
 			bool bobbleheads;
 
-			bool IsEnabled() const { return all || magazines || bobbleheads; }
+			[[nodiscard]] bool IsEnabled() const { return all || magazines || bobbleheads; }
 		} aid{};
 
 		struct Misc
 		{
 			bool all;
 
-			bool IsEnabled() const { return all; }
+			[[nodiscard]] bool IsEnabled() const { return all; }
 		} misc{};
 
 		struct Holo
 		{
 			bool all;
 
-			bool IsEnabled() const { return all; }
+			[[nodiscard]] bool IsEnabled() const { return all; }
 		} holo{};
 
 		struct Notes
@@ -76,7 +76,7 @@ struct LooterSettings
 			bool plansKnown;
 			bool plansUnknown;
 
-			bool IsEnabled() const { return all || treasureMaps || plansKnown || plansUnknown; }
+			[[nodiscard]] bool IsEnabled() const { return all || treasureMaps || plansKnown || plansUnknown; }
 		} notes{};
 
 		struct Junk
@@ -391,23 +391,23 @@ public:
 	static OverlaySettingsB itemSettings;
 	static OverlaySettingsB floraSettings;
 	static OverlaySettingsB entitySettings;
-	static FluxSettings customFluxSettings;
+	inline static FluxSettings customFluxSettings = {};
 	static LegendarySettings customLegendarySettings;
-	static KnownRecipeSettings recipes;
-	static ExtraNpcSettings customExtraNpcSettings;
+	inline static KnownRecipeSettings recipes = { true, true };
+	inline static ExtraNpcSettings customExtraNpcSettings = {};
 
 	//utils
 	static WeaponSettings weapons;
 	static TargetSettings targetting;
-	static LocalPlayerSettings customLocalPlayerSettings;
-	static OpkSettings opk;
-	static UtilitySettings utilities;
-	static SwapperSettings swapper;
+	static LocalPlayerSettings localPlayer;
+	inline static OpkSettings opk = {};
+	inline static UtilitySettings utilities = {};
+	inline static SwapperSettings swapper = {};
 	static TransferSettings customTransferSettings;
-	static TeleportSettings teleporter;
-	static NukeCodeSettings customNukeCodeSettings;
-	static MeleeSettings melee;
-	static ChargenSettings characterEditor;
+	inline static TeleportSettings teleporter = {};
+	inline static NukeCodeSettings customNukeCodeSettings = {};
+	inline static MeleeSettings melee = { false,10,20 };;
+	inline static ChargenSettings characterEditor = { false,0.33f,0.33f,0.33f };;
 	inline static WeaponSettings defaultWeaponSettings{
 		false, false, false, false, false, false, false, 250, false, 2.0f, false, 500.0f
 	};
@@ -417,8 +417,6 @@ private:
 	static void SetOverlaySettingsB(const std::string& section, OverlaySettingsB* value, const OverlaySettingsB* deflt);
 	static void GetInfoBoxSettings();
 	static void SetInfoBoxSettings();
-	static void GetItemLooterSettings();
-	static void SetItemLooterSettings();
 	static void GetWeaponSettings();
 	static void SetWeaponSettings();
 	static void GetTargetSettings();
@@ -471,5 +469,8 @@ private:
 	static void GetOverlaySettingsA(const std::string& section, OverlaySettingsA* value, const OverlaySettingsA* deflt);
 	static void SetOverlaySettingsA(const std::string& section, OverlaySettingsA* value, const OverlaySettingsA* deflt);
 
-	virtual void __dummy();
+	static void GetLooterSettings();
+	static void SetLooterSettings();
+
+	virtual void __dummy() = 0;
 };

@@ -12,7 +12,6 @@ public:
 
 	static bool Valid(DWORD64 ptr);
 
-
 	static float GetDistance(const float* a1, const float* a2);
 	static float GetDegrees(float* src, float* forward, float* origin);
 	static bool WorldToScreen(const float* view, const float* position, float* screen);

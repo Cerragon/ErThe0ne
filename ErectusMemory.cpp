@@ -604,8 +604,7 @@ ItemInfo ErectusMemory::GetItemInfo(const TesObjectRefr& entity, const TesItem& 
 	return result;
 }
 
-void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* entityFlag, DWORD64* entityNamePtr,
-	int* enabledDistance, const bool checkScrap, const bool checkIngredient)
+void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* entityFlag, DWORD64* entityNamePtr, int* enabledDistance)
 {
 	switch (referenceData.formType)
 	{
@@ -892,7 +891,7 @@ bool ErectusMemory::UpdateBufferEntityList()
 		DWORD64 entityNamePtr = 0;
 		auto enabledDistance = 0;
 
-		GetCustomEntityData(referenceData, &entityFlag, &entityNamePtr, &enabledDistance, false, false);
+		GetCustomEntityData(referenceData, &entityFlag, &entityNamePtr, &enabledDistance);
 		if (entityFlag & CUSTOM_ENTRY_INVALID)
 			continue;
 
@@ -1575,7 +1574,7 @@ bool ErectusMemory::MovePlayer()
 	float velocityB[4];
 	memset(velocityB, 0x00, sizeof velocityB);
 
-	auto speed = Settings::customLocalPlayerSettings.noclipSpeed;
+	auto speed = Settings::localPlayer.noclipSpeed;
 	if (GetAsyncKeyState(VK_SHIFT))
 		speed *= 1.5f;
 
@@ -1711,22 +1710,22 @@ bool ErectusMemory::ActorValue(DWORD64* actorValuePage, bool* actorValuePageVali
 		return false;
 
 	ActorValueHook actorValueHookData;
-	actorValueHookData.actionPointsEnabled = static_cast<int>(Settings::customLocalPlayerSettings.actionPointsEnabled);
-	actorValueHookData.actionPoints = static_cast<float>(Settings::customLocalPlayerSettings.actionPoints);
-	actorValueHookData.strengthEnabled = static_cast<int>(Settings::customLocalPlayerSettings.strengthEnabled);
-	actorValueHookData.strength = static_cast<float>(Settings::customLocalPlayerSettings.strength);
-	actorValueHookData.perceptionEnabled = static_cast<int>(Settings::customLocalPlayerSettings.perceptionEnabled);
-	actorValueHookData.perception = static_cast<float>(Settings::customLocalPlayerSettings.perception);
-	actorValueHookData.enduranceEnabled = static_cast<int>(Settings::customLocalPlayerSettings.enduranceEnabled);
-	actorValueHookData.endurance = static_cast<float>(Settings::customLocalPlayerSettings.endurance);
-	actorValueHookData.charismaEnabled = static_cast<int>(Settings::customLocalPlayerSettings.charismaEnabled);
-	actorValueHookData.charisma = static_cast<float>(Settings::customLocalPlayerSettings.charisma);
-	actorValueHookData.intelligenceEnabled = static_cast<int>(Settings::customLocalPlayerSettings.intelligenceEnabled);
-	actorValueHookData.intelligence = static_cast<float>(Settings::customLocalPlayerSettings.intelligence);
-	actorValueHookData.agilityEnabled = static_cast<int>(Settings::customLocalPlayerSettings.agilityEnabled);
-	actorValueHookData.agility = static_cast<float>(Settings::customLocalPlayerSettings.agility);
-	actorValueHookData.luckEnabled = static_cast<int>(Settings::customLocalPlayerSettings.luckEnabled);
-	actorValueHookData.luck = static_cast<float>(Settings::customLocalPlayerSettings.luck);
+	actorValueHookData.actionPointsEnabled = static_cast<int>(Settings::localPlayer.actionPointsEnabled);
+	actorValueHookData.actionPoints = static_cast<float>(Settings::localPlayer.actionPoints);
+	actorValueHookData.strengthEnabled = static_cast<int>(Settings::localPlayer.strengthEnabled);
+	actorValueHookData.strength = static_cast<float>(Settings::localPlayer.strength);
+	actorValueHookData.perceptionEnabled = static_cast<int>(Settings::localPlayer.perceptionEnabled);
+	actorValueHookData.perception = static_cast<float>(Settings::localPlayer.perception);
+	actorValueHookData.enduranceEnabled = static_cast<int>(Settings::localPlayer.enduranceEnabled);
+	actorValueHookData.endurance = static_cast<float>(Settings::localPlayer.endurance);
+	actorValueHookData.charismaEnabled = static_cast<int>(Settings::localPlayer.charismaEnabled);
+	actorValueHookData.charisma = static_cast<float>(Settings::localPlayer.charisma);
+	actorValueHookData.intelligenceEnabled = static_cast<int>(Settings::localPlayer.intelligenceEnabled);
+	actorValueHookData.intelligence = static_cast<float>(Settings::localPlayer.intelligence);
+	actorValueHookData.agilityEnabled = static_cast<int>(Settings::localPlayer.agilityEnabled);
+	actorValueHookData.agility = static_cast<float>(Settings::localPlayer.agility);
+	actorValueHookData.luckEnabled = static_cast<int>(Settings::localPlayer.luckEnabled);
+	actorValueHookData.luck = static_cast<float>(Settings::localPlayer.luck);
 	actorValueHookData.originalFunction = ErectusProcess::exe + OFFSET_ACTOR_VALUE;
 
 	if (actorValueFunction != ErectusProcess::exe + OFFSET_ACTOR_VALUE && actorValueFunction != *actorValuePage)
@@ -2285,7 +2284,7 @@ bool ErectusMemory::FreezeActionPoints(DWORD64* freezeApPage, bool* freezeApPage
 	if (state)
 	{
 		FreezeAp freezeApData;
-		freezeApData.freezeApEnabled = Settings::customLocalPlayerSettings.freezeApEnabled;
+		freezeApData.freezeApEnabled = Settings::localPlayer.freezeApEnabled;
 
 		if (*freezeApPageValid)
 		{
@@ -2365,14 +2364,14 @@ bool ErectusMemory::PositionSpoofing(const bool state)
 
 	int spoofingHeightCheck;
 	memcpy(&spoofingHeightCheck, &positionSpoofingCheck[1], sizeof spoofingHeightCheck);
-	memcpy(&positionSpoofingOn[1], &Settings::customLocalPlayerSettings.positionSpoofingHeight,
-		sizeof Settings::customLocalPlayerSettings.positionSpoofingHeight);
+	memcpy(&positionSpoofingOn[1], &Settings::localPlayer.positionSpoofingHeight,
+		sizeof Settings::localPlayer.positionSpoofingHeight);
 
 	if (!memcmp(positionSpoofingCheck, positionSpoofingOn, sizeof positionSpoofingOn))
 		return true;
 	if (!memcmp(positionSpoofingCheck, positionSpoofingOff, sizeof positionSpoofingOff))
 		return ErectusProcess::Wpm(ErectusProcess::exe + OFFSET_SERVER_POSITION, &positionSpoofingOn, sizeof positionSpoofingOn);
-	if (spoofingHeightCheck != Settings::customLocalPlayerSettings.positionSpoofingHeight)
+	if (spoofingHeightCheck != Settings::localPlayer.positionSpoofingHeight)
 	{
 		if (positionSpoofingCheck[0] != 0xBA || spoofingHeightCheck < -524287 || spoofingHeightCheck > 524287)
 			return false;

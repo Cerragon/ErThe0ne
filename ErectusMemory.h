@@ -775,8 +775,6 @@ struct ItemInfo
 	DWORD64 namePtr;
 	TesObjectRefr refr;
 	TesItem base;
-
-	std::string GetName();
 };
 
 class ErectusMemory final {
@@ -857,7 +855,7 @@ public:
 
 	static DWORD64 GetLocalPlayerPtr(bool checkMainMenu);
 	static std::vector<DWORD64> GetEntityPtrList();
-	static void GetCustomEntityData(const TesItem& referenceData, DWORD64* entityFlag, DWORD64* entityNamePtr, int* enabledDistance, bool checkScrap, bool checkIngredient);
+	static void GetCustomEntityData(const TesItem& referenceData, DWORD64* entityFlag, DWORD64* entityNamePtr, int* enabledDistance);
 	static bool CheckFormIdArray(DWORD formId, const bool* enabledArray, const DWORD* formIdArray, int size);
 	static DWORD64 RttiGetNamePtr(DWORD64 vtable);
 	static bool IsBobblehead(const TesItem& tesItem);
@@ -894,8 +892,6 @@ private:
 
 	static bool CheckWhitelistedFlux(const TesItem& referenceData);
 	static bool IsTreasureMap(const TesItem& referenceData);
-	static bool CheckFactionFormId(DWORD formId);
-	static bool BlacklistedNpcFaction(const TesItem& referenceData);
 	static bool CheckReferenceItem(const TesItem& referenceData);
 
 	static std::string GetEntityName(DWORD64 ptr);
@@ -904,5 +900,5 @@ private:
 	
 	inline static OldWeapon* oldWeaponList = nullptr;
 
-	virtual void __dummy();
+	virtual void __dummy() = 0;
 };

@@ -11,8 +11,7 @@ mINI::INIFile file("Erectus.ini");
 mINI::INIStructure ini;
 
 //esp
-OverlaySettingsA defltPlayerSettings
-{
+OverlaySettingsA Settings::playerSettings = {
 	true,					//Enabled
 	1500,					//EnabledDistance
 	true,					//DrawAlive
@@ -36,9 +35,8 @@ OverlaySettingsA defltPlayerSettings
 	true,					//TextShadowed;
 	true,					//TextCentered;
 };
-OverlaySettingsA defltNpcSettings
-{
-	true,					//Enabled
+OverlaySettingsA Settings::npcSettings = {
+		true,					//Enabled
 	1500,					//EnabledDistance
 	true,					//DrawAlive
 	{ 0.5f, 1.0f, 1.0f },	//AliveColor
@@ -61,8 +59,8 @@ OverlaySettingsA defltNpcSettings
 	true,					//TextShadowed;
 	true,					//TextCentered;
 };
-OverlaySettingsB defltOverlaySettingsB
-{
+
+OverlaySettingsB defltOverlaySettingsB = {
 	false,					//Enabled
 	1500,					//EnabledDistance
 	{ 1.0f, 1.0f, 1.0f },	//Color
@@ -79,24 +77,6 @@ OverlaySettingsB defltOverlaySettingsB
 	{},						//Whitelisted
 	{},				//Whitelist
 };
-LegendarySettings defltLegendarySettings
-{
-	true,
-	{ 0.7f, 1.0f, 0.7f },
-	true,
-	{ 1.0f, 0.5f, 0.5f },
-	true,
-	{ 0.7f, 1.0f, 0.7f },
-	true,
-	{ 1.0f, 0.5f, 0.5f },
-	true,
-	{ 0.7f, 1.0f, 0.7f },
-	true,
-	{ 1.0f, 0.5f, 0.5f },
-};
-
-OverlaySettingsA Settings::playerSettings = defltPlayerSettings;
-OverlaySettingsA Settings::npcSettings = defltNpcSettings;
 OverlaySettingsB Settings::containerSettings = defltOverlaySettingsB;
 OverlaySettingsB Settings::junkSettings = defltOverlaySettingsB;
 OverlaySettingsB Settings::planSettings = defltOverlaySettingsB;
@@ -105,20 +85,31 @@ OverlaySettingsB Settings::bobbleheadSettings = defltOverlaySettingsB;
 OverlaySettingsB Settings::itemSettings = defltOverlaySettingsB;
 OverlaySettingsB Settings::floraSettings = defltOverlaySettingsB;
 OverlaySettingsB Settings::entitySettings = defltOverlaySettingsB;
-LegendarySettings Settings::customLegendarySettings = defltLegendarySettings;
-FluxSettings Settings::customFluxSettings = {};
+LegendarySettings Settings::customLegendarySettings = {
+	true,
+	{ 0.7f, 1.0f, 0.7f },
+	true,
+	{ 1.0f, 0.5f, 0.5f },
+	true,
+	{ 0.7f, 1.0f, 0.7f },
+	true,
+	{ 1.0f, 0.5f, 0.5f },
+	true,
+	{ 0.7f, 1.0f, 0.7f },
+	true,
+	{ 1.0f, 0.5f, 0.5f },
+};
 
 //utils
-TargetSettings defltTargetSettings
-{
+WeaponSettings Settings::weapons = defaultWeaponSettings;
+TargetSettings Settings::targetting = {
 	.lockingFov = 20.0f,
 	.lockingColor = { 1.0f, 0.0f, 1.0f },
 	.sendDamageMin = 1,
 	.sendDamageMax = 1,
 	.favoriteIndex = 12,
 };
-LocalPlayerSettings defltLocalPlayerSettings
-{
+LocalPlayerSettings Settings::localPlayer = {
 	false,
 	524287,
 	false,
@@ -143,8 +134,7 @@ LocalPlayerSettings defltLocalPlayerSettings
 	false,
 	9001,
 };
-TransferSettings defltTransferSettings
-{
+TransferSettings Settings::customTransferSettings = {
 	0x00000000,
 	0x00000000,
 	true,
@@ -164,21 +154,6 @@ TransferSettings defltTransferSettings
 		0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
 	},
 };
-
-WeaponSettings Settings::weapons = defaultWeaponSettings;
-TargetSettings Settings::targetting = defltTargetSettings;
-LocalPlayerSettings Settings::customLocalPlayerSettings = defltLocalPlayerSettings;
-OpkSettings Settings::opk = {};
-UtilitySettings Settings::utilities = {};
-SwapperSettings Settings::swapper = {};
-TransferSettings Settings::customTransferSettings = defltTransferSettings;
-TeleportSettings Settings::teleporter = {};
-NukeCodeSettings Settings::customNukeCodeSettings = {};
-MeleeSettings Settings::melee = {false,10,20 };
-ChargenSettings Settings::characterEditor = { false,0.33f,0.33f,0.33f };
-ExtraNpcSettings Settings::customExtraNpcSettings = {};
-KnownRecipeSettings Settings::recipes = { true, true };
-
 
 void Settings::GetDword(const std::string& section, const std::string& key, DWORD& value, const DWORD deflt)
 {
@@ -470,6 +445,132 @@ void Settings::GetInfoBoxSettings()
 	GetBool("InfoBox", "drawNukeCodes", infobox.drawNukeCodes, false);
 }
 
+void Settings::GetLooterSettings()
+{
+	auto modeInt = 0;
+	GetInt("Looter", "mode", modeInt, 0);
+	looter.mode = static_cast<LooterSettings::Mode>(modeInt);
+
+	GetBool("Looter", "lootersNpc", looter.looters.npcs, false);
+	GetBool("Looter", "lootersItems", looter.looters.items, false);
+	GetBool("Looter", "lootersContainers", looter.looters.containers, false);
+	GetBool("Looter", "lootersFlora", looter.looters.flora, false);
+
+	GetBool("Looter", "weaponsAll", looter.selection.weapons.all, false);
+	GetBool("Looter", "weaponsOneStar", looter.selection.weapons.oneStar, false);
+	GetBool("Looter", "weaponsTwoStar", looter.selection.weapons.twoStar, false);
+	GetBool("Looter", "weaponsThreeStar", looter.selection.weapons.threeStar, false);
+
+	GetBool("Looter", "apparelAll", looter.selection.apparel.all, false);
+	GetBool("Looter", "apparelOneStar", looter.selection.apparel.oneStar, false);
+	GetBool("Looter", "apparelTwoStar", looter.selection.apparel.twoStar, false);
+	GetBool("Looter", "apparelThreeStar", looter.selection.apparel.threeStar, false);
+
+	GetBool("Looter", "aidAll", looter.selection.aid.all, false);
+	GetBool("Looter", "aidMagazines", looter.selection.aid.magazines, false);
+	GetBool("Looter", "aidBobbleheads", looter.selection.aid.bobbleheads, false);
+
+	GetBool("Looter", "miscAll", looter.selection.misc.all, false);
+	
+	GetBool("Looter", "holoAll", looter.selection.holo.all, false);
+	
+	GetBool("Looter", "notesAll", looter.selection.notes.all, false);
+	GetBool("Looter", "notesTreasureMaps", looter.selection.notes.treasureMaps, false);
+	GetBool("Looter", "notesPlansKnown", looter.selection.notes.plansKnown, false);
+	GetBool("Looter", "notesPlansUnknown", looter.selection.notes.plansUnknown, false);
+
+	GetBool("Looter", "junkAll", looter.selection.junk.all, false);
+	for (auto& component : looter.selection.junk.components)
+	{
+		GetBool("Looter", fmt::format("junk{:x}", component.first), component.second, false);
+	}
+
+	GetBool("Looter", "floraAll", looter.selection.flora.all, false);
+	for (auto& component : looter.selection.flora.components)
+	{
+		GetBool("Looter", fmt::format("flora{:x}", component.first), component.second, false);
+	}
+	
+	GetBool("Looter", "modsAll", looter.selection.mods.all, false);
+
+	GetBool("Looter", "ammoAll", looter.selection.ammo.all, false);
+
+	GetBool("Looter", "otherCaps", looter.selection.other.caps, false);
+
+	for(const auto& item : ini["LooterWhitelist"])
+	{
+		looter.selection.whitelist.emplace(stoul(item.first, nullptr, 16), static_cast<bool>(stoi(item.second)));
+	}
+
+	for (const auto& item : ini["LooterBlacklist"])
+	{
+		looter.selection.blacklist.emplace(stoul(item.first, nullptr, 16), static_cast<bool>(stoi(item.second)));
+	}
+}
+
+void Settings::SetLooterSettings()
+{
+	SetInt("Looter", "mode", static_cast<int>(looter.mode), 0);
+
+	SetBool("Looter", "lootersNpc", looter.looters.npcs, false);
+	SetBool("Looter", "lootersItems", looter.looters.items, false);
+	SetBool("Looter", "lootersContainers", looter.looters.containers, false);
+	SetBool("Looter", "lootersFlora", looter.looters.flora, false);
+
+	SetBool("Looter", "weaponsAll", looter.selection.weapons.all, false);
+	SetBool("Looter", "weaponsOneStar", looter.selection.weapons.oneStar, false);
+	SetBool("Looter", "weaponsTwoStar", looter.selection.weapons.twoStar, false);
+	SetBool("Looter", "weaponsThreeStar", looter.selection.weapons.threeStar, false);
+
+	SetBool("Looter", "apparelAll", looter.selection.apparel.all, false);
+	SetBool("Looter", "apparelOneStar", looter.selection.apparel.oneStar, false);
+	SetBool("Looter", "apparelTwoStar", looter.selection.apparel.twoStar, false);
+	SetBool("Looter", "apparelThreeStar", looter.selection.apparel.threeStar, false);
+
+	SetBool("Looter", "aidAll", looter.selection.aid.all, false);
+	SetBool("Looter", "aidMagazines", looter.selection.aid.magazines, false);
+	SetBool("Looter", "aidBobbleheads", looter.selection.aid.bobbleheads, false);
+
+	SetBool("Looter", "miscAll", looter.selection.misc.all, false);
+
+	SetBool("Looter", "holoAll", looter.selection.holo.all, false);
+
+	SetBool("Looter", "notesAll", looter.selection.notes.all, false);
+	SetBool("Looter", "notesTreasureMaps", looter.selection.notes.treasureMaps, false);
+	SetBool("Looter", "notesPlansKnown", looter.selection.notes.plansKnown, false);
+	SetBool("Looter", "notesPlansUnknown", looter.selection.notes.plansUnknown, false);
+
+	SetBool("Looter", "junkAll", looter.selection.junk.all, false);
+	for(const auto& component : looter.selection.junk.components)
+	{
+		SetBool("Looter", fmt::format("junk{:x}", component.first), component.second, false);
+	}
+
+	SetBool("Looter", "floraAll", looter.selection.flora.all, false);
+	for (const auto& component : looter.selection.flora.components)
+	{
+		SetBool("Looter", fmt::format("flora{:x}", component.first), component.second, false);
+	}
+
+	SetBool("Looter", "modsAll", looter.selection.mods.all, false);
+
+	SetBool("Looter", "ammoAll", looter.selection.ammo.all, false);
+
+	SetBool("Looter", "otherCaps", looter.selection.other.caps, false);
+
+	ini.remove("LooterWhitelist");
+	for(const auto& item : looter.selection.whitelist)
+	{
+		SetBool("LooterWhitelist", fmt::format("{:x}", item.first), item.second, false);
+	}
+
+	ini.remove("LooterBlacklist");
+	for (const auto& item : looter.selection.blacklist)
+	{
+		SetBool("LooterBlacklist", fmt::format("{:x}", item.first), item.second, false);
+	}
+}
+
 void Settings::SetInfoBoxSettings()
 {
 	SetBool("InfoBox", "drawScrapLooterStatus", infobox.drawScrapLooterStatus, false);
@@ -480,98 +581,6 @@ void Settings::SetInfoBoxSettings()
 
 	SetBool("InfoBox", "drawPositionSpoofingStatus", infobox.drawPositionSpoofingStatus, false);
 	SetBool("InfoBox", "drawNukeCodes", infobox.drawNukeCodes, false);
-}
-
-void Settings::GetItemLooterSettings()
-{
-	/*
-	GetBool("ItemLooterSettings", "ItemKeybindEnabled", itemLooter.keybindEnabled, defltItemLooterSettings.keybindEnabled);
-	GetBool("ItemLooterSettings", "ItemAutomaticLootingEnabled", itemLooter.autoLootingEnabled, defltItemLooterSettings.autoLootingEnabled);
-
-	GetSliderInt("ItemLooterSettings", "ItemAutomaticSpeedMin", itemLooter.autoLootingSpeedMin, defltItemLooterSettings.autoLootingSpeedMin, 10, 60);
-	GetSliderInt("ItemLooterSettings", "ItemAutomaticSpeedMax", itemLooter.autoLootingSpeedMax, defltItemLooterSettings.autoLootingSpeedMax, 10, 60);
-	GetBool("ItemLooterSettings", "ItemLooterWeaponsEnabled", itemLooter.lootWeaponsEnabled, defltItemLooterSettings.lootWeaponsEnabled);
-	GetSliderInt("ItemLooterSettings", "ItemLooterWeaponsDistance", itemLooter.lootWeaponsDistance, defltItemLooterSettings.lootWeaponsDistance, 0, 3000);
-	GetBool("ItemLooterSettings", "ItemLooterArmorEnabled", itemLooter.lootArmorEnabled, defltItemLooterSettings.lootArmorEnabled);
-	GetSliderInt("ItemLooterSettings", "ItemLooterArmorDistance", itemLooter.lootArmorDistance, defltItemLooterSettings.lootArmorDistance, 0, 3000);
-	GetBool("ItemLooterSettings", "ItemLooterAmmoEnabled", itemLooter.lootAmmoEnabled, defltItemLooterSettings.lootAmmoEnabled);
-	GetSliderInt("ItemLooterSettings", "ItemLooterAmmoDistance", itemLooter.lootAmmoDistance, defltItemLooterSettings.lootAmmoDistance, 0, 3000);
-	GetBool("ItemLooterSettings", "ItemLooterModsEnabled", itemLooter.lootModsEnabled, defltItemLooterSettings.lootModsEnabled);
-	GetSliderInt("ItemLooterSettings", "ItemLooterModsDistance", itemLooter.lootModsDistance, defltItemLooterSettings.lootModsDistance, 0, 3000);
-	GetBool("ItemLooterSettings", "ItemLooterMagazinesEnabled", itemLooter.lootMagazinesEnabled, defltItemLooterSettings.lootMagazinesEnabled);
-	GetSliderInt("ItemLooterSettings", "ItemLooterMagazinesDistance", itemLooter.lootMagazinesDistance, defltItemLooterSettings.lootMagazinesDistance, 0, 3000);
-	GetBool("ItemLooterSettings", "ItemLooterBobbleheadsEnabled", itemLooter.lootBobbleheadsEnabled, defltItemLooterSettings.lootBobbleheadsEnabled);
-	GetSliderInt("ItemLooterSettings", "ItemLooterBobbleheadsDistance", itemLooter.lootBobbleheadsDistance, defltItemLooterSettings.lootBobbleheadsDistance, 0, 3000);
-	GetBool("ItemLooterSettings", "ItemLooterAidEnabled", itemLooter.lootAidEnabled, defltItemLooterSettings.lootAidEnabled);
-	GetSliderInt("ItemLooterSettings", "ItemLooterAidDistance", itemLooter.lootAidDistance, defltItemLooterSettings.lootAidDistance, 0, 3000);
-	GetBool("ItemLooterSettings", "ItemLooterKnownPlansEnabled", itemLooter.lootKnownPlansEnabled, defltItemLooterSettings.lootKnownPlansEnabled);
-	GetSliderInt("ItemLooterSettings", "ItemLooterKnownPlansDistance", itemLooter.lootKnownPlansDistance, defltItemLooterSettings.lootKnownPlansDistance, 0, 3000);
-	GetBool("ItemLooterSettings", "ItemLooterUnknownPlansEnabled", itemLooter.lootUnknownPlansEnabled, defltItemLooterSettings.lootUnknownPlansEnabled);
-	GetSliderInt("ItemLooterSettings", "ItemLooterUnknownPlansDistance", itemLooter.lootUnknownPlansDistance, defltItemLooterSettings.lootUnknownPlansDistance, 0, 3000);
-	GetBool("ItemLooterSettings", "ItemLooterMiscEnabled", itemLooter.lootMiscEnabled, defltItemLooterSettings.lootMiscEnabled);
-	GetSliderInt("ItemLooterSettings", "ItemLooterMiscDistance", itemLooter.lootMiscDistance, defltItemLooterSettings.lootMiscDistance, 0, 3000);
-	GetBool("ItemLooterSettings", "ItemLooterUnlistedEnabled", itemLooter.lootUnlistedEnabled, defltItemLooterSettings.lootUnlistedEnabled);
-	GetSliderInt("ItemLooterSettings", "ItemLooterUnlistedDistance", itemLooter.lootUnlistedDistance, defltItemLooterSettings.lootUnlistedDistance, 0, 3000);
-	GetBool("ItemLooterSettings", "ItemLooterListEnabled", itemLooter.lootListEnabled, defltItemLooterSettings.lootListEnabled);
-	GetSliderInt("ItemLooterSettings", "ItemLooterListDistance", itemLooter.lootListDistance, defltItemLooterSettings.lootListDistance, 0, 3000);
-	GetBool("ItemLooterSettings", "ItemLooterBlacklistToggle", itemLooter.blacklistToggle, defltItemLooterSettings.blacklistToggle);
-	for (auto i = 0; i < 100; i++)
-	{
-		GetBool("ItemLooterSettings", fmt::format("ItemLooterEnabled{:d}", i), itemLooter.enabledList[i], defltItemLooterSettings.enabledList[i]);
-		GetDword("ItemLooterSettings", fmt::format("ItemLooterList{:d}", i), itemLooter.formIdList[i], defltItemLooterSettings.formIdList[i]);
-	}
-	for (auto i = 0; i < 64; i++)
-	{
-		GetBool("ItemLooterSettings", fmt::format("ItemLooterBlacklistEnabled{:d}", i), itemLooter.blacklistEnabled[i], defltItemLooterSettings.blacklistEnabled[i]);
-		GetDword("ItemLooterSettings", fmt::format("ItemLooterBlacklist{:d}", i), itemLooter.blacklist[i], defltItemLooterSettings.blacklist[i]);
-	}
-
-*/
-}
-
-void Settings::SetItemLooterSettings()
-{
-	/*
-		SetBool("ItemLooterSettings", "ItemKeybindEnabled", itemLooter.keybindEnabled, defltItemLooterSettings.keybindEnabled);
-		SetBool("ItemLooterSettings", "ItemAutomaticLootingEnabled", itemLooter.autoLootingEnabled, defltItemLooterSettings.autoLootingEnabled);
-		SetSliderInt("ItemLooterSettings", "ItemAutomaticSpeedMin", itemLooter.autoLootingSpeedMin, defltItemLooterSettings.autoLootingSpeedMin, 10, 60);
-		SetSliderInt("ItemLooterSettings", "ItemAutomaticSpeedMax", itemLooter.autoLootingSpeedMax, defltItemLooterSettings.autoLootingSpeedMax, 10, 60);
-		SetBool("ItemLooterSettings", "ItemLooterWeaponsEnabled", itemLooter.lootWeaponsEnabled, defltItemLooterSettings.lootWeaponsEnabled);
-		SetSliderInt("ItemLooterSettings", "ItemLooterWeaponsDistance", itemLooter.lootWeaponsDistance, defltItemLooterSettings.lootWeaponsDistance, 0, 3000);
-		SetBool("ItemLooterSettings", "ItemLooterArmorEnabled", itemLooter.lootArmorEnabled, defltItemLooterSettings.lootArmorEnabled);
-		SetSliderInt("ItemLooterSettings", "ItemLooterArmorDistance", itemLooter.lootArmorDistance, defltItemLooterSettings.lootArmorDistance, 0, 3000);
-		SetBool("ItemLooterSettings", "ItemLooterAmmoEnabled", itemLooter.lootAmmoEnabled, defltItemLooterSettings.lootAmmoEnabled);
-		SetSliderInt("ItemLooterSettings", "ItemLooterAmmoDistance", itemLooter.lootAmmoDistance, defltItemLooterSettings.lootAmmoDistance, 0, 3000);
-		SetBool("ItemLooterSettings", "ItemLooterModsEnabled", itemLooter.lootModsEnabled, defltItemLooterSettings.lootModsEnabled);
-		SetSliderInt("ItemLooterSettings", "ItemLooterModsDistance", itemLooter.lootModsDistance, defltItemLooterSettings.lootModsDistance, 0, 3000);
-		SetBool("ItemLooterSettings", "ItemLooterMagazinesEnabled", itemLooter.lootMagazinesEnabled, defltItemLooterSettings.lootMagazinesEnabled);
-		SetSliderInt("ItemLooterSettings", "ItemLooterMagazinesDistance", itemLooter.lootMagazinesDistance, defltItemLooterSettings.lootMagazinesDistance, 0, 3000);
-		SetBool("ItemLooterSettings", "ItemLooterBobbleheadsEnabled", itemLooter.lootBobbleheadsEnabled, defltItemLooterSettings.lootBobbleheadsEnabled);
-		SetSliderInt("ItemLooterSettings", "ItemLooterBobbleheadsDistance", itemLooter.lootBobbleheadsDistance, defltItemLooterSettings.lootBobbleheadsDistance, 0, 3000);
-		SetBool("ItemLooterSettings", "ItemLooterAidEnabled", itemLooter.lootAidEnabled, defltItemLooterSettings.lootAidEnabled);
-		SetSliderInt("ItemLooterSettings", "ItemLooterAidDistance", itemLooter.lootAidDistance, defltItemLooterSettings.lootAidDistance, 0, 3000);
-		SetBool("ItemLooterSettings", "ItemLooterKnownPlansEnabled", itemLooter.lootKnownPlansEnabled, defltItemLooterSettings.lootKnownPlansEnabled);
-		SetSliderInt("ItemLooterSettings", "ItemLooterKnownPlansDistance", itemLooter.lootKnownPlansDistance, defltItemLooterSettings.lootKnownPlansDistance, 0, 3000);
-		SetBool("ItemLooterSettings", "ItemLooterUnknownPlansEnabled", itemLooter.lootUnknownPlansEnabled, defltItemLooterSettings.lootUnknownPlansEnabled);
-		SetSliderInt("ItemLooterSettings", "ItemLooterUnknownPlansDistance", itemLooter.lootUnknownPlansDistance, defltItemLooterSettings.lootUnknownPlansDistance, 0, 3000);
-		SetBool("ItemLooterSettings", "ItemLooterMiscEnabled", itemLooter.lootMiscEnabled, defltItemLooterSettings.lootMiscEnabled);
-		SetSliderInt("ItemLooterSettings", "ItemLooterMiscDistance", itemLooter.lootMiscDistance, defltItemLooterSettings.lootMiscDistance, 0, 3000);
-		SetBool("ItemLooterSettings", "ItemLooterUnlistedEnabled", itemLooter.lootUnlistedEnabled, defltItemLooterSettings.lootUnlistedEnabled);
-		SetSliderInt("ItemLooterSettings", "ItemLooterUnlistedDistance", itemLooter.lootUnlistedDistance, defltItemLooterSettings.lootUnlistedDistance, 0, 3000);
-		SetBool("ItemLooterSettings", "ItemLooterListEnabled", itemLooter.lootListEnabled, defltItemLooterSettings.lootListEnabled);
-		SetSliderInt("ItemLooterSettings", "ItemLooterListDistance", itemLooter.lootListDistance, defltItemLooterSettings.lootListDistance, 0, 3000);
-		SetBool("ItemLooterSettings", "ItemLooterBlacklistToggle", itemLooter.blacklistToggle, defltItemLooterSettings.blacklistToggle);
-		for (auto i = 0; i < 100; i++)
-		{
-			SetBool("ItemLooterSettings", fmt::format("ItemLooterEnabled{:d}", i), itemLooter.enabledList[i], defltItemLooterSettings.enabledList[i]);
-			SetDword("ItemLooterSettings", fmt::format("ItemLooterList{:d}", i), itemLooter.formIdList[i], defltItemLooterSettings.formIdList[i]);
-		}
-		for (auto i = 0; i < 64; i++)
-		{
-			SetBool("ItemLooterSettings", fmt::format("ItemLooterBlacklistEnabled{:d}", i), itemLooter.blacklistEnabled[i], defltItemLooterSettings.blacklistEnabled[i]);
-			SetDword("ItemLooterSettings", fmt::format("ItemLooterBlacklist{:d}", i), itemLooter.blacklist[i], defltItemLooterSettings.blacklist[i]);
-		}
-		*/
 }
 
 void Settings::GetWeaponSettings()
@@ -608,25 +617,25 @@ void Settings::SetWeaponSettings()
 
 void Settings::GetTargetSettings()
 {
-	GetBool("TargetSettings", "LockPlayers", targetting.lockPlayers, defltTargetSettings.lockPlayers);
-	GetBool("TargetSettings", "LockNPCs", targetting.lockNpCs, defltTargetSettings.lockNpCs);
-	GetBool("TargetSettings", "IndirectPlayers", targetting.indirectPlayers, defltTargetSettings.indirectPlayers);
-	GetBool("TargetSettings", "IndirectNPCs", targetting.indirectNpCs, defltTargetSettings.indirectNpCs);
-	GetBool("TargetSettings", "DirectPlayers", targetting.directPlayers, defltTargetSettings.directPlayers);
-	GetBool("TargetSettings", "DirectNPCs", targetting.directNpCs, defltTargetSettings.directNpCs);
-	GetBool("TargetSettings", "TargetLiving", targetting.targetLiving, defltTargetSettings.targetLiving);
-	GetBool("TargetSettings", "TargetDowned", targetting.targetDowned, defltTargetSettings.targetDowned);
-	GetBool("TargetSettings", "TargetDead", targetting.targetDead, defltTargetSettings.targetDead);
-	GetBool("TargetSettings", "TargetUnknown", targetting.targetUnknown, defltTargetSettings.targetUnknown);
-	GetBool("TargetSettings", "IgnoreRenderDistance", targetting.ignoreRenderDistance, defltTargetSettings.ignoreRenderDistance);
-	GetSliderFloat("TargetSettings", "LockingFOV", targetting.lockingFov, defltTargetSettings.lockingFov, 5.0f, 40.0f);
-	GetBool("TargetSettings", "IgnoreEssentialNPCs", targetting.ignoreEssentialNpCs, defltTargetSettings.ignoreEssentialNpCs);
-	GetRgb("TargetSettings", "LockingColor", targetting.lockingColor, defltTargetSettings.lockingColor);
-	GetBool("TargetSettings", "Retargeting", targetting.retargeting, defltTargetSettings.retargeting);
-	GetSliderInt("TargetSettings", "Cooldown", targetting.cooldown, defltTargetSettings.cooldown, 0, 120);
-	GetSliderInt("TargetSettings", "SendDamageMin", targetting.sendDamageMin, defltTargetSettings.sendDamageMin, 1, 60);
-	GetSliderInt("TargetSettings", "SendDamageMax", targetting.sendDamageMax, defltTargetSettings.sendDamageMax, 1, 60);
-	GetSliderInt("TargetSettings", "FavoriteIndex", targetting.favoriteIndex, defltTargetSettings.favoriteIndex, 0, 12);
+	GetBool("TargetSettings", "LockPlayers", targetting.lockPlayers, targetting.lockPlayers);
+	GetBool("TargetSettings", "LockNPCs", targetting.lockNpCs, targetting.lockNpCs);
+	GetBool("TargetSettings", "IndirectPlayers", targetting.indirectPlayers, targetting.indirectPlayers);
+	GetBool("TargetSettings", "IndirectNPCs", targetting.indirectNpCs, targetting.indirectNpCs);
+	GetBool("TargetSettings", "DirectPlayers", targetting.directPlayers, targetting.directPlayers);
+	GetBool("TargetSettings", "DirectNPCs", targetting.directNpCs, targetting.directNpCs);
+	GetBool("TargetSettings", "TargetLiving", targetting.targetLiving, targetting.targetLiving);
+	GetBool("TargetSettings", "TargetDowned", targetting.targetDowned, targetting.targetDowned);
+	GetBool("TargetSettings", "TargetDead", targetting.targetDead, targetting.targetDead);
+	GetBool("TargetSettings", "TargetUnknown", targetting.targetUnknown, targetting.targetUnknown);
+	GetBool("TargetSettings", "IgnoreRenderDistance", targetting.ignoreRenderDistance, targetting.ignoreRenderDistance);
+	GetSliderFloat("TargetSettings", "LockingFOV", targetting.lockingFov, targetting.lockingFov, 5.0f, 40.0f);
+	GetBool("TargetSettings", "IgnoreEssentialNPCs", targetting.ignoreEssentialNpCs, targetting.ignoreEssentialNpCs);
+	GetRgb("TargetSettings", "LockingColor", targetting.lockingColor, targetting.lockingColor);
+	GetBool("TargetSettings", "Retargeting", targetting.retargeting, targetting.retargeting);
+	GetSliderInt("TargetSettings", "Cooldown", targetting.cooldown, targetting.cooldown, 0, 120);
+	GetSliderInt("TargetSettings", "SendDamageMin", targetting.sendDamageMin, targetting.sendDamageMin, 1, 60);
+	GetSliderInt("TargetSettings", "SendDamageMax", targetting.sendDamageMax, targetting.sendDamageMax, 1, 60);
+	GetSliderInt("TargetSettings", "FavoriteIndex", targetting.favoriteIndex, targetting.favoriteIndex, 0, 12);
 	if (targetting.sendDamageMax < targetting.sendDamageMin)
 		targetting.sendDamageMax = targetting.sendDamageMin;
 }
@@ -636,79 +645,79 @@ void Settings::SetTargetSettings()
 	if (targetting.sendDamageMax < targetting.sendDamageMin)
 		targetting.sendDamageMax = targetting.sendDamageMin;
 
-	SetBool("TargetSettings", "LockPlayers", targetting.lockPlayers, defltTargetSettings.lockPlayers);
-	SetBool("TargetSettings", "LockNPCs", targetting.lockNpCs, defltTargetSettings.lockNpCs);
-	SetBool("TargetSettings", "IndirectPlayers", targetting.indirectPlayers, defltTargetSettings.indirectPlayers);
-	SetBool("TargetSettings", "IndirectNPCs", targetting.indirectNpCs, defltTargetSettings.indirectNpCs);
-	SetBool("TargetSettings", "DirectPlayers", targetting.directPlayers, defltTargetSettings.directPlayers);
-	SetBool("TargetSettings", "DirectNPCs", targetting.directNpCs, defltTargetSettings.directNpCs);
-	SetBool("TargetSettings", "TargetLiving", targetting.targetLiving, defltTargetSettings.targetLiving);
-	SetBool("TargetSettings", "TargetDowned", targetting.targetDowned, defltTargetSettings.targetDowned);
-	SetBool("TargetSettings", "TargetDead", targetting.targetDead, defltTargetSettings.targetDead);
-	SetBool("TargetSettings", "TargetUnknown", targetting.targetUnknown, defltTargetSettings.targetUnknown);
-	SetBool("TargetSettings", "IgnoreRenderDistance", targetting.ignoreRenderDistance, defltTargetSettings.ignoreRenderDistance);
-	SetSliderFloat("TargetSettings", "LockingFOV", targetting.lockingFov, defltTargetSettings.lockingFov, 5.0f, 40.0f);
-	SetBool("TargetSettings", "IgnoreEssentialNPCs", targetting.ignoreEssentialNpCs, defltTargetSettings.ignoreEssentialNpCs);
-	SetRgb("TargetSettings", "LockingColor", targetting.lockingColor, defltTargetSettings.lockingColor);
-	SetBool("TargetSettings", "Retargeting", targetting.retargeting, defltTargetSettings.retargeting);
-	SetSliderInt("TargetSettings", "Cooldown", targetting.cooldown, defltTargetSettings.cooldown, 0, 120);
-	SetSliderInt("TargetSettings", "SendDamageMin", targetting.sendDamageMin, defltTargetSettings.sendDamageMin, 1, 60);
-	SetSliderInt("TargetSettings", "SendDamageMax", targetting.sendDamageMax, defltTargetSettings.sendDamageMax, 1, 60);
-	SetSliderInt("TargetSettings", "FavoriteIndex", targetting.favoriteIndex, defltTargetSettings.favoriteIndex, 0, 12);
+	SetBool("TargetSettings", "LockPlayers", targetting.lockPlayers, targetting.lockPlayers);
+	SetBool("TargetSettings", "LockNPCs", targetting.lockNpCs, targetting.lockNpCs);
+	SetBool("TargetSettings", "IndirectPlayers", targetting.indirectPlayers, targetting.indirectPlayers);
+	SetBool("TargetSettings", "IndirectNPCs", targetting.indirectNpCs, targetting.indirectNpCs);
+	SetBool("TargetSettings", "DirectPlayers", targetting.directPlayers, targetting.directPlayers);
+	SetBool("TargetSettings", "DirectNPCs", targetting.directNpCs, targetting.directNpCs);
+	SetBool("TargetSettings", "TargetLiving", targetting.targetLiving, targetting.targetLiving);
+	SetBool("TargetSettings", "TargetDowned", targetting.targetDowned, targetting.targetDowned);
+	SetBool("TargetSettings", "TargetDead", targetting.targetDead, targetting.targetDead);
+	SetBool("TargetSettings", "TargetUnknown", targetting.targetUnknown, targetting.targetUnknown);
+	SetBool("TargetSettings", "IgnoreRenderDistance", targetting.ignoreRenderDistance, targetting.ignoreRenderDistance);
+	SetSliderFloat("TargetSettings", "LockingFOV", targetting.lockingFov, targetting.lockingFov, 5.0f, 40.0f);
+	SetBool("TargetSettings", "IgnoreEssentialNPCs", targetting.ignoreEssentialNpCs, targetting.ignoreEssentialNpCs);
+	SetRgb("TargetSettings", "LockingColor", targetting.lockingColor, targetting.lockingColor);
+	SetBool("TargetSettings", "Retargeting", targetting.retargeting, targetting.retargeting);
+	SetSliderInt("TargetSettings", "Cooldown", targetting.cooldown, targetting.cooldown, 0, 120);
+	SetSliderInt("TargetSettings", "SendDamageMin", targetting.sendDamageMin, targetting.sendDamageMin, 1, 60);
+	SetSliderInt("TargetSettings", "SendDamageMax", targetting.sendDamageMax, targetting.sendDamageMax, 1, 60);
+	SetSliderInt("TargetSettings", "FavoriteIndex", targetting.favoriteIndex, targetting.favoriteIndex, 0, 12);
 }
 
 void Settings::GetLocalPlayerSettings()
 {
-	GetBool("LocalPlayerSettings", "PositionSpoofingEnabled", customLocalPlayerSettings.positionSpoofingEnabled, defltLocalPlayerSettings.positionSpoofingEnabled);
-	GetSliderInt("LocalPlayerSettings", "PositionSpoofingHeight", customLocalPlayerSettings.positionSpoofingHeight, defltLocalPlayerSettings.positionSpoofingHeight, -524287, 524287);
-	GetBool("LocalPlayerSettings", "NoclipEnabled", customLocalPlayerSettings.noclipEnabled, defltLocalPlayerSettings.noclipEnabled);
-	GetSliderFloat("LocalPlayerSettings", "NoclipSpeed", customLocalPlayerSettings.noclipSpeed, defltLocalPlayerSettings.noclipSpeed, 0.0f, 2.0f);
-	GetBool("LocalPlayerSettings", "ClientState", customLocalPlayerSettings.clientState, defltLocalPlayerSettings.clientState);
-	GetBool("LocalPlayerSettings", "AutomaticClientState", customLocalPlayerSettings.automaticClientState, defltLocalPlayerSettings.automaticClientState);
-	GetBool("LocalPlayerSettings", "FreezeApEnabled", customLocalPlayerSettings.freezeApEnabled, defltLocalPlayerSettings.freezeApEnabled);
-	GetBool("LocalPlayerSettings", "ActionPointsEnabled", customLocalPlayerSettings.actionPointsEnabled, defltLocalPlayerSettings.actionPointsEnabled);
-	GetSliderInt("LocalPlayerSettings", "ActionPoints", customLocalPlayerSettings.actionPoints, defltLocalPlayerSettings.actionPoints, 0, 99999);
-	GetBool("LocalPlayerSettings", "StrengthEnabled", customLocalPlayerSettings.strengthEnabled, defltLocalPlayerSettings.strengthEnabled);
-	GetSliderInt("LocalPlayerSettings", "Strength", customLocalPlayerSettings.strength, defltLocalPlayerSettings.strength, 0, 99999);
-	GetBool("LocalPlayerSettings", "PerceptionEnabled", customLocalPlayerSettings.perceptionEnabled, defltLocalPlayerSettings.perceptionEnabled);
-	GetSliderInt("LocalPlayerSettings", "Perception", customLocalPlayerSettings.perception, defltLocalPlayerSettings.perception, 0, 99999);
-	GetBool("LocalPlayerSettings", "EnduranceEnabled", customLocalPlayerSettings.enduranceEnabled, defltLocalPlayerSettings.enduranceEnabled);
-	GetSliderInt("LocalPlayerSettings", "Endurance", customLocalPlayerSettings.endurance, defltLocalPlayerSettings.endurance, 0, 99999);
-	GetBool("LocalPlayerSettings", "CharismaEnabled", customLocalPlayerSettings.charismaEnabled, defltLocalPlayerSettings.charismaEnabled);
-	GetSliderInt("LocalPlayerSettings", "Charisma", customLocalPlayerSettings.charisma, defltLocalPlayerSettings.charisma, 0, 99999);
-	GetBool("LocalPlayerSettings", "IntelligenceEnabled", customLocalPlayerSettings.intelligenceEnabled, defltLocalPlayerSettings.intelligenceEnabled);
-	GetSliderInt("LocalPlayerSettings", "Intelligence", customLocalPlayerSettings.intelligence, defltLocalPlayerSettings.intelligence, 0, 99999);
-	GetBool("LocalPlayerSettings", "AgilityEnabled", customLocalPlayerSettings.agilityEnabled, defltLocalPlayerSettings.agilityEnabled);
-	GetSliderInt("LocalPlayerSettings", "Agility", customLocalPlayerSettings.agility, defltLocalPlayerSettings.agility, 0, 99999);
-	GetBool("LocalPlayerSettings", "LuckEnabled", customLocalPlayerSettings.luckEnabled, defltLocalPlayerSettings.luckEnabled);
-	GetSliderInt("LocalPlayerSettings", "Luck", customLocalPlayerSettings.luck, defltLocalPlayerSettings.luck, 0, 99999);
+	GetBool("LocalPlayerSettings", "PositionSpoofingEnabled", localPlayer.positionSpoofingEnabled, localPlayer.positionSpoofingEnabled);
+	GetSliderInt("LocalPlayerSettings", "PositionSpoofingHeight", localPlayer.positionSpoofingHeight, localPlayer.positionSpoofingHeight, -524287, 524287);
+	GetBool("LocalPlayerSettings", "NoclipEnabled", localPlayer.noclipEnabled, localPlayer.noclipEnabled);
+	GetSliderFloat("LocalPlayerSettings", "NoclipSpeed", localPlayer.noclipSpeed, localPlayer.noclipSpeed, 0.0f, 2.0f);
+	GetBool("LocalPlayerSettings", "ClientState", localPlayer.clientState, localPlayer.clientState);
+	GetBool("LocalPlayerSettings", "AutomaticClientState", localPlayer.automaticClientState, localPlayer.automaticClientState);
+	GetBool("LocalPlayerSettings", "FreezeApEnabled", localPlayer.freezeApEnabled, localPlayer.freezeApEnabled);
+	GetBool("LocalPlayerSettings", "ActionPointsEnabled", localPlayer.actionPointsEnabled, localPlayer.actionPointsEnabled);
+	GetSliderInt("LocalPlayerSettings", "ActionPoints", localPlayer.actionPoints, localPlayer.actionPoints, 0, 99999);
+	GetBool("LocalPlayerSettings", "StrengthEnabled", localPlayer.strengthEnabled, localPlayer.strengthEnabled);
+	GetSliderInt("LocalPlayerSettings", "Strength", localPlayer.strength, localPlayer.strength, 0, 99999);
+	GetBool("LocalPlayerSettings", "PerceptionEnabled", localPlayer.perceptionEnabled, localPlayer.perceptionEnabled);
+	GetSliderInt("LocalPlayerSettings", "Perception", localPlayer.perception, localPlayer.perception, 0, 99999);
+	GetBool("LocalPlayerSettings", "EnduranceEnabled", localPlayer.enduranceEnabled, localPlayer.enduranceEnabled);
+	GetSliderInt("LocalPlayerSettings", "Endurance", localPlayer.endurance, localPlayer.endurance, 0, 99999);
+	GetBool("LocalPlayerSettings", "CharismaEnabled", localPlayer.charismaEnabled, localPlayer.charismaEnabled);
+	GetSliderInt("LocalPlayerSettings", "Charisma", localPlayer.charisma, localPlayer.charisma, 0, 99999);
+	GetBool("LocalPlayerSettings", "IntelligenceEnabled", localPlayer.intelligenceEnabled, localPlayer.intelligenceEnabled);
+	GetSliderInt("LocalPlayerSettings", "Intelligence", localPlayer.intelligence, localPlayer.intelligence, 0, 99999);
+	GetBool("LocalPlayerSettings", "AgilityEnabled", localPlayer.agilityEnabled, localPlayer.agilityEnabled);
+	GetSliderInt("LocalPlayerSettings", "Agility", localPlayer.agility, localPlayer.agility, 0, 99999);
+	GetBool("LocalPlayerSettings", "LuckEnabled", localPlayer.luckEnabled, localPlayer.luckEnabled);
+	GetSliderInt("LocalPlayerSettings", "Luck", localPlayer.luck, localPlayer.luck, 0, 99999);
 }
 
 void Settings::SetLocalPlayerSettings()
 {
-	SetBool("LocalPlayerSettings", "PositionSpoofingEnabled", customLocalPlayerSettings.positionSpoofingEnabled, defltLocalPlayerSettings.positionSpoofingEnabled);
-	SetSliderInt("LocalPlayerSettings", "PositionSpoofingHeight", customLocalPlayerSettings.positionSpoofingHeight, defltLocalPlayerSettings.positionSpoofingHeight, -524287, 524287);
-	SetBool("LocalPlayerSettings", "NoclipEnabled", customLocalPlayerSettings.noclipEnabled, defltLocalPlayerSettings.noclipEnabled);
-	SetSliderFloat("LocalPlayerSettings", "NoclipSpeed", customLocalPlayerSettings.noclipSpeed, defltLocalPlayerSettings.noclipSpeed, 0.0f, 2.0f);
-	SetBool("LocalPlayerSettings", "ClientState", customLocalPlayerSettings.clientState, defltLocalPlayerSettings.clientState);
-	SetBool("LocalPlayerSettings", "AutomaticClientState", customLocalPlayerSettings.automaticClientState, defltLocalPlayerSettings.automaticClientState);
-	SetBool("LocalPlayerSettings", "FreezeApEnabled", customLocalPlayerSettings.freezeApEnabled, defltLocalPlayerSettings.freezeApEnabled);
-	SetBool("LocalPlayerSettings", "ActionPointsEnabled", customLocalPlayerSettings.actionPointsEnabled, defltLocalPlayerSettings.actionPointsEnabled);
-	SetSliderInt("LocalPlayerSettings", "ActionPoints", customLocalPlayerSettings.actionPoints, defltLocalPlayerSettings.actionPoints, 0, 99999);
-	SetBool("LocalPlayerSettings", "StrengthEnabled", customLocalPlayerSettings.strengthEnabled, defltLocalPlayerSettings.strengthEnabled);
-	SetSliderInt("LocalPlayerSettings", "Strength", customLocalPlayerSettings.strength, defltLocalPlayerSettings.strength, 0, 99999);
-	SetBool("LocalPlayerSettings", "PerceptionEnabled", customLocalPlayerSettings.perceptionEnabled, defltLocalPlayerSettings.perceptionEnabled);
-	SetSliderInt("LocalPlayerSettings", "Perception", customLocalPlayerSettings.perception, defltLocalPlayerSettings.perception, 0, 99999);
-	SetBool("LocalPlayerSettings", "EnduranceEnabled", customLocalPlayerSettings.enduranceEnabled, defltLocalPlayerSettings.enduranceEnabled);
-	SetSliderInt("LocalPlayerSettings", "Endurance", customLocalPlayerSettings.endurance, defltLocalPlayerSettings.endurance, 0, 99999);
-	SetBool("LocalPlayerSettings", "CharismaEnabled", customLocalPlayerSettings.charismaEnabled, defltLocalPlayerSettings.charismaEnabled);
-	SetSliderInt("LocalPlayerSettings", "Charisma", customLocalPlayerSettings.charisma, defltLocalPlayerSettings.charisma, 0, 99999);
-	SetBool("LocalPlayerSettings", "IntelligenceEnabled", customLocalPlayerSettings.intelligenceEnabled, defltLocalPlayerSettings.intelligenceEnabled);
-	SetSliderInt("LocalPlayerSettings", "Intelligence", customLocalPlayerSettings.intelligence, defltLocalPlayerSettings.intelligence, 0, 99999);
-	SetBool("LocalPlayerSettings", "AgilityEnabled", customLocalPlayerSettings.agilityEnabled, defltLocalPlayerSettings.agilityEnabled);
-	SetSliderInt("LocalPlayerSettings", "Agility", customLocalPlayerSettings.agility, defltLocalPlayerSettings.agility, 0, 99999);
-	SetBool("LocalPlayerSettings", "LuckEnabled", customLocalPlayerSettings.luckEnabled, defltLocalPlayerSettings.luckEnabled);
-	SetSliderInt("LocalPlayerSettings", "Luck", customLocalPlayerSettings.luck, defltLocalPlayerSettings.luck, 0, 99999);
+	SetBool("LocalPlayerSettings", "PositionSpoofingEnabled", localPlayer.positionSpoofingEnabled, localPlayer.positionSpoofingEnabled);
+	SetSliderInt("LocalPlayerSettings", "PositionSpoofingHeight", localPlayer.positionSpoofingHeight, localPlayer.positionSpoofingHeight, -524287, 524287);
+	SetBool("LocalPlayerSettings", "NoclipEnabled", localPlayer.noclipEnabled, localPlayer.noclipEnabled);
+	SetSliderFloat("LocalPlayerSettings", "NoclipSpeed", localPlayer.noclipSpeed, localPlayer.noclipSpeed, 0.0f, 2.0f);
+	SetBool("LocalPlayerSettings", "ClientState", localPlayer.clientState, localPlayer.clientState);
+	SetBool("LocalPlayerSettings", "AutomaticClientState", localPlayer.automaticClientState, localPlayer.automaticClientState);
+	SetBool("LocalPlayerSettings", "FreezeApEnabled", localPlayer.freezeApEnabled, localPlayer.freezeApEnabled);
+	SetBool("LocalPlayerSettings", "ActionPointsEnabled", localPlayer.actionPointsEnabled, localPlayer.actionPointsEnabled);
+	SetSliderInt("LocalPlayerSettings", "ActionPoints", localPlayer.actionPoints, localPlayer.actionPoints, 0, 99999);
+	SetBool("LocalPlayerSettings", "StrengthEnabled", localPlayer.strengthEnabled, localPlayer.strengthEnabled);
+	SetSliderInt("LocalPlayerSettings", "Strength", localPlayer.strength, localPlayer.strength, 0, 99999);
+	SetBool("LocalPlayerSettings", "PerceptionEnabled", localPlayer.perceptionEnabled, localPlayer.perceptionEnabled);
+	SetSliderInt("LocalPlayerSettings", "Perception", localPlayer.perception, localPlayer.perception, 0, 99999);
+	SetBool("LocalPlayerSettings", "EnduranceEnabled", localPlayer.enduranceEnabled, localPlayer.enduranceEnabled);
+	SetSliderInt("LocalPlayerSettings", "Endurance", localPlayer.endurance, localPlayer.endurance, 0, 99999);
+	SetBool("LocalPlayerSettings", "CharismaEnabled", localPlayer.charismaEnabled, localPlayer.charismaEnabled);
+	SetSliderInt("LocalPlayerSettings", "Charisma", localPlayer.charisma, localPlayer.charisma, 0, 99999);
+	SetBool("LocalPlayerSettings", "IntelligenceEnabled", localPlayer.intelligenceEnabled, localPlayer.intelligenceEnabled);
+	SetSliderInt("LocalPlayerSettings", "Intelligence", localPlayer.intelligence, localPlayer.intelligence, 0, 99999);
+	SetBool("LocalPlayerSettings", "AgilityEnabled", localPlayer.agilityEnabled, localPlayer.agilityEnabled);
+	SetSliderInt("LocalPlayerSettings", "Agility", localPlayer.agility, localPlayer.agility, 0, 99999);
+	SetBool("LocalPlayerSettings", "LuckEnabled", localPlayer.luckEnabled, localPlayer.luckEnabled);
+	SetSliderInt("LocalPlayerSettings", "Luck", localPlayer.luck, localPlayer.luck, 0, 99999);
 }
 
 void Settings::GetOpkSettings()
@@ -753,37 +762,37 @@ void Settings::SetSwapperSettings()
 
 void Settings::GetTransferSettings()
 {
-	GetDword("TransferSettings", "SourceFormId", customTransferSettings.sourceFormId, defltTransferSettings.sourceFormId);
-	GetDword("TransferSettings", "DestinationFormId", customTransferSettings.destinationFormId, defltTransferSettings.destinationFormId);
-	GetBool("TransferSettings", "UseWhitelist", customTransferSettings.useWhitelist, defltTransferSettings.useWhitelist);
-	GetBool("TransferSettings", "UseBlacklist", customTransferSettings.useBlacklist, defltTransferSettings.useBlacklist);
+	GetDword("TransferSettings", "SourceFormId", customTransferSettings.sourceFormId, customTransferSettings.sourceFormId);
+	GetDword("TransferSettings", "DestinationFormId", customTransferSettings.destinationFormId, customTransferSettings.destinationFormId);
+	GetBool("TransferSettings", "UseWhitelist", customTransferSettings.useWhitelist, customTransferSettings.useWhitelist);
+	GetBool("TransferSettings", "UseBlacklist", customTransferSettings.useBlacklist, customTransferSettings.useBlacklist);
 	for (auto i = 0; i < 32; i++)
 	{
-		GetBool("TransferSettings", fmt::format("Whitelisted{:d}", i), customTransferSettings.whitelisted[i], defltTransferSettings.whitelisted[i]);
-		GetDword("TransferSettings", fmt::format("Whitelist{:d}", i), customTransferSettings.whitelist[i], defltTransferSettings.whitelist[i]);
+		GetBool("TransferSettings", fmt::format("Whitelisted{:d}", i), customTransferSettings.whitelisted[i], customTransferSettings.whitelisted[i]);
+		GetDword("TransferSettings", fmt::format("Whitelist{:d}", i), customTransferSettings.whitelist[i], customTransferSettings.whitelist[i]);
 	}
 	for (auto i = 0; i < 32; i++)
 	{
-		GetBool("TransferSettings", fmt::format("Blacklisted{:d}", i), customTransferSettings.blacklisted[i], defltTransferSettings.blacklisted[i]);
-		GetDword("TransferSettings", fmt::format("Blacklist{:d}", i), customTransferSettings.blacklist[i], defltTransferSettings.blacklist[i]);
+		GetBool("TransferSettings", fmt::format("Blacklisted{:d}", i), customTransferSettings.blacklisted[i], customTransferSettings.blacklisted[i]);
+		GetDword("TransferSettings", fmt::format("Blacklist{:d}", i), customTransferSettings.blacklist[i], customTransferSettings.blacklist[i]);
 	}
 }
 
 void Settings::SetTransferSettings()
 {
-	SetDword("TransferSettings", "SourceFormId", customTransferSettings.sourceFormId, defltTransferSettings.sourceFormId);
-	SetDword("TransferSettings", "DestinationFormId", customTransferSettings.destinationFormId, defltTransferSettings.destinationFormId);
-	SetBool("TransferSettings", "UseWhitelist", customTransferSettings.useWhitelist, defltTransferSettings.useWhitelist);
-	SetBool("TransferSettings", "UseBlacklist", customTransferSettings.useBlacklist, defltTransferSettings.useBlacklist);
+	SetDword("TransferSettings", "SourceFormId", customTransferSettings.sourceFormId, customTransferSettings.sourceFormId);
+	SetDword("TransferSettings", "DestinationFormId", customTransferSettings.destinationFormId, customTransferSettings.destinationFormId);
+	SetBool("TransferSettings", "UseWhitelist", customTransferSettings.useWhitelist, customTransferSettings.useWhitelist);
+	SetBool("TransferSettings", "UseBlacklist", customTransferSettings.useBlacklist, customTransferSettings.useBlacklist);
 	for (auto i = 0; i < 32; i++)
 	{
-		SetBool("TransferSettings", fmt::format("Whitelisted{:d}", i), customTransferSettings.whitelisted[i], defltTransferSettings.whitelisted[i]);
-		SetDword("TransferSettings", fmt::format("Whitelist{:d}", i), customTransferSettings.whitelist[i], defltTransferSettings.whitelist[i]);
+		SetBool("TransferSettings", fmt::format("Whitelisted{:d}", i), customTransferSettings.whitelisted[i], customTransferSettings.whitelisted[i]);
+		SetDword("TransferSettings", fmt::format("Whitelist{:d}", i), customTransferSettings.whitelist[i], customTransferSettings.whitelist[i]);
 	}
 	for (auto i = 0; i < 32; i++)
 	{
-		SetBool("TransferSettings", fmt::format("Blacklisted{:d}", i), customTransferSettings.blacklisted[i], defltTransferSettings.blacklisted[i]);
-		SetDword("TransferSettings", fmt::format("Blacklist{:d}", i), customTransferSettings.blacklist[i], defltTransferSettings.blacklist[i]);
+		SetBool("TransferSettings", fmt::format("Blacklisted{:d}", i), customTransferSettings.blacklisted[i], customTransferSettings.blacklisted[i]);
+		SetDword("TransferSettings", fmt::format("Blacklist{:d}", i), customTransferSettings.blacklist[i], customTransferSettings.blacklist[i]);
 	}
 }
 
@@ -819,34 +828,34 @@ void Settings::SetNukeCodeSettings()
 
 void Settings::GetLegendarySettings()
 {
-	GetBool("LegendarySettings", "OverrideLivingOneStar", customLegendarySettings.overrideLivingOneStar, defltLegendarySettings.overrideLivingOneStar);
-	GetRgb("LegendarySettings", "LivingOneStarColor", customLegendarySettings.livingOneStarColor, defltLegendarySettings.livingOneStarColor);
-	GetBool("LegendarySettings", "OverrideDeadOneStar", customLegendarySettings.overrideDeadOneStar, defltLegendarySettings.overrideDeadOneStar);
-	GetRgb("LegendarySettings", "DeadOneStarColor", customLegendarySettings.deadOneStarColor, defltLegendarySettings.deadOneStarColor);
-	GetBool("LegendarySettings", "OverrideLivingTwoStar", customLegendarySettings.overrideLivingTwoStar, defltLegendarySettings.overrideLivingTwoStar);
-	GetRgb("LegendarySettings", "LivingTwoStarColor", customLegendarySettings.livingTwoStarColor, defltLegendarySettings.livingTwoStarColor);
-	GetBool("LegendarySettings", "OverrideDeadTwoStar", customLegendarySettings.overrideDeadTwoStar, defltLegendarySettings.overrideDeadTwoStar);
-	GetRgb("LegendarySettings", "DeadTwoStarColor", customLegendarySettings.deadTwoStarColor, defltLegendarySettings.deadTwoStarColor);
-	GetBool("LegendarySettings", "OverrideLivingThreeStar", customLegendarySettings.overrideLivingThreeStar, defltLegendarySettings.overrideLivingThreeStar);
-	GetRgb("LegendarySettings", "LivingThreeStarColor", customLegendarySettings.livingThreeStarColor, defltLegendarySettings.livingThreeStarColor);
-	GetBool("LegendarySettings", "OverrideDeadThreeStar", customLegendarySettings.overrideDeadThreeStar, defltLegendarySettings.overrideDeadThreeStar);
-	GetRgb("LegendarySettings", "DeadThreeStarColor", customLegendarySettings.deadThreeStarColor, defltLegendarySettings.deadThreeStarColor);
+	GetBool("LegendarySettings", "OverrideLivingOneStar", customLegendarySettings.overrideLivingOneStar, customLegendarySettings.overrideLivingOneStar);
+	GetRgb("LegendarySettings", "LivingOneStarColor", customLegendarySettings.livingOneStarColor, customLegendarySettings.livingOneStarColor);
+	GetBool("LegendarySettings", "OverrideDeadOneStar", customLegendarySettings.overrideDeadOneStar, customLegendarySettings.overrideDeadOneStar);
+	GetRgb("LegendarySettings", "DeadOneStarColor", customLegendarySettings.deadOneStarColor, customLegendarySettings.deadOneStarColor);
+	GetBool("LegendarySettings", "OverrideLivingTwoStar", customLegendarySettings.overrideLivingTwoStar, customLegendarySettings.overrideLivingTwoStar);
+	GetRgb("LegendarySettings", "LivingTwoStarColor", customLegendarySettings.livingTwoStarColor, customLegendarySettings.livingTwoStarColor);
+	GetBool("LegendarySettings", "OverrideDeadTwoStar", customLegendarySettings.overrideDeadTwoStar, customLegendarySettings.overrideDeadTwoStar);
+	GetRgb("LegendarySettings", "DeadTwoStarColor", customLegendarySettings.deadTwoStarColor, customLegendarySettings.deadTwoStarColor);
+	GetBool("LegendarySettings", "OverrideLivingThreeStar", customLegendarySettings.overrideLivingThreeStar, customLegendarySettings.overrideLivingThreeStar);
+	GetRgb("LegendarySettings", "LivingThreeStarColor", customLegendarySettings.livingThreeStarColor, customLegendarySettings.livingThreeStarColor);
+	GetBool("LegendarySettings", "OverrideDeadThreeStar", customLegendarySettings.overrideDeadThreeStar, customLegendarySettings.overrideDeadThreeStar);
+	GetRgb("LegendarySettings", "DeadThreeStarColor", customLegendarySettings.deadThreeStarColor, customLegendarySettings.deadThreeStarColor);
 }
 
 void Settings::SetLegendarySettings()
 {
-	SetBool("LegendarySettings", "OverrideLivingOneStar", customLegendarySettings.overrideLivingOneStar, defltLegendarySettings.overrideLivingOneStar);
-	SetRgb("LegendarySettings", "LivingOneStarColor", customLegendarySettings.livingOneStarColor, defltLegendarySettings.livingOneStarColor);
-	SetBool("LegendarySettings", "OverrideDeadOneStar", customLegendarySettings.overrideDeadOneStar, defltLegendarySettings.overrideDeadOneStar);
-	SetRgb("LegendarySettings", "DeadOneStarColor", customLegendarySettings.deadOneStarColor, defltLegendarySettings.deadOneStarColor);
-	SetBool("LegendarySettings", "OverrideLivingTwoStar", customLegendarySettings.overrideLivingTwoStar, defltLegendarySettings.overrideLivingTwoStar);
-	SetRgb("LegendarySettings", "LivingTwoStarColor", customLegendarySettings.livingTwoStarColor, defltLegendarySettings.livingTwoStarColor);
-	SetBool("LegendarySettings", "OverrideDeadTwoStar", customLegendarySettings.overrideDeadTwoStar, defltLegendarySettings.overrideDeadTwoStar);
-	SetRgb("LegendarySettings", "DeadTwoStarColor", customLegendarySettings.deadTwoStarColor, defltLegendarySettings.deadTwoStarColor);
-	SetBool("LegendarySettings", "OverrideLivingThreeStar", customLegendarySettings.overrideLivingThreeStar, defltLegendarySettings.overrideLivingThreeStar);
-	SetRgb("LegendarySettings", "LivingThreeStarColor", customLegendarySettings.livingThreeStarColor, defltLegendarySettings.livingThreeStarColor);
-	SetBool("LegendarySettings", "OverrideDeadThreeStar", customLegendarySettings.overrideDeadThreeStar, defltLegendarySettings.overrideDeadThreeStar);
-	SetRgb("LegendarySettings", "DeadThreeStarColor", customLegendarySettings.deadThreeStarColor, defltLegendarySettings.deadThreeStarColor);
+	SetBool("LegendarySettings", "OverrideLivingOneStar", customLegendarySettings.overrideLivingOneStar, customLegendarySettings.overrideLivingOneStar);
+	SetRgb("LegendarySettings", "LivingOneStarColor", customLegendarySettings.livingOneStarColor, customLegendarySettings.livingOneStarColor);
+	SetBool("LegendarySettings", "OverrideDeadOneStar", customLegendarySettings.overrideDeadOneStar, customLegendarySettings.overrideDeadOneStar);
+	SetRgb("LegendarySettings", "DeadOneStarColor", customLegendarySettings.deadOneStarColor, customLegendarySettings.deadOneStarColor);
+	SetBool("LegendarySettings", "OverrideLivingTwoStar", customLegendarySettings.overrideLivingTwoStar, customLegendarySettings.overrideLivingTwoStar);
+	SetRgb("LegendarySettings", "LivingTwoStarColor", customLegendarySettings.livingTwoStarColor, customLegendarySettings.livingTwoStarColor);
+	SetBool("LegendarySettings", "OverrideDeadTwoStar", customLegendarySettings.overrideDeadTwoStar, customLegendarySettings.overrideDeadTwoStar);
+	SetRgb("LegendarySettings", "DeadTwoStarColor", customLegendarySettings.deadTwoStarColor, customLegendarySettings.deadTwoStarColor);
+	SetBool("LegendarySettings", "OverrideLivingThreeStar", customLegendarySettings.overrideLivingThreeStar, customLegendarySettings.overrideLivingThreeStar);
+	SetRgb("LegendarySettings", "LivingThreeStarColor", customLegendarySettings.livingThreeStarColor, customLegendarySettings.livingThreeStarColor);
+	SetBool("LegendarySettings", "OverrideDeadThreeStar", customLegendarySettings.overrideDeadThreeStar, customLegendarySettings.overrideDeadThreeStar);
+	SetRgb("LegendarySettings", "DeadThreeStarColor", customLegendarySettings.deadThreeStarColor, customLegendarySettings.deadThreeStarColor);
 }
 
 void Settings::GetFluxSettings()
@@ -946,8 +955,8 @@ void Settings::SetBitMsgWriterSettings()
 void Settings::ReadIniSettings()
 {
 	file.read(ini);
-	GetOverlaySettingsA("PlayerSettings", &playerSettings, &defltPlayerSettings);
-	GetOverlaySettingsA("NpcSettings", &npcSettings, &defltNpcSettings);
+	GetOverlaySettingsA("PlayerSettings", &playerSettings, &playerSettings);
+	GetOverlaySettingsA("NpcSettings", &npcSettings, &npcSettings);
 	GetLegendarySettings();
 	GetExtraNpcSettings();
 	GetOverlaySettingsB("ContainerSettings", &containerSettings, &defltOverlaySettingsB);
@@ -973,6 +982,7 @@ void Settings::ReadIniSettings()
 	GetBitMsgWriterSettings();
 
 	GetInfoBoxSettings();
+	GetLooterSettings();
 
 	file.write(ini, true);
 }
@@ -980,8 +990,8 @@ void Settings::ReadIniSettings()
 void Settings::WriteIniSettings()
 {
 	file.read(ini);
-	SetOverlaySettingsA("PlayerSettings", &playerSettings, &defltPlayerSettings);
-	SetOverlaySettingsA("NpcSettings", &npcSettings, &defltNpcSettings);
+	SetOverlaySettingsA("PlayerSettings", &playerSettings, &playerSettings);
+	SetOverlaySettingsA("NpcSettings", &npcSettings, &npcSettings);
 	SetLegendarySettings();
 	SetExtraNpcSettings();
 	SetOverlaySettingsB("ContainerSettings", &containerSettings, &defltOverlaySettingsB);
@@ -1007,6 +1017,7 @@ void Settings::WriteIniSettings()
 	SetBitMsgWriterSettings();
 
 	SetInfoBoxSettings();
+	SetLooterSettings();
 
 	file.write(ini, true);
 }

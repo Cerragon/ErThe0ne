@@ -2,7 +2,7 @@
 #include "ErectusMemory.h"
 #include "settings.h"
 
-class Looter
+class Looter final
 {
 public:
 	static void Loot();
@@ -22,4 +22,6 @@ private:
 	static void LootFlora(const ItemInfo& item, const TesObjectRefr& player);
 
 	inline static bool lootItemsRequested = false;
+
+	virtual void __dummy() = 0;
 };

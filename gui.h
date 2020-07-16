@@ -17,7 +17,6 @@ private:
 
 	static void OverlayMenuTabEsp();
 	static void OverlayMenuTabInfoBox();
-	static void OverlayMenuTabLoot();
 	static void OverlayMenuTabCombat();
 	static void OverlayMenuTabPlayer();
 	static void OverlayMenuTabUtilities();
@@ -44,5 +43,6 @@ private:
 
 	inline static DWORD64 getPtrResult = 0;
 	inline static DWORD64 getAddressResult = 0;
+	
 	virtual void __dummy() = 0;
 };

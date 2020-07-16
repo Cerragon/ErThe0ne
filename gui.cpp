@@ -7,7 +7,6 @@
 
 #include "ErectusProcess.h"
 #include "ErectusMemory.h"
-#include "Looter.h"
 #include "threads.h"
 #include "utils.h"
 
@@ -452,8 +451,8 @@ void Gui::RenderInfoBox()
 
 	if (Settings::infobox.drawPositionSpoofingStatus)
 	{
-		featureText = fmt::format("Position Spoofing (Active): {0:d} (Height: {1:d})", static_cast<int>(Threads::positionSpoofingToggle), Settings::customLocalPlayerSettings.positionSpoofingHeight);
-		featureState = ErectusMemory::InsideInteriorCell() ? false : Settings::customLocalPlayerSettings.positionSpoofingEnabled;
+		featureText = fmt::format("Position Spoofing (Active): {0:d} (Height: {1:d})", static_cast<int>(Threads::positionSpoofingToggle), Settings::localPlayer.positionSpoofingHeight);
+		featureState = ErectusMemory::InsideInteriorCell() ? false : Settings::localPlayer.positionSpoofingEnabled;
 		infoTexts.emplace_back(featureText, featureState);
 	}
 
@@ -1388,7 +1387,7 @@ void Gui::OverlayMenuLooter()
 						Settings::looter.selection.whitelist.erase(item.first);
 						if(key)
 							Settings::looter.selection.whitelist.try_emplace(key, value);
-					};
+					}
 
 					ImGui::NextColumn();
 				}
@@ -1405,7 +1404,7 @@ void Gui::OverlayMenuLooter()
 					{
 						if (key)
 							Settings::looter.selection.whitelist.try_emplace(key, value);
-					};
+					}
 				}
 			
 				ImGui::Columns();
@@ -1430,7 +1429,7 @@ void Gui::OverlayMenuLooter()
 						Settings::looter.selection.blacklist.erase(item.first);
 						if (key)
 							Settings::looter.selection.blacklist.try_emplace(key, value);
-					};
+					}
 
 					ImGui::NextColumn();
 				}
@@ -1447,7 +1446,7 @@ void Gui::OverlayMenuLooter()
 					{
 						if (key)
 							Settings::looter.selection.blacklist.try_emplace(key, value);
-					};
+					}
 				}
 
 				ImGui::Columns();
@@ -1632,76 +1631,76 @@ void Gui::OverlayMenuTabPlayer()
 	{
 		if (ImGui::CollapsingHeader("Local Player Settings"))
 		{
-			LargeButtonToggle("Position Spoofing (Keybind CTRL+L)##LocalPlayerPositionSpoofingEnabled", Settings::customLocalPlayerSettings.positionSpoofingEnabled);
+			LargeButtonToggle("Position Spoofing (Keybind CTRL+L)##LocalPlayerPositionSpoofingEnabled", Settings::localPlayer.positionSpoofingEnabled);
 
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 
-			ImGui::SliderInt("###LocalPlayerPositionSpoofingHeight", &Settings::customLocalPlayerSettings.positionSpoofingHeight, -524287, 524287, "Spoofed Height: %d");
+			ImGui::SliderInt("###LocalPlayerPositionSpoofingHeight", &Settings::localPlayer.positionSpoofingHeight, -524287, 524287, "Spoofed Height: %d");
 
-			ButtonToggle("Noclip (Keybind CTRL+Y)###NoclipEnabled", Settings::customLocalPlayerSettings.noclipEnabled);
-
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-
-			ImGui::SliderFloat("###NoclipSpeed", &Settings::customLocalPlayerSettings.noclipSpeed, 0.0f, 2.0f, "Speed: %.5f");
-
-			ButtonToggle("Client State", Settings::customLocalPlayerSettings.clientState);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Automatic Client State", Settings::customLocalPlayerSettings.automaticClientState);
-
-			LargeButtonToggle("Freeze Action Points###LocalPlayerFreezeApEnabled", Settings::customLocalPlayerSettings.freezeApEnabled);
-
-			ButtonToggle("Action Points###LocalPlayerAPEnabled", Settings::customLocalPlayerSettings.actionPointsEnabled);
+			ButtonToggle("Noclip (Keybind CTRL+Y)###NoclipEnabled", Settings::localPlayer.noclipEnabled);
 
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 
-			ImGui::SliderInt("###LocalPlayerAP", &Settings::customLocalPlayerSettings.actionPoints, 0, 99999, "Action Points: %d");
+			ImGui::SliderFloat("###NoclipSpeed", &Settings::localPlayer.noclipSpeed, 0.0f, 2.0f, "Speed: %.5f");
 
-			ButtonToggle("Strength###LocalPlayerStrengthEnabled", Settings::customLocalPlayerSettings.strengthEnabled);
+			ButtonToggle("Client State", Settings::localPlayer.clientState);
+			ImGui::SameLine(235.0f);
+			ButtonToggle("Automatic Client State", Settings::localPlayer.automaticClientState);
+
+			LargeButtonToggle("Freeze Action Points###LocalPlayerFreezeApEnabled", Settings::localPlayer.freezeApEnabled);
+
+			ButtonToggle("Action Points###LocalPlayerAPEnabled", Settings::localPlayer.actionPointsEnabled);
 
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 
-			ImGui::SliderInt("###LocalPlayerStrength", &Settings::customLocalPlayerSettings.strength, 0, 99999, "Strength: %d");
+			ImGui::SliderInt("###LocalPlayerAP", &Settings::localPlayer.actionPoints, 0, 99999, "Action Points: %d");
 
-			ButtonToggle("Perception###LocalPlayerPerceptionEnabled", Settings::customLocalPlayerSettings.perceptionEnabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::SliderInt("###LocalPlayerPerception", &Settings::customLocalPlayerSettings.perception, 0, 99999, "Perception: %d");
-
-			ButtonToggle("Endurance###LocalPlayerEnduranceEnabled", Settings::customLocalPlayerSettings.enduranceEnabled);
+			ButtonToggle("Strength###LocalPlayerStrengthEnabled", Settings::localPlayer.strengthEnabled);
 
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 
-			ImGui::SliderInt("###LocalPlayerEndurance", &Settings::customLocalPlayerSettings.endurance, 0, 99999, "Endurance: %d");
+			ImGui::SliderInt("###LocalPlayerStrength", &Settings::localPlayer.strength, 0, 99999, "Strength: %d");
 
-			ButtonToggle("Charisma###LocalPlayerCharismaEnabled", Settings::customLocalPlayerSettings.charismaEnabled);
+			ButtonToggle("Perception###LocalPlayerPerceptionEnabled", Settings::localPlayer.perceptionEnabled);
+			ImGui::SameLine(235.0f);
+			ImGui::SetNextItemWidth(224.0f);
+			ImGui::SliderInt("###LocalPlayerPerception", &Settings::localPlayer.perception, 0, 99999, "Perception: %d");
+
+			ButtonToggle("Endurance###LocalPlayerEnduranceEnabled", Settings::localPlayer.enduranceEnabled);
 
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 
-			ImGui::SliderInt("###LocalPlayerCharisma", &Settings::customLocalPlayerSettings.charisma, 0, 99999, "Charisma: %d");
+			ImGui::SliderInt("###LocalPlayerEndurance", &Settings::localPlayer.endurance, 0, 99999, "Endurance: %d");
 
-			ButtonToggle("Intelligence###LocalPlayerIntelligenceEnabled", Settings::customLocalPlayerSettings.intelligenceEnabled);
-
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-
-			ImGui::SliderInt("###LocalPlayerIntelligence", &Settings::customLocalPlayerSettings.intelligence, 0, 99999, "Intelligence: %d");
-
-			ButtonToggle("Agility###LocalPlayerAgilityEnabled", Settings::customLocalPlayerSettings.agilityEnabled);
+			ButtonToggle("Charisma###LocalPlayerCharismaEnabled", Settings::localPlayer.charismaEnabled);
 
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 
-			ImGui::SliderInt("###LocalPlayerAgility", &Settings::customLocalPlayerSettings.agility, 0, 99999, "Agility: %d");
+			ImGui::SliderInt("###LocalPlayerCharisma", &Settings::localPlayer.charisma, 0, 99999, "Charisma: %d");
 
-			ButtonToggle("Luck###LocalPlayerLuckEnabled", Settings::customLocalPlayerSettings.luckEnabled);					ImGui::SameLine(235.0f);
+			ButtonToggle("Intelligence###LocalPlayerIntelligenceEnabled", Settings::localPlayer.intelligenceEnabled);
+
+			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
-			ImGui::SliderInt("###LocalPlayerLuck", &Settings::customLocalPlayerSettings.luck, 0, 99999, "Luck: %d");
+
+			ImGui::SliderInt("###LocalPlayerIntelligence", &Settings::localPlayer.intelligence, 0, 99999, "Intelligence: %d");
+
+			ButtonToggle("Agility###LocalPlayerAgilityEnabled", Settings::localPlayer.agilityEnabled);
+
+			ImGui::SameLine(235.0f);
+			ImGui::SetNextItemWidth(224.0f);
+
+			ImGui::SliderInt("###LocalPlayerAgility", &Settings::localPlayer.agility, 0, 99999, "Agility: %d");
+
+			ButtonToggle("Luck###LocalPlayerLuckEnabled", Settings::localPlayer.luckEnabled);					ImGui::SameLine(235.0f);
+			ImGui::SetNextItemWidth(224.0f);
+			ImGui::SliderInt("###LocalPlayerLuck", &Settings::localPlayer.luck, 0, 99999, "Luck: %d");
 		}
 
 		if (ImGui::CollapsingHeader("Character Settings"))

@@ -1,6 +1,4 @@
-﻿//FIXME: settings load/save
-
-#include "Looter.h"
+﻿#include "Looter.h"
 
 #include <memory>
 
@@ -9,33 +7,6 @@
 #include "MsgSender.h"
 #include "settings.h"
 #include "utils.h"
-
-namespace
-{
-	std::unordered_set<DWORD> legendaryFormIds = {
-		0x00425E28, 0x004392CD, 0x0037F7D9, 0x001A7B80, 0x001A7AF6, 0x001A7BE2, 0x001A7BD3, 0x001A7AB2, 0x001A7B88,
-		0x001A7BDA, 0x001A7C39, 0x0052BDC7, 0x0052BDC5, 0x0052BDC2, 0x0052BDC8, 0x0052BDB4, 0x0052BDB5, 0x0052BDB6,
-		0x0052BDB7, 0x0052BDBA, 0x0052BDBC, 0x0052BDBF, 0x005299F5, 0x005299ED, 0x00529A14, 0x005299FE, 0x00529A0F,
-		0x00529A0C, 0x00529A09, 0x005299F9, 0x005299FA, 0x005299FC, 0x00529A05, 0x00529A04, 0x005299FB, 0x00529A03,
-		0x005299FD, 0x00529A02, 0x005281B8, 0x005281B4, 0x00527F6F, 0x00527F72, 0x00527F6E, 0x00527F7D, 0x00527F75,
-		0x00527F6C, 0x00527F6D, 0x00527F74, 0x00527F84, 0x00527F82, 0x00527F8B, 0x00527F81, 0x00527F78, 0x00527F76,
-		0x00527F7F, 0x00527F77, 0x00527F79, 0x00527F7A, 0x00527F7B, 0x00525400, 0x00525401, 0x005253FB, 0x0052414C,
-		0x00524143, 0x0052414E, 0x0052414F, 0x00524150, 0x00524152, 0x00524153, 0x00524154, 0x00524146, 0x00524147,
-		0x0052414A, 0x0052414B, 0x00521914, 0x00521915, 0x004F6D77, 0x004F6D7C, 0x004F6D86, 0x004F6D76, 0x004F6D85,
-		0x004F6D84, 0x004F6D82, 0x004F6D83, 0x004F6D81, 0x004F6D80, 0x004F6D7F, 0x004F6D78, 0x004F6D7E, 0x004F6D7D,
-		0x004F6AAE, 0x004F6AAB, 0x004F6AA1, 0x004F6AA0, 0x004F6AA7, 0x004F6AA5, 0x004F6AB1, 0x004F5772, 0x004F5778,
-		0x004F5770, 0x004F5773, 0x004F577C, 0x004F5771, 0x004F5777, 0x004F5776, 0x004F577D, 0x004F577B, 0x004F577A,
-		0x004F5779, 0x004EE548, 0x004EE54B, 0x004EE54C, 0x004EE54E, 0x004ED02B, 0x004ED02E, 0x004ED02C, 0x004ED02F,
-		0x004E89B3, 0x004E89B2, 0x004E89AC, 0x004E89B4, 0x004E89B0, 0x004E89AF, 0x004E89AE, 0x004E89B6, 0x004E89AD,
-		0x004E89B5, 0x003C4E27, 0x003C3458, 0x00357FBF, 0x001142A8, 0x0011410E, 0x0011410D, 0x0011410C, 0x0011410B,
-		0x0011410A, 0x00114109, 0x00114108, 0x00114107, 0x00114106, 0x00114105, 0x00114104, 0x00114103, 0x00114101,
-		0x001140FF, 0x001140FD, 0x001140FC, 0x001140FB, 0x001140FA, 0x001140F8, 0x001140F2, 0x001140F1, 0x001140F0,
-		0x001140EF, 0x001140EE, 0x001140ED, 0x001140EC, 0x001140EB, 0x001140EA, 0x00113FC0, 0x001138DD, 0x0011384A,
-		0x0011374F, 0x0011371F, 0x0010F599, 0x0010F598, 0x0010F596, 0x00226436, 0x001F81EB, 0x001F7A75, 0x001F1E47,
-		0x001F1E0C, 0x001F1E0B, 0x001E73BD,
-	};
-}
-
 
 bool Looter::ShouldLootJunk(const ItemInfo& item)
 {
@@ -123,12 +94,16 @@ bool Looter::ShouldLootItem(const ItemInfo& item, const DWORD64 displayPtr = 0)
 {
 	BYTE rank;
 
-	if (Settings::looter.selection.blacklist.find(item.base.formId)->second)
-		return false;
+	if (auto found = Settings::looter.selection.blacklist.find(item.base.formId); found != Settings::looter.selection.blacklist.end()) {
+		if (found->second)
+			return false;
+	}
 
-	if (Settings::looter.selection.whitelist.find(item.base.formId)->second)
-		return true;
-	
+	if (auto found = Settings::looter.selection.whitelist.find(item.base.formId); found != Settings::looter.selection.whitelist.end()) {
+		if (found->second)
+			return true;
+	}
+
 	switch (item.type)
 	{
 	case ItemTypes::Weapons:
@@ -278,7 +253,7 @@ void Looter::LootContainer(const ItemInfo& item, const TesObjectRefr& player)
 	}
 }
 
-void Looter::LootFlora(const ItemInfo& item, const TesObjectRefr& localPlayer)
+void Looter::LootFlora(const ItemInfo& item, const TesObjectRefr& player)
 {
 	if (!MsgSender::IsEnabled())
 		return;
@@ -286,7 +261,7 @@ void Looter::LootFlora(const ItemInfo& item, const TesObjectRefr& localPlayer)
 	if (ErectusMemory::IsFloraHarvested(item.refr.harvestFlagA, item.refr.harvestFlagB))
 		return;
 
-	if (Utils::GetDistance(item.refr.position, localPlayer.position) * 0.01f > 6.f)
+	if (Utils::GetDistance(item.refr.position, player.position) * 0.01f > 6.f)
 		return;
 
 	if (!ShouldLootItem(item))
@@ -488,7 +463,7 @@ BYTE Looter::GetLegendaryRank(const DWORD64 displayPtr)
 	BYTE legendaryRank = 0;
 	for (DWORD64 i = 0; i < modArraySize; i++)
 	{
-		if (legendaryFormIds.count(modArray[i * 2]) > 0)
+		if (LEGENDARY_FORMIDS.count(modArray[i * 2]) > 0)
 			legendaryRank++;
 	}
 	return legendaryRank;
