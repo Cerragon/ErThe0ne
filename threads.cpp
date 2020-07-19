@@ -105,6 +105,8 @@ DWORD WINAPI Threads::LockingThread([[maybe_unused]] LPVOID lpParameter)
 	auto meleeCounter = 0;
 	auto meleeThreshold = 0;
 
+	auto targetLockingKeyPressed = false;
+
 	while (!threadDestructionState)
 	{
 		//no clue if this works properly
@@ -133,7 +135,7 @@ DWORD WINAPI Threads::LockingThread([[maybe_unused]] LPVOID lpParameter)
 			{
 				currentTargetValid = true;
 			}
-			else if (ErectusMemory::targetLockingKeyPressed && !ErectusMemory::targetLockingCooldown)
+			else if (targetLockingKeyPressed && !ErectusMemory::targetLockingCooldown)
 			{
 				auto degrees = Utils::GetDegrees(entityData.position, cameraData.forward, cameraData.origin);
 				if (degrees < closestEntityDegrees)
@@ -168,13 +170,13 @@ DWORD WINAPI Threads::LockingThread([[maybe_unused]] LPVOID lpParameter)
 
 		if (App::overlayForeground && GetAsyncKeyState('T'))
 		{
-			ErectusMemory::targetLockingKeyPressed = true;
+			targetLockingKeyPressed = true;
 			if (ErectusMemory::targetLockingCooldown > 0)
 				ErectusMemory::targetLockingCooldown--;
 		}
 		else
 		{
-			ErectusMemory::targetLockingKeyPressed = false;
+			targetLockingKeyPressed = false;
 			ErectusMemory::targetLockingCooldown = 0;
 			ErectusMemory::targetLockingPtr = 0;
 		}
@@ -182,7 +184,7 @@ DWORD WINAPI Threads::LockingThread([[maybe_unused]] LPVOID lpParameter)
 		if (ErectusMemory::targetLockingPtr)
 		{
 			ErectusMemory::DamageRedirection(&targetingPage, &targetingPageValid, false, true);
-
+			
 			sendDamageCounter++;
 			if (sendDamageCounter > sendDamageThreshold)
 			{
@@ -190,6 +192,7 @@ DWORD WINAPI Threads::LockingThread([[maybe_unused]] LPVOID lpParameter)
 				sendDamageThreshold = Utils::GetRangedInt(Settings::targetting.sendDamageMin, Settings::targetting.sendDamageMax);
 				ErectusMemory::SendDamage(weaponId, &shotsHit, &shotsFired, 1);
 			}
+			
 		}
 		else
 		{

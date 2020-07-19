@@ -313,7 +313,7 @@ void Gui::RenderActors(const CustomEntry& entry, const EspSettings::Actors& sett
 		if (Settings::utilities.debugEsp)
 			itemText = fmt::format("{0:16x}\n{1:08x}\n{2:16x}\n{3:08x}", entry.entityPtr, entry.entityFormId, entry.referencePtr, entry.referenceFormId);
 
-		Renderer::DrawTextA(itemText.c_str(), settings.textShadowed, settings.textCentered, screen, color, alpha);
+		Renderer::DrawTextA(itemText.c_str(), screen, color, alpha);
 	}
 }
 
@@ -404,7 +404,7 @@ void Gui::RenderItems(const CustomEntry& entry, const EspSettings::Items& settin
 		if (Settings::utilities.debugEsp)
 			itemText = fmt::format("{0:16x}\n{1:08x}\n{2:16x}\n{3:08x}", entry.entityPtr, entry.entityFormId, entry.referencePtr, entry.referenceFormId);
 
-		Renderer::DrawTextA(itemText.c_str(), settings.textShadowed, settings.textCentered, screen, settings.color, alpha);
+		Renderer::DrawTextA(itemText.c_str(), screen, settings.color, alpha);
 	}
 }
 
@@ -415,8 +415,8 @@ void Gui::RenderInfoBox()
 	std::string featureText = {};
 	auto featureState = false;
 
-	float enabledTextColor[3] = { 0.0f, 1.0f, 0.0f };
-	float disabledTextColor[3] = { 1.0f, 0.0f, 0.0f };
+	ImVec4 enabledTextColor = { 0.f, 1.f, 0.f, 1.f };
+	ImVec4 disabledTextColor = { 1.f, 0.f, 0.f, 1.f };
 
 	if (Settings::infobox.drawLocalPlayerInfo) {
 		auto localPlayer = ErectusMemory::GetLocalPlayerInfo();
@@ -471,14 +471,18 @@ void Gui::RenderInfoBox()
 		infoTexts.emplace_back(featureText, featureState);
 	}
 
-	auto spacing = 0;
-	for (const auto& item : infoTexts)
+	if (infoTexts.empty())
+		return;
+	
+	ImGui::SetNextWindowPos(ImVec2(10.f, 10.f), ImGuiCond_FirstUseEver);
+	if (ImGui::Begin("##infobox", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav))
 	{
-		float textPosition[2] = { 0.0f, static_cast<float>(spacing) * 16.0f };
-		auto* textColor = item.second ? enabledTextColor : disabledTextColor;
-		Renderer::DrawTextA(item.first.c_str(), true, false, textPosition, textColor, 1.f);
-		spacing++;
+		for (const auto& item : infoTexts)
+		{
+			ImGui::TextColored(item.second ? enabledTextColor : disabledTextColor, item.first.c_str());
+		}
 	}
+	ImGui::End();
 }
 
 void Gui::ProcessMenu()
@@ -617,7 +621,7 @@ void Gui::LargeButtonToggle(const char* label, bool& state)
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 1.0f, 0.0f, 0.3f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 1.0f, 0.0f, 0.4f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 1.0f, 0.0f, 0.5f));
-		if (ImGui::Button(label, ImVec2(ImGui::GetContentRegionAvail().x + 1.f, 0)))
+		if (ImGui::Button(label, ImVec2(-FLT_MIN, 0)))
 			state = false;
 		ImGui::PopStyleColor(3);
 	}
@@ -658,62 +662,71 @@ void Gui::OverlayMenuTabEsp()
 {
 	if (ImGui::BeginTabItem("ESP###ESPTab"))
 	{
-		if (ImGui::CollapsingHeader("Player ESP Settings"))
+		if (ImGui::CollapsingHeader("Player ESP"))
 		{
-			ButtonToggle("Player ESP Enabled", Settings::esp.players.enabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
+			ImGui::Columns(2, nullptr, false);
+			LargeButtonToggle("ESP Enabled", Settings::esp.players.enabled);
+			ImGui::NextColumn();
+			ImGui::SetNextItemWidth(-FLT_MIN);
 			ImGui::SliderInt("###esp.playersEnabledDistance", &Settings::esp.players.enabledDistance, 0, 3000, "Distance: %d");
+			ImGui::NextColumn();
 
-			ButtonToggle("Draw Living Players", Settings::esp.players.drawAlive);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
+			LargeButtonToggle("Draw Alive", Settings::esp.players.drawAlive);
+			ImGui::NextColumn();
+			ImGui::SetNextItemWidth(-FLT_MIN);
 			ImGui::ColorEdit3("###esp.playersAliveColor", Settings::esp.players.aliveColor);
 			Utils::ValidateRgb(Settings::esp.players.aliveColor);
+			ImGui::NextColumn();
 
-			ButtonToggle("Draw Downed Players", Settings::esp.players.drawDowned);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
+			LargeButtonToggle("Draw Downed", Settings::esp.players.drawDowned);
+			ImGui::NextColumn();
+			ImGui::SetNextItemWidth(-FLT_MIN);
 			ImGui::ColorEdit3("###esp.playersDownedColor", Settings::esp.players.downedColor);
 			Utils::ValidateRgb(Settings::esp.players.downedColor);
+			ImGui::NextColumn();
 
-			ButtonToggle("Draw Dead Players", Settings::esp.players.drawDead);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
+			LargeButtonToggle("Draw Dead", Settings::esp.players.drawDead);
+			ImGui::NextColumn();
+			ImGui::SetNextItemWidth(-FLT_MIN);
 			ImGui::ColorEdit3("###esp.playersDeadColor", Settings::esp.players.deadColor);
 			Utils::ValidateRgb(Settings::esp.players.deadColor);
+			ImGui::NextColumn();
 
-			ButtonToggle("Draw Unknown Players", Settings::esp.players.drawUnknown);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
+			LargeButtonToggle("Draw Unknown", Settings::esp.players.drawUnknown);
+			ImGui::NextColumn();
+			ImGui::SetNextItemWidth(-FLT_MIN);
 			ImGui::ColorEdit3("###esp.playersUnknownColor", Settings::esp.players.unknownColor);
 			Utils::ValidateRgb(Settings::esp.players.unknownColor);
+			ImGui::NextColumn();
 
-			ButtonToggle("Draw Enabled Players", Settings::esp.players.drawEnabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
+			LargeButtonToggle("Draw Enabled", Settings::esp.players.drawEnabled);
+			ImGui::NextColumn();
+			ImGui::SetNextItemWidth(-FLT_MIN);
 			ImGui::SliderFloat("###esp.playersEnabledAlpha", &Settings::esp.players.enabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
+			ImGui::NextColumn();
 
-			ButtonToggle("Draw Disabled Players", Settings::esp.players.drawDisabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
+			LargeButtonToggle("Draw Disabled", Settings::esp.players.drawDisabled);
+			ImGui::NextColumn();
+			ImGui::SetNextItemWidth(-FLT_MIN);
 			ImGui::SliderFloat("###esp.playersDisabledAlpha", &Settings::esp.players.disabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
+			ImGui::NextColumn();
 
-			ButtonToggle("Draw Named Players", Settings::esp.players.drawNamed);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Draw Unnamed Players", Settings::esp.players.drawUnnamed);
+			LargeButtonToggle("Draw Named", Settings::esp.players.drawNamed);
+			ImGui::NextColumn();
+			LargeButtonToggle("Draw Unnamed", Settings::esp.players.drawUnnamed);
+			ImGui::NextColumn();
 
-			ButtonToggle("Show Player Name", Settings::esp.players.showName);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Show Player Distance", Settings::esp.players.showDistance);
+			LargeButtonToggle("Show Name", Settings::esp.players.showName);
+			ImGui::NextColumn();
+			LargeButtonToggle("Show Distance", Settings::esp.players.showDistance);
+			ImGui::NextColumn();
 
-			ButtonToggle("Show Player Health", Settings::esp.players.showHealth);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Show Dead Player Health", Settings::esp.players.showDeadHealth);
+			LargeButtonToggle("Show Alive Health", Settings::esp.players.showHealth);
+			ImGui::NextColumn();
+			LargeButtonToggle("Show Dead Health", Settings::esp.players.showDeadHealth);
+			ImGui::NextColumn();
 
-			ButtonToggle("Player Text Shadowed", Settings::esp.players.textShadowed);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Player Text Centered", Settings::esp.players.textCentered);
+			ImGui::Columns();
 		}
 
 		if (ImGui::CollapsingHeader("NPC ESP Settings"))
@@ -768,10 +781,6 @@ void Gui::OverlayMenuTabEsp()
 			ButtonToggle("Show NPC Health", Settings::esp.npcs.showHealth);
 			ImGui::SameLine(235.0f);
 			ButtonToggle("Show Dead NPC Health", Settings::esp.npcs.showDeadHealth);
-
-			ButtonToggle("NPC Text Shadowed", Settings::esp.npcs.textShadowed);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("NPC Text Centered", Settings::esp.npcs.textCentered);
 
 			ButtonToggle("Always Draw Living 1* NPCs", Settings::esp.legendaryNpcs.overrideLivingOneStar);
 			ImGui::SameLine(235.0f);
@@ -838,26 +847,6 @@ void Gui::OverlayMenuTabEsp()
 			ButtonToggle("Show Container Name", Settings::esp.containers.showName);
 			ImGui::SameLine(235.0f);
 			ButtonToggle("Show Container Distance", Settings::esp.containers.showDistance);
-
-			ButtonToggle("Container Text Shadowed", Settings::esp.containers.textShadowed);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Container Text Centered", Settings::esp.containers.textCentered);
-
-			if (ImGui::CollapsingHeader("Container Whitelist Settings"))
-			{
-				for (auto i = 0; i < 32; i++)
-				{
-					auto toggleLabel = fmt::format("Container Whitelist Slot: {0:d}", i);
-					ButtonToggle(toggleLabel.c_str(), Settings::esp.containers.whitelisted[i]);
-
-					ImGui::SameLine(235.0f);
-					ImGui::SetNextItemWidth(224.0f);
-
-					auto inputLabel = fmt::format("###ContainerWhitelist{:d}", i);
-					ImGui::InputScalar(inputLabel.c_str(), ImGuiDataType_U32, &Settings::esp.containers.whitelist[i],
-						nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal);
-				}
-			}
 		}
 
 		if (ImGui::CollapsingHeader("Junk ESP Settings"))
@@ -890,26 +879,6 @@ void Gui::OverlayMenuTabEsp()
 			ButtonToggle("Show Junk Name", Settings::esp.junk.showName);
 			ImGui::SameLine(235.0f);
 			ButtonToggle("Show Junk Distance", Settings::esp.junk.showDistance);
-
-			ButtonToggle("Junk Text Shadowed", Settings::esp.junk.textShadowed);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Junk Text Centered", Settings::esp.junk.textCentered);
-
-			if (ImGui::CollapsingHeader("Junk Whitelist Settings"))
-			{
-				for (auto i = 0; i < 32; i++)
-				{
-					auto toggleLabel = fmt::format("Junk Whitelist Slot: {0:d}", i);
-					ButtonToggle(toggleLabel.c_str(), Settings::esp.junk.whitelisted[i]);
-
-					ImGui::SameLine(235.0f);
-					ImGui::SetNextItemWidth(224.0f);
-
-					auto inputLabel = fmt::format("###JunkWhitelist{:d}", i);
-					ImGui::InputScalar(inputLabel.c_str(), ImGuiDataType_U32, &Settings::esp.junk.whitelist[i],
-						nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal);
-				}
-			}
 		}
 
 		if (ImGui::CollapsingHeader("Plan ESP Settings"))
@@ -944,26 +913,6 @@ void Gui::OverlayMenuTabEsp()
 			ButtonToggle("Show Plan Name", Settings::esp.plans.showName);
 			ImGui::SameLine(235.0f);
 			ButtonToggle("Show Plan Distance", Settings::esp.plans.showDistance);
-
-			ButtonToggle("Plan Text Shadowed", Settings::esp.plans.textShadowed);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Plan Text Centered", Settings::esp.plans.textCentered);
-
-			if (ImGui::CollapsingHeader("Plan Whitelist Settings"))
-			{
-				for (auto i = 0; i < 32; i++)
-				{
-					auto toggleLabel = fmt::format("Plan Whitelist Slot: {0:d}", i);
-					ButtonToggle(toggleLabel.c_str(), Settings::esp.plans.whitelisted[i]);
-
-					ImGui::SameLine(235.0f);
-					ImGui::SetNextItemWidth(224.0f);
-
-					auto inputLabel = fmt::format("###PlanWhitelis{:d}", i);
-					ImGui::InputScalar(inputLabel.c_str(), ImGuiDataType_U32, &Settings::esp.plans.whitelist[i],
-						nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal);
-				}
-			}
 		}
 
 		if (ImGui::CollapsingHeader("Magazine ESP Settings"))
@@ -994,26 +943,6 @@ void Gui::OverlayMenuTabEsp()
 			ButtonToggle("Show Magazine Name", Settings::esp.magazines.showName);
 			ImGui::SameLine(235.0f);
 			ButtonToggle("Show Magazine Distance", Settings::esp.magazines.showDistance);
-
-			ButtonToggle("Magazine Text Shadowed", Settings::esp.magazines.textShadowed);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Magazine Text Centered", Settings::esp.magazines.textCentered);
-
-			if (ImGui::CollapsingHeader("Magazine Whitelist Settings"))
-			{
-				for (auto i = 0; i < 32; i++)
-				{
-					auto toggleLabel = fmt::format("Magazine Whitelist Slot: {0:d}", i);
-					ButtonToggle(toggleLabel.c_str(), Settings::esp.magazines.whitelisted[i]);
-
-					ImGui::SameLine(235.0f);
-					ImGui::SetNextItemWidth(224.0f);
-
-					auto inputLabel = fmt::format("###MagazineWhitelist{:d}", i);
-					ImGui::InputScalar(inputLabel.c_str(), ImGuiDataType_U32, &Settings::esp.magazines.whitelist[i],
-						nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal);
-				}
-			}
 		}
 
 		if (ImGui::CollapsingHeader("Bobblehead ESP Settings"))
@@ -1044,26 +973,6 @@ void Gui::OverlayMenuTabEsp()
 			ButtonToggle("Show Bobblehead Name", Settings::esp.bobbleheads.showName);
 			ImGui::SameLine(235.0f);
 			ButtonToggle("Show Bobblehead Distance", Settings::esp.bobbleheads.showDistance);
-
-			ButtonToggle("Bobblehead Text Shadowed", Settings::esp.bobbleheads.textShadowed);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Bobblehead Text Centered", Settings::esp.bobbleheads.textCentered);
-
-			if (ImGui::CollapsingHeader("Bobblehead Whitelist Settings"))
-			{
-				for (auto i = 0; i < 32; i++)
-				{
-					auto toggleLabel = fmt::format("Bobblehead Whitelist Slot: {0:d}", i);
-					ButtonToggle(toggleLabel.c_str(), Settings::esp.bobbleheads.whitelisted[i]);
-
-					ImGui::SameLine(235.0f);
-					ImGui::SetNextItemWidth(224.0f);
-
-					auto inputLabel = fmt::format("###BobbleheadWhitelist{:d}", i);
-					ImGui::InputScalar(inputLabel.c_str(), ImGuiDataType_U32, &Settings::esp.bobbleheads.whitelist[i],
-						nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal);
-				}
-			}
 		}
 
 		if (ImGui::CollapsingHeader("Item ESP Settings"))
@@ -1094,26 +1003,6 @@ void Gui::OverlayMenuTabEsp()
 			ButtonToggle("Show Item Name", Settings::esp.items.showName);
 			ImGui::SameLine(235.0f);
 			ButtonToggle("Show Item Distance", Settings::esp.items.showDistance);
-
-			ButtonToggle("Item Text Shadowed", Settings::esp.items.textShadowed);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Item Text Centered", Settings::esp.items.textCentered);
-
-			if (ImGui::CollapsingHeader("Item Whitelist Settings"))
-			{
-				for (auto i = 0; i < 32; i++)
-				{
-					auto toggleLabel = fmt::format("Item Whitelist Slot: {0:d}", i);
-					ButtonToggle(toggleLabel.c_str(), Settings::esp.items.whitelisted[i]);
-
-					ImGui::SameLine(235.0f);
-					ImGui::SetNextItemWidth(224.0f);
-
-					auto inputLabel = fmt::format("###ItemWhitelist{:d}", i);
-					ImGui::InputScalar(inputLabel.c_str(), ImGuiDataType_U32, &Settings::esp.items.whitelist[i],
-						nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal);
-				}
-			}
 		}
 
 		if (ImGui::CollapsingHeader("Flora ESP Settings"))
@@ -1150,26 +1039,6 @@ void Gui::OverlayMenuTabEsp()
 			ButtonToggle("Show Flora Name", Settings::esp.flora.showName);
 			ImGui::SameLine(235.0f);
 			ButtonToggle("Show Flora Distance", Settings::esp.flora.showDistance);
-
-			ButtonToggle("Flora Text Shadowed", Settings::esp.flora.textShadowed);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Flora Text Centered", Settings::esp.flora.textCentered);
-
-			if (ImGui::CollapsingHeader("Flora Whitelist Settings"))
-			{
-				for (auto i = 0; i < 32; i++)
-				{
-					auto toggleLabel = fmt::format("Flora Whitelist Slot: {0:d}", i);
-					ButtonToggle(toggleLabel.c_str(), Settings::esp.flora.whitelisted[i]);
-
-					ImGui::SameLine(235.0f);
-					ImGui::SetNextItemWidth(224.0f);
-
-					auto inputLabel = fmt::format("###FloraWhitelist{:d}", i);
-					ImGui::InputScalar(inputLabel.c_str(), ImGuiDataType_U32, &Settings::esp.flora.whitelist[i],
-						nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal);
-				}
-			}
 		}
 
 		if (ImGui::CollapsingHeader("Entity ESP Settings"))
@@ -1200,26 +1069,90 @@ void Gui::OverlayMenuTabEsp()
 			ButtonToggle("Show Entity Name", Settings::esp.entities.showName);
 			ImGui::SameLine(235.0f);
 			ButtonToggle("Show Entity Distance", Settings::esp.entities.showDistance);
+		}
 
-			ButtonToggle("Entity Text Shadowed", Settings::esp.entities.textShadowed);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Entity Text Centered", Settings::esp.entities.textCentered);
+		if (ImGui::CollapsingHeader("Whitelist"))
+		{
+			ImGui::Columns(2, nullptr, false);
 
-			if (ImGui::CollapsingHeader("Entity Whitelist Settings"))
+			for (auto& item : Settings::esp.whitelist)
 			{
-				for (auto i = 0; i < 32; i++)
+				auto toggleLabel = fmt::format("Enabled##espwhiteList{0:x}Enabled", item.first);
+				LargeButtonToggle(toggleLabel.c_str(), item.second);
+
+				ImGui::NextColumn();
+
+				auto inputLabel = fmt::format("##espWhiteList{0:x}Item", item.first);
+				auto key = item.first;
+				auto value = item.second;
+				if (ImGui::InputScalar(inputLabel.c_str(), ImGuiDataType_U32, &key, nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_EnterReturnsTrue))
 				{
-					auto toggleLabel = fmt::format("Entity Whitelist Slot: {0:d}", i);
-					ButtonToggle(toggleLabel.c_str(), Settings::esp.flora.whitelisted[i]);
+					Settings::esp.whitelist.erase(item.first);
+					if (key)
+						Settings::esp.whitelist.try_emplace(key, value);
+				}
 
-					ImGui::SameLine(235.0f);
-					ImGui::SetNextItemWidth(224.0f);
+				ImGui::NextColumn();
+			}
+			//this is for inserting new records into the map
+			{
+				DWORD key = 0;
+				auto value = false;
 
-					auto inputLabel = fmt::format("###EntityWhitelist{:d}", i);
-					ImGui::InputScalar(inputLabel.c_str(), ImGuiDataType_U32, &Settings::esp.entities.whitelist[i],
-						nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal);
+				LargeButtonToggle("Enabled##espWhiteListNewEnabled", value);
+
+				ImGui::NextColumn();
+
+				if (ImGui::InputScalar("##espWhiteListNewItem", ImGuiDataType_U32, &key, nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_EnterReturnsTrue))
+				{
+					if (key)
+						Settings::esp.whitelist.try_emplace(key, value);
 				}
 			}
+
+			ImGui::Columns();
+		}
+
+		if (ImGui::CollapsingHeader("Blacklist"))
+		{
+			ImGui::Columns(2, nullptr, false);
+
+			for (auto& item : Settings::esp.blacklist)
+			{
+				auto toggleLabel = fmt::format("Enabled##espBlackList{0:x}Enabled", item.first);
+				LargeButtonToggle(toggleLabel.c_str(), item.second);
+
+				ImGui::NextColumn();
+
+				auto inputLabel = fmt::format("##espBlackList{0:x}Item", item.first);
+				auto key = item.first;
+				auto value = item.second;
+				if (ImGui::InputScalar(inputLabel.c_str(), ImGuiDataType_U32, &key, nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_EnterReturnsTrue))
+				{
+					Settings::esp.blacklist.erase(item.first);
+					if (key)
+						Settings::esp.blacklist.try_emplace(key, value);
+				}
+
+				ImGui::NextColumn();
+			}
+			//this is for inserting new records into the map
+			{
+				DWORD key = 0;
+				auto value = false;
+
+				LargeButtonToggle("Enabled##espBlackListNewEnabled", value);
+
+				ImGui::NextColumn();
+
+				if (ImGui::InputScalar("##espBlackListNewItem", ImGuiDataType_U32, &key, nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_EnterReturnsTrue))
+				{
+					if (key)
+						Settings::esp.blacklist.try_emplace(key, value);
+				}
+			}
+
+			ImGui::Columns();
 		}
 		ImGui::EndTabItem();
 	}
@@ -1229,6 +1162,7 @@ void Gui::OverlayMenuTabInfoBox()
 {
 	if (ImGui::BeginTabItem("InfoBox###InfoBoxTab"))
 	{
+		LargeButtonToggle("Draw Local Player Data", Settings::infobox.drawLocalPlayerInfo);
 		LargeButtonToggle("Draw Automatic Scrap Looter Status", Settings::infobox.drawScrapLooterStatus);
 		LargeButtonToggle("Draw Automatic Item Looter Status", Settings::infobox.drawItemLooterStatus);
 		LargeButtonToggle("Draw NPC Looter Status", Settings::infobox.drawNpcLooterStatus);
@@ -1614,92 +1548,79 @@ void Gui::OverlayMenuTabPlayer()
 	{
 		if (ImGui::CollapsingHeader("Local Player Settings"))
 		{
-			LargeButtonToggle("Draw Local Player Data", Settings::infobox.drawLocalPlayerInfo);
+			ImGui::Columns(2, nullptr, false);
 
-			ImGui::SameLine(235.0f);
-
-			LargeButtonToggle("Position Spoofing (Keybind CTRL+L)##LocalPlayerPositionSpoofingEnabled", Settings::localPlayer.positionSpoofingEnabled);
-
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-
+			LargeButtonToggle("Height Spoofing (CTRL+L)##LocalPlayerPositionSpoofingEnabled", Settings::localPlayer.positionSpoofingEnabled);
+			ImGui::NextColumn();
 			ImGui::SliderInt("###LocalPlayerPositionSpoofingHeight", &Settings::localPlayer.positionSpoofingHeight, -524287, 524287, "Spoofed Height: %d");
+			ImGui::NextColumn();
 
-			ButtonToggle("Noclip (Keybind CTRL+Y)###NoclipEnabled", Settings::localPlayer.noclipEnabled);
-
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-
+			LargeButtonToggle("Noclip (CTRL+Y)###NoclipEnabled", Settings::localPlayer.noclipEnabled);
+			ImGui::NextColumn();
 			ImGui::SliderFloat("###NoclipSpeed", &Settings::localPlayer.noclipSpeed, 0.0f, 2.0f, "Speed: %.5f");
+			ImGui::NextColumn();
 
-			ButtonToggle("Client State", Settings::localPlayer.clientState);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Automatic Client State", Settings::localPlayer.automaticClientState);
+			LargeButtonToggle("Client State", Settings::localPlayer.clientState);
+			ImGui::NextColumn();
+			LargeButtonToggle("Automatic Client State", Settings::localPlayer.automaticClientState);
+			ImGui::NextColumn();
 
 			LargeButtonToggle("Freeze Action Points###LocalPlayerFreezeApEnabled", Settings::localPlayer.freezeApEnabled);
+			ImGui::NextColumn();
+			ImGui::NextColumn();
 
-			ButtonToggle("Action Points###LocalPlayerAPEnabled", Settings::localPlayer.actionPointsEnabled);
-
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-
+			LargeButtonToggle("Action Points###LocalPlayerAPEnabled", Settings::localPlayer.actionPointsEnabled);
+			ImGui::NextColumn();
 			ImGui::SliderInt("###LocalPlayerAP", &Settings::localPlayer.actionPoints, 0, 99999, "Action Points: %d");
+			ImGui::NextColumn();
 
-			ButtonToggle("Strength###LocalPlayerStrengthEnabled", Settings::localPlayer.strengthEnabled);
-
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-
+			LargeButtonToggle("Strength###LocalPlayerStrengthEnabled", Settings::localPlayer.strengthEnabled);
+			ImGui::NextColumn();
 			ImGui::SliderInt("###LocalPlayerStrength", &Settings::localPlayer.strength, 0, 99999, "Strength: %d");
+			ImGui::NextColumn();
 
-			ButtonToggle("Perception###LocalPlayerPerceptionEnabled", Settings::localPlayer.perceptionEnabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
+			LargeButtonToggle("Perception###LocalPlayerPerceptionEnabled", Settings::localPlayer.perceptionEnabled);
+			ImGui::NextColumn();
 			ImGui::SliderInt("###LocalPlayerPerception", &Settings::localPlayer.perception, 0, 99999, "Perception: %d");
+			ImGui::NextColumn();
 
-			ButtonToggle("Endurance###LocalPlayerEnduranceEnabled", Settings::localPlayer.enduranceEnabled);
-
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-
+			LargeButtonToggle("Endurance###LocalPlayerEnduranceEnabled", Settings::localPlayer.enduranceEnabled);
+			ImGui::NextColumn();
 			ImGui::SliderInt("###LocalPlayerEndurance", &Settings::localPlayer.endurance, 0, 99999, "Endurance: %d");
+			ImGui::NextColumn();
 
-			ButtonToggle("Charisma###LocalPlayerCharismaEnabled", Settings::localPlayer.charismaEnabled);
-
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-
+			LargeButtonToggle("Charisma###LocalPlayerCharismaEnabled", Settings::localPlayer.charismaEnabled);
+			ImGui::NextColumn();
 			ImGui::SliderInt("###LocalPlayerCharisma", &Settings::localPlayer.charisma, 0, 99999, "Charisma: %d");
+			ImGui::NextColumn();
 
-			ButtonToggle("Intelligence###LocalPlayerIntelligenceEnabled", Settings::localPlayer.intelligenceEnabled);
-
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-
+			LargeButtonToggle("Intelligence###LocalPlayerIntelligenceEnabled", Settings::localPlayer.intelligenceEnabled);
+			ImGui::NextColumn();
 			ImGui::SliderInt("###LocalPlayerIntelligence", &Settings::localPlayer.intelligence, 0, 99999, "Intelligence: %d");
+			ImGui::NextColumn();
 
-			ButtonToggle("Agility###LocalPlayerAgilityEnabled", Settings::localPlayer.agilityEnabled);
-
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-
+			LargeButtonToggle("Agility###LocalPlayerAgilityEnabled", Settings::localPlayer.agilityEnabled);
+			ImGui::NextColumn();
 			ImGui::SliderInt("###LocalPlayerAgility", &Settings::localPlayer.agility, 0, 99999, "Agility: %d");
+			ImGui::NextColumn();
 
-			ButtonToggle("Luck###LocalPlayerLuckEnabled", Settings::localPlayer.luckEnabled);					ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
+			LargeButtonToggle("Luck###LocalPlayerLuckEnabled", Settings::localPlayer.luckEnabled);					ImGui::SameLine(235.0f);
+			ImGui::NextColumn();
 			ImGui::SliderInt("###LocalPlayerLuck", &Settings::localPlayer.luck, 0, 99999, "Luck: %d");
+
+			ImGui::Columns();
 		}
 
 		if (ImGui::CollapsingHeader("Character Settings"))
 		{
 			LargeButtonToggle("Character Appearance Editing Enabled###ChargenEditingEnabled", Settings::characterEditor.enabled);
-			ImGui::SetNextItemWidth(451.0f);
+			ImGui::SetNextItemWidth(-FLT_MIN);
 			ImGui::SliderFloat("###ChargenThin", &Settings::characterEditor.thin, 0.0f, 1.0f, "Character Appearance (Thin): %f");
 
-			ImGui::SetNextItemWidth(451.0f);
+			ImGui::SetNextItemWidth(-FLT_MIN);
 			ImGui::SliderFloat("###ChargenMuscular", &Settings::characterEditor.muscular, 0.0f, 1.0f, "Character Appearance (Muscular): %f");
 
-			ImGui::SetNextItemWidth(451.0f);
+			ImGui::SetNextItemWidth(-FLT_MIN);
 			ImGui::SliderFloat("###ChargenLarge", &Settings::characterEditor.large, 0.0f, 1.0f, "Character Appearance (Large): %f");
 		}
 		ImGui::EndTabItem();
@@ -2144,7 +2065,7 @@ void Gui::OverlayMenu()
 	ImGui::SetNextWindowSize(ImVec2(static_cast<float>(App::windowSize[0]), static_cast<float>(App::windowSize[1])));
 	ImGui::SetNextWindowCollapsed(false);
 
-	if (ImGui::Begin("Erectus - Overlay Menu", nullptr,
+	if (ImGui::Begin("Overlay Menu", nullptr,
 		ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysVerticalScrollbar))
 	{
 		if (ImGui::BeginMenuBar())
@@ -2167,14 +2088,13 @@ void Gui::OverlayMenu()
 		if (ImGui::BeginTabBar("###OverlayMenuTabBar", ImGuiTabBarFlags_None))
 		{
 			OverlayMenuTabEsp();
+			OverlayMenuLooter();
 			OverlayMenuTabCombat();
 			OverlayMenuTabPlayer();
 			OverlayMenuTabInfoBox();
 			OverlayMenuTabUtilities();
 			OverlayMenuTabTeleporter();
 			OverlayMenuTabBitMsgWriter();
-
-			OverlayMenuLooter();
 
 			ImGui::EndTabBar();
 		}

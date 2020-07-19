@@ -1,5 +1,4 @@
 #pragma once
-#include <array>
 #include <map>
 #include <Windows.h>
 #include <string>
@@ -170,8 +169,6 @@ struct EspSettings
 		bool showDistance = true;
 		bool showHealth = true;
 		bool showDeadHealth = false;
-		bool textCentered = true;
-		bool textShadowed = true;
 	} players, npcs;
 
 	struct Items
@@ -187,10 +184,6 @@ struct EspSettings
 		bool drawUnnamed = false;
 		bool showName = true;
 		bool showDistance = true;
-		bool textCentered = true;
-		bool textShadowed = true;
-		bool whitelisted[32] = {};
-		DWORD whitelist[32] = {};
 	} junk, containers, plans, magazines, bobbleheads, items, flora, entities;
 
 	struct LegendaryNpcs
@@ -223,6 +216,8 @@ struct EspSettings
 		bool knownRecipesEnabled = true;
 		bool unknownRecipesEnabled = true;
 	} recipes;
+
+	std::map<DWORD, bool> whitelist, blacklist;
 };
 
 //utils
@@ -400,8 +395,14 @@ public:
 private:
 	static void GetItemSettings(const std::string& section, EspSettings::Items& value, const EspSettings::Items& deflt);
 	static void SetItemSettings(const std::string& section, EspSettings::Items& value, const EspSettings::Items& deflt);
+
+	static void GetEspSettings();
+	static void SetEspSettings();
 	static void GetInfoBoxSettings();
 	static void SetInfoBoxSettings();
+	static void GetLooterSettings();
+	static void SetLooterSettings();
+
 	static void GetWeaponSettings();
 	static void SetWeaponSettings();
 	static void GetTargetSettings();
@@ -432,9 +433,7 @@ private:
 	static void SetChargenSettings();
 	static void GetBitMsgWriterSettings();
 	static void SetBitMsgWriterSettings();
-	static void GetLooterSettings();
-	static void SetLooterSettings();
-
+	
 	static void GetDword(const std::string& section, const std::string& key, DWORD& value, DWORD deflt);
 	static void SetDword(const std::string& section, const std::string& key, DWORD value, DWORD deflt);
 	static void GetInt(const std::string& section, const std::string& key, int& value, int deflt);

@@ -843,8 +843,6 @@ public:
 	inline static int targetLockingCooldown = 0;
 	inline static DWORD64 targetLockingPtr = 0;
 
-	inline static bool targetLockingKeyPressed = false;
-
 	inline static std::vector<CustomEntry> entityDataBuffer{};
 	inline static std::vector<CustomEntry> playerDataBuffer{};
 

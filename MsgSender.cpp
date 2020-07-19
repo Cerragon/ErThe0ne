@@ -1,5 +1,8 @@
 #include "MsgSender.h"
 
+#include <memory>
+
+
 #include "common.h"
 #include "ErectusMemory.h"
 #include "settings.h"
@@ -31,14 +34,11 @@ bool MsgSender::Send(void* message, const size_t size)
 		.r9 = 0
 	};
 
-	auto* pageData = new BYTE[allocSize];
-	memset(pageData, 0x00, allocSize);
-	memcpy(pageData, &externalFunctionData, sizeof externalFunctionData);
-	memcpy(&pageData[sizeof(ExternalFunction)], message, size);
-	const auto written = ErectusProcess::Wpm(allocAddress, &*pageData, allocSize);
-
-	delete[]pageData;
-	pageData = nullptr;
+	auto pageData = std::make_unique<BYTE[]>(allocSize);
+	memset(pageData.get(), 0x00, allocSize);
+	memcpy(pageData.get(), &externalFunctionData, sizeof externalFunctionData);
+	memcpy(&pageData.get()[sizeof(ExternalFunction)], message, size);
+	const auto written = ErectusProcess::Wpm(allocAddress, pageData.get(), allocSize);
 
 	if (!written)
 	{

@@ -61,7 +61,6 @@ void Settings::GetDword(const std::string& section, const std::string& key, DWOR
 		value = deflt;
 	}
 }
-
 void Settings::SetDword(const std::string& section, const std::string& key, const DWORD value, const DWORD deflt)
 {
 	if (!ini.has(section))
@@ -91,7 +90,6 @@ void Settings::GetInt(const std::string& section, const std::string& key, int& v
 		value = deflt;
 	}
 }
-
 void Settings::SetInt(const std::string& section, const std::string& key, const int value, const int deflt)
 {
 	if (!ini.has(section))
@@ -109,7 +107,6 @@ void Settings::GetSliderInt(const std::string& section, const std::string& key, 
 	Utils::ValidateInt(value, min, max);
 	SetInt(section, key, value, deflt);
 }
-
 void Settings::SetSliderInt(const std::string& section, const std::string& key, int& value, const int deflt, const int min, const int max)
 {
 	Utils::ValidateInt(value, min, max);
@@ -133,7 +130,6 @@ void Settings::GetFloat(const std::string& section, const std::string& key, floa
 		value = deflt;
 	}
 }
-
 void Settings::SetFloat(const std::string& section, const std::string& key, const float value, const float deflt)
 {
 	if (!ini.has(section))
@@ -151,7 +147,6 @@ void Settings::GetSliderFloat(const std::string& section, const std::string& key
 	Utils::ValidateFloat(value, min, max);
 	SetFloat(section, key, value, deflt);
 }
-
 void Settings::SetSliderFloat(const std::string& section, const std::string& key, float& value, const float deflt, const float min, const float max)
 {
 	Utils::ValidateFloat(value, min, max);
@@ -169,7 +164,6 @@ void Settings::GetRgb(const std::string& section, const std::string& key, float*
 	GetFloat(section, keyB, value[2], deflt[2]);
 	Utils::ValidateRgb(value);
 }
-
 void Settings::SetRgb(const std::string& section, const std::string& key, float* value, const float* deflt)
 {
 	Utils::ValidateRgb(value);
@@ -195,7 +189,6 @@ void Settings::GetQuadFloat(const std::string& section, const std::string& key, 
 	GetFloat(section, keyZ, value[2], deflt == nullptr ? 0 : deflt[2]);
 	GetFloat(section, keyW, value[3], deflt == nullptr ? 0 : deflt[3]);
 }
-
 void Settings::SetQuadFloat(const std::string& section, const std::string& key, float* value, const float* deflt)
 {
 	auto keyX = fmt::format("{}X", key);
@@ -216,7 +209,6 @@ void Settings::GetBool(const std::string& section, const std::string& key, bool&
 	GetSliderInt(section, key, bufferValue, bufferdeflt, 0, 1);
 	value = static_cast<bool>(bufferValue);
 }
-
 void Settings::SetBool(const std::string& section, const std::string& key, const bool& value, const bool deflt)
 {
 	auto bufferValue = static_cast<int>(value);
@@ -246,10 +238,7 @@ void Settings::GetActorSettings(const std::string& section, EspSettings::Actors&
 	GetBool(section, "ShowDistance", value.showDistance, deflt.showDistance);
 	GetBool(section, "ShowHealth", value.showHealth, deflt.showHealth);
 	GetBool(section, "ShowDeadHealth", value.showDeadHealth, deflt.showDeadHealth);
-	GetBool(section, "TextShadowed", value.textShadowed, deflt.textShadowed);
-	GetBool(section, "TextCentered", value.textCentered, deflt.textCentered);
 }
-
 void Settings::SetActorSettings(const std::string& section, EspSettings::Actors& value, const EspSettings::Actors& deflt)
 {
 	SetBool(section, "Enabled", value.enabled, deflt.enabled);
@@ -272,8 +261,6 @@ void Settings::SetActorSettings(const std::string& section, EspSettings::Actors&
 	SetBool(section, "ShowDistance", value.showDistance, deflt.showDistance);
 	SetBool(section, "ShowHealth", value.showHealth, deflt.showHealth);
 	SetBool(section, "ShowDeadHealth", value.showDeadHealth, deflt.showDeadHealth);
-	SetBool(section, "TextShadowed", value.textShadowed, deflt.textShadowed);
-	SetBool(section, "TextCentered", value.textCentered, deflt.textCentered);
 }
 
 void Settings::GetItemSettings(const std::string& section, EspSettings::Items& value, const EspSettings::Items& deflt)
@@ -289,15 +276,7 @@ void Settings::GetItemSettings(const std::string& section, EspSettings::Items& v
 	GetBool(section, "DrawUnnamed", value.drawUnnamed, deflt.drawUnnamed);
 	GetBool(section, "ShowName", value.showName, deflt.showName);
 	GetBool(section, "ShowDistance", value.showDistance, deflt.showDistance);
-	GetBool(section, "TextShadowed", value.textShadowed, deflt.textShadowed);
-	GetBool(section, "TextCentered", value.textCentered, deflt.textCentered);
-	for (auto i = 0; i < 32; i++)
-	{
-		GetBool(section, fmt::format("Whitelisted{:d}", i), value.whitelisted[i], deflt.whitelisted[i]);
-		GetDword(section, fmt::format("Whitelist{:d}", i), value.whitelist[i], deflt.whitelist[i]);
-	}
 }
-
 void Settings::SetItemSettings(const std::string& section, EspSettings::Items& value, const EspSettings::Items& deflt)
 {
 	SetBool(section, "Enabled", value.enabled, deflt.enabled);
@@ -311,14 +290,8 @@ void Settings::SetItemSettings(const std::string& section, EspSettings::Items& v
 	SetBool(section, "DrawUnnamed", value.drawUnnamed, deflt.drawUnnamed);
 	SetBool(section, "ShowName", value.showName, deflt.showName);
 	SetBool(section, "ShowDistance", value.showDistance, deflt.showDistance);
-	SetBool(section, "TextShadowed", value.textShadowed, deflt.textShadowed);
-	SetBool(section, "TextCentered", value.textCentered, deflt.textCentered);
-	for (auto i = 0; i < 32; i++)
-	{
-		SetBool(section, fmt::format("Whitelisted{:d}", i), value.whitelisted[i], deflt.whitelisted[i]);
-		SetDword(section, fmt::format("Whitelist{:d}", i), value.whitelist[i], deflt.whitelist[i]);
-	}
 }
+
 
 void Settings::GetInfoBoxSettings()
 {
@@ -331,6 +304,18 @@ void Settings::GetInfoBoxSettings()
 
 	GetBool("InfoBox", "drawPositionSpoofingStatus", infobox.drawPositionSpoofingStatus, false);
 	GetBool("InfoBox", "drawNukeCodes", infobox.drawNukeCodes, false);
+}
+void Settings::SetInfoBoxSettings()
+{
+	SetBool("InfoBox", "drawLocalPlayerInfo", infobox.drawLocalPlayerInfo, false);
+	SetBool("InfoBox", "drawScrapLooterStatus", infobox.drawScrapLooterStatus, false);
+	SetBool("InfoBox", "drawItemLooterStatus", infobox.drawItemLooterStatus, false);
+	SetBool("InfoBox", "drawNpcLooterStatus", infobox.drawNpcLooterStatus, false);
+	SetBool("InfoBox", "drawContainerLooterStatus", infobox.drawContainerLooterStatus, false);
+	SetBool("InfoBox", "drawHarvesterStatus", infobox.drawHarvesterStatus, false);
+
+	SetBool("InfoBox", "drawPositionSpoofingStatus", infobox.drawPositionSpoofingStatus, false);
+	SetBool("InfoBox", "drawNukeCodes", infobox.drawNukeCodes, false);
 }
 
 void Settings::GetLooterSettings()
@@ -395,7 +380,6 @@ void Settings::GetLooterSettings()
 		looter.selection.blacklist.emplace(stoul(item.first, nullptr, 16), static_cast<bool>(stoi(item.second)));
 	}
 }
-
 void Settings::SetLooterSettings()
 {
 	SetInt("Looter", "mode", static_cast<int>(looter.mode), 0);
@@ -459,19 +443,6 @@ void Settings::SetLooterSettings()
 	}
 }
 
-void Settings::SetInfoBoxSettings()
-{
-	SetBool("InfoBox", "drawLocalPlayerInfo", infobox.drawLocalPlayerInfo, false);
-	SetBool("InfoBox", "drawScrapLooterStatus", infobox.drawScrapLooterStatus, false);
-	SetBool("InfoBox", "drawItemLooterStatus", infobox.drawItemLooterStatus, false);
-	SetBool("InfoBox", "drawNpcLooterStatus", infobox.drawNpcLooterStatus, false);
-	SetBool("InfoBox", "drawContainerLooterStatus", infobox.drawContainerLooterStatus, false);
-	SetBool("InfoBox", "drawHarvesterStatus", infobox.drawHarvesterStatus, false);
-
-	SetBool("InfoBox", "drawPositionSpoofingStatus", infobox.drawPositionSpoofingStatus, false);
-	SetBool("InfoBox", "drawNukeCodes", infobox.drawNukeCodes, false);
-}
-
 void Settings::GetWeaponSettings()
 {
 	GetBool("WeaponSettings", "WeaponNoRecoil", weapons.noRecoil, defaultWeaponSettings.noRecoil);
@@ -487,7 +458,6 @@ void Settings::GetWeaponSettings()
 	GetBool("WeaponSettings", "WeaponReachEnabled", weapons.reachEnabled, defaultWeaponSettings.reachEnabled);
 	GetSliderFloat("WeaponSettings", "WeaponReach", weapons.reach, defaultWeaponSettings.reach, 0.0f, 999.0f);
 }
-
 void Settings::SetWeaponSettings()
 {
 	SetBool("WeaponSettings", "WeaponNoRecoil", weapons.noRecoil, defaultWeaponSettings.noRecoil);
@@ -528,7 +498,6 @@ void Settings::GetTargetSettings()
 	if (targetting.sendDamageMax < targetting.sendDamageMin)
 		targetting.sendDamageMax = targetting.sendDamageMin;
 }
-
 void Settings::SetTargetSettings()
 {
 	if (targetting.sendDamageMax < targetting.sendDamageMin)
@@ -581,7 +550,6 @@ void Settings::GetLocalPlayerSettings()
 	GetBool("LocalPlayerSettings", "LuckEnabled", localPlayer.luckEnabled, localPlayer.luckEnabled);
 	GetSliderInt("LocalPlayerSettings", "Luck", localPlayer.luck, localPlayer.luck, 0, 99999);
 }
-
 void Settings::SetLocalPlayerSettings()
 {
 	SetBool("LocalPlayerSettings", "PositionSpoofingEnabled", localPlayer.positionSpoofingEnabled, localPlayer.positionSpoofingEnabled);
@@ -614,7 +582,6 @@ void Settings::GetOpkSettings()
 	GetBool("OpkSettings", "OpkPlayersEnabled", opk.playersEnabled, false);
 	GetBool("OpkSettings", "OpkNpcsEnabled", opk.npcsEnabled, false);
 }
-
 void Settings::SetOpkSettings()
 {
 	SetBool("OpkSettings", "OpkPlayersEnabled", opk.playersEnabled, false);
@@ -627,7 +594,6 @@ void Settings::GetUtilitySettings()
 	GetDword("UtilitySettings", "PtrFormId", utilities.ptrFormId, 0);
 	GetDword("UtilitySettings", "AddressFormId", utilities.addressFormId, 0);
 }
-
 void Settings::SetUtilitySettings()
 {
 	SetBool("UtilitySettings", "DebugEsp", utilities.debugEsp, false);
@@ -640,7 +606,6 @@ void Settings::GetSwapperSettings()
 	GetDword("SwapperSettings", "SourceFormId", swapper.sourceFormId, 0);
 	GetDword("SwapperSettings", "DestinationFormId", swapper.destinationFormId, 0);
 }
-
 void Settings::SetSwapperSettings()
 {
 	SetDword("SwapperSettings", "SourceFormId", swapper.sourceFormId, 0);
@@ -664,7 +629,6 @@ void Settings::GetTransferSettings()
 		GetDword("TransferSettings", fmt::format("Blacklist{:d}", i), customTransferSettings.blacklist[i], customTransferSettings.blacklist[i]);
 	}
 }
-
 void Settings::SetTransferSettings()
 {
 	SetDword("TransferSettings", "SourceFormId", customTransferSettings.sourceFormId, customTransferSettings.sourceFormId);
@@ -692,7 +656,6 @@ void Settings::GetTeleportSettings()
 		GetBool("TeleportSettings", fmt::format("DisableSaving{:d}", i), teleporter.entries[i].disableSaving, false);
 	}
 }
-
 void Settings::SetTeleportSettings()
 {
 	for (auto i = 0; i < 16; i++)
@@ -707,7 +670,6 @@ void Settings::GetNukeCodeSettings()
 {
 	GetBool("NukeCodeSettings", "AutomaticNukeCodes", customNukeCodeSettings.automaticNukeCodes, false);
 }
-
 void Settings::SetNukeCodeSettings()
 {
 	SetBool("NukeCodeSettings", "AutomaticNukeCodes", customNukeCodeSettings.automaticNukeCodes, false);
@@ -728,7 +690,6 @@ void Settings::GetLegendarySettings()
 	GetBool("LegendarySettings", "OverrideDeadThreeStar", esp.legendaryNpcs.overrideDeadThreeStar, esp.legendaryNpcs.overrideDeadThreeStar);
 	GetRgb("LegendarySettings", "DeadThreeStarColor", esp.legendaryNpcs.deadThreeStarColor, esp.legendaryNpcs.deadThreeStarColor);
 }
-
 void Settings::SetLegendarySettings()
 {
 	SetBool("LegendarySettings", "OverrideLivingOneStar", esp.legendaryNpcs.overrideLivingOneStar, esp.legendaryNpcs.overrideLivingOneStar);
@@ -753,7 +714,6 @@ void Settings::GetFluxSettings()
 	GetBool("FluxSettings", "FluorescentFluxEnabled", esp.flux.fluorescentFluxEnabled, false);
 	GetBool("FluxSettings", "VioletFluxEnabled", esp.flux.violetFluxEnabled, false);
 }
-
 void Settings::SetFluxSettings()
 {
 	SetBool("FluxSettings", "CrimsonFluxEnabled", esp.flux.crimsonFluxEnabled, false);
@@ -768,7 +728,6 @@ void Settings::GetKnownRecipeSettings()
 	GetBool("KnownRecipeSettings", "KnownRecipesEnabled", esp.recipes.knownRecipesEnabled, false);
 	GetBool("KnownRecipeSettings", "UnknownRecipesEnabled", esp.recipes.unknownRecipesEnabled, false);
 }
-
 void Settings::SetKnownRecipeSettings()
 {
 	SetBool("KnownRecipeSettings", "KnownRecipesEnabled", esp.recipes.knownRecipesEnabled, false);
@@ -784,7 +743,6 @@ void Settings::GetMeleeSettings()
 	if (melee.speedMax < melee.speedMin)
 		melee.speedMax = melee.speedMin;
 }
-
 void Settings::SetMeleeSettings()
 {
 	if (melee.speedMax < melee.speedMin)
@@ -802,7 +760,6 @@ void Settings::GetChargenSettings()
 	GetSliderFloat("ChargenSettings", "Muscular", characterEditor.muscular, 0, 0.0f, 1.0f);
 	GetSliderFloat("ChargenSettings", "Large", characterEditor.large, 0, 0.0f, 1.0f);
 }
-
 void Settings::SetChargenSettings()
 {
 	SetBool("ChargenSettings", "ChargenEditingEnabled", characterEditor.enabled, false);
@@ -815,28 +772,78 @@ void Settings::GetBitMsgWriterSettings()
 {
 	GetBool("BitMsgWriter", "AllowMessages", msgWriter.enabled, false);
 }
-
 void Settings::SetBitMsgWriterSettings()
 {
 	SetBool("BitMsgWriter", "AllowMessages", msgWriter.enabled, false);
 }
 
-void Settings::Read()
+void Settings::GetEspSettings()
 {
-	file.read(ini);
 	GetActorSettings("esp.players", esp.players, EspSettings::Actors());
 	GetActorSettings("esp.npcs", esp.npcs, EspSettings::Actors());
-	GetLegendarySettings();
+
 	GetItemSettings("esp.containers", esp.containers, EspSettings::Items());
 	GetItemSettings("esp.junk", esp.junk, EspSettings::Items());
 	GetItemSettings("esp.plans", esp.plans, EspSettings::Items());
-	GetKnownRecipeSettings();
 	GetItemSettings("esp.magazines", esp.magazines, EspSettings::Items());
 	GetItemSettings("esp.bobbleheads", esp.bobbleheads, EspSettings::Items());
 	GetItemSettings("esp.items", esp.items, EspSettings::Items());
 	GetItemSettings("esp.flora", esp.flora, EspSettings::Items());
+	GetItemSettings("esp.entities", esp.entities, EspSettings::Items());
+
+	GetLegendarySettings();
+	GetKnownRecipeSettings();
 	GetFluxSettings();
-	GetItemSettings("EntitySettings", esp.entities, EspSettings::Items());
+
+	for (const auto& item : ini["EspWhitelist"])
+	{
+		esp.whitelist.emplace(stoul(item.first, nullptr, 16), static_cast<bool>(stoi(item.second)));
+	}
+
+	for (const auto& item : ini["EspBlacklist"])
+	{
+		esp.blacklist.emplace(stoul(item.first, nullptr, 16), static_cast<bool>(stoi(item.second)));
+	}
+}
+void Settings::SetEspSettings()
+{
+	SetActorSettings("esp.players", esp.players, EspSettings::Actors());
+	SetActorSettings("esp.npcs", esp.npcs, EspSettings::Actors());
+
+	SetItemSettings("esp.containers", esp.containers, EspSettings::Items());
+	SetItemSettings("esp.junk", esp.junk, EspSettings::Items());
+	SetItemSettings("esp.plans", esp.plans, EspSettings::Items());
+	SetItemSettings("esp.magazines", esp.magazines, EspSettings::Items());
+	SetItemSettings("esp.bobbleheads", esp.bobbleheads, EspSettings::Items());
+	SetItemSettings("esp.items", esp.items, EspSettings::Items());
+	SetItemSettings("esp.flora", esp.flora, EspSettings::Items());
+	SetItemSettings("esp.entities", esp.entities, EspSettings::Items());
+
+	SetLegendarySettings();
+	SetKnownRecipeSettings();
+	SetFluxSettings();
+
+	ini.remove("EspWhitelist");
+	for (const auto& item : esp.whitelist)
+	{
+		SetBool("EspWhitelist", fmt::format("{:x}", item.first), item.second, false);
+	}
+
+	ini.remove("EspBlacklist");
+	for (const auto& item : esp.blacklist)
+	{
+		SetBool("EspBlacklist", fmt::format("{:x}", item.first), item.second, false);
+	}
+}
+
+void Settings::Read()
+{
+	file.read(ini);
+
+	GetInfoBoxSettings();
+	GetLooterSettings();
+	GetEspSettings();
+	
 	GetWeaponSettings();
 	GetTargetSettings();
 	GetLocalPlayerSettings();
@@ -849,28 +856,17 @@ void Settings::Read()
 	GetChargenSettings();
 	GetBitMsgWriterSettings();
 
-	GetInfoBoxSettings();
-	GetLooterSettings();
-
 	file.write(ini, true);
 }
 
 void Settings::Write()
 {
 	file.read(ini);
-	SetActorSettings("esp.players", esp.players, EspSettings::Actors());
-	SetActorSettings("esp.npcs", esp.npcs, EspSettings::Actors());
-	SetLegendarySettings();
-	SetItemSettings("esp.containers", esp.containers, EspSettings::Items());
-	SetItemSettings("esp.junk", esp.junk, EspSettings::Items());
-	SetItemSettings("esp.plans", esp.plans, EspSettings::Items());
-	SetKnownRecipeSettings();
-	SetItemSettings("esp.magazines", esp.magazines, EspSettings::Items());
-	SetItemSettings("esp.bobbleheads", esp.bobbleheads, EspSettings::Items());
-	SetItemSettings("esp.items", esp.items, EspSettings::Items());
-	SetItemSettings("esp.flora", esp.flora, EspSettings::Items());
-	SetFluxSettings();
-	SetItemSettings("EntitySettings", esp.entities, EspSettings::Items());
+
+	SetInfoBoxSettings();
+	SetLooterSettings();
+	SetEspSettings();
+	
 	SetWeaponSettings();
 	SetTargetSettings();
 	SetLocalPlayerSettings();
@@ -882,9 +878,6 @@ void Settings::Write()
 	SetMeleeSettings();
 	SetChargenSettings();
 	SetBitMsgWriterSettings();
-
-	SetInfoBoxSettings();
-	SetLooterSettings();
 
 	file.write(ini, true);
 }

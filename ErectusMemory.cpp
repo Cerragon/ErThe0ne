@@ -333,13 +333,9 @@ bool ErectusMemory::CheckReferenceKeywordBook(const TesItem& referenceData, cons
 	if (!Utils::Valid(referenceData.keywordArrayData01B8))
 		return false;
 
-	auto* keywordArray = new DWORD64[referenceData.keywordArrayData01C0];
-	if (!ErectusProcess::Rpm(referenceData.keywordArrayData01B8, &*keywordArray, referenceData.keywordArrayData01C0 * sizeof(DWORD64)))
-	{
-		delete[]keywordArray;
-		keywordArray = nullptr;
+	auto keywordArray = std::make_unique<DWORD64[]>(referenceData.keywordArrayData01C0);
+	if (!ErectusProcess::Rpm(referenceData.keywordArrayData01B8, keywordArray.get(), referenceData.keywordArrayData01C0 * sizeof(DWORD64)))
 		return false;
-	}
 
 	for (DWORD64 i = 0; i < referenceData.keywordArrayData01C0; i++)
 	{
@@ -352,13 +348,9 @@ bool ErectusMemory::CheckReferenceKeywordBook(const TesItem& referenceData, cons
 		if (formIdCheck != formId)
 			continue;
 
-		delete[]keywordArray;
-		keywordArray = nullptr;
 		return true;
 	}
 
-	delete[]keywordArray;
-	keywordArray = nullptr;
 	return false;
 }
 
@@ -369,13 +361,9 @@ bool ErectusMemory::CheckReferenceKeywordMisc(const TesItem& referenceData, cons
 	if (!Utils::Valid(referenceData.keywordArrayData01B0))
 		return false;
 
-	auto* keywordArray = new DWORD64[referenceData.keywordArrayData01B8];
-	if (!ErectusProcess::Rpm(referenceData.keywordArrayData01B0, &*keywordArray, referenceData.keywordArrayData01B8 * sizeof(DWORD64)))
-	{
-		delete[]keywordArray;
-		keywordArray = nullptr;
+	auto keywordArray = std::make_unique<DWORD64[]>(referenceData.keywordArrayData01B8);
+	if (!ErectusProcess::Rpm(referenceData.keywordArrayData01B0, keywordArray.get(), referenceData.keywordArrayData01B8 * sizeof(DWORD64)))
 		return false;
-	}
 
 	for (DWORD64 i = 0; i < referenceData.keywordArrayData01B8; i++)
 	{
@@ -388,13 +376,9 @@ bool ErectusMemory::CheckReferenceKeywordMisc(const TesItem& referenceData, cons
 		if (formIdCheck != formId)
 			continue;
 
-		delete[]keywordArray;
-		keywordArray = nullptr;
 		return true;
 	}
 
-	delete[]keywordArray;
-	keywordArray = nullptr;
 	return false;
 }
 
@@ -606,6 +590,12 @@ ItemInfo ErectusMemory::GetItemInfo(const TesObjectRefr& entity, const TesItem& 
 
 void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* entityFlag, DWORD64* entityNamePtr, int* enabledDistance)
 {
+
+	if (auto found = Settings::esp.whitelist.find(referenceData.formId); found != Settings::esp.whitelist.end()) {
+		if (found->second)
+			*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
+	}
+
 	switch (referenceData.formType)
 	{
 	case (static_cast<byte>(FormTypes::BgsIdleMarker)):
@@ -628,9 +618,7 @@ void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* e
 		*entityFlag |= CUSTOM_ENTRY_CONTAINER;
 		*entityNamePtr = referenceData.namePtr00B0;
 		*enabledDistance = Settings::esp.containers.enabledDistance;
-		if (CheckFormIdArray(referenceData.formId, Settings::esp.containers.whitelisted, Settings::esp.containers.whitelist, 32))
-			*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-		else if (!Settings::esp.containers.enabled)
+		if (!Settings::esp.containers.enabled && !(*entityFlag & CUSTOM_ENTRY_WHITELISTED))
 			*entityFlag |= CUSTOM_ENTRY_INVALID;
 		break;
 	case (static_cast<byte>(FormTypes::TesObjectMisc)):
@@ -640,9 +628,7 @@ void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* e
 		{
 			*entityFlag |= CUSTOM_ENTRY_JUNK;
 			*enabledDistance = Settings::esp.junk.enabledDistance;
-			if (CheckFormIdArray(referenceData.formId, Settings::esp.junk.whitelisted, Settings::esp.junk.whitelist, 32))
-				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-			else if (!Settings::esp.junk.enabled)
+			if (!Settings::esp.junk.enabled && !(*entityFlag & CUSTOM_ENTRY_WHITELISTED))
 				*entityFlag |= CUSTOM_ENTRY_INVALID;
 		}
 		else if (IsMod(referenceData))
@@ -650,18 +636,14 @@ void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* e
 			*entityFlag |= CUSTOM_ENTRY_MOD;
 			*entityFlag |= CUSTOM_ENTRY_ITEM;
 			*enabledDistance = Settings::esp.items.enabledDistance;
-			if (CheckFormIdArray(referenceData.formId, Settings::esp.items.whitelisted, Settings::esp.items.whitelist, 32))
-				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-			else if (!Settings::esp.items.enabled)
+			if (!Settings::esp.items.enabled)
 				*entityFlag |= CUSTOM_ENTRY_INVALID;
 		}
 		else if (IsBobblehead(referenceData))
 		{
 			*entityFlag |= CUSTOM_ENTRY_BOBBLEHEAD;
 			*enabledDistance = Settings::esp.bobbleheads.enabledDistance;
-			if (CheckFormIdArray(referenceData.formId, Settings::esp.bobbleheads.whitelisted, Settings::esp.bobbleheads.whitelist, 32))
-				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-			else if (!Settings::esp.bobbleheads.enabled)
+			if (!Settings::esp.bobbleheads.enabled && !(*entityFlag & CUSTOM_ENTRY_WHITELISTED))
 				*entityFlag |= CUSTOM_ENTRY_INVALID;
 		}
 		else
@@ -669,9 +651,7 @@ void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* e
 			*entityFlag |= CUSTOM_ENTRY_MISC;
 			*entityFlag |= CUSTOM_ENTRY_ITEM;
 			*enabledDistance = Settings::esp.items.enabledDistance;
-			if (CheckFormIdArray(referenceData.formId, Settings::esp.items.whitelisted, Settings::esp.items.whitelist, 32))
-				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-			else if (!Settings::esp.items.enabled)
+			if (!Settings::esp.items.enabled)
 				*entityFlag |= CUSTOM_ENTRY_INVALID;
 		}
 		break;
@@ -688,18 +668,14 @@ void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* e
 			else
 				*entityFlag |= CUSTOM_ENTRY_UNKNOWN_RECIPE;
 
-			if (CheckFormIdArray(referenceData.formId, Settings::esp.plans.whitelisted, Settings::esp.plans.whitelist, 32))
-				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-			else if (!Settings::esp.plans.enabled)
+			if (!Settings::esp.plans.enabled && !(*entityFlag & CUSTOM_ENTRY_WHITELISTED))
 				*entityFlag |= CUSTOM_ENTRY_INVALID;
 		}
 		else if (IsMagazine(referenceData))
 		{
 			*entityFlag |= CUSTOM_ENTRY_MAGAZINE;
 			*enabledDistance = Settings::esp.magazines.enabledDistance;
-			if (CheckFormIdArray(referenceData.formId, Settings::esp.magazines.whitelisted, Settings::esp.magazines.whitelist, 32))
-				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-			else if (!Settings::esp.magazines.enabled)
+			if (!Settings::esp.magazines.enabled && !(*entityFlag & CUSTOM_ENTRY_WHITELISTED))
 				*entityFlag |= CUSTOM_ENTRY_INVALID;
 		}
 		else
@@ -708,9 +684,7 @@ void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* e
 			*enabledDistance = Settings::esp.items.enabledDistance;
 			if (IsTreasureMap(referenceData))
 				*entityFlag |= CUSTOM_ENTRY_TREASURE_MAP;
-			if (CheckFormIdArray(referenceData.formId, Settings::esp.items.whitelisted, Settings::esp.items.whitelist, 32))
-				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-			else if (!Settings::esp.items.enabled)
+			if (!Settings::esp.items.enabled && !(*entityFlag & CUSTOM_ENTRY_WHITELISTED))
 				*entityFlag |= CUSTOM_ENTRY_INVALID;
 		}
 		break;
@@ -719,9 +693,9 @@ void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* e
 		*entityNamePtr = referenceData.namePtr0098;
 		*enabledDistance = Settings::esp.flora.enabledDistance;
 
-		if (CheckWhitelistedFlux(referenceData) || CheckFormIdArray(referenceData.formId, Settings::esp.flora.whitelisted, Settings::esp.flora.whitelist, 32))
+		if (CheckWhitelistedFlux(referenceData))
 			*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-		else if (!Settings::esp.flora.enabled)
+		if (!Settings::esp.flora.enabled && !(*entityFlag & CUSTOM_ENTRY_WHITELISTED))
 			*entityFlag |= CUSTOM_ENTRY_INVALID;
 
 		break;
@@ -731,9 +705,7 @@ void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* e
 		*entityFlag |= CUSTOM_ENTRY_VALID_ITEM;
 		*entityNamePtr = referenceData.namePtr0098;
 		*enabledDistance = Settings::esp.items.enabledDistance;
-		if (CheckFormIdArray(referenceData.formId, Settings::esp.items.whitelisted, Settings::esp.items.whitelist, 32))
-			*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-		else if (!Settings::esp.items.enabled)
+		if (!Settings::esp.items.enabled && !(*entityFlag & CUSTOM_ENTRY_WHITELISTED))
 			*entityFlag |= CUSTOM_ENTRY_INVALID;
 		break;
 	case (static_cast<byte>(FormTypes::TesObjectArmo)):
@@ -742,9 +714,7 @@ void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* e
 		*entityFlag |= CUSTOM_ENTRY_VALID_ITEM;
 		*entityNamePtr = referenceData.namePtr0098;
 		*enabledDistance = Settings::esp.items.enabledDistance;
-		if (CheckFormIdArray(referenceData.formId, Settings::esp.items.whitelisted, Settings::esp.items.whitelist, 32))
-			*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-		else if (!Settings::esp.items.enabled)
+		if (!Settings::esp.items.enabled && !(*entityFlag & CUSTOM_ENTRY_WHITELISTED))
 			*entityFlag |= CUSTOM_ENTRY_INVALID;
 		break;
 	case (static_cast<byte>(FormTypes::TesAmmo)):
@@ -753,9 +723,7 @@ void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* e
 		*entityFlag |= CUSTOM_ENTRY_VALID_ITEM;
 		*entityNamePtr = referenceData.namePtr0098;
 		*enabledDistance = Settings::esp.items.enabledDistance;
-		if (CheckFormIdArray(referenceData.formId, Settings::esp.items.whitelisted, Settings::esp.items.whitelist, 32))
-			*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-		else if (!Settings::esp.items.enabled)
+		if (!Settings::esp.items.enabled && !(*entityFlag & CUSTOM_ENTRY_WHITELISTED))
 			*entityFlag |= CUSTOM_ENTRY_INVALID;
 		break;
 	case (static_cast<byte>(FormTypes::AlchemyItem)):
@@ -764,9 +732,7 @@ void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* e
 		*entityFlag |= CUSTOM_ENTRY_VALID_ITEM;
 		*entityNamePtr = referenceData.namePtr0098;
 		*enabledDistance = Settings::esp.items.enabledDistance;
-		if (CheckFormIdArray(referenceData.formId, Settings::esp.items.whitelisted, Settings::esp.items.whitelist, 32))
-			*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-		else if (!Settings::esp.items.enabled)
+		if (!Settings::esp.items.enabled)
 			*entityFlag |= CUSTOM_ENTRY_INVALID;
 		break;
 	default:
@@ -776,9 +742,7 @@ void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* e
 			*entityFlag |= CUSTOM_ENTRY_VALID_ITEM;
 			*entityNamePtr = referenceData.namePtr0098;
 			*enabledDistance = Settings::esp.items.enabledDistance;
-			if (CheckFormIdArray(referenceData.formId, Settings::esp.items.whitelisted, Settings::esp.items.whitelist, 32))
-				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-			else if (!Settings::esp.items.enabled)
+			if (!Settings::esp.items.enabled && !(*entityFlag & CUSTOM_ENTRY_WHITELISTED))
 				*entityFlag |= CUSTOM_ENTRY_INVALID;
 		}
 		else
@@ -786,9 +750,7 @@ void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* e
 			*entityFlag |= CUSTOM_ENTRY_ENTITY;
 			*entityNamePtr = 0;
 			*enabledDistance = Settings::esp.entities.enabledDistance;
-			if (CheckFormIdArray(referenceData.formId, Settings::esp.entities.whitelisted, Settings::esp.entities.whitelist, 32))
-				*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
-			else if (!Settings::esp.entities.enabled || !Settings::esp.entities.drawUnnamed)
+			if ((!Settings::esp.entities.enabled || !Settings::esp.entities.drawUnnamed) && !(*entityFlag & CUSTOM_ENTRY_WHITELISTED))
 				*entityFlag |= CUSTOM_ENTRY_INVALID;
 		}
 		break;
@@ -930,39 +892,25 @@ std::string ErectusMemory::GetPlayerName(const ClientAccount& clientAccountData)
 		return result;
 
 	const auto playerNameSize = clientAccountData.nameLength + 1;
-	auto* playerName = new char[playerNameSize];
+	auto playerName = std::make_unique<char[]>(playerNameSize);
 
 	if (clientAccountData.nameLength > 15)
 	{
 		DWORD64 buffer;
 		memcpy(&buffer, clientAccountData.nameData, sizeof buffer);
 		if (!Utils::Valid(buffer))
-		{
-			delete[]playerName;
-			playerName = nullptr;
 			return result;
-		}
 
-		if (!ErectusProcess::Rpm(buffer, &*playerName, playerNameSize))
-		{
-			delete[]playerName;
-			playerName = nullptr;
+		if (!ErectusProcess::Rpm(buffer, playerName.get(), playerNameSize))
 			return result;
-		}
 	}
 	else
-		memcpy(playerName, clientAccountData.nameData, playerNameSize);
+		memcpy(playerName.get(), clientAccountData.nameData, playerNameSize);
 
-	if (Utils::GetTextLength(playerName) != clientAccountData.nameLength)
-	{
-		delete[]playerName;
-		playerName = nullptr;
+	if (Utils::GetTextLength(playerName.get()) != clientAccountData.nameLength)
 		return result;
-	}
-	result.assign(playerName);
 
-	delete[]playerName;
-	playerName = nullptr;
+	result.assign(playerName.get());
 
 	return result;
 }
@@ -1005,13 +953,9 @@ bool ErectusMemory::UpdateBufferPlayerList()
 	if (!clientAccountArraySize)
 		return false;
 
-	auto* clientAccountArray = new DWORD64[clientAccountArraySize];
-	if (!ErectusProcess::Rpm(clientAccountManagerData.clientAccountArrayPtr, &*clientAccountArray, clientAccountArraySize * sizeof(DWORD64)))
-	{
-		delete[]clientAccountArray;
-		clientAccountArray = nullptr;
+	auto clientAccountArray = std::make_unique<DWORD64[]>(clientAccountArraySize);
+	if (!ErectusProcess::Rpm(clientAccountManagerData.clientAccountArrayPtr, clientAccountArray.get(), clientAccountArraySize * sizeof(DWORD64)))
 		return false;
-	}
 
 	for (auto i = 0; i < clientAccountArraySize; i++)
 	{
@@ -1066,10 +1010,6 @@ bool ErectusMemory::UpdateBufferPlayerList()
 		};
 		players.push_back(entry);
 	}
-
-	delete[]clientAccountArray;
-	clientAccountArray = nullptr;
-
 	playerDataBuffer = players;
 
 	return playerDataBuffer.empty() ? false : true;
@@ -1152,13 +1092,9 @@ bool ErectusMemory::UpdateOldWeaponData()
 	if (!Utils::Valid(weaponList.arrayPtr) || !weaponList.arraySize || weaponList.arraySize > 0x7FFF)
 		return false;
 
-	auto* weaponPtrArray = new DWORD64[weaponList.arraySize];
-	if (!ErectusProcess::Rpm(weaponList.arrayPtr, &*weaponPtrArray, weaponList.arraySize * sizeof(DWORD64)))
-	{
-		delete[]weaponPtrArray;
-		weaponPtrArray = nullptr;
+	auto weaponPtrArray = std::make_unique<DWORD64[]>(weaponList.arraySize);
+	if (!ErectusProcess::Rpm(weaponList.arrayPtr, weaponPtrArray.get(), weaponList.arraySize * sizeof(DWORD64)))
 		return false;
-	}
 
 	oldWeaponList = new OldWeapon[weaponList.arraySize];
 	oldWeaponListSize = weaponList.arraySize;
@@ -1189,8 +1125,6 @@ bool ErectusMemory::UpdateOldWeaponData()
 		memcpy(&*oldWeaponList[i].aimModelData, &aimModelData, sizeof aimModelData);
 	}
 
-	delete[]weaponPtrArray;
-	weaponPtrArray = nullptr;
 	return true;
 }
 
@@ -1461,7 +1395,7 @@ bool ErectusMemory::DamageRedirection(DWORD64* targetingPage, bool* targetingPag
 	BYTE pageJmpOff[] = { 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC };
 	BYTE pageJmpCheck[sizeof pageJmpOff];
 
-	BYTE redirectionOn[] = { 0xE9, 0x69, 0xFE, 0xFF, 0xFF };
+	BYTE redirectionOn[] = { 0xE9, 0x8D, 0xFE, 0xFF, 0xFF };
 	BYTE redirectionOff[] = { 0x48, 0x8B, 0x5C, 0x24, 0x50 };
 	BYTE redirectionCheck[sizeof redirectionOff];
 
@@ -1522,7 +1456,7 @@ bool ErectusMemory::DamageRedirection(DWORD64* targetingPage, bool* targetingPag
 		memcpy(&pageJmpOn[2], &*targetingPage, sizeof(DWORD64));
 	}
 	memcpy(&pageJmpOn[2], &*targetingPage, sizeof(DWORD64));
-
+	
 	auto isPlayer = false;
 	auto targetValid = LockedTargetValid(&isPlayer);
 	if (!Settings::targetting.indirectPlayers && isPlayer || !Settings::targetting.indirectNpCs && !isPlayer)
@@ -2077,13 +2011,9 @@ bool ErectusMemory::TransferItems(const DWORD sourceFormId, const DWORD destinat
 	if (!itemArraySize || itemArraySize > 0x7FFF)
 		return false;
 
-	auto* itemData = new InventoryEntry[itemArraySize];
-	if (!ErectusProcess::Rpm(inventoryData.entryArrayBegin, &*itemData, itemArraySize * sizeof(InventoryEntry)))
-	{
-		delete[]itemData;
-		itemData = nullptr;
+	auto itemData = std::make_unique<InventoryEntry[]>(itemArraySize);
+	if (!ErectusProcess::Rpm(inventoryData.entryArrayBegin, itemData.get(), itemArraySize * sizeof(InventoryEntry)))
 		return false;
-	}
 
 	for (DWORD64 i = 0; i < itemArraySize; i++)
 	{
@@ -2115,23 +2045,15 @@ bool ErectusMemory::TransferItems(const DWORD sourceFormId, const DWORD destinat
 		if (!iterations || iterations > 0x7FFF)
 			continue;
 
-		auto* itemCountData = new ItemCount[iterations];
-		if (!ErectusProcess::Rpm(itemData[i].displayPtr, &*itemCountData, iterations * sizeof(ItemCount)))
-		{
-			delete[]itemCountData;
-			itemCountData = nullptr;
+		auto itemCountData = std::make_unique<ItemCount[]>(iterations);
+		if (!ErectusProcess::Rpm(itemData[i].displayPtr, itemCountData.get(), iterations * sizeof(ItemCount)))
 			continue;
-		}
 
 		auto count = 0;
 		for (DWORD64 c = 0; c < iterations; c++)
 		{
 			count += itemCountData[c].count;
 		}
-
-		delete[]itemCountData;
-		itemCountData = nullptr;
-
 		if (count == 0)
 			continue;
 
@@ -2150,8 +2072,6 @@ bool ErectusMemory::TransferItems(const DWORD sourceFormId, const DWORD destinat
 		MsgSender::Send(&transferMessageData, sizeof transferMessageData);
 	}
 
-	delete[]itemData;
-	itemData = nullptr;
 	return true;
 }
 
@@ -2417,8 +2337,8 @@ bool ErectusMemory::SendHitsToServer(Hits* hitsData, const size_t hitsDataSize)
 	externalFunctionData.r8 = 0;
 	externalFunctionData.r9 = 0;
 
-	auto* pageData = new BYTE[allocSize];
-	memset(pageData, 0x00, allocSize);
+	auto pageData = std::make_unique<BYTE[]>(allocSize);
+	memset(pageData.get(), 0x00, allocSize);
 
 	RequestHitsOnActors requestHitsOnActorsData{};
 	memset(&requestHitsOnActorsData, 0x00, sizeof(RequestHitsOnActors));
@@ -2428,14 +2348,11 @@ bool ErectusMemory::SendHitsToServer(Hits* hitsData, const size_t hitsDataSize)
 	requestHitsOnActorsData.hitsArrayEnd = allocAddress + sizeof(ExternalFunction) + sizeof(RequestHitsOnActors) +
 		hitsDataSize;
 
-	memcpy(pageData, &externalFunctionData, sizeof externalFunctionData);
+	memcpy(pageData.get(), &externalFunctionData, sizeof externalFunctionData);
 	memcpy(&pageData[sizeof(ExternalFunction)], &requestHitsOnActorsData, sizeof requestHitsOnActorsData);
 	memcpy(&pageData[sizeof(ExternalFunction) + sizeof(RequestHitsOnActors)], &*hitsData, hitsDataSize);
 
-	const auto pageWritten = ErectusProcess::Wpm(allocAddress, &*pageData, allocSize);
-
-	delete[]pageData;
-	pageData = nullptr;
+	const auto pageWritten = ErectusProcess::Wpm(allocAddress, pageData.get(), allocSize);
 
 	if (!pageWritten)
 	{
@@ -2496,8 +2413,8 @@ bool ErectusMemory::SendDamage(const DWORD weaponId, BYTE* shotsHit, BYTE* shots
 	if (!targetId)
 		return false;
 
-	auto* hitsData = new Hits[count];
-	memset(hitsData, 0x00, count * sizeof(Hits));
+	auto hitsData = std::make_unique<Hits[]>(count);
+	memset(hitsData.get(), 0x00, count * sizeof(Hits));
 
 	if (*shotsHit == 0 || *shotsHit == 255)
 		*shotsHit = 1;
@@ -2554,9 +2471,7 @@ bool ErectusMemory::SendDamage(const DWORD weaponId, BYTE* shotsHit, BYTE* shots
 		}
 	}
 
-	const auto result = SendHitsToServer(hitsData, count * sizeof(Hits));
-
-	delete[]hitsData;
+	const auto result = SendHitsToServer(hitsData.get(), count * sizeof(Hits));
 
 	return result;
 }
@@ -2569,13 +2484,9 @@ DWORD64 ErectusMemory::GetNukeCodePtr(const DWORD formId)
 	if (!Utils::Valid(questTextList.arrayPtr) || !questTextList.arraySize || questTextList.arraySize > 0x7FFF)
 		return 0;
 
-	auto* questTextArray = new DWORD64[questTextList.arraySize];
-	if (!ErectusProcess::Rpm(questTextList.arrayPtr, &*questTextArray, questTextList.arraySize * sizeof(DWORD64)))
-	{
-		delete[]questTextArray;
-		questTextArray = nullptr;
+	auto questTextArray = std::make_unique<DWORD64[]>(questTextList.arraySize);
+	if (!ErectusProcess::Rpm(questTextList.arrayPtr, questTextArray.get(), questTextList.arraySize * sizeof(DWORD64)))
 		return 0;
-	}
 
 	DWORD64 nukeCodePtr = 0;
 	for (auto i = 0; i < questTextList.arraySize; i++)
@@ -2598,9 +2509,6 @@ DWORD64 ErectusMemory::GetNukeCodePtr(const DWORD formId)
 		nukeCodePtr = bgsQuestTextData.codePtr;
 		break;
 	}
-
-	delete[]questTextArray;
-	questTextArray = nullptr;
 
 	return nukeCodePtr;
 }
@@ -2918,12 +2826,13 @@ bool ErectusMemory::MeleeAttack()
 	if (allocAddress == 0)
 		return false;
 
-	ExternalFunction externalFunctionData;
-	externalFunctionData.address = ErectusProcess::exe + OFFSET_MELEE_ATTACK;
-	externalFunctionData.rcx = localPlayerPtr;
-	externalFunctionData.rdx = 0;
-	externalFunctionData.r8 = 1;
-	externalFunctionData.r9 = 0;
+	ExternalFunction externalFunctionData = {
+		.address = ErectusProcess::exe + OFFSET_MELEE_ATTACK,
+		.rcx = localPlayerPtr,
+		.rdx = 0,
+		.r8 = 1,
+		.r9 = 0,
+	};
 
 	const auto written = ErectusProcess::Wpm(allocAddress, &externalFunctionData, sizeof(ExternalFunction));
 

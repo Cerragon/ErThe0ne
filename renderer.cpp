@@ -4,7 +4,7 @@
 #include "app.h"
 
 
-bool Renderer::DrawTextA(const char* text, const bool shadowed, const bool centered, float* position, const float* color, const float alpha)
+bool Renderer::DrawTextA(const char* text, float* position, const float* color, const float alpha)
 {
 	if (text == nullptr)
 	{
@@ -16,16 +16,12 @@ bool Renderer::DrawTextA(const char* text, const bool shadowed, const bool cente
 		return false;
 	}
 
-	DWORD format = DT_NOCLIP;
-	if (centered) format |= DT_CENTER;
+	DWORD format = DT_NOCLIP | DT_CENTER;
 
 	LONG longPosition[2] = { LONG(position[0]), LONG(position[1]) };
 
-	if (shadowed)
-	{
-		RECT background = { longPosition[0] + 1L, longPosition[1] + 1L, longPosition[0] + 1L, longPosition[1] + 1L };
-		d3DxFont->DrawTextA(d3DxSprite, text, -1, &background, format, D3DCOLOR_COLORVALUE(0.0f, 0.0f, 0.0f, alpha));
-	}
+	RECT background = { longPosition[0] + 1L, longPosition[1] + 1L, longPosition[0] + 1L, longPosition[1] + 1L };
+	d3DxFont->DrawTextA(d3DxSprite, text, -1, &background, format, D3DCOLOR_COLORVALUE(0.0f, 0.0f, 0.0f, alpha));
 
 	RECT foreground = { longPosition[0], longPosition[1], longPosition[0], longPosition[1] };
 	d3DxFont->DrawTextA(d3DxSprite, text, -1, &foreground, format, D3DCOLOR_COLORVALUE(color[0], color[1], color[2], alpha));

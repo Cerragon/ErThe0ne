@@ -11,7 +11,7 @@ public:
 
 	static bool Init();
 	static void Cleanup();
-	static bool DrawTextA(const char* text, bool shadowed, bool centered, float* position, const float* color, float alpha);
+	static bool DrawTextA(const char* text, float* position, const float* color, float alpha);
 
 	inline static LPD3DXSPRITE d3DxSprite = nullptr;
 	inline static LPDIRECT3DDEVICE9 d3D9Device = nullptr;
