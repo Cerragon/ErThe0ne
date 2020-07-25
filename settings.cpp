@@ -40,7 +40,7 @@ EspSettings Settings::esp.npcs = {
 
 
 //utils
-WeaponSettings Settings::weapons = defaultWeaponSettings;
+WeaponEditorSettings Settings::weapons = defaultWeaponSettings;
 
 void Settings::GetDword(const std::string& section, const std::string& key, DWORD& value, const DWORD deflt)
 {
@@ -295,25 +295,13 @@ void Settings::SetItemSettings(const std::string& section, EspSettings::Items& v
 
 void Settings::GetInfoBoxSettings()
 {
-	GetBool("InfoBox", "drawLocalPlayerInfo", infobox.drawLocalPlayerInfo, false);
-	GetBool("InfoBox", "drawScrapLooterStatus", infobox.drawScrapLooterStatus, false);
-	GetBool("InfoBox", "drawItemLooterStatus", infobox.drawItemLooterStatus, false);
-	GetBool("InfoBox", "drawNpcLooterStatus", infobox.drawNpcLooterStatus, false);
-	GetBool("InfoBox", "drawContainerLooterStatus", infobox.drawContainerLooterStatus, false);
-	GetBool("InfoBox", "drawHarvesterStatus", infobox.drawHarvesterStatus, false);
-
+	GetBool("InfoBox", "drawPlayerInfo", infobox.drawPlayerInfo, false);
 	GetBool("InfoBox", "drawPositionSpoofingStatus", infobox.drawPositionSpoofingStatus, false);
 	GetBool("InfoBox", "drawNukeCodes", infobox.drawNukeCodes, false);
 }
 void Settings::SetInfoBoxSettings()
 {
-	SetBool("InfoBox", "drawLocalPlayerInfo", infobox.drawLocalPlayerInfo, false);
-	SetBool("InfoBox", "drawScrapLooterStatus", infobox.drawScrapLooterStatus, false);
-	SetBool("InfoBox", "drawItemLooterStatus", infobox.drawItemLooterStatus, false);
-	SetBool("InfoBox", "drawNpcLooterStatus", infobox.drawNpcLooterStatus, false);
-	SetBool("InfoBox", "drawContainerLooterStatus", infobox.drawContainerLooterStatus, false);
-	SetBool("InfoBox", "drawHarvesterStatus", infobox.drawHarvesterStatus, false);
-
+	SetBool("InfoBox", "drawPlayerInfo", infobox.drawPlayerInfo, false);
 	SetBool("InfoBox", "drawPositionSpoofingStatus", infobox.drawPositionSpoofingStatus, false);
 	SetBool("InfoBox", "drawNukeCodes", infobox.drawNukeCodes, false);
 }
@@ -445,51 +433,44 @@ void Settings::SetLooterSettings()
 
 void Settings::GetWeaponSettings()
 {
-	GetBool("WeaponSettings", "WeaponNoRecoil", weapons.noRecoil, defaultWeaponSettings.noRecoil);
-	GetBool("WeaponSettings", "WeaponNoSpread", weapons.noSpread, defaultWeaponSettings.noSpread);
-	GetBool("WeaponSettings", "WeaponNoSway", weapons.noSway, defaultWeaponSettings.noSway);
-	GetBool("WeaponSettings", "WeaponInfiniteAmmo", weapons.infiniteAmmo, defaultWeaponSettings.infiniteAmmo);
-	GetBool("WeaponSettings", "WeaponInstantReload", weapons.instantReload, defaultWeaponSettings.instantReload);
-	GetBool("WeaponSettings", "WeaponAutomaticflag", weapons.automaticflag, defaultWeaponSettings.automaticflag);
-	GetBool("WeaponSettings", "WeaponCapacityEnabled", weapons.capacityEnabled, defaultWeaponSettings.capacityEnabled);
-	GetSliderInt("WeaponSettings", "WeaponCapacity", weapons.capacity, defaultWeaponSettings.capacity, 0, 999);
-	GetBool("WeaponSettings", "WeaponSpeedEnabled", weapons.speedEnabled, defaultWeaponSettings.speedEnabled);
-	GetSliderFloat("WeaponSettings", "WeaponSpeed", weapons.speed, defaultWeaponSettings.speed, 0.0f, 100.0f);
-	GetBool("WeaponSettings", "WeaponReachEnabled", weapons.reachEnabled, defaultWeaponSettings.reachEnabled);
-	GetSliderFloat("WeaponSettings", "WeaponReach", weapons.reach, defaultWeaponSettings.reach, 0.0f, 999.0f);
+	GetBool("WeaponEditorSettings", "WeaponNoRecoil", weapons.noRecoil, defaultWeaponSettings.noRecoil);
+	GetBool("WeaponEditorSettings", "WeaponNoSpread", weapons.noSpread, defaultWeaponSettings.noSpread);
+	GetBool("WeaponEditorSettings", "WeaponNoSway", weapons.noSway, defaultWeaponSettings.noSway);
+	GetBool("WeaponEditorSettings", "WeaponInfiniteAmmo", weapons.infiniteAmmo, defaultWeaponSettings.infiniteAmmo);
+	GetBool("WeaponEditorSettings", "WeaponInstantReload", weapons.instantReload, defaultWeaponSettings.instantReload);
+	GetBool("WeaponEditorSettings", "WeaponAutomaticflag", weapons.automaticflag, defaultWeaponSettings.automaticflag);
+	GetBool("WeaponEditorSettings", "WeaponCapacityEnabled", weapons.capacityEnabled, defaultWeaponSettings.capacityEnabled);
+	GetSliderInt("WeaponEditorSettings", "WeaponCapacity", weapons.capacity, defaultWeaponSettings.capacity, 0, 999);
+	GetBool("WeaponEditorSettings", "WeaponSpeedEnabled", weapons.speedEnabled, defaultWeaponSettings.speedEnabled);
+	GetSliderFloat("WeaponEditorSettings", "WeaponSpeed", weapons.speed, defaultWeaponSettings.speed, 0.0f, 100.0f);
+	GetBool("WeaponEditorSettings", "WeaponReachEnabled", weapons.reachEnabled, defaultWeaponSettings.reachEnabled);
+	GetSliderFloat("WeaponEditorSettings", "WeaponReach", weapons.reach, defaultWeaponSettings.reach, 0.0f, 999.0f);
 }
 void Settings::SetWeaponSettings()
 {
-	SetBool("WeaponSettings", "WeaponNoRecoil", weapons.noRecoil, defaultWeaponSettings.noRecoil);
-	SetBool("WeaponSettings", "WeaponNoSpread", weapons.noSpread, defaultWeaponSettings.noSpread);
-	SetBool("WeaponSettings", "WeaponNoSway", weapons.noSway, defaultWeaponSettings.noSway);
-	SetBool("WeaponSettings", "WeaponInfiniteAmmo", weapons.infiniteAmmo, defaultWeaponSettings.infiniteAmmo);
-	SetBool("WeaponSettings", "WeaponInstantReload", weapons.instantReload, defaultWeaponSettings.instantReload);
-	SetBool("WeaponSettings", "WeaponAutomaticflag", weapons.automaticflag, defaultWeaponSettings.automaticflag);
-	SetBool("WeaponSettings", "WeaponCapacityEnabled", weapons.capacityEnabled, defaultWeaponSettings.capacityEnabled);
-	SetSliderInt("WeaponSettings", "WeaponCapacity", weapons.capacity, defaultWeaponSettings.capacity, 0, 999);
-	SetBool("WeaponSettings", "WeaponSpeedEnabled", weapons.speedEnabled, defaultWeaponSettings.speedEnabled);
-	SetSliderFloat("WeaponSettings", "WeaponSpeed", weapons.speed, defaultWeaponSettings.speed, 0.0f, 100.0f);
-	SetBool("WeaponSettings", "WeaponReachEnabled", weapons.reachEnabled, defaultWeaponSettings.reachEnabled);
-	SetSliderFloat("WeaponSettings", "WeaponReach", weapons.reach, defaultWeaponSettings.reach, 0.0f, 999.0f);
+	SetBool("WeaponEditorSettings", "WeaponNoRecoil", weapons.noRecoil, defaultWeaponSettings.noRecoil);
+	SetBool("WeaponEditorSettings", "WeaponNoSpread", weapons.noSpread, defaultWeaponSettings.noSpread);
+	SetBool("WeaponEditorSettings", "WeaponNoSway", weapons.noSway, defaultWeaponSettings.noSway);
+	SetBool("WeaponEditorSettings", "WeaponInfiniteAmmo", weapons.infiniteAmmo, defaultWeaponSettings.infiniteAmmo);
+	SetBool("WeaponEditorSettings", "WeaponInstantReload", weapons.instantReload, defaultWeaponSettings.instantReload);
+	SetBool("WeaponEditorSettings", "WeaponAutomaticflag", weapons.automaticflag, defaultWeaponSettings.automaticflag);
+	SetBool("WeaponEditorSettings", "WeaponCapacityEnabled", weapons.capacityEnabled, defaultWeaponSettings.capacityEnabled);
+	SetSliderInt("WeaponEditorSettings", "WeaponCapacity", weapons.capacity, defaultWeaponSettings.capacity, 0, 999);
+	SetBool("WeaponEditorSettings", "WeaponSpeedEnabled", weapons.speedEnabled, defaultWeaponSettings.speedEnabled);
+	SetSliderFloat("WeaponEditorSettings", "WeaponSpeed", weapons.speed, defaultWeaponSettings.speed, 0.0f, 100.0f);
+	SetBool("WeaponEditorSettings", "WeaponReachEnabled", weapons.reachEnabled, defaultWeaponSettings.reachEnabled);
+	SetSliderFloat("WeaponEditorSettings", "WeaponReach", weapons.reach, defaultWeaponSettings.reach, 0.0f, 999.0f);
 }
 
 void Settings::GetTargetSettings()
 {
-	GetBool("TargetSettings", "LockPlayers", targetting.lockPlayers, targetting.lockPlayers);
 	GetBool("TargetSettings", "LockNPCs", targetting.lockNpCs, targetting.lockNpCs);
-	GetBool("TargetSettings", "IndirectPlayers", targetting.indirectPlayers, targetting.indirectPlayers);
-	GetBool("TargetSettings", "IndirectNPCs", targetting.indirectNpCs, targetting.indirectNpCs);
-	GetBool("TargetSettings", "DirectPlayers", targetting.directPlayers, targetting.directPlayers);
-	GetBool("TargetSettings", "DirectNPCs", targetting.directNpCs, targetting.directNpCs);
-	GetBool("TargetSettings", "TargetLiving", targetting.targetLiving, targetting.targetLiving);
-	GetBool("TargetSettings", "TargetDowned", targetting.targetDowned, targetting.targetDowned);
-	GetBool("TargetSettings", "TargetDead", targetting.targetDead, targetting.targetDead);
+	GetBool("TargetSettings", "IndirectNPCs", targetting.dmgRedirect, targetting.dmgRedirect);
+	GetBool("TargetSettings", "DirectNPCs", targetting.dmgSend, targetting.dmgSend);
 	GetBool("TargetSettings", "TargetUnknown", targetting.targetUnknown, targetting.targetUnknown);
-	GetBool("TargetSettings", "IgnoreRenderDistance", targetting.ignoreRenderDistance, targetting.ignoreRenderDistance);
 	GetSliderFloat("TargetSettings", "LockingFOV", targetting.lockingFov, targetting.lockingFov, 5.0f, 40.0f);
-	GetBool("TargetSettings", "IgnoreEssentialNPCs", targetting.ignoreEssentialNpCs, targetting.ignoreEssentialNpCs);
-	GetRgb("TargetSettings", "LockingColor", targetting.lockingColor, targetting.lockingColor);
+	GetBool("TargetSettings", "IgnoreEssentialNPCs", targetting.ignoreEssentialNpcs, targetting.ignoreEssentialNpcs);
+	GetRgb("TargetSettings", "LockingColor", targetting.lockedColor, targetting.lockedColor);
 	GetBool("TargetSettings", "Retargeting", targetting.retargeting, targetting.retargeting);
 	GetSliderInt("TargetSettings", "Cooldown", targetting.cooldown, targetting.cooldown, 0, 120);
 	GetSliderInt("TargetSettings", "SendDamageMin", targetting.sendDamageMin, targetting.sendDamageMin, 1, 60);
@@ -503,20 +484,13 @@ void Settings::SetTargetSettings()
 	if (targetting.sendDamageMax < targetting.sendDamageMin)
 		targetting.sendDamageMax = targetting.sendDamageMin;
 
-	SetBool("TargetSettings", "LockPlayers", targetting.lockPlayers, targetting.lockPlayers);
 	SetBool("TargetSettings", "LockNPCs", targetting.lockNpCs, targetting.lockNpCs);
-	SetBool("TargetSettings", "IndirectPlayers", targetting.indirectPlayers, targetting.indirectPlayers);
-	SetBool("TargetSettings", "IndirectNPCs", targetting.indirectNpCs, targetting.indirectNpCs);
-	SetBool("TargetSettings", "DirectPlayers", targetting.directPlayers, targetting.directPlayers);
-	SetBool("TargetSettings", "DirectNPCs", targetting.directNpCs, targetting.directNpCs);
-	SetBool("TargetSettings", "TargetLiving", targetting.targetLiving, targetting.targetLiving);
-	SetBool("TargetSettings", "TargetDowned", targetting.targetDowned, targetting.targetDowned);
-	SetBool("TargetSettings", "TargetDead", targetting.targetDead, targetting.targetDead);
+	SetBool("TargetSettings", "IndirectNPCs", targetting.dmgRedirect, targetting.dmgRedirect);
+	SetBool("TargetSettings", "DirectNPCs", targetting.dmgSend, targetting.dmgSend);
 	SetBool("TargetSettings", "TargetUnknown", targetting.targetUnknown, targetting.targetUnknown);
-	SetBool("TargetSettings", "IgnoreRenderDistance", targetting.ignoreRenderDistance, targetting.ignoreRenderDistance);
 	SetSliderFloat("TargetSettings", "LockingFOV", targetting.lockingFov, targetting.lockingFov, 5.0f, 40.0f);
-	SetBool("TargetSettings", "IgnoreEssentialNPCs", targetting.ignoreEssentialNpCs, targetting.ignoreEssentialNpCs);
-	SetRgb("TargetSettings", "LockingColor", targetting.lockingColor, targetting.lockingColor);
+	SetBool("TargetSettings", "IgnoreEssentialNPCs", targetting.ignoreEssentialNpcs, targetting.ignoreEssentialNpcs);
+	SetRgb("TargetSettings", "LockingColor", targetting.lockedColor, targetting.lockedColor);
 	SetBool("TargetSettings", "Retargeting", targetting.retargeting, targetting.retargeting);
 	SetSliderInt("TargetSettings", "Cooldown", targetting.cooldown, targetting.cooldown, 0, 120);
 	SetSliderInt("TargetSettings", "SendDamageMin", targetting.sendDamageMin, targetting.sendDamageMin, 1, 60);
@@ -579,13 +553,11 @@ void Settings::SetLocalPlayerSettings()
 
 void Settings::GetOpkSettings()
 {
-	GetBool("OpkSettings", "OpkPlayersEnabled", opk.playersEnabled, false);
-	GetBool("OpkSettings", "OpkNpcsEnabled", opk.npcsEnabled, false);
+	GetBool("OpkSettings", "OpkNpcsEnabled", opk.enabled, false);
 }
 void Settings::SetOpkSettings()
 {
-	SetBool("OpkSettings", "OpkPlayersEnabled", opk.playersEnabled, false);
-	SetBool("OpkSettings", "OpkNpcsEnabled", opk.npcsEnabled, false);
+	SetBool("OpkSettings", "OpkNpcsEnabled", opk.enabled, false);
 }
 
 void Settings::GetUtilitySettings()
@@ -677,61 +649,61 @@ void Settings::SetNukeCodeSettings()
 
 void Settings::GetLegendarySettings()
 {
-	GetBool("LegendarySettings", "OverrideLivingOneStar", esp.legendaryNpcs.overrideLivingOneStar, esp.legendaryNpcs.overrideLivingOneStar);
-	GetRgb("LegendarySettings", "LivingOneStarColor", esp.legendaryNpcs.livingOneStarColor, esp.legendaryNpcs.livingOneStarColor);
-	GetBool("LegendarySettings", "OverrideDeadOneStar", esp.legendaryNpcs.overrideDeadOneStar, esp.legendaryNpcs.overrideDeadOneStar);
-	GetRgb("LegendarySettings", "DeadOneStarColor", esp.legendaryNpcs.deadOneStarColor, esp.legendaryNpcs.deadOneStarColor);
-	GetBool("LegendarySettings", "OverrideLivingTwoStar", esp.legendaryNpcs.overrideLivingTwoStar, esp.legendaryNpcs.overrideLivingTwoStar);
-	GetRgb("LegendarySettings", "LivingTwoStarColor", esp.legendaryNpcs.livingTwoStarColor, esp.legendaryNpcs.livingTwoStarColor);
-	GetBool("LegendarySettings", "OverrideDeadTwoStar", esp.legendaryNpcs.overrideDeadTwoStar, esp.legendaryNpcs.overrideDeadTwoStar);
-	GetRgb("LegendarySettings", "DeadTwoStarColor", esp.legendaryNpcs.deadTwoStarColor, esp.legendaryNpcs.deadTwoStarColor);
-	GetBool("LegendarySettings", "OverrideLivingThreeStar", esp.legendaryNpcs.overrideLivingThreeStar, esp.legendaryNpcs.overrideLivingThreeStar);
-	GetRgb("LegendarySettings", "LivingThreeStarColor", esp.legendaryNpcs.livingThreeStarColor, esp.legendaryNpcs.livingThreeStarColor);
-	GetBool("LegendarySettings", "OverrideDeadThreeStar", esp.legendaryNpcs.overrideDeadThreeStar, esp.legendaryNpcs.overrideDeadThreeStar);
-	GetRgb("LegendarySettings", "DeadThreeStarColor", esp.legendaryNpcs.deadThreeStarColor, esp.legendaryNpcs.deadThreeStarColor);
+	GetBool("LegendarySettings", "OverrideLivingOneStar", esp.npcsExt.overrideLivingOneStar, esp.npcsExt.overrideLivingOneStar);
+	GetRgb("LegendarySettings", "LivingOneStarColor", esp.npcsExt.livingOneStarColor, esp.npcsExt.livingOneStarColor);
+	GetBool("LegendarySettings", "OverrideDeadOneStar", esp.npcsExt.overrideDeadOneStar, esp.npcsExt.overrideDeadOneStar);
+	GetRgb("LegendarySettings", "DeadOneStarColor", esp.npcsExt.deadOneStarColor, esp.npcsExt.deadOneStarColor);
+	GetBool("LegendarySettings", "OverrideLivingTwoStar", esp.npcsExt.overrideLivingTwoStar, esp.npcsExt.overrideLivingTwoStar);
+	GetRgb("LegendarySettings", "LivingTwoStarColor", esp.npcsExt.livingTwoStarColor, esp.npcsExt.livingTwoStarColor);
+	GetBool("LegendarySettings", "OverrideDeadTwoStar", esp.npcsExt.overrideDeadTwoStar, esp.npcsExt.overrideDeadTwoStar);
+	GetRgb("LegendarySettings", "DeadTwoStarColor", esp.npcsExt.deadTwoStarColor, esp.npcsExt.deadTwoStarColor);
+	GetBool("LegendarySettings", "OverrideLivingThreeStar", esp.npcsExt.overrideLivingThreeStar, esp.npcsExt.overrideLivingThreeStar);
+	GetRgb("LegendarySettings", "LivingThreeStarColor", esp.npcsExt.livingThreeStarColor, esp.npcsExt.livingThreeStarColor);
+	GetBool("LegendarySettings", "OverrideDeadThreeStar", esp.npcsExt.overrideDeadThreeStar, esp.npcsExt.overrideDeadThreeStar);
+	GetRgb("LegendarySettings", "DeadThreeStarColor", esp.npcsExt.deadThreeStarColor, esp.npcsExt.deadThreeStarColor);
 }
 void Settings::SetLegendarySettings()
 {
-	SetBool("LegendarySettings", "OverrideLivingOneStar", esp.legendaryNpcs.overrideLivingOneStar, esp.legendaryNpcs.overrideLivingOneStar);
-	SetRgb("LegendarySettings", "LivingOneStarColor", esp.legendaryNpcs.livingOneStarColor, esp.legendaryNpcs.livingOneStarColor);
-	SetBool("LegendarySettings", "OverrideDeadOneStar", esp.legendaryNpcs.overrideDeadOneStar, esp.legendaryNpcs.overrideDeadOneStar);
-	SetRgb("LegendarySettings", "DeadOneStarColor", esp.legendaryNpcs.deadOneStarColor, esp.legendaryNpcs.deadOneStarColor);
-	SetBool("LegendarySettings", "OverrideLivingTwoStar", esp.legendaryNpcs.overrideLivingTwoStar, esp.legendaryNpcs.overrideLivingTwoStar);
-	SetRgb("LegendarySettings", "LivingTwoStarColor", esp.legendaryNpcs.livingTwoStarColor, esp.legendaryNpcs.livingTwoStarColor);
-	SetBool("LegendarySettings", "OverrideDeadTwoStar", esp.legendaryNpcs.overrideDeadTwoStar, esp.legendaryNpcs.overrideDeadTwoStar);
-	SetRgb("LegendarySettings", "DeadTwoStarColor", esp.legendaryNpcs.deadTwoStarColor, esp.legendaryNpcs.deadTwoStarColor);
-	SetBool("LegendarySettings", "OverrideLivingThreeStar", esp.legendaryNpcs.overrideLivingThreeStar, esp.legendaryNpcs.overrideLivingThreeStar);
-	SetRgb("LegendarySettings", "LivingThreeStarColor", esp.legendaryNpcs.livingThreeStarColor, esp.legendaryNpcs.livingThreeStarColor);
-	SetBool("LegendarySettings", "OverrideDeadThreeStar", esp.legendaryNpcs.overrideDeadThreeStar, esp.legendaryNpcs.overrideDeadThreeStar);
-	SetRgb("LegendarySettings", "DeadThreeStarColor", esp.legendaryNpcs.deadThreeStarColor, esp.legendaryNpcs.deadThreeStarColor);
+	SetBool("LegendarySettings", "OverrideLivingOneStar", esp.npcsExt.overrideLivingOneStar, esp.npcsExt.overrideLivingOneStar);
+	SetRgb("LegendarySettings", "LivingOneStarColor", esp.npcsExt.livingOneStarColor, esp.npcsExt.livingOneStarColor);
+	SetBool("LegendarySettings", "OverrideDeadOneStar", esp.npcsExt.overrideDeadOneStar, esp.npcsExt.overrideDeadOneStar);
+	SetRgb("LegendarySettings", "DeadOneStarColor", esp.npcsExt.deadOneStarColor, esp.npcsExt.deadOneStarColor);
+	SetBool("LegendarySettings", "OverrideLivingTwoStar", esp.npcsExt.overrideLivingTwoStar, esp.npcsExt.overrideLivingTwoStar);
+	SetRgb("LegendarySettings", "LivingTwoStarColor", esp.npcsExt.livingTwoStarColor, esp.npcsExt.livingTwoStarColor);
+	SetBool("LegendarySettings", "OverrideDeadTwoStar", esp.npcsExt.overrideDeadTwoStar, esp.npcsExt.overrideDeadTwoStar);
+	SetRgb("LegendarySettings", "DeadTwoStarColor", esp.npcsExt.deadTwoStarColor, esp.npcsExt.deadTwoStarColor);
+	SetBool("LegendarySettings", "OverrideLivingThreeStar", esp.npcsExt.overrideLivingThreeStar, esp.npcsExt.overrideLivingThreeStar);
+	SetRgb("LegendarySettings", "LivingThreeStarColor", esp.npcsExt.livingThreeStarColor, esp.npcsExt.livingThreeStarColor);
+	SetBool("LegendarySettings", "OverrideDeadThreeStar", esp.npcsExt.overrideDeadThreeStar, esp.npcsExt.overrideDeadThreeStar);
+	SetRgb("LegendarySettings", "DeadThreeStarColor", esp.npcsExt.deadThreeStarColor, esp.npcsExt.deadThreeStarColor);
 }
 
 void Settings::GetFluxSettings()
 {
-	GetBool("FluxSettings", "CrimsonFluxEnabled", esp.flux.crimsonFluxEnabled, false);
-	GetBool("FluxSettings", "CobaltFluxEnabled", esp.flux.cobaltFluxEnabled, false);
-	GetBool("FluxSettings", "YellowcakeFluxEnabled", esp.flux.yellowcakeFluxEnabled, false);
-	GetBool("FluxSettings", "FluorescentFluxEnabled", esp.flux.fluorescentFluxEnabled, false);
-	GetBool("FluxSettings", "VioletFluxEnabled", esp.flux.violetFluxEnabled, false);
+	GetBool("FluxSettings", "CrimsonFluxEnabled", esp.floraExt.crimsonFluxEnabled, false);
+	GetBool("FluxSettings", "CobaltFluxEnabled", esp.floraExt.cobaltFluxEnabled, false);
+	GetBool("FluxSettings", "YellowcakeFluxEnabled", esp.floraExt.yellowcakeFluxEnabled, false);
+	GetBool("FluxSettings", "FluorescentFluxEnabled", esp.floraExt.fluorescentFluxEnabled, false);
+	GetBool("FluxSettings", "VioletFluxEnabled", esp.floraExt.violetFluxEnabled, false);
 }
 void Settings::SetFluxSettings()
 {
-	SetBool("FluxSettings", "CrimsonFluxEnabled", esp.flux.crimsonFluxEnabled, false);
-	SetBool("FluxSettings", "CobaltFluxEnabled", esp.flux.cobaltFluxEnabled, false);
-	SetBool("FluxSettings", "YellowcakeFluxEnabled", esp.flux.yellowcakeFluxEnabled, false);
-	SetBool("FluxSettings", "FluorescentFluxEnabled", esp.flux.fluorescentFluxEnabled, false);
-	SetBool("FluxSettings", "VioletFluxEnabled", esp.flux.violetFluxEnabled, false);
+	SetBool("FluxSettings", "CrimsonFluxEnabled", esp.floraExt.crimsonFluxEnabled, false);
+	SetBool("FluxSettings", "CobaltFluxEnabled", esp.floraExt.cobaltFluxEnabled, false);
+	SetBool("FluxSettings", "YellowcakeFluxEnabled", esp.floraExt.yellowcakeFluxEnabled, false);
+	SetBool("FluxSettings", "FluorescentFluxEnabled", esp.floraExt.fluorescentFluxEnabled, false);
+	SetBool("FluxSettings", "VioletFluxEnabled", esp.floraExt.violetFluxEnabled, false);
 }
 
 void Settings::GetKnownRecipeSettings()
 {
-	GetBool("KnownRecipeSettings", "KnownRecipesEnabled", esp.recipes.knownRecipesEnabled, false);
-	GetBool("KnownRecipeSettings", "UnknownRecipesEnabled", esp.recipes.unknownRecipesEnabled, false);
+	GetBool("KnownRecipeSettings", "KnownRecipesEnabled", esp.plansExt.knownRecipesEnabled, false);
+	GetBool("KnownRecipeSettings", "UnknownRecipesEnabled", esp.plansExt.unknownRecipesEnabled, false);
 }
 void Settings::SetKnownRecipeSettings()
 {
-	SetBool("KnownRecipeSettings", "KnownRecipesEnabled", esp.recipes.knownRecipesEnabled, false);
-	SetBool("KnownRecipeSettings", "UnknownRecipesEnabled", esp.recipes.unknownRecipesEnabled, false);
+	SetBool("KnownRecipeSettings", "KnownRecipesEnabled", esp.plansExt.knownRecipesEnabled, false);
+	SetBool("KnownRecipeSettings", "UnknownRecipesEnabled", esp.plansExt.unknownRecipesEnabled, false);
 }
 
 void Settings::GetMeleeSettings()

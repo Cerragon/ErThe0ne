@@ -12,7 +12,6 @@ public:
 
 	inline static bool positionSpoofingToggle = false;
 	inline static bool noclipToggle = false;
-	inline static bool opkPlayersToggle = false;
 	inline static bool opkNpcsToggle = false;
 
 private:
@@ -28,7 +27,7 @@ private:
 	inline static bool weaponEditorThreadActive = false;
 	inline static bool lockingThreadActive = false;
 	inline static bool multihackThreadActive = false;
-	inline static bool harvesterThreadActive = false;
+	inline static bool looterThreadActive = false;
 
 	inline static bool threadDestructionState = false;
 

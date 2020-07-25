@@ -30,7 +30,7 @@ constexpr auto OFFSET_REDIRECTION_JMP = 0x017F518DUL;//1.3.2.10
 constexpr auto OFFSET_ENTITY_ID = 0x050F9C80UL;//1.3.2.10
 constexpr auto OFFSET_ACTOR_VALUE = 0x0167C230UL;//1.3.2.10 +
 constexpr auto OFFSET_MELEE_ATTACK = 0x01685BE0UL;//1.3.2.10 +
-constexpr auto OFFSET_OPK = 0x0298374DUL;//1.3.2.10 +
+constexpr auto OFFSET_OPK = 0x0298374DUL;//1.3.2.10
 constexpr auto OFFSET_AV_REGEN = 0x0167C5EFUL;//1.3.2.10
 constexpr auto OFFSET_SERVER_POSITION = 0x01469D25UL;//1.3.2.10 + 0x0146B121UL?
 constexpr auto OFFSET_CHAR_CONTROLLER = 0x05D6E120UL;//1.3.2.10
@@ -38,7 +38,7 @@ constexpr auto OFFSET_NOCLIP_A = 0x02975798UL;//1.3.2.10 +
 constexpr auto OFFSET_NOCLIP_B = 0x02975750UL;//1.3.2.10 + 0x02965510UL?
 constexpr auto OFFSET_NOCLIP_C = 0x015F9441UL;//1.3.2.10 + 0x01602D91UL?
 constexpr auto OFFSET_NOCLIP_D = 0x015F9471UL;//1.3.2.10 + 0x01602DC1UL?
-constexpr auto OFFSET_INFINITE_AMMO = 0x00CB4316UL;//1.3.2.10 +
+constexpr auto OFFSET_INFINITE_AMMO = 0x00CB4316UL;//1.3.2.10
 
 constexpr auto OFFSET_DATA_HANDLER = 0x058FEFE8UL;//1.3.2.10
 
@@ -70,7 +70,6 @@ struct HotkeyCombination
 const std::unordered_map<HotKeys, HotkeyCombination> HOTKEYS{
 	{ HotKeys::PositionSpoofingToggle, HotkeyCombination{MOD_CONTROL | MOD_NOREPEAT, 'L' } },
 	{ HotKeys::NoclipToggle, HotkeyCombination{ MOD_CONTROL | MOD_NOREPEAT, 'Y' } },
-	{ HotKeys::OpkPlayersToggle, HotkeyCombination{ MOD_CONTROL | MOD_NOREPEAT, 'B' } },
 	{ HotKeys::OpkNpcsToggle, HotkeyCombination{ MOD_CONTROL | MOD_NOREPEAT, 'N' } },
 	{ HotKeys::Loot, HotkeyCombination{ MOD_CONTROL | MOD_NOREPEAT, 'R' } },
 	{ HotKeys::ToggleOverlay, HotkeyCombination{ MOD_CONTROL | MOD_NOREPEAT, VK_RETURN } }
@@ -189,7 +188,7 @@ const std::unordered_map<DWORD, std::string> FLORA_COMPONENT_NAMES = {
 		{ 0x000933EA, "Glowing Resin" },
 		{ 0x0008E922, "Mothman Egg" },
 };
-const std::unordered_set<DWORD> LEGENDARY_FORMIDS = {
+const std::unordered_set<DWORD> LEGENDARYEFFECT_FORMIDS = {
 	0x00425E28, 0x004392CD, 0x0037F7D9, 0x001A7B80, 0x001A7AF6, 0x001A7BE2, 0x001A7BD3, 0x001A7AB2, 0x001A7B88,
 	0x001A7BDA, 0x001A7C39, 0x0052BDC7, 0x0052BDC5, 0x0052BDC2, 0x0052BDC8, 0x0052BDB4, 0x0052BDB5, 0x0052BDB6,
 	0x0052BDB7, 0x0052BDBA, 0x0052BDBC, 0x0052BDBF, 0x005299F5, 0x005299ED, 0x00529A14, 0x005299FE, 0x00529A0F,
@@ -210,6 +209,49 @@ const std::unordered_set<DWORD> LEGENDARY_FORMIDS = {
 	0x001140EF, 0x001140EE, 0x001140ED, 0x001140EC, 0x001140EB, 0x001140EA, 0x00113FC0, 0x001138DD, 0x0011384A,
 	0x0011374F, 0x0011371F, 0x0010F599, 0x0010F598, 0x0010F596, 0x00226436, 0x001F81EB, 0x001F7A75, 0x001F1E47,
 	0x001F1E0C, 0x001F1E0B, 0x001E73BD,
+};
+
+const std::unordered_set<DWORD> TREASUREMAP_FORMIDS = {
+	0x0051B8A8, //Ash Heap Treasure Map #01
+	0x0051B8AC, //Ash Heap Treasure Map #02
+	
+	0x0051B8CD, //Cranberry Bog Treasure Map #01
+	0x0051B8D6, //Cranberry Bog Treasure Map #02
+	0x0051B8D9, //Cranberry Bog Treasure Map #03
+	0x0051B8DE, //Cranberry Bog Treasure Map #04
+	
+	0x0051B7A2, //Forest Treasure Map #01
+	0x0051B8A6, //Forest Treasure Map #02
+	0x0051B8A7, //Forest Treasure Map #03
+	0x0051B8A9, //Forest Treasure Map #04
+	0x0051B8AA, //Forest Treasure Map #05
+	0x0051B8AE, //Forest Treasure Map #06
+	0x0051B8B0, //Forest Treasure Map #07
+	0x0051B8B2, //Forest Treasure Map #08
+	0x0051B8B6, //Forest Treasure Map #09
+	0x0051B8B9, //Forest Treasure Map #10
+	
+	0x0051B8CE, //Mire Treasure Map #01
+	0x0051B8D2, //Mire Treasure Map #02
+	0x0051B8D7, //Mire Treasure Map #03
+	0x0051B8D8, //Mire Treasure Map #04
+	0x0051B8DB, //Mire Treasure Map #05
+	
+	0x0051B8BA, //Savage Divide Treasure Map #01
+	0x0051B8C0, //Savage Divide Treasure Map #02
+	0x0051B8C2, //Savage Divide Treasure Map #03
+	0x0051B8C4, //Savage Divide Treasure Map #04
+	0x0051B8C6, //Savage Divide Treasure Map #05
+	0x0051B8C7, //Savage Divide Treasure Map #06
+	0x0051B8C8, //Savage Divide Treasure Map #07
+	0x0051B8CA, //Savage Divide Treasure Map #08
+	0x0051B8CC, //Savage Divide Treasure Map #09
+	0x0051B8D4, //Savage Divide Treasure Map #10
+	
+	0x0051B8B1, //Toxic Valley Treasure Map #01
+	0x0051B8B8, //Toxic Valley Treasure Map #02
+	0x0051B8BC, //Toxic Valley Treasure Map #03
+	0x0051B8C1, //Toxic Valley Treasure Map #04
 };
 
 constexpr auto CUSTOM_ENTRY_DEFAULT = 0x0000000000000000ULL;

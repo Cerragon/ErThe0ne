@@ -58,12 +58,8 @@ void App::OnHotkey(const WPARAM hotkeyId)
 		if (Settings::localPlayer.noclipEnabled)
 			Threads::noclipToggle = !Threads::noclipToggle;
 		break;
-	case (static_cast<int>(HotKeys::OpkPlayersToggle)):
-		if (Settings::opk.playersEnabled)
-			Threads::opkPlayersToggle = !Threads::opkPlayersToggle;
-		break;
 	case (static_cast<int>(HotKeys::OpkNpcsToggle)):
-		if (Settings::opk.npcsEnabled)
+		if (Settings::opk.enabled)
 			Threads::opkNpcsToggle = !Threads::opkNpcsToggle;
 		break;
 	case (static_cast<int>(HotKeys::Loot)):

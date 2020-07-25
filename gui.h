@@ -14,6 +14,9 @@ private:
 	static void ButtonToggle(const char* label, bool& state);
 	static void LargeButtonToggle(const char* label, bool& state);
 	static void SmallButtonToggle(const char* label, bool& state);
+	
+	static void EspSettings(EspSettings::Actors& actorEsp);
+	static void EspSettings(EspSettings::Items& itemEsp);
 
 	static void OverlayMenuTabEsp();
 	static void OverlayMenuTabInfoBox();
@@ -22,6 +25,7 @@ private:
 	static void OverlayMenuTabUtilities();
 	static void OverlayMenuTabTeleporter();
 	static void OverlayMenuTabBitMsgWriter();
+	static void MenuBar();
 	static void OverlayMenuLooter();
 	
 	static void RenderOverlay();

@@ -8,12 +8,7 @@
 
 struct InfoBoxSettings
 {
-	bool drawLocalPlayerInfo;
-	bool drawScrapLooterStatus;
-	bool drawItemLooterStatus;
-	bool drawNpcLooterStatus;
-	bool drawContainerLooterStatus;
-	bool drawHarvesterStatus;
+	bool drawPlayerInfo;
 	bool drawPositionSpoofingStatus;
 	bool drawNukeCodes;
 };
@@ -186,7 +181,7 @@ struct EspSettings
 		bool showDistance = true;
 	} junk, containers, plans, magazines, bobbleheads, items, flora, entities;
 
-	struct LegendaryNpcs
+	struct NpcsExt
 	{
 		bool overrideLivingOneStar = true;
 		float livingOneStarColor[3] = { 0.7f, 1.0f, 0.7f };
@@ -200,28 +195,28 @@ struct EspSettings
 		float livingThreeStarColor[3] = { 0.7f, 1.0f, 0.7f };
 		bool overrideDeadThreeStar = true;
 		float deadThreeStarColor[3] = { 1.0f, 0.5f, 0.5f };
-	} legendaryNpcs;
+	} npcsExt;
 
-	struct FluxSettings
+	struct FloraExt
 	{
 		bool crimsonFluxEnabled = true;
 		bool cobaltFluxEnabled = true;
 		bool yellowcakeFluxEnabled = true;
 		bool fluorescentFluxEnabled = true;
 		bool violetFluxEnabled = true;
-	} flux{};
+	} floraExt;
 
-	struct KnownRecipeSettings
+	struct PlansExt
 	{
 		bool knownRecipesEnabled = true;
 		bool unknownRecipesEnabled = true;
-	} recipes;
+	} plansExt;
 
 	std::map<DWORD, bool> whitelist, blacklist;
 };
 
 //utils
-class WeaponSettings
+class WeaponEditorSettings
 {
 public:
 	bool noRecoil;
@@ -237,30 +232,23 @@ public:
 	bool reachEnabled;
 	float reach;
 };
-class TargetSettings
+class TargetingSettings
 {
 public:
-	bool lockPlayers = false;
 	bool lockNpCs = true;
-	bool indirectPlayers = false;
-	bool indirectNpCs = true;
-	bool directPlayers = false;
-	bool directNpCs = true;
-	bool targetLiving = false;
-	bool targetDowned = false;
-	bool targetDead = false;
+	bool dmgRedirect = true;
+	bool dmgSend = true;
 	bool targetUnknown = false;
-	bool ignoreRenderDistance = false;
 	float lockingFov = 20.0f;
-	bool ignoreEssentialNpCs = true;
-	float lockingColor[3] = { 1.0f, 0.0f, 1.0f };
+	bool ignoreEssentialNpcs = true;
+	float lockedColor[3] = { 1.0f, 0.0f, 1.0f };
 	bool retargeting = false;
 	int cooldown = 1;
 	int sendDamageMin = 1;
 	int sendDamageMax = 1;
 	int favoriteIndex = 12;
 };
-class LocalPlayerSettings
+class PlayerEditorSettings
 {
 public:
 	bool positionSpoofingEnabled = false;
@@ -290,8 +278,7 @@ public:
 class OpkSettings
 {
 public:
-	bool playersEnabled;
-	bool npcsEnabled;
+	bool enabled;
 };
 class UtilitySettings
 {
@@ -328,18 +315,17 @@ public:
 		0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
 	};
 };
-class TeleportEntry
+
+class TeleporterSettings
 {
 public:
-	float destination[4];
-	DWORD cellFormId;
-	bool disableSaving;
+	struct Entry {
+		float destination[4];
+		DWORD cellFormId;
+		bool disableSaving;
+	} entries[16];
 };
-class TeleportSettings
-{
-public:
-	TeleportEntry entries[16];
-};
+
 class NukeCodeSettings
 {
 public:
@@ -377,18 +363,18 @@ public:
 	inline static MessageWriterSettings msgWriter = {};
 
 	//utils
-	static WeaponSettings weapons;
-	inline static TargetSettings targetting = {};
-	inline static LocalPlayerSettings localPlayer = {};
+	static WeaponEditorSettings weapons;
+	inline static TargetingSettings targetting = {};
+	inline static PlayerEditorSettings localPlayer = {};
 	inline static OpkSettings opk = {};
 	inline static UtilitySettings utilities = {};
 	inline static SwapperSettings swapper = {};
 	inline static TransferSettings customTransferSettings = {};
-	inline static TeleportSettings teleporter = {};
+	inline static TeleporterSettings teleporter = {};
 	inline static NukeCodeSettings customNukeCodeSettings = {};
 	inline static MeleeSettings melee = { false,10,20 };
 	inline static ChargenSettings characterEditor = { false,0.33f,0.33f,0.33f };
-	inline static WeaponSettings defaultWeaponSettings{
+	inline static WeaponEditorSettings defaultWeaponSettings{
 		false, false, false, false, false, false, false, 250, false, 2.0f, false, 500.0f
 	};
 

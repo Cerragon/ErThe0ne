@@ -2,7 +2,6 @@
 
 #include <memory>
 
-
 #include "common.h"
 #include "ErectusMemory.h"
 #include "settings.h"

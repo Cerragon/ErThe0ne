@@ -27,7 +27,6 @@ void Gui::Render()
 	OverlayMenu();
 	RenderOverlay();
 
-
 	ImGui::EndFrame();
 	ImGui::Render();
 	ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
@@ -109,13 +108,13 @@ void Gui::RenderActors(const CustomEntry& entry, const EspSettings::Actors& sett
 					switch (epicRank)
 					{
 					case 1:
-						allowNpc = Settings::esp.legendaryNpcs.overrideLivingOneStar;
+						allowNpc = Settings::esp.npcsExt.overrideLivingOneStar;
 						break;
 					case 2:
-						allowNpc = Settings::esp.legendaryNpcs.overrideLivingTwoStar;
+						allowNpc = Settings::esp.npcsExt.overrideLivingTwoStar;
 						break;
 					case 3:
-						allowNpc = Settings::esp.legendaryNpcs.overrideLivingThreeStar;
+						allowNpc = Settings::esp.npcsExt.overrideLivingThreeStar;
 						break;
 					default:
 						break;
@@ -192,17 +191,17 @@ void Gui::RenderActors(const CustomEntry& entry, const EspSettings::Actors& sett
 			switch (epicRank)
 			{
 			case 1:
-				color = Settings::esp.legendaryNpcs.livingOneStarColor;
+				color = Settings::esp.npcsExt.livingOneStarColor;
 				if (entityData.spawnFlag == 0x02)
 					alpha = legendaryAlpha;
 				break;
 			case 2:
-				color = Settings::esp.legendaryNpcs.livingTwoStarColor;
+				color = Settings::esp.npcsExt.livingTwoStarColor;
 				if (entityData.spawnFlag == 0x02)
 					alpha = legendaryAlpha;
 				break;
 			case 3:
-				color = Settings::esp.legendaryNpcs.livingThreeStarColor;
+				color = Settings::esp.npcsExt.livingThreeStarColor;
 				if (entityData.spawnFlag == 0x02)
 					alpha = legendaryAlpha;
 				break;
@@ -220,17 +219,17 @@ void Gui::RenderActors(const CustomEntry& entry, const EspSettings::Actors& sett
 			switch (epicRank)
 			{
 			case 1:
-				color = Settings::esp.legendaryNpcs.livingOneStarColor;
+				color = Settings::esp.npcsExt.livingOneStarColor;
 				if (entityData.spawnFlag == 0x02)
 					alpha = legendaryAlpha;
 				break;
 			case 2:
-				color = Settings::esp.legendaryNpcs.livingTwoStarColor;
+				color = Settings::esp.npcsExt.livingTwoStarColor;
 				if (entityData.spawnFlag == 0x02)
 					alpha = legendaryAlpha;
 				break;
 			case 3:
-				color = Settings::esp.legendaryNpcs.livingThreeStarColor;
+				color = Settings::esp.npcsExt.livingThreeStarColor;
 				if (entityData.spawnFlag == 0x02)
 					alpha = legendaryAlpha;
 				break;
@@ -248,17 +247,17 @@ void Gui::RenderActors(const CustomEntry& entry, const EspSettings::Actors& sett
 			switch (epicRank)
 			{
 			case 1:
-				color = Settings::esp.legendaryNpcs.deadOneStarColor;
+				color = Settings::esp.npcsExt.deadOneStarColor;
 				if (entityData.spawnFlag == 0x02)
 					alpha = legendaryAlpha;
 				break;
 			case 2:
-				color = Settings::esp.legendaryNpcs.deadTwoStarColor;
+				color = Settings::esp.npcsExt.deadTwoStarColor;
 				if (entityData.spawnFlag == 0x02)
 					alpha = legendaryAlpha;
 				break;
 			case 3:
-				color = Settings::esp.legendaryNpcs.deadThreeStarColor;
+				color = Settings::esp.npcsExt.deadThreeStarColor;
 				if (entityData.spawnFlag == 0x02)
 					alpha = legendaryAlpha;
 				break;
@@ -285,8 +284,8 @@ void Gui::RenderActors(const CustomEntry& entry, const EspSettings::Actors& sett
 	if (normalDistance > settings.enabledDistance)
 		return;
 
-	if (entry.entityPtr == ErectusMemory::targetLockingPtr)
-		color = Settings::targetting.lockingColor;
+	if (entry.entityPtr == ErectusMemory::targetLockedEntityPtr)
+		color = Settings::targetting.lockedColor;
 
 	float screen[2] = { 0.0f, 0.0f };
 	if (!Utils::WorldToScreen(cameraData.view, entityData.position, screen))
@@ -311,7 +310,7 @@ void Gui::RenderActors(const CustomEntry& entry, const EspSettings::Actors& sett
 	if (!itemText.empty())
 	{
 		if (Settings::utilities.debugEsp)
-			itemText = fmt::format("{0:16x}\n{1:08x}\n{2:16x}\n{3:08x}", entry.entityPtr, entry.entityFormId, entry.referencePtr, entry.referenceFormId);
+			itemText = fmt::format("{0:08x}\n{1:08x}", entry.entityFormId, entry.baseObjectFormId);
 
 		Renderer::DrawTextA(itemText.c_str(), screen, color, alpha);
 	}
@@ -345,12 +344,12 @@ void Gui::RenderItems(const CustomEntry& entry, const EspSettings::Items& settin
 
 	if (entry.flag & CUSTOM_ENTRY_PLAN)
 	{
-		if (!Settings::esp.recipes.knownRecipesEnabled && !Settings::esp.recipes.unknownRecipesEnabled)
+		if (!Settings::esp.plansExt.knownRecipesEnabled && !Settings::esp.plansExt.unknownRecipesEnabled)
 			return;
 
-		if (!Settings::esp.recipes.knownRecipesEnabled && entry.flag & CUSTOM_ENTRY_KNOWN_RECIPE)
+		if (!Settings::esp.plansExt.knownRecipesEnabled && entry.flag & CUSTOM_ENTRY_KNOWN_RECIPE)
 			return;
-		if (!Settings::esp.recipes.unknownRecipesEnabled && entry.flag & CUSTOM_ENTRY_UNKNOWN_RECIPE)
+		if (!Settings::esp.plansExt.unknownRecipesEnabled && entry.flag & CUSTOM_ENTRY_UNKNOWN_RECIPE)
 			return;
 	}
 
@@ -402,7 +401,7 @@ void Gui::RenderItems(const CustomEntry& entry, const EspSettings::Items& settin
 	if (!itemText.empty())
 	{
 		if (Settings::utilities.debugEsp)
-			itemText = fmt::format("{0:16x}\n{1:08x}\n{2:16x}\n{3:08x}", entry.entityPtr, entry.entityFormId, entry.referencePtr, entry.referenceFormId);
+			itemText = fmt::format("{0:16x}\n{1:08x}\n{2:16x}\n{3:08x}", entry.entityPtr, entry.entityFormId, entry.baseObjectPtr, entry.baseObjectFormId);
 
 		Renderer::DrawTextA(itemText.c_str(), screen, settings.color, alpha);
 	}
@@ -418,7 +417,7 @@ void Gui::RenderInfoBox()
 	ImVec4 enabledTextColor = { 0.f, 1.f, 0.f, 1.f };
 	ImVec4 disabledTextColor = { 1.f, 0.f, 0.f, 1.f };
 
-	if (Settings::infobox.drawLocalPlayerInfo) {
+	if (Settings::infobox.drawPlayerInfo) {
 		auto localPlayer = ErectusMemory::GetLocalPlayerInfo();
 
 		featureText = fmt::format("Player FormId: {:08x}", localPlayer.formId);
@@ -485,6 +484,44 @@ void Gui::RenderInfoBox()
 	ImGui::End();
 }
 
+void Gui::MenuBar()
+{
+	if (ImGui::BeginMenuBar())
+	{
+		if (ImGui::MenuItem("Exit"))
+			App::CloseWnd();
+
+		if (ErectusProcess::processMenuActive)
+		{
+			if (ImGui::MenuItem("Overlay Menu"))
+				App::SetOverlayMenu();
+		}
+
+		if (App::overlayMenuActive) {
+			if (ImGui::MenuItem("Process Menu"))
+				ErectusProcess::SetProcessMenu();
+		}
+		
+		if (!ErectusProcess::pid)
+		{
+			ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+
+			ImGui::MenuItem("Overlay");
+
+			ImGui::PopStyleVar();
+			ImGui::PopItemFlag();
+		}
+		else
+		{
+			if (ImGui::MenuItem("Overlay"))
+				App::SetOverlayPosition(false, true);
+		}
+		
+		ImGui::EndMenuBar();
+	}
+}
+
 void Gui::ProcessMenu()
 {
 	if (!ErectusProcess::processMenuActive)
@@ -496,34 +533,9 @@ void Gui::ProcessMenu()
 
 	if (ImGui::Begin("Erectus - Process Menu", nullptr, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize))
 	{
-		if (ImGui::BeginMenuBar())
-		{
-			if (ImGui::MenuItem("Exit"))
-				App::CloseWnd();
-			if (ImGui::MenuItem("Overlay Menu"))
-				App::SetOverlayMenu();
-			if (!ErectusProcess::pid)
-			{
-				ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-				ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
-
-				ImGui::MenuItem("Overlay");
-
-				ImGui::PopStyleVar();
-				ImGui::PopItemFlag();
-			}
-			else
-			{
-				if (ImGui::MenuItem("Overlay Menu"))
-					App::SetOverlayMenu();
-				if (ImGui::MenuItem("Overlay"))
-					App::SetOverlayPosition(false, true);
-			}
-			ImGui::EndMenuBar();
-		}
+		MenuBar();
 
 		ImGui::SetNextItemWidth(-16.f);
-
 		auto processText = ErectusProcess::pid ? "Fallout76.exe - " + std::to_string(ErectusProcess::pid) : "No  process selected.";
 		if (ImGui::BeginCombo("###ProcessList", processText.c_str()))
 		{
@@ -658,387 +670,199 @@ void Gui::SmallButtonToggle(const char* label, bool& state)
 	}
 }
 
+void Gui::EspSettings(EspSettings::Actors& actorEsp)
+{
+		ImGui::PushID(&actorEsp);
+		ImGui::Columns(2, nullptr, false);
+		
+		LargeButtonToggle("ESP Enabled", actorEsp.enabled);
+		ImGui::NextColumn();
+		ImGui::SetNextItemWidth(-FLT_MIN);
+		ImGui::SliderInt("##Distance", &actorEsp.enabledDistance, 0, 3000, "Distance: %d");
+		ImGui::NextColumn();
+
+		LargeButtonToggle("Draw Alive", actorEsp.drawAlive);
+		ImGui::NextColumn();
+		ImGui::SetNextItemWidth(-FLT_MIN);
+		ImGui::ColorEdit3("##AliveColor", actorEsp.aliveColor);
+		Utils::ValidateRgb(actorEsp.aliveColor);
+		ImGui::NextColumn();
+
+		LargeButtonToggle("Draw Downed", actorEsp.drawDowned);
+		ImGui::NextColumn();
+		ImGui::SetNextItemWidth(-FLT_MIN);
+		ImGui::ColorEdit3("##DownedColor", actorEsp.downedColor);
+		Utils::ValidateRgb(actorEsp.downedColor);
+		ImGui::NextColumn();
+
+		LargeButtonToggle("Draw Dead", actorEsp.drawDead);
+		ImGui::NextColumn();
+		ImGui::SetNextItemWidth(-FLT_MIN);
+		ImGui::ColorEdit3("##DeadColor", actorEsp.deadColor);
+		Utils::ValidateRgb(actorEsp.deadColor);
+		ImGui::NextColumn();
+
+		LargeButtonToggle("Draw Unknown", actorEsp.drawUnknown);
+		ImGui::NextColumn();
+		ImGui::SetNextItemWidth(-FLT_MIN);
+		ImGui::ColorEdit3("##UnknownColor", actorEsp.unknownColor);
+		Utils::ValidateRgb(actorEsp.unknownColor);
+		ImGui::NextColumn();
+
+		LargeButtonToggle("Draw Enabled", actorEsp.drawEnabled);
+		ImGui::NextColumn();
+		ImGui::SetNextItemWidth(-FLT_MIN);
+		ImGui::SliderFloat("##EnabledAlpha", &actorEsp.enabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
+		ImGui::NextColumn();
+
+		LargeButtonToggle("Draw Disabled", actorEsp.drawDisabled);
+		ImGui::NextColumn();
+		ImGui::SetNextItemWidth(-FLT_MIN);
+		ImGui::SliderFloat("##DisabledAlpha", &actorEsp.disabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
+		ImGui::NextColumn();
+
+		LargeButtonToggle("Draw Named", actorEsp.drawNamed);
+		ImGui::NextColumn();
+		LargeButtonToggle("Draw Unnamed", actorEsp.drawUnnamed);
+		ImGui::NextColumn();
+
+		LargeButtonToggle("Show Name", actorEsp.showName);
+		ImGui::NextColumn();
+		LargeButtonToggle("Show Distance", actorEsp.showDistance);
+		ImGui::NextColumn();
+
+		LargeButtonToggle("Show Alive Health", actorEsp.showHealth);
+		ImGui::NextColumn();
+		LargeButtonToggle("Show Dead Health", actorEsp.showDeadHealth);
+		ImGui::NextColumn();
+	
+		ImGui::Columns();
+		ImGui::PopID();
+}
+
+void Gui::EspSettings(EspSettings::Items& itemEsp)
+{
+	ImGui::PushID(&itemEsp);
+	ImGui::Columns(2, nullptr, false);
+
+	LargeButtonToggle("ESP Enabled", itemEsp.enabled);
+	ImGui::NextColumn();
+	ImGui::SetNextItemWidth(-FLT_MIN);
+	ImGui::SliderInt("##Distance", &itemEsp.enabledDistance, 0, 3000, "Distance: %d");
+	ImGui::NextColumn();
+
+	ImGui::SetNextItemWidth(-FLT_MIN);
+	ImGui::ColorEdit3("##Color", itemEsp.color);
+	Utils::ValidateRgb(itemEsp.color);
+	ImGui::NextColumn();
+	ImGui::NextColumn();
+
+	LargeButtonToggle("Draw Enabled", itemEsp.drawEnabled);
+	ImGui::NextColumn();
+	ImGui::SetNextItemWidth(-FLT_MIN);
+	ImGui::SliderFloat("##EnabledAlpha", &itemEsp.enabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
+	ImGui::NextColumn();
+	
+	LargeButtonToggle("Draw Disabled", itemEsp.drawDisabled);
+	ImGui::NextColumn();
+	ImGui::SetNextItemWidth(-FLT_MIN);
+	ImGui::SliderFloat("##DisabledAlpha", &itemEsp.disabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
+	ImGui::NextColumn();
+	
+	LargeButtonToggle("Draw Named", itemEsp.drawNamed);
+	ImGui::NextColumn();
+	LargeButtonToggle("Draw Unnamed", itemEsp.drawUnnamed);
+	ImGui::NextColumn();
+	
+	LargeButtonToggle("Show Name", itemEsp.showName);
+	ImGui::NextColumn();
+	LargeButtonToggle("Show Distance", itemEsp.showDistance);
+	ImGui::NextColumn();
+	
+	ImGui::Columns();
+	ImGui::PopID();
+}
 void Gui::OverlayMenuTabEsp()
 {
 	if (ImGui::BeginTabItem("ESP###ESPTab"))
 	{
 		if (ImGui::CollapsingHeader("Player ESP"))
+			EspSettings(Settings::esp.players);
+
+		if (ImGui::CollapsingHeader("NPC ESP"))
 		{
-			ImGui::Columns(2, nullptr, false);
-			LargeButtonToggle("ESP Enabled", Settings::esp.players.enabled);
-			ImGui::NextColumn();
-			ImGui::SetNextItemWidth(-FLT_MIN);
-			ImGui::SliderInt("###esp.playersEnabledDistance", &Settings::esp.players.enabledDistance, 0, 3000, "Distance: %d");
-			ImGui::NextColumn();
+			EspSettings(Settings::esp.npcs);
 
-			LargeButtonToggle("Draw Alive", Settings::esp.players.drawAlive);
-			ImGui::NextColumn();
-			ImGui::SetNextItemWidth(-FLT_MIN);
-			ImGui::ColorEdit3("###esp.playersAliveColor", Settings::esp.players.aliveColor);
-			Utils::ValidateRgb(Settings::esp.players.aliveColor);
-			ImGui::NextColumn();
+			ButtonToggle("Always Draw Living 1* NPCs", Settings::esp.npcsExt.overrideLivingOneStar);
+			ImGui::SameLine(235.0f);
+			ImGui::SetNextItemWidth(224.0f);
+			ImGui::ColorEdit3("###LivingOneStarColor", Settings::esp.npcsExt.livingOneStarColor);
+			Utils::ValidateRgb(Settings::esp.npcsExt.livingOneStarColor);
 
-			LargeButtonToggle("Draw Downed", Settings::esp.players.drawDowned);
-			ImGui::NextColumn();
-			ImGui::SetNextItemWidth(-FLT_MIN);
-			ImGui::ColorEdit3("###esp.playersDownedColor", Settings::esp.players.downedColor);
-			Utils::ValidateRgb(Settings::esp.players.downedColor);
-			ImGui::NextColumn();
+			ButtonToggle("Always Draw Dead 1* NPCs", Settings::esp.npcsExt.overrideDeadOneStar);
+			ImGui::SameLine(235.0f);
+			ImGui::SetNextItemWidth(224.0f);
+			ImGui::ColorEdit3("###DeadOneStarColor", Settings::esp.npcsExt.deadOneStarColor);
+			Utils::ValidateRgb(Settings::esp.npcsExt.deadOneStarColor);
 
-			LargeButtonToggle("Draw Dead", Settings::esp.players.drawDead);
-			ImGui::NextColumn();
-			ImGui::SetNextItemWidth(-FLT_MIN);
-			ImGui::ColorEdit3("###esp.playersDeadColor", Settings::esp.players.deadColor);
-			Utils::ValidateRgb(Settings::esp.players.deadColor);
-			ImGui::NextColumn();
+			ButtonToggle("Always Draw Living 2* NPCs", Settings::esp.npcsExt.overrideLivingTwoStar);
+			ImGui::SameLine(235.0f);
+			ImGui::SetNextItemWidth(224.0f);
+			ImGui::ColorEdit3("###LivingTwoStarColor", Settings::esp.npcsExt.livingTwoStarColor);
+			Utils::ValidateRgb(Settings::esp.npcsExt.livingTwoStarColor);
 
-			LargeButtonToggle("Draw Unknown", Settings::esp.players.drawUnknown);
-			ImGui::NextColumn();
-			ImGui::SetNextItemWidth(-FLT_MIN);
-			ImGui::ColorEdit3("###esp.playersUnknownColor", Settings::esp.players.unknownColor);
-			Utils::ValidateRgb(Settings::esp.players.unknownColor);
-			ImGui::NextColumn();
+			ButtonToggle("Always Draw Dead 2* NPCs", Settings::esp.npcsExt.overrideDeadTwoStar);
+			ImGui::SameLine(235.0f);
+			ImGui::SetNextItemWidth(224.0f);
+			ImGui::ColorEdit3("###DeadTwoStarColor", Settings::esp.npcsExt.deadTwoStarColor);
+			Utils::ValidateRgb(Settings::esp.npcsExt.deadTwoStarColor);
 
-			LargeButtonToggle("Draw Enabled", Settings::esp.players.drawEnabled);
-			ImGui::NextColumn();
-			ImGui::SetNextItemWidth(-FLT_MIN);
-			ImGui::SliderFloat("###esp.playersEnabledAlpha", &Settings::esp.players.enabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
-			ImGui::NextColumn();
+			ButtonToggle("Always Draw Living 3* NPCs", Settings::esp.npcsExt.overrideLivingThreeStar);
+			ImGui::SameLine(235.0f);
+			ImGui::SetNextItemWidth(224.0f);
+			ImGui::ColorEdit3("###LivingThreeStarColor", Settings::esp.npcsExt.livingThreeStarColor);
+			Utils::ValidateRgb(Settings::esp.npcsExt.livingThreeStarColor);
 
-			LargeButtonToggle("Draw Disabled", Settings::esp.players.drawDisabled);
-			ImGui::NextColumn();
-			ImGui::SetNextItemWidth(-FLT_MIN);
-			ImGui::SliderFloat("###esp.playersDisabledAlpha", &Settings::esp.players.disabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
-			ImGui::NextColumn();
-
-			LargeButtonToggle("Draw Named", Settings::esp.players.drawNamed);
-			ImGui::NextColumn();
-			LargeButtonToggle("Draw Unnamed", Settings::esp.players.drawUnnamed);
-			ImGui::NextColumn();
-
-			LargeButtonToggle("Show Name", Settings::esp.players.showName);
-			ImGui::NextColumn();
-			LargeButtonToggle("Show Distance", Settings::esp.players.showDistance);
-			ImGui::NextColumn();
-
-			LargeButtonToggle("Show Alive Health", Settings::esp.players.showHealth);
-			ImGui::NextColumn();
-			LargeButtonToggle("Show Dead Health", Settings::esp.players.showDeadHealth);
-			ImGui::NextColumn();
-
-			ImGui::Columns();
+			ButtonToggle("Always Draw Dead 3* NPCs", Settings::esp.npcsExt.overrideDeadThreeStar);
+			ImGui::SameLine(235.0f);
+			ImGui::SetNextItemWidth(224.0f);
+			ImGui::ColorEdit3("###DeadThreeStarColor", Settings::esp.npcsExt.deadThreeStarColor);
+			Utils::ValidateRgb(Settings::esp.npcsExt.deadThreeStarColor);
 		}
 
-		if (ImGui::CollapsingHeader("NPC ESP Settings"))
+		if (ImGui::CollapsingHeader("Container ESP"))
+			EspSettings(Settings::esp.containers);
+
+		if (ImGui::CollapsingHeader("Junk ESP"))
+			EspSettings(Settings::esp.junk);
+		
+		if (ImGui::CollapsingHeader("Magazine ESP"))
+			EspSettings(Settings::esp.magazines);
+		
+		if (ImGui::CollapsingHeader("Bobblehead ESP"))
+			EspSettings(Settings::esp.bobbleheads);
+			
+		if (ImGui::CollapsingHeader("Item ESP"))
+			EspSettings(Settings::esp.items);
+
+		if (ImGui::CollapsingHeader("Plan/Recipe ESP Settings"))
 		{
-			ButtonToggle("NPC ESP Enabled", Settings::esp.npcs.enabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::SliderInt("###esp.npcsEnabledDistance", &Settings::esp.npcs.enabledDistance, 0, 3000, "Distance: %d");
+			EspSettings(Settings::esp.plans);
 
-			ButtonToggle("Draw Living NPCs", Settings::esp.npcs.drawAlive);
+			ButtonToggle("Draw Known Plans", Settings::esp.plansExt.knownRecipesEnabled);
 			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::ColorEdit3("###esp.npcsAliveColor", Settings::esp.npcs.aliveColor);
-			Utils::ValidateRgb(Settings::esp.npcs.aliveColor);
-
-			ButtonToggle("Draw Downed NPCs", Settings::esp.npcs.drawDowned);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::ColorEdit3("###esp.npcsDownedColor", Settings::esp.npcs.downedColor);
-			Utils::ValidateRgb(Settings::esp.npcs.downedColor);
-
-			ButtonToggle("Draw Dead NPCs", Settings::esp.npcs.drawDead);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::ColorEdit3("###esp.npcsDeadColor", Settings::esp.npcs.deadColor);
-			Utils::ValidateRgb(Settings::esp.npcs.deadColor);
-
-			ButtonToggle("Draw Unknown NPCs", Settings::esp.npcs.drawUnknown);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::ColorEdit3("###esp.npcsUnknownColor", Settings::esp.npcs.unknownColor);
-			Utils::ValidateRgb(Settings::esp.npcs.unknownColor);
-
-			ButtonToggle("Draw Enabled NPCs", Settings::esp.npcs.drawEnabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::SliderFloat("###esp.npcsEnabledAlpha", &Settings::esp.npcs.enabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
-
-			ButtonToggle("Draw Disabled NPCs", Settings::esp.npcs.drawDisabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::SliderFloat("###esp.npcsDisabledAlpha", &Settings::esp.npcs.disabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
-
-			ButtonToggle("Draw Named NPCs", Settings::esp.npcs.drawNamed);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Draw Unnamed NPCs", Settings::esp.npcs.drawUnnamed);
-
-			ButtonToggle("Show NPC Name", Settings::esp.npcs.showName);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Show NPC Distance", Settings::esp.npcs.showDistance);
-
-			ButtonToggle("Show NPC Health", Settings::esp.npcs.showHealth);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Show Dead NPC Health", Settings::esp.npcs.showDeadHealth);
-
-			ButtonToggle("Always Draw Living 1* NPCs", Settings::esp.legendaryNpcs.overrideLivingOneStar);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::ColorEdit3("###LivingOneStarColor", Settings::esp.legendaryNpcs.livingOneStarColor);
-			Utils::ValidateRgb(Settings::esp.legendaryNpcs.livingOneStarColor);
-
-			ButtonToggle("Always Draw Dead 1* NPCs", Settings::esp.legendaryNpcs.overrideDeadOneStar);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::ColorEdit3("###DeadOneStarColor", Settings::esp.legendaryNpcs.deadOneStarColor);
-			Utils::ValidateRgb(Settings::esp.legendaryNpcs.deadOneStarColor);
-
-			ButtonToggle("Always Draw Living 2* NPCs", Settings::esp.legendaryNpcs.overrideLivingTwoStar);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::ColorEdit3("###LivingTwoStarColor", Settings::esp.legendaryNpcs.livingTwoStarColor);
-			Utils::ValidateRgb(Settings::esp.legendaryNpcs.livingTwoStarColor);
-
-			ButtonToggle("Always Draw Dead 2* NPCs", Settings::esp.legendaryNpcs.overrideDeadTwoStar);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::ColorEdit3("###DeadTwoStarColor", Settings::esp.legendaryNpcs.deadTwoStarColor);
-			Utils::ValidateRgb(Settings::esp.legendaryNpcs.deadTwoStarColor);
-
-			ButtonToggle("Always Draw Living 3* NPCs", Settings::esp.legendaryNpcs.overrideLivingThreeStar);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::ColorEdit3("###LivingThreeStarColor", Settings::esp.legendaryNpcs.livingThreeStarColor);
-			Utils::ValidateRgb(Settings::esp.legendaryNpcs.livingThreeStarColor);
-
-			ButtonToggle("Always Draw Dead 3* NPCs", Settings::esp.legendaryNpcs.overrideDeadThreeStar);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::ColorEdit3("###DeadThreeStarColor", Settings::esp.legendaryNpcs.deadThreeStarColor);
-			Utils::ValidateRgb(Settings::esp.legendaryNpcs.deadThreeStarColor);
+			LargeButtonToggle("Draw Unknown Plans", Settings::esp.plansExt.unknownRecipesEnabled);
 		}
-
-		if (ImGui::CollapsingHeader("Container ESP Settings"))
-		{
-			ButtonToggle("Container ESP Enabled", Settings::esp.containers.enabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::SliderInt("###esp.containersEnabledDistance", &Settings::esp.containers.enabledDistance, 0, 3000, "Distance: %d");
-
-			ImGui::SetNextItemWidth(451.0f);
-			ImGui::ColorEdit3("###esp.containersColor", Settings::esp.containers.color);
-			Utils::ValidateRgb(Settings::esp.containers.color);
-
-			ButtonToggle("Draw Enabled Containers", Settings::esp.containers.drawEnabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::SliderFloat("###esp.containersEnabledAlpha", &Settings::esp.containers.enabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
-
-			ButtonToggle("Draw Disabled Containers", Settings::esp.containers.drawDisabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::SliderFloat("###esp.containersDisabledAlpha", &Settings::esp.containers.disabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
-
-			ButtonToggle("Draw Named Containers", Settings::esp.containers.drawNamed);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Draw Unnamed Containers", Settings::esp.containers.drawUnnamed);
-
-			ButtonToggle("Show Container Name", Settings::esp.containers.showName);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Show Container Distance", Settings::esp.containers.showDistance);
-		}
-
-		if (ImGui::CollapsingHeader("Junk ESP Settings"))
-		{
-			ButtonToggle("Junk ESP Enabled", Settings::esp.junk.enabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::SliderInt("###esp.junkEnabledDistance", &Settings::esp.junk.enabledDistance, 0, 3000, "Distance: %d");
-
-			ImGui::SetNextItemWidth(451.0f);
-			ImGui::ColorEdit3("###esp.junkColor", Settings::esp.junk.color);
-			Utils::ValidateRgb(Settings::esp.junk.color);
-
-			ButtonToggle("Draw Enabled Junk", Settings::esp.junk.drawEnabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::SliderFloat("###esp.junkEnabledAlpha", &Settings::esp.junk.enabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
-
-			Utils::ValidateFloat(Settings::esp.junk.enabledAlpha, 0.0f, 1.0f);
-
-			ButtonToggle("Draw Disabled Junk", Settings::esp.junk.drawDisabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::SliderFloat("###esp.junkDisabledAlpha", &Settings::esp.junk.disabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
-
-			ButtonToggle("Draw Named Junk", Settings::esp.junk.drawNamed);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Draw Unnamed Junk", Settings::esp.junk.drawUnnamed);
-
-			ButtonToggle("Show Junk Name", Settings::esp.junk.showName);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Show Junk Distance", Settings::esp.junk.showDistance);
-		}
-
-		if (ImGui::CollapsingHeader("Plan ESP Settings"))
-		{
-			ButtonToggle("Plan ESP Enabled", Settings::esp.plans.enabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::SliderInt("###esp.plansEnabledDistance", &Settings::esp.plans.enabledDistance, 0, 3000, "Distance: %d");
-
-			ImGui::SetNextItemWidth(451.0f);
-			ImGui::ColorEdit3("###esp.plansColor", Settings::esp.plans.color);
-			Utils::ValidateRgb(Settings::esp.plans.color);
-
-			ButtonToggle("Draw Enabled Plans", Settings::esp.plans.drawEnabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::SliderFloat("###esp.plansEnabledAlpha", &Settings::esp.plans.enabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
-
-			ButtonToggle("Draw Disabled Plans", Settings::esp.plans.drawDisabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::SliderFloat("###esp.plansDisabledAlpha", &Settings::esp.plans.disabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
-
-			ButtonToggle("Draw Known Plans", Settings::esp.recipes.knownRecipesEnabled);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Draw Unknown Plans", Settings::esp.recipes.unknownRecipesEnabled);
-
-			ButtonToggle("Draw Named Plans", Settings::esp.plans.drawNamed);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Draw Unnamed Plans", Settings::esp.plans.drawUnnamed);
-
-			ButtonToggle("Show Plan Name", Settings::esp.plans.showName);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Show Plan Distance", Settings::esp.plans.showDistance);
-		}
-
-		if (ImGui::CollapsingHeader("Magazine ESP Settings"))
-		{
-			ButtonToggle("Magazine ESP Enabled", Settings::esp.magazines.enabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::SliderInt("###esp.magazinesEnabledDistance", &Settings::esp.magazines.enabledDistance, 0, 3000, "Distance: %d");
-
-			ImGui::SetNextItemWidth(451.0f);
-			ImGui::ColorEdit3("###esp.magazinesColor", Settings::esp.magazines.color);
-			Utils::ValidateRgb(Settings::esp.magazines.color);
-
-			ButtonToggle("Draw Enabled Magazines", Settings::esp.magazines.drawEnabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::SliderFloat("###esp.magazinesEnabledAlpha", &Settings::esp.magazines.enabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
-
-			ButtonToggle("Draw Disabled Magazines", Settings::esp.magazines.drawDisabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::SliderFloat("###esp.magazinesDisabledAlpha", &Settings::esp.magazines.disabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
-
-			ButtonToggle("Draw Named Magazines", Settings::esp.magazines.drawNamed);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Draw Unnamed Magazines", Settings::esp.magazines.drawUnnamed);
-
-			ButtonToggle("Show Magazine Name", Settings::esp.magazines.showName);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Show Magazine Distance", Settings::esp.magazines.showDistance);
-		}
-
-		if (ImGui::CollapsingHeader("Bobblehead ESP Settings"))
-		{
-			ButtonToggle("Bobblehead ESP Enabled", Settings::esp.bobbleheads.enabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::SliderInt("###esp.bobbleheadsEnabledDistance", &Settings::esp.bobbleheads.enabledDistance, 0, 3000, "Distance: %d");
-
-			ImGui::SetNextItemWidth(451.0f);
-			ImGui::ColorEdit3("###esp.bobbleheadsColor", Settings::esp.bobbleheads.color);
-			Utils::ValidateRgb(Settings::esp.bobbleheads.color);
-
-			ButtonToggle("Draw Enabled Bobbleheads", Settings::esp.bobbleheads.drawEnabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::SliderFloat("###esp.bobbleheadsEnabledAlpha", &Settings::esp.bobbleheads.enabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
-
-			ButtonToggle("Draw Disabled Bobbleheads", Settings::esp.bobbleheads.drawDisabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::SliderFloat("###esp.bobbleheadsDisabledAlpha", &Settings::esp.bobbleheads.disabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
-
-			ButtonToggle("Draw Named Bobbleheads", Settings::esp.bobbleheads.drawNamed);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Draw Unnamed Bobbleheads", Settings::esp.bobbleheads.drawUnnamed);
-
-			ButtonToggle("Show Bobblehead Name", Settings::esp.bobbleheads.showName);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Show Bobblehead Distance", Settings::esp.bobbleheads.showDistance);
-		}
-
-		if (ImGui::CollapsingHeader("Item ESP Settings"))
-		{
-			ButtonToggle("Item ESP Enabled", Settings::esp.items.enabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::SliderInt("###esp.itemsEnabledDistance", &Settings::esp.items.enabledDistance, 0, 3000, "Distance: %d");
-
-			ImGui::SetNextItemWidth(451.0f);
-			ImGui::ColorEdit3("###esp.itemsColor", Settings::esp.items.color);
-			Utils::ValidateRgb(Settings::esp.items.color);
-
-			ButtonToggle("Draw Enabled Items", Settings::esp.items.drawEnabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::SliderFloat("###esp.itemsEnabledAlpha", &Settings::esp.items.enabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
-
-			ButtonToggle("Draw Disabled Items", Settings::esp.items.drawDisabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::SliderFloat("###esp.itemsDisabledAlpha", &Settings::esp.items.disabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
-
-			ButtonToggle("Draw Named Items", Settings::esp.items.drawNamed);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Draw Unnamed Items", Settings::esp.items.drawUnnamed);
-
-			ButtonToggle("Show Item Name", Settings::esp.items.showName);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Show Item Distance", Settings::esp.items.showDistance);
-		}
-
+	
 		if (ImGui::CollapsingHeader("Flora ESP Settings"))
 		{
-			ButtonToggle("Flora ESP Enabled", Settings::esp.flora.enabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::SliderInt("###esp.floraEnabledDistance", &Settings::esp.flora.enabledDistance, 0, 3000, "Distance: %d");
+			EspSettings(Settings::esp.flora);
 
-			ImGui::SetNextItemWidth(451.0f);
-			ImGui::ColorEdit3("###esp.floraColor", Settings::esp.flora.color);
-			Utils::ValidateRgb(Settings::esp.flora.color);
-
-			ButtonToggle("Draw Enabled Flora", Settings::esp.flora.drawEnabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::SliderFloat("###esp.floraEnabledAlpha", &Settings::esp.flora.enabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
-
-			ButtonToggle("Draw Disabled Flora", Settings::esp.flora.drawDisabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::SliderFloat("###esp.floraDisabledAlpha", &Settings::esp.flora.disabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
-
-			ButtonToggle("Draw Named Flora", Settings::esp.flora.drawNamed);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Draw Unnamed Flora", Settings::esp.flora.drawUnnamed);
-
-			LargeButtonToggle("Draw Raw Crimson Flux Yielding Flora", Settings::esp.flux.crimsonFluxEnabled);
-			LargeButtonToggle("Draw Raw Cobalt Flux Yielding Flora", Settings::esp.flux.cobaltFluxEnabled);
-			LargeButtonToggle("Draw Raw Yellowcake Flux Yielding Flora", Settings::esp.flux.yellowcakeFluxEnabled);
-			LargeButtonToggle("Draw Raw Fluorescent Flux Yielding Flora", Settings::esp.flux.fluorescentFluxEnabled);
-			LargeButtonToggle("Draw Raw Violet Flux Yielding Flora", Settings::esp.flux.violetFluxEnabled);
-
-			ButtonToggle("Show Flora Name", Settings::esp.flora.showName);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Show Flora Distance", Settings::esp.flora.showDistance);
+			LargeButtonToggle("Draw Raw Crimson Flux Yielding Flora", Settings::esp.floraExt.crimsonFluxEnabled);
+			LargeButtonToggle("Draw Raw Cobalt Flux Yielding Flora", Settings::esp.floraExt.cobaltFluxEnabled);
+			LargeButtonToggle("Draw Raw Yellowcake Flux Yielding Flora", Settings::esp.floraExt.yellowcakeFluxEnabled);
+			LargeButtonToggle("Draw Raw Fluorescent Flux Yielding Flora", Settings::esp.floraExt.fluorescentFluxEnabled);
+			LargeButtonToggle("Draw Raw Violet Flux Yielding Flora", Settings::esp.floraExt.violetFluxEnabled);
 		}
 
 		if (ImGui::CollapsingHeader("Entity ESP Settings"))
@@ -1162,12 +986,7 @@ void Gui::OverlayMenuTabInfoBox()
 {
 	if (ImGui::BeginTabItem("InfoBox###InfoBoxTab"))
 	{
-		LargeButtonToggle("Draw Local Player Data", Settings::infobox.drawLocalPlayerInfo);
-		LargeButtonToggle("Draw Automatic Scrap Looter Status", Settings::infobox.drawScrapLooterStatus);
-		LargeButtonToggle("Draw Automatic Item Looter Status", Settings::infobox.drawItemLooterStatus);
-		LargeButtonToggle("Draw NPC Looter Status", Settings::infobox.drawNpcLooterStatus);
-		LargeButtonToggle("Draw Container Looter Status", Settings::infobox.drawContainerLooterStatus);
-		LargeButtonToggle("Draw Flora Harvester Status", Settings::infobox.drawHarvesterStatus);
+		LargeButtonToggle("Draw Local Player Data", Settings::infobox.drawPlayerInfo);
 		LargeButtonToggle("Draw Position Status", Settings::infobox.drawPositionSpoofingStatus);
 		LargeButtonToggle("Draw Nuke Codes", Settings::infobox.drawNukeCodes);
 
@@ -1381,65 +1200,61 @@ void Gui::OverlayMenuTabCombat()
 	{
 		if (ImGui::CollapsingHeader("Weapon Editor"))
 		{
-			ButtonToggle("No Recoil", Settings::weapons.noRecoil);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Infinite Ammo", Settings::weapons.infiniteAmmo);
+			ImGui::Columns(2, nullptr, false);
+			
+			LargeButtonToggle("No Recoil", Settings::weapons.noRecoil);
+			ImGui::NextColumn();
+			LargeButtonToggle("Infinite Ammo", Settings::weapons.infiniteAmmo);
+			ImGui::NextColumn();
 
-			ButtonToggle("No Spread", Settings::weapons.noSpread);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Instant Reload", Settings::weapons.instantReload);
-
-			ButtonToggle("No Sway", Settings::weapons.noSway);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Automatic Flag###WeaponAutomatic", Settings::weapons.automaticflag);
-
-			ButtonToggle("Capacity###WeaponCapacityEnabled", Settings::weapons.capacityEnabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
+			LargeButtonToggle("No Spread", Settings::weapons.noSpread);
+			ImGui::NextColumn();
+			LargeButtonToggle("Instant Reload", Settings::weapons.instantReload);
+			ImGui::NextColumn();
+			
+			LargeButtonToggle("No Sway", Settings::weapons.noSway);
+			ImGui::NextColumn();
+			LargeButtonToggle("Automatic Flag###WeaponAutomatic", Settings::weapons.automaticflag);
+			ImGui::NextColumn();
+			
+			LargeButtonToggle("Capacity###WeaponCapacityEnabled", Settings::weapons.capacityEnabled);
+			ImGui::NextColumn();
+			ImGui::SetNextItemWidth(-FLT_MIN);
 			ImGui::SliderInt("###WeaponCapacity", &Settings::weapons.capacity, 0, 999, "Capacity: %d");
-
-			ButtonToggle("Speed###WeaponSpeedEnabled", Settings::weapons.speedEnabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
+			ImGui::NextColumn();
+			
+			LargeButtonToggle("Speed###WeaponSpeedEnabled", Settings::weapons.speedEnabled);
+			ImGui::NextColumn();
+			ImGui::SetNextItemWidth(-FLT_MIN);
 			ImGui::SliderFloat("###WeaponSpeed", &Settings::weapons.speed, 0.0f, 100.0f, "Speed: %.2f");
-
-			ButtonToggle("Reach###WeaponReachEnabled", Settings::weapons.reachEnabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
+			ImGui::NextColumn();
+			
+			LargeButtonToggle("Reach###WeaponReachEnabled", Settings::weapons.reachEnabled);
+			ImGui::NextColumn();
+			ImGui::SetNextItemWidth(-FLT_MIN);
 			ImGui::SliderFloat("###WeaponReach", &Settings::weapons.reach, 0.0f, 999.0f, "Reach: %.2f");
+			ImGui::NextColumn();
+			
+			ImGui::Columns();
 		}
 
 		if (ImGui::CollapsingHeader("Targeting Settings"))
 		{
-			ButtonToggle("Player Targeting (Keybind: T)", Settings::targetting.lockPlayers);
+			LargeButtonToggle("NPC Targeting (Keybind: T)", Settings::targetting.lockNpCs);
+			
+			ButtonToggle("Damage Redirection", Settings::targetting.dmgRedirect);
 			ImGui::SameLine(235.0f);
-			ButtonToggle("NPC Targeting (Keybind: T)", Settings::targetting.lockNpCs);
+			LargeButtonToggle("Send Damage", Settings::targetting.dmgSend);
 
-			ButtonToggle("Damage Redirection (Players)", Settings::targetting.indirectPlayers);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Damage Redirection (NPCs)", Settings::targetting.indirectNpCs);
-
-			ButtonToggle("Send Damage (Players)", Settings::targetting.directPlayers);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Send Damage (NPCs)", Settings::targetting.directNpCs);
-
-			SmallButtonToggle("Living###TargetLiving", Settings::targetting.targetLiving);
-			ImGui::SameLine(122.0f);
-			SmallButtonToggle("Downed###TargetDowned", Settings::targetting.targetDowned);
-			ImGui::SameLine(235.0f);
-			SmallButtonToggle("Dead###TargetDead", Settings::targetting.targetDead);
-			ImGui::SameLine(349.0f);
-			SmallButtonToggle("Unknown###TargetUnknown", Settings::targetting.targetUnknown);
-
-			ButtonToggle("Ignore Render Distance###IgnoreRenderDistance", Settings::targetting.ignoreRenderDistance);
-			ImGui::SameLine(235.0f);
+			LargeButtonToggle("Also target NPCs with unknown state###TargetUnknown", Settings::targetting.targetUnknown);
+			LargeButtonToggle("Ignore Essential NPCs###IgnoreEssentialNPCs", Settings::targetting.ignoreEssentialNpcs);
+			
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::SliderFloat("###TargetLockingFOV", &Settings::targetting.lockingFov, 5.0f, 40.0f, "Targeting FOV: %.2f");
-
-			ButtonToggle("Ignore Essential NPCs###IgnoreEssentialNPCs", Settings::targetting.ignoreEssentialNpCs);
+						
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
-			ImGui::ColorEdit3("###TargetLockingColor", Settings::targetting.lockingColor);
+			ImGui::ColorEdit3("###TargetLockingColor", Settings::targetting.lockedColor);
 			Utils::ValidateRgb(Settings::esp.players.unknownColor);
 
 			ButtonToggle("Automatic Retargeting###TargetLockingRetargeting", Settings::targetting.retargeting);
@@ -1533,10 +1348,7 @@ void Gui::OverlayMenuTabCombat()
 		}
 
 		if (ImGui::CollapsingHeader("One Position Kill"))
-		{
-			LargeButtonToggle("OPK Players (Keybind: CTRL+B)", Settings::opk.playersEnabled);
-			LargeButtonToggle("OPK NPCs (Keybind: CTRL+N)", Settings::opk.npcsEnabled);
-		}
+			LargeButtonToggle("OPK NPCs (Keybind: CTRL+N)", Settings::opk.enabled);
 
 		ImGui::EndTabItem();
 	}
@@ -2068,22 +1880,7 @@ void Gui::OverlayMenu()
 	if (ImGui::Begin("Overlay Menu", nullptr,
 		ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysVerticalScrollbar))
 	{
-		if (ImGui::BeginMenuBar())
-		{
-			if (ImGui::MenuItem("Exit"))
-				App::CloseWnd();
-
-			if (ImGui::MenuItem("Process Menu"))
-				ErectusProcess::SetProcessMenu();
-
-			if (ImGui::MenuItem("Overlay"))
-			{
-				if (!App::SetOverlayPosition(false, true))
-					ErectusProcess::SetProcessMenu();
-			}
-
-			ImGui::EndMenuBar();
-		}
+		MenuBar();
 
 		if (ImGui::BeginTabBar("###OverlayMenuTabBar", ImGuiTabBarFlags_None))
 		{

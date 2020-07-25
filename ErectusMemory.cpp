@@ -394,15 +394,15 @@ bool ErectusMemory::CheckWhitelistedFlux(const TesItem& referenceData)
 	switch (formIdCheck)
 	{
 	case 0x002DDD45: //Raw Crimson Flux
-		return Settings::esp.flux.crimsonFluxEnabled;
+		return Settings::esp.floraExt.crimsonFluxEnabled;
 	case 0x002DDD46: //Raw Cobalt Flux
-		return Settings::esp.flux.cobaltFluxEnabled;
+		return Settings::esp.floraExt.cobaltFluxEnabled;
 	case 0x002DDD49: //Raw Yellowcake Flux
-		return Settings::esp.flux.yellowcakeFluxEnabled;
+		return Settings::esp.floraExt.yellowcakeFluxEnabled;
 	case 0x002DDD4B: //Raw Fluorescent Flux
-		return Settings::esp.flux.fluorescentFluxEnabled;
+		return Settings::esp.floraExt.fluorescentFluxEnabled;
 	case 0x002DDD4D: //Raw Violet Flux
-		return Settings::esp.flux.violetFluxEnabled;
+		return Settings::esp.floraExt.violetFluxEnabled;
 	default:
 		return false;
 	}
@@ -410,47 +410,7 @@ bool ErectusMemory::CheckWhitelistedFlux(const TesItem& referenceData)
 
 bool ErectusMemory::IsTreasureMap(const TesItem& referenceData)
 {
-	switch (referenceData.formId)
-	{
-	case 0x0051B8CD: //Cranberry Bog Treasure Map #01
-	case 0x0051B8D6: //Cranberry Bog Treasure Map #02
-	case 0x0051B8D9: //Cranberry Bog Treasure Map #03
-	case 0x0051B8DE: //Cranberry Bog Treasure Map #04
-	case 0x0051B8CE: //Mire Treasure Map #01
-	case 0x0051B8D2: //Mire Treasure Map #02
-	case 0x0051B8D7: //Mire Treasure Map #03
-	case 0x0051B8D8: //Mire Treasure Map #04
-	case 0x0051B8DB: //Mire Treasure Map #05
-	case 0x0051B8BA: //Savage Divide Treasure Map #01
-	case 0x0051B8C0: //Savage Divide Treasure Map #02
-	case 0x0051B8C2: //Savage Divide Treasure Map #03
-	case 0x0051B8C4: //Savage Divide Treasure Map #04
-	case 0x0051B8C6: //Savage Divide Treasure Map #05
-	case 0x0051B8C7: //Savage Divide Treasure Map #06
-	case 0x0051B8C8: //Savage Divide Treasure Map #07
-	case 0x0051B8CA: //Savage Divide Treasure Map #08
-	case 0x0051B8CC: //Savage Divide Treasure Map #09
-	case 0x0051B8D4: //Savage Divide Treasure Map #10
-	case 0x0051B8B1: //Toxic Valley Treasure Map #01
-	case 0x0051B8B8: //Toxic Valley Treasure Map #02
-	case 0x0051B8BC: //Toxic Valley Treasure Map #03
-	case 0x0051B8C1: //Toxic Valley Treasure Map #04
-	case 0x0051B7A2: //Forest Treasure Map #01
-	case 0x0051B8A6: //Forest Treasure Map #02
-	case 0x0051B8A7: //Forest Treasure Map #03
-	case 0x0051B8A9: //Forest Treasure Map #04
-	case 0x0051B8AA: //Forest Treasure Map #05
-	case 0x0051B8AE: //Forest Treasure Map #06
-	case 0x0051B8B0: //Forest Treasure Map #07
-	case 0x0051B8B2: //Forest Treasure Map #08
-	case 0x0051B8B6: //Forest Treasure Map #09
-	case 0x0051B8B9: //Forest Treasure Map #10
-	case 0x0051B8A8: //Ash Heap Treasure Map #01
-	case 0x0051B8AC: //Ash Heap Treasure Map #02
-		return true;
-	default:
-		return false;
-	}
+	return TREASUREMAP_FORMIDS.contains(referenceData.formId);
 }
 
 bool ErectusMemory::CheckReferenceItem(const TesItem& referenceData)
@@ -871,9 +831,9 @@ bool ErectusMemory::UpdateBufferEntityList()
 
 		CustomEntry entry{
 			.entityPtr = entityPtr,
-			.referencePtr = entityData.baseObjectPtr,
+			.baseObjectPtr = entityData.baseObjectPtr,
 			.entityFormId = entityData.formId,
-			.referenceFormId = referenceData.formId,
+			.baseObjectFormId = referenceData.formId,
 			.flag = entityFlag,
 			.name = entityName
 		};
@@ -1002,9 +962,9 @@ bool ErectusMemory::UpdateBufferPlayerList()
 
 		CustomEntry entry{
 			.entityPtr = entityPtr,
-			.referencePtr = entityData.baseObjectPtr,
+			.baseObjectPtr = entityData.baseObjectPtr,
 			.entityFormId = entityData.formId,
-			.referenceFormId = referenceData.formId,
+			.baseObjectFormId = referenceData.formId,
 			.flag = entityFlag,
 			.name = GetPlayerName(clientAccountData),
 		};
@@ -1014,30 +974,40 @@ bool ErectusMemory::UpdateBufferPlayerList()
 
 	return playerDataBuffer.empty() ? false : true;
 }
-
-bool ErectusMemory::TargetValid(const TesObjectRefr& entityData)
+bool ErectusMemory::IsTargetValid(const DWORD64 targetPtr)
 {
-	if (entityData.formType != static_cast<BYTE>(FormTypes::PlayerCharacter) && entityData.formType != static_cast<BYTE>(FormTypes::TesActor))
+	TesObjectRefr target{};
+	if (!ErectusProcess::Rpm(targetPtr, &target, sizeof target))
 		return false;
 
-	if (entityData.spawnFlag != 0x02 && !Settings::targetting.ignoreRenderDistance)
+	return IsTargetValid(target);
+}
+
+bool ErectusMemory::IsTargetValid(const TesObjectRefr& targetData)
+{
+	if (targetData.formType != static_cast<BYTE>(FormTypes::TesActor))
 		return false;
 
-	ActorSnapshotComponent actorSnapshotComponentData{};
-	if (GetActorSnapshotComponentData(entityData, &actorSnapshotComponentData))
+	if (targetData.spawnFlag != 0x02)
+		return false;
+
+	if (Settings::targetting.ignoreEssentialNpcs)
 	{
-		if (Settings::targetting.ignoreEssentialNpCs && actorSnapshotComponentData.isEssential)
-			return false;
+		ActorSnapshotComponent actorSnapshotComponentData{};
+		if (GetActorSnapshotComponentData(targetData, &actorSnapshotComponentData))
+		{
+			if (actorSnapshotComponentData.isEssential)
+				return false;
+		}
 	}
-
-	switch (CheckHealthFlag(entityData.healthFlag))
+	
+	switch (CheckHealthFlag(targetData.healthFlag))
 	{
 	case 0x01: //Alive
-		return Settings::targetting.targetLiving;
+		return true;
 	case 0x02: //Downed
-		return Settings::targetting.targetDowned;
 	case 0x03: //Dead
-		return Settings::targetting.targetDead;
+		return false;
 	default: //Unknown
 		return Settings::targetting.targetUnknown;
 	}
@@ -1145,7 +1115,7 @@ bool ErectusMemory::WeaponEditingEnabled()
 	bufferSettings.capacity = Settings::defaultWeaponSettings.capacity;
 	bufferSettings.speed = Settings::defaultWeaponSettings.speed;
 	bufferSettings.reach = Settings::defaultWeaponSettings.reach;
-	if (!memcmp(&bufferSettings, &Settings::defaultWeaponSettings, sizeof(WeaponSettings)))
+	if (!memcmp(&bufferSettings, &Settings::defaultWeaponSettings, sizeof(WeaponEditorSettings)))
 		return false;
 
 	return true;
@@ -1365,31 +1335,7 @@ bool ErectusMemory::InfiniteAmmo(const bool state)
 	return false;
 }
 
-bool ErectusMemory::LockedTargetValid(bool* isPlayer)
-{
-	if (!Utils::Valid(targetLockingPtr))
-		return false;
-
-	TesObjectRefr entityData{};
-	if (!ErectusProcess::Rpm(targetLockingPtr, &entityData, sizeof entityData))
-		return false;
-	if (!Utils::Valid(entityData.baseObjectPtr))
-		return false;
-
-	TesItem referenceData{};
-	if (!ErectusProcess::Rpm(entityData.baseObjectPtr, &referenceData, sizeof referenceData))
-		return false;
-	const auto result = TargetValid(entityData);
-
-	if (referenceData.formId == 0x00000007)
-		*isPlayer = true;
-	else
-		*isPlayer = false;
-
-	return result;
-}
-
-bool ErectusMemory::DamageRedirection(DWORD64* targetingPage, bool* targetingPageValid, const bool isExiting, const bool state)
+bool ErectusMemory::DamageRedirection(const DWORD64 targetPtr, DWORD64* targetingPage, bool* targetingPageValid, const bool isExiting, const bool state)
 {
 	BYTE pageJmpOn[] = { 0x48, 0xBB, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xE3 };
 	BYTE pageJmpOff[] = { 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC };
@@ -1429,7 +1375,7 @@ bool ErectusMemory::DamageRedirection(DWORD64* targetingPage, bool* targetingPag
 	if (!*targetingPageValid)
 	{
 		TargetLocking targetLockingData;
-		targetLockingData.targetLockingPtr = targetLockingPtr;
+		targetLockingData.targetLockingPtr = targetPtr;
 		auto originalFunction = ErectusProcess::exe + OFFSET_REDIRECTION + sizeof redirectionOff;
 		DWORD64 originalFunctionCheck;
 		if (!ErectusProcess::Rpm(*targetingPage + 0x30, &originalFunctionCheck, sizeof originalFunctionCheck))
@@ -1448,24 +1394,19 @@ bool ErectusMemory::DamageRedirection(DWORD64* targetingPage, bool* targetingPag
 	if (!ErectusProcess::Rpm(*targetingPage, &targetLockingData, sizeof targetLockingData))
 		return false;
 
-	if (targetLockingData.targetLockingPtr != targetLockingPtr)
+	if (targetLockingData.targetLockingPtr != targetPtr)
 	{
-		targetLockingData.targetLockingPtr = targetLockingPtr;
+		targetLockingData.targetLockingPtr = targetPtr;
 		if (!ErectusProcess::Wpm(*targetingPage, &targetLockingData, sizeof targetLockingData))
 			return false;
 		memcpy(&pageJmpOn[2], &*targetingPage, sizeof(DWORD64));
 	}
 	memcpy(&pageJmpOn[2], &*targetingPage, sizeof(DWORD64));
-	
-	auto isPlayer = false;
-	auto targetValid = LockedTargetValid(&isPlayer);
-	if (!Settings::targetting.indirectPlayers && isPlayer || !Settings::targetting.indirectNpCs && !isPlayer)
-		targetValid = false;
 
 	const auto redirection = ErectusProcess::Rpm(ErectusProcess::exe + OFFSET_REDIRECTION, &redirectionCheck,
 		sizeof redirectionCheck);
 
-	if (*targetingPageValid && state && targetValid)
+	if (*targetingPageValid && state && IsTargetValid(targetPtr))
 	{
 		if (redirection && !memcmp(redirectionCheck, redirectionOff, sizeof redirectionOff))
 			ErectusProcess::Wpm(ErectusProcess::exe + OFFSET_REDIRECTION, &redirectionOn, sizeof redirectionOn);
@@ -1779,10 +1720,8 @@ bool ErectusMemory::OnePositionKill(DWORD64* opkPage, bool* opkPageValid, const 
 			return true;
 
 		Opk opkData;
-		opkData.opkPlayers = 0;
 		opkData.opkNpcs = 0;
 		opkData.originalFunction = originalFunction;
-		memset(opkData.opkPlayerPosition, 0x00, sizeof opkData.opkPlayerPosition);
 		memset(opkData.opkNpcPosition, 0x00, sizeof opkData.opkNpcPosition);
 
 		if (!ErectusProcess::Wpm(*opkPage, &opkData, sizeof opkData))
@@ -1801,13 +1740,12 @@ bool ErectusMemory::OnePositionKill(DWORD64* opkPage, bool* opkPageValid, const 
 			*opkPage = 0;
 			*opkPageValid = false;
 		}
-
 	}
 
 	return true;
 }
 
-bool ErectusMemory::CheckOpkDistance(const DWORD64 opkPage, const bool players)
+bool ErectusMemory::CheckOpkDistance(const DWORD64 opkPage)
 {
 	Opk opkData;
 	if (!ErectusProcess::Rpm(opkPage, &opkData, sizeof opkData))
@@ -1820,52 +1758,30 @@ bool ErectusMemory::CheckOpkDistance(const DWORD64 opkPage, const bool players)
 	editedOrigin[1] = cameraData.origin[1] / 70.0f;
 	editedOrigin[2] = cameraData.origin[2] / 70.0f;
 
-	if (players)
-	{
-		const auto distance = Utils::GetDistance(opkData.opkPlayerPosition, editedOrigin);
-		if (distance > 20.0f)
-			return false;
-	}
-	else
-	{
-		const auto distance = Utils::GetDistance(opkData.opkNpcPosition, editedOrigin);
-		if (distance > 20.0f)
-			return false;
-	}
+	const auto distance = Utils::GetDistance(opkData.opkNpcPosition, editedOrigin);
+	if (distance > 20.0f)
+		return false;
+
 
 	return true;
 }
 
-bool ErectusMemory::SetOpkData(const DWORD64 opkPage, const bool players, const bool state)
+bool ErectusMemory::SetOpkData(const DWORD64 opkPage, const bool enabled)
 {
 	Opk opkData;
 	if (!ErectusProcess::Rpm(opkPage, &opkData, sizeof opkData))
 		return false;
 
-	if (!state)
+	if (!enabled)
 	{
-		auto writeData = false;
-
-		if (players && opkData.opkPlayers)
-		{
-			opkData.opkPlayers = 0;
-			memset(opkData.opkPlayerPosition, 0x00, sizeof opkData.opkPlayerPosition);
-			writeData = true;
-		}
-		else if (!players && opkData.opkNpcs)
-		{
-			opkData.opkNpcs = 0;
-			memset(opkData.opkNpcPosition, 0x00, sizeof opkData.opkNpcPosition);
-			writeData = true;
-		}
-
-		if (writeData)
-			ErectusProcess::Wpm(opkPage, &opkData, sizeof opkData);
+		opkData.opkNpcs = 0;
+		memset(opkData.opkNpcPosition, 0x00, sizeof opkData.opkNpcPosition);
+		ErectusProcess::Wpm(opkPage, &opkData, sizeof opkData);
 
 		return true;
 	}
 
-	if (CheckOpkDistance(opkPage, players))
+	if (CheckOpkDistance(opkPage))
 		return true;
 
 	auto cameraData = GetCameraInfo();
@@ -1878,20 +1794,10 @@ bool ErectusMemory::SetOpkData(const DWORD64 opkPage, const bool players, const 
 	float opkPosition[3];
 	Utils::ProjectView(opkPosition, cameraData.forward, editedOrigin, 3.0f);
 
-	if (players)
-	{
-		opkData.opkPlayerPosition[0] = opkPosition[0];
-		opkData.opkPlayerPosition[1] = opkPosition[1];
-		opkData.opkPlayerPosition[2] = opkPosition[2];
-		opkData.opkPlayers = 1;
-	}
-	else
-	{
-		opkData.opkNpcPosition[0] = opkPosition[0];
-		opkData.opkNpcPosition[1] = opkPosition[1];
-		opkData.opkNpcPosition[2] = opkPosition[2];
-		opkData.opkNpcs = 1;
-	}
+	opkData.opkNpcPosition[0] = opkPosition[0];
+	opkData.opkNpcPosition[1] = opkPosition[1];
+	opkData.opkNpcPosition[2] = opkPosition[2];
+	opkData.opkNpcs = 1;
 
 	return ErectusProcess::Wpm(opkPage, &opkData, sizeof opkData);
 }
@@ -2345,8 +2251,7 @@ bool ErectusMemory::SendHitsToServer(Hits* hitsData, const size_t hitsDataSize)
 
 	requestHitsOnActorsData.vtable = ErectusProcess::exe + VTABLE_REQUESTHITSONACTORS;
 	requestHitsOnActorsData.hitsArrayPtr = allocAddress + sizeof(ExternalFunction) + sizeof(RequestHitsOnActors);
-	requestHitsOnActorsData.hitsArrayEnd = allocAddress + sizeof(ExternalFunction) + sizeof(RequestHitsOnActors) +
-		hitsDataSize;
+	requestHitsOnActorsData.hitsArrayEnd = allocAddress + sizeof(ExternalFunction) + sizeof(RequestHitsOnActors) + hitsDataSize;
 
 	memcpy(pageData.get(), &externalFunctionData, sizeof externalFunctionData);
 	memcpy(&pageData[sizeof(ExternalFunction)], &requestHitsOnActorsData, sizeof requestHitsOnActorsData);
@@ -2381,17 +2286,15 @@ bool ErectusMemory::SendHitsToServer(Hits* hitsData, const size_t hitsDataSize)
 	return true;
 }
 
-bool ErectusMemory::SendDamage(const DWORD weaponId, BYTE* shotsHit, BYTE* shotsFired, const BYTE count)
+bool ErectusMemory::SendDamage(const DWORD64 targetPtr, const DWORD weaponId, BYTE* shotsHit, BYTE* shotsFired, const BYTE count)
 {
-	if (!MsgSender::IsEnabled())
+	if (!Settings::targetting.dmgSend)
 		return false;
 
 	if (!weaponId)
 		return false;
 
-	auto isPlayer = false;
-	LockedTargetValid(&isPlayer);
-	if (!Settings::targetting.directPlayers && isPlayer || !Settings::targetting.directNpCs && !isPlayer)
+	if (!MsgSender::IsEnabled())
 		return false;
 
 	const auto localPlayerPtr = GetLocalPlayerPtr(true);
@@ -2402,12 +2305,19 @@ bool ErectusMemory::SendDamage(const DWORD weaponId, BYTE* shotsHit, BYTE* shots
 	if (!ErectusProcess::Rpm(localPlayerPtr, &localPlayer, sizeof localPlayer))
 		return false;
 
+	TesObjectRefr target{};
+	if (!ErectusProcess::Rpm(targetPtr, &target, sizeof target))
+		return false;
+
+	if (target.formType == static_cast<BYTE>(FormTypes::PlayerCharacter))
+		return false;
+
+	if (!IsTargetValid(target))
+		return false;
+
 	const auto localPlayerId = GetEntityId(localPlayer);
 	if (!localPlayerId)
 		return false;
-
-	TesObjectRefr target{};
-	if (!ErectusProcess::Rpm(targetLockingPtr, &target, sizeof target)) return false;
 
 	const auto targetId = GetEntityId(target);
 	if (!targetId)

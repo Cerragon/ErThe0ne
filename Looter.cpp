@@ -461,7 +461,7 @@ BYTE Looter::GetLegendaryRank(const DWORD64 displayPtr)
 	BYTE legendaryRank = 0;
 	for (DWORD64 i = 0; i < modArraySize; i++)
 	{
-		if (LEGENDARY_FORMIDS.count(modArray[i * 2]) > 0)
+		if (LEGENDARYEFFECT_FORMIDS.count(modArray[i * 2]) > 0)
 			legendaryRank++;
 	}
 	return legendaryRank;

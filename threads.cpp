@@ -14,7 +14,7 @@ DWORD WINAPI Threads::BufferEntityListThread([[maybe_unused]] LPVOID lpParameter
 	while (!threadDestructionState)
 	{
 		ErectusMemory::UpdateBufferEntityList();
-		std::this_thread::sleep_for(std::chrono::milliseconds(60 * 16));
+		std::this_thread::sleep_for(std::chrono::milliseconds(30 * 16));
 	}
 
 	ErectusMemory::entityDataBuffer.clear();
@@ -90,7 +90,7 @@ DWORD WINAPI Threads::LockingThread([[maybe_unused]] LPVOID lpParameter)
 {
 	srand(static_cast<unsigned int>(time(nullptr)));
 
-	auto favoritedWeaponCounter = 0;
+	auto weaponIdRefreshCooldown = 0;
 
 	DWORD weaponId = 0;
 	BYTE shotsHit = 1;
@@ -102,124 +102,107 @@ DWORD WINAPI Threads::LockingThread([[maybe_unused]] LPVOID lpParameter)
 	auto sendDamageCounter = 0;
 	auto sendDamageThreshold = 0;
 
-	auto meleeCounter = 0;
-	auto meleeThreshold = 0;
-
 	auto targetLockingKeyPressed = false;
+	auto targetLockingCooldown = 0;
 
 	while (!threadDestructionState)
 	{
-		//no clue if this works properly
-		//begin targetting
-
-		auto currentTargetValid = false;
-		DWORD64 closestEntityPtr = 0;
-		auto closestEntityDegrees = Settings::targetting.lockingFov;
-
-
-		auto cameraData = ErectusMemory::GetCameraInfo();
-		auto entities = ErectusMemory::entityDataBuffer;
-		for (const auto& entity : entities)
+		
+		if (Settings::targetting.lockNpCs)
 		{
-			if ((!(entity.flag & CUSTOM_ENTRY_PLAYER) || !Settings::targetting.lockPlayers) && (!(entity.flag & CUSTOM_ENTRY_NPC) || !Settings::targetting.lockNpCs))
-				continue;
+			auto currentTargetValid = false;
+			DWORD64 closestEntityPtr = 0;
+			auto closestEntityDegrees = Settings::targetting.lockingFov;
 
-			TesObjectRefr entityData{};
-			if (!ErectusProcess::Rpm(entity.entityPtr, &entityData, sizeof entityData))
-				continue;
-
-			if (!ErectusMemory::TargetValid(entityData))
-				continue;
-
-			if (entity.entityPtr == ErectusMemory::targetLockingPtr)
+			//refresh weaponId every 60 loops
+			if (weaponIdRefreshCooldown == 0)
 			{
-				currentTargetValid = true;
+				weaponIdRefreshCooldown = 60;
+				weaponId = ErectusMemory::GetFavoritedWeaponId(BYTE(Settings::targetting.favoriteIndex));
 			}
-			else if (targetLockingKeyPressed && !ErectusMemory::targetLockingCooldown)
+			weaponIdRefreshCooldown--;
+			
+			if (App::overlayForeground && GetAsyncKeyState('T'))
 			{
-				auto degrees = Utils::GetDegrees(entityData.position, cameraData.forward, cameraData.origin);
-				if (degrees < closestEntityDegrees)
+				targetLockingKeyPressed = true;
+				if (targetLockingCooldown > 0)
+					targetLockingCooldown--;
+			}
+			else
+			{
+				targetLockingKeyPressed = false;
+				targetLockingCooldown = 0;
+				ErectusMemory::targetLockedEntityPtr = 0;
+			}
+
+			if (ErectusMemory::targetLockedEntityPtr || targetLockingKeyPressed)
+			{
+				auto cameraData = ErectusMemory::GetCameraInfo();
+				auto entities = ErectusMemory::entityDataBuffer;
+				for (const auto& entity : entities)
 				{
-					closestEntityDegrees = degrees;
-					closestEntityPtr = entity.entityPtr;
+					if (!(entity.flag & CUSTOM_ENTRY_NPC) || !Settings::targetting.lockNpCs)
+						continue;
+					
+					TesObjectRefr entityData{};
+					if (!ErectusProcess::Rpm(entity.entityPtr, &entityData, sizeof entityData))
+						continue;
+
+					if (!ErectusMemory::IsTargetValid(entityData))
+						continue;
+
+					if (entity.entityPtr == ErectusMemory::targetLockedEntityPtr)
+					{
+						currentTargetValid = true;
+					}
+					else if (targetLockingKeyPressed && !targetLockingCooldown)
+					{
+						auto degrees = Utils::GetDegrees(entityData.position, cameraData.forward, cameraData.origin);
+						if (degrees < closestEntityDegrees)
+						{
+							closestEntityDegrees = degrees;
+							closestEntityPtr     = entity.entityPtr;
+						}
+					}
 				}
 			}
-		}
 
-		if (!currentTargetValid)
-		{
-			if (ErectusMemory::targetLockingPtr)
+			if (!currentTargetValid)
 			{
-				ErectusMemory::targetLockingCooldown = Settings::targetting.retargeting ? Settings::targetting.cooldown : -1;
-				ErectusMemory::targetLockingPtr = 0;
-			}
-			else if (closestEntityDegrees < Settings::targetting.lockingFov)
-			{
-				ErectusMemory::targetLockingCooldown = 0;
-				ErectusMemory::targetLockingPtr = closestEntityPtr;
-			}
-		}
-		//end targetting
-
-		favoritedWeaponCounter++;
-		if (favoritedWeaponCounter > 60)
-		{
-			favoritedWeaponCounter = 0;
-			weaponId = ErectusMemory::GetFavoritedWeaponId(BYTE(Settings::targetting.favoriteIndex));
-		}
-
-		if (App::overlayForeground && GetAsyncKeyState('T'))
-		{
-			targetLockingKeyPressed = true;
-			if (ErectusMemory::targetLockingCooldown > 0)
-				ErectusMemory::targetLockingCooldown--;
-		}
-		else
-		{
-			targetLockingKeyPressed = false;
-			ErectusMemory::targetLockingCooldown = 0;
-			ErectusMemory::targetLockingPtr = 0;
-		}
-
-		if (ErectusMemory::targetLockingPtr)
-		{
-			ErectusMemory::DamageRedirection(&targetingPage, &targetingPageValid, false, true);
-			
-			sendDamageCounter++;
-			if (sendDamageCounter > sendDamageThreshold)
-			{
-				sendDamageCounter = 0;
-				sendDamageThreshold = Utils::GetRangedInt(Settings::targetting.sendDamageMin, Settings::targetting.sendDamageMax);
-				ErectusMemory::SendDamage(weaponId, &shotsHit, &shotsFired, 1);
-			}
-			
-		}
-		else
-		{
-			ErectusMemory::DamageRedirection(&targetingPage, &targetingPageValid, false, false);
-			sendDamageThreshold = 0;
-		}
-
-		if (Settings::melee.enabled)
-		{
-			if (App::overlayForeground && GetAsyncKeyState('U'))
-			{
-				meleeCounter++;
-				if (meleeCounter > meleeThreshold)
+				if (ErectusMemory::targetLockedEntityPtr)
 				{
-					meleeCounter = 0;
-					meleeThreshold = Utils::GetRangedInt(Settings::melee.speedMin, Settings::melee.speedMax);
-					ErectusMemory::MeleeAttack();
+					targetLockingCooldown = Settings::targetting.retargeting ? Settings::targetting.cooldown : -1;
+					ErectusMemory::targetLockedEntityPtr = 0;
+				}
+				else if (closestEntityDegrees < Settings::targetting.lockingFov)
+				{
+					targetLockingCooldown = 0;
+					ErectusMemory::targetLockedEntityPtr = closestEntityPtr;
+				}
+			}
+
+			if (ErectusMemory::targetLockedEntityPtr)
+			{
+				ErectusMemory::DamageRedirection(ErectusMemory::targetLockedEntityPtr, &targetingPage, &targetingPageValid, false, true);
+
+				sendDamageCounter++;
+				if (sendDamageCounter > sendDamageThreshold)
+				{
+					sendDamageCounter = 0;
+					sendDamageThreshold = Utils::GetRangedInt(Settings::targetting.sendDamageMin, Settings::targetting.sendDamageMax);
+					ErectusMemory::SendDamage(ErectusMemory::targetLockedEntityPtr, weaponId, &shotsHit, &shotsFired, 1);
 				}
 			}
 			else
-				meleeThreshold = 0;
+			{
+				ErectusMemory::DamageRedirection(ErectusMemory::targetLockedEntityPtr, &targetingPage, &targetingPageValid, false, false);
+				sendDamageThreshold = 0;
+			}
 		}
-
 		std::this_thread::sleep_for(std::chrono::milliseconds(16));
 	}
 
-	ErectusMemory::DamageRedirection(&targetingPage, &targetingPageValid, true, false);
+	ErectusMemory::DamageRedirection(ErectusMemory::targetLockedEntityPtr, &targetingPage, &targetingPageValid, true, false);
 
 	if (targetingPage)
 		ErectusProcess::FreeEx(targetingPage);
@@ -231,6 +214,9 @@ DWORD WINAPI Threads::LockingThread([[maybe_unused]] LPVOID lpParameter)
 
 DWORD WINAPI Threads::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 {
+	auto meleeCounter = 0;
+	auto meleeThreshold = 0;
+
 	DWORD64 actorValuePage = 0;
 	auto actorValuePageValid = false;
 
@@ -276,15 +262,10 @@ DWORD WINAPI Threads::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 
 		if (opkPageValid)
 		{
-			if (opkPlayersToggle)
-				ErectusMemory::SetOpkData(opkPage, true, true);
-			else
-				ErectusMemory::SetOpkData(opkPage, true, false);
-
 			if (opkNpcsToggle)
-				ErectusMemory::SetOpkData(opkPage, false, true);
+				ErectusMemory::SetOpkData(opkPage, true);
 			else
-				ErectusMemory::SetOpkData(opkPage, false, false);
+				ErectusMemory::SetOpkData(opkPage, false);
 		}
 
 		if (Settings::customNukeCodeSettings.automaticNukeCodes)
@@ -297,6 +278,22 @@ DWORD WINAPI Threads::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 		if (loopCount % 10 == 0) //every 10 loops
 			ErectusMemory::ChargenEditing();
 
+		if (Settings::melee.enabled)
+		{
+			if (App::overlayForeground && GetAsyncKeyState('U'))
+			{
+				meleeCounter++;
+				if (meleeCounter > meleeThreshold)
+				{
+					meleeCounter = 0;
+					meleeThreshold = Utils::GetRangedInt(Settings::melee.speedMin, Settings::melee.speedMax);
+					ErectusMemory::MeleeAttack();
+				}
+			}
+			else
+				meleeThreshold = 0;
+		}
+		
 		std::this_thread::sleep_for(std::chrono::milliseconds(16));
 	}
 
@@ -335,10 +332,10 @@ DWORD WINAPI Threads::Looter([[maybe_unused]] LPVOID lpParameter)
 	while (!threadDestructionState)
 	{
 		Looter::Loot();
-		std::this_thread::sleep_for(std::chrono::milliseconds(Utils::GetRangedInt(12, 36) * 16));
+		std::this_thread::sleep_for(std::chrono::milliseconds(Utils::GetRangedInt(36, 72) * 16));
 	}
 
-	harvesterThreadActive = false;
+	looterThreadActive = false;
 
 	return 0xDEAF;
 }
@@ -404,10 +401,10 @@ bool Threads::CreateProcessThreads()
 		}
 	}
 
-	if (!harvesterThreadActive)
+	if (!looterThreadActive)
 	{
-		harvesterThreadActive = CloseHandle(CreateThread(nullptr, 0, &Looter, nullptr, 0, nullptr));
-		if (!harvesterThreadActive)
+		looterThreadActive = CloseHandle(CreateThread(nullptr, 0, &Looter, nullptr, 0, nullptr));
+		if (!looterThreadActive)
 		{
 			threadDestructionQueued = true;
 			return false;
@@ -436,7 +433,7 @@ bool Threads::ThreadDestruction()
 	if (multihackThreadActive)
 		return false;
 
-	if (harvesterThreadActive)
+	if (looterThreadActive)
 		return false;
 
 	threadCreationState = false;
