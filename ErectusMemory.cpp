@@ -550,9 +550,15 @@ ItemInfo ErectusMemory::GetItemInfo(const TesObjectRefr& entity, const TesItem& 
 
 void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* entityFlag, DWORD64* entityNamePtr, int* enabledDistance)
 {
-
-	if (auto found = Settings::esp.whitelist.find(referenceData.formId); found != Settings::esp.whitelist.end()) {
-		if (found->second)
+	if (auto found1 = Settings::esp.blacklist.find(referenceData.formId); found1 != Settings::esp.blacklist.end()) {
+		if (found1->second) {
+			*entityFlag |= CUSTOM_ENTRY_INVALID;
+			return;
+		}
+	}
+	
+	if (auto found2 = Settings::esp.whitelist.find(referenceData.formId); found2 != Settings::esp.whitelist.end()) {
+		if (found2->second)
 			*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
 	}
 
@@ -692,7 +698,7 @@ void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* e
 		*entityFlag |= CUSTOM_ENTRY_VALID_ITEM;
 		*entityNamePtr = referenceData.namePtr0098;
 		*enabledDistance = Settings::esp.items.enabledDistance;
-		if (!Settings::esp.items.enabled)
+		if (!Settings::esp.items.enabled && !(*entityFlag & CUSTOM_ENTRY_WHITELISTED))
 			*entityFlag |= CUSTOM_ENTRY_INVALID;
 		break;
 	default:
