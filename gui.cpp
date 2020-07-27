@@ -516,7 +516,7 @@ void Gui::Menu()
 {
 	auto windowFlags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoResize;
 	if (gApp->mode == App::Mode::Standalone)
-		windowFlags |= ImGuiWindowFlags_NoTitleBar;
+		windowFlags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove;
 	
 	if (ImGui::Begin(OVERLAY_WINDOW_NAME, nullptr, windowFlags))
 	{
@@ -757,12 +757,6 @@ void Gui::EspSettings(EspSettings::Items& itemEsp)
 	ImGui::SliderInt("##Distance", &itemEsp.enabledDistance, 0, 3000, "Distance: %d");
 	ImGui::NextColumn();
 
-	ImGui::SetNextItemWidth(-FLT_MIN);
-	ImGui::ColorEdit3("##Color", itemEsp.color);
-	Utils::ValidateRgb(itemEsp.color);
-	ImGui::NextColumn();
-	ImGui::NextColumn();
-
 	LargeButtonToggle("Draw Enabled", itemEsp.drawEnabled);
 	ImGui::NextColumn();
 	ImGui::SetNextItemWidth(-FLT_MIN);
@@ -786,6 +780,11 @@ void Gui::EspSettings(EspSettings::Items& itemEsp)
 	ImGui::NextColumn();
 
 	ImGui::Columns();
+
+	ImGui::SetNextItemWidth(-FLT_MIN);
+	ImGui::ColorEdit3("##Color", itemEsp.color);
+	Utils::ValidateRgb(itemEsp.color);
+
 	ImGui::PopID();
 }
 void Gui::OverlayMenuTabEsp()
@@ -799,41 +798,37 @@ void Gui::OverlayMenuTabEsp()
 		{
 			EspSettings(Settings::esp.npcs);
 
+			ImGui::PushItemWidth(-FLT_MIN);
 			ButtonToggle("Always Draw Living 1* NPCs", Settings::esp.npcsExt.overrideLivingOneStar);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
+			ImGui::SameLine();
 			ImGui::ColorEdit3("###LivingOneStarColor", Settings::esp.npcsExt.livingOneStarColor);
 			Utils::ValidateRgb(Settings::esp.npcsExt.livingOneStarColor);
 
 			ButtonToggle("Always Draw Dead 1* NPCs", Settings::esp.npcsExt.overrideDeadOneStar);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
+			ImGui::SameLine();
 			ImGui::ColorEdit3("###DeadOneStarColor", Settings::esp.npcsExt.deadOneStarColor);
 			Utils::ValidateRgb(Settings::esp.npcsExt.deadOneStarColor);
 
 			ButtonToggle("Always Draw Living 2* NPCs", Settings::esp.npcsExt.overrideLivingTwoStar);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
+			ImGui::SameLine();
 			ImGui::ColorEdit3("###LivingTwoStarColor", Settings::esp.npcsExt.livingTwoStarColor);
 			Utils::ValidateRgb(Settings::esp.npcsExt.livingTwoStarColor);
 
 			ButtonToggle("Always Draw Dead 2* NPCs", Settings::esp.npcsExt.overrideDeadTwoStar);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
+			ImGui::SameLine();
 			ImGui::ColorEdit3("###DeadTwoStarColor", Settings::esp.npcsExt.deadTwoStarColor);
 			Utils::ValidateRgb(Settings::esp.npcsExt.deadTwoStarColor);
 
 			ButtonToggle("Always Draw Living 3* NPCs", Settings::esp.npcsExt.overrideLivingThreeStar);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
+			ImGui::SameLine();
 			ImGui::ColorEdit3("###LivingThreeStarColor", Settings::esp.npcsExt.livingThreeStarColor);
 			Utils::ValidateRgb(Settings::esp.npcsExt.livingThreeStarColor);
 
 			ButtonToggle("Always Draw Dead 3* NPCs", Settings::esp.npcsExt.overrideDeadThreeStar);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
+			ImGui::SameLine();
 			ImGui::ColorEdit3("###DeadThreeStarColor", Settings::esp.npcsExt.deadThreeStarColor);
 			Utils::ValidateRgb(Settings::esp.npcsExt.deadThreeStarColor);
+			ImGui::PopItemWidth();
 		}
 
 		if (ImGui::CollapsingHeader("Container ESP"))
@@ -856,7 +851,7 @@ void Gui::OverlayMenuTabEsp()
 			EspSettings(Settings::esp.plans);
 
 			ButtonToggle("Draw Known Plans", Settings::esp.plansExt.knownRecipesEnabled);
-			ImGui::SameLine(235.0f);
+			ImGui::SameLine();
 			LargeButtonToggle("Draw Unknown Plans", Settings::esp.plansExt.unknownRecipesEnabled);
 		}
 
@@ -872,34 +867,7 @@ void Gui::OverlayMenuTabEsp()
 		}
 
 		if (ImGui::CollapsingHeader("Entity ESP Settings"))
-		{
-			ButtonToggle("Entity ESP Enabled", Settings::esp.entities.enabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::SliderInt("###EntitySettingsEnabledDistance", &Settings::esp.entities.enabledDistance, 0, 3000, "Distance: %d");
-
-			ImGui::SetNextItemWidth(451.0f);
-			ImGui::ColorEdit3("###EntitySettingsColor", Settings::esp.entities.color);
-			Utils::ValidateRgb(Settings::esp.entities.color);
-
-			ButtonToggle("Draw Enabled Entities", Settings::esp.entities.drawEnabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::SliderFloat("###EntitySettingsEnabledAlpha", &Settings::esp.entities.enabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
-
-			ButtonToggle("Draw Disabled Entities", Settings::esp.entities.drawDisabled);
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
-			ImGui::SliderFloat("###EntitySettingsDisabledAlpha", &Settings::esp.entities.disabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
-
-			ButtonToggle("Draw Named Entities", Settings::esp.entities.drawNamed);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Draw Unnamed Entities", Settings::esp.entities.drawUnnamed);
-
-			ButtonToggle("Show Entity Name", Settings::esp.entities.showName);
-			ImGui::SameLine(235.0f);
-			ButtonToggle("Show Entity Distance", Settings::esp.entities.showDistance);
-		}
+			EspSettings(Settings::esp.entities);
 
 		if (ImGui::CollapsingHeader("Whitelist"))
 		{
@@ -1249,32 +1217,32 @@ void Gui::OverlayMenuTabCombat()
 			LargeButtonToggle("NPC Targeting (Keybind: T)", Settings::targetting.lockNpCs);
 
 			ButtonToggle("Damage Redirection", Settings::targetting.dmgRedirect);
-			ImGui::SameLine(235.0f);
+			ImGui::SameLine();
 			LargeButtonToggle("Send Damage", Settings::targetting.dmgSend);
 
 			LargeButtonToggle("Also target NPCs with unknown state###TargetUnknown", Settings::targetting.targetUnknown);
 			LargeButtonToggle("Ignore Essential NPCs###IgnoreEssentialNPCs", Settings::targetting.ignoreEssentialNpcs);
 
-			ImGui::SetNextItemWidth(224.0f);
+			ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x / 2);
 			ImGui::SliderFloat("###TargetLockingFOV", &Settings::targetting.lockingFov, 5.0f, 40.0f, "Targeting FOV: %.2f");
 
-			ImGui::SameLine(235.0f);
-			ImGui::SetNextItemWidth(224.0f);
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(-FLT_MIN);
 			ImGui::ColorEdit3("###TargetLockingColor", Settings::targetting.lockedColor);
 			Utils::ValidateRgb(Settings::esp.players.unknownColor);
 
 			ButtonToggle("Automatic Retargeting###TargetLockingRetargeting", Settings::targetting.retargeting);
 
-			ImGui::SameLine(235.0f);
+			ImGui::SameLine();
 
 			{
-				ImGui::SetNextItemWidth(224.0f);
+				ImGui::SetNextItemWidth(-FLT_MIN);
 				auto sliderText = fmt::format("Cooldown: {0:d} ({1:d} ms)", Settings::targetting.cooldown, Settings::targetting.cooldown * 16);
 				ImGui::SliderInt("###TargetLockingCooldown", &Settings::targetting.cooldown, 0, 120, sliderText.c_str());
 			}
 
 			{
-				ImGui::SetNextItemWidth(224.0f);
+				ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x / 2);
 				auto sliderText = fmt::format("Send Damage (Min): {0:d} ({1:d} ms)", Settings::targetting.sendDamageMin, Settings::targetting.sendDamageMin * 16);
 				if (ImGui::SliderInt("###SendDamageMin", &Settings::targetting.sendDamageMin, 1, 60, sliderText.c_str()))
 				{
@@ -1283,10 +1251,10 @@ void Gui::OverlayMenuTabCombat()
 				}
 			}
 
-			ImGui::SameLine(235.0f);
+			ImGui::SameLine();
 
 			{
-				ImGui::SetNextItemWidth(224.0f);
+				ImGui::SetNextItemWidth(-FLT_MIN);
 				auto sliderText = fmt::format("Send Damage (Max): {0:d} ({1:d} ms)", Settings::targetting.sendDamageMax, Settings::targetting.sendDamageMax * 16);
 				if (ImGui::SliderInt("###SendDamageMax", &Settings::targetting.sendDamageMax, 1, 60, sliderText.c_str()))
 				{
@@ -1306,7 +1274,7 @@ void Gui::OverlayMenuTabCombat()
 					}
 				}
 
-				ImGui::SetNextItemWidth(451.0f);
+				ImGui::SetNextItemWidth(-FLT_MIN);
 				if (ImGui::BeginCombo("###BeginTempCombo", favoritedWeaponsPreview.c_str()))
 				{
 					for (const auto& item : ErectusMemory::GetFavoritedWeapons())
@@ -1331,7 +1299,7 @@ void Gui::OverlayMenuTabCombat()
 			LargeButtonToggle("Melee Enabled (Keybind: U)", Settings::melee.enabled);
 
 			{
-				ImGui::SetNextItemWidth(224.0f);
+				ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x / 2);
 				auto sliderText = fmt::format("Melee Speed (Min): {0:d} ({1:d} ms)", Settings::melee.speedMin, Settings::melee.speedMin * 16);
 				if (ImGui::SliderInt("###MeleeSpeedMin", &Settings::melee.speedMin, 1, 60, sliderText.c_str()))
 				{
@@ -1340,10 +1308,10 @@ void Gui::OverlayMenuTabCombat()
 				}
 			}
 
-			ImGui::SameLine(235.0f);
+			ImGui::SameLine();
 
 			{
-				ImGui::SetNextItemWidth(224.0f);
+				ImGui::SetNextItemWidth(-FLT_MIN);
 				auto sliderText = fmt::format("Melee Speed (Max): {0:d} ({1:d} ms)", Settings::melee.speedMax, Settings::melee.speedMax * 16);
 				if (ImGui::SliderInt("###MeleeSpeedMax", &Settings::melee.speedMax, 1, 60, sliderText.c_str()))
 				{
@@ -1370,11 +1338,13 @@ void Gui::OverlayMenuTabPlayer()
 
 			LargeButtonToggle("Height Spoofing (CTRL+L)##LocalPlayerPositionSpoofingEnabled", Settings::localPlayer.positionSpoofingEnabled);
 			ImGui::NextColumn();
+			ImGui::SetNextItemWidth(-FLT_MIN);
 			ImGui::SliderInt("###LocalPlayerPositionSpoofingHeight", &Settings::localPlayer.positionSpoofingHeight, -524287, 524287, "Spoofed Height: %d");
 			ImGui::NextColumn();
 
 			LargeButtonToggle("Noclip (CTRL+Y)###NoclipEnabled", Settings::localPlayer.noclipEnabled);
 			ImGui::NextColumn();
+			ImGui::SetNextItemWidth(-FLT_MIN);
 			ImGui::SliderFloat("###NoclipSpeed", &Settings::localPlayer.noclipSpeed, 0.0f, 2.0f, "Speed: %.5f");
 			ImGui::NextColumn();
 
@@ -1389,41 +1359,49 @@ void Gui::OverlayMenuTabPlayer()
 
 			LargeButtonToggle("Action Points###LocalPlayerAPEnabled", Settings::localPlayer.actionPointsEnabled);
 			ImGui::NextColumn();
+			ImGui::SetNextItemWidth(-FLT_MIN);
 			ImGui::SliderInt("###LocalPlayerAP", &Settings::localPlayer.actionPoints, 0, 99999, "Action Points: %d");
 			ImGui::NextColumn();
 
 			LargeButtonToggle("Strength###LocalPlayerStrengthEnabled", Settings::localPlayer.strengthEnabled);
 			ImGui::NextColumn();
+			ImGui::SetNextItemWidth(-FLT_MIN);
 			ImGui::SliderInt("###LocalPlayerStrength", &Settings::localPlayer.strength, 0, 99999, "Strength: %d");
 			ImGui::NextColumn();
 
 			LargeButtonToggle("Perception###LocalPlayerPerceptionEnabled", Settings::localPlayer.perceptionEnabled);
 			ImGui::NextColumn();
+			ImGui::SetNextItemWidth(-FLT_MIN);
 			ImGui::SliderInt("###LocalPlayerPerception", &Settings::localPlayer.perception, 0, 99999, "Perception: %d");
 			ImGui::NextColumn();
 
 			LargeButtonToggle("Endurance###LocalPlayerEnduranceEnabled", Settings::localPlayer.enduranceEnabled);
 			ImGui::NextColumn();
+			ImGui::SetNextItemWidth(-FLT_MIN);
 			ImGui::SliderInt("###LocalPlayerEndurance", &Settings::localPlayer.endurance, 0, 99999, "Endurance: %d");
 			ImGui::NextColumn();
 
 			LargeButtonToggle("Charisma###LocalPlayerCharismaEnabled", Settings::localPlayer.charismaEnabled);
 			ImGui::NextColumn();
+			ImGui::SetNextItemWidth(-FLT_MIN);
 			ImGui::SliderInt("###LocalPlayerCharisma", &Settings::localPlayer.charisma, 0, 99999, "Charisma: %d");
 			ImGui::NextColumn();
 
 			LargeButtonToggle("Intelligence###LocalPlayerIntelligenceEnabled", Settings::localPlayer.intelligenceEnabled);
 			ImGui::NextColumn();
+			ImGui::SetNextItemWidth(-FLT_MIN);
 			ImGui::SliderInt("###LocalPlayerIntelligence", &Settings::localPlayer.intelligence, 0, 99999, "Intelligence: %d");
 			ImGui::NextColumn();
 
 			LargeButtonToggle("Agility###LocalPlayerAgilityEnabled", Settings::localPlayer.agilityEnabled);
 			ImGui::NextColumn();
+			ImGui::SetNextItemWidth(-FLT_MIN);
 			ImGui::SliderInt("###LocalPlayerAgility", &Settings::localPlayer.agility, 0, 99999, "Agility: %d");
 			ImGui::NextColumn();
 
 			LargeButtonToggle("Luck###LocalPlayerLuckEnabled", Settings::localPlayer.luckEnabled);					ImGui::SameLine(235.0f);
 			ImGui::NextColumn();
+			ImGui::SetNextItemWidth(-FLT_MIN);
 			ImGui::SliderInt("###LocalPlayerLuck", &Settings::localPlayer.luck, 0, 99999, "Luck: %d");
 
 			ImGui::Columns();
@@ -1451,7 +1429,7 @@ void Gui::OverlayMenuTabUtilities()
 	{
 		if (ImGui::CollapsingHeader("Utility"))
 		{
-			ButtonToggle("ESP Debug Mode", Settings::utilities.debugEsp);
+			LargeButtonToggle("ESP Debug Mode", Settings::utilities.debugEsp);
 
 			{
 				if (Settings::utilities.ptrFormId)
@@ -1460,7 +1438,7 @@ void Gui::OverlayMenuTabUtilities()
 					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 1.0f, 0.0f, 0.4f));
 					ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 1.0f, 0.0f, 0.5f));
 
-					if (ImGui::Button("Get Pointer###GetPointerEnabled", ImVec2(224.0f, 0.0f)))
+					if (ImGui::Button("Get Pointer###GetPointerEnabled", ImVec2(ImGui::GetContentRegionAvail().x / 2, 0.0f)))
 						getPtrResult = ErectusMemory::GetPtr(Settings::utilities.ptrFormId);
 
 					ImGui::PopStyleColor(3);
@@ -1472,26 +1450,26 @@ void Gui::OverlayMenuTabUtilities()
 					ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(1.0f, 0.0f, 0.0f, 0.5f));
 
 					ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-					ImGui::Button("Get Pointer###GetPointerDisabled", ImVec2(224.0f, 0.0f));
+					ImGui::Button("Get Pointer###GetPointerDisabled", ImVec2(ImGui::GetContentRegionAvail().x / 2, 0.0f));
 					ImGui::PopItemFlag();
 
 					ImGui::PopStyleColor(3);
 				}
 			}
 
-			ImGui::SameLine(235.0f);
+			ImGui::SameLine();
 
 			{
-				ImGui::SetNextItemWidth(80.0f);
+				ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x / 2);
 				if (ImGui::InputScalar("###PtrFormIdText", ImGuiDataType_U32, &Settings::utilities.ptrFormId,
 					nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal))
 					getPtrResult = 0;
 			}
 
-			ImGui::SameLine(318.0f);
+			ImGui::SameLine();
 
 			{
-				ImGui::SetNextItemWidth(141.0f);
+				ImGui::SetNextItemWidth(-FLT_MIN);
 				auto inputText = fmt::format("{:16X}", getPtrResult);
 				ImGui::InputText("###PtrPointerText", &inputText, ImGuiInputTextFlags_ReadOnly);
 			}
@@ -1503,7 +1481,7 @@ void Gui::OverlayMenuTabUtilities()
 					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 1.0f, 0.0f, 0.4f));
 					ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 1.0f, 0.0f, 0.5f));
 
-					if (ImGui::Button("Get Address###GetAddressEnabled", ImVec2(224.0f, 0.0f)))
+					if (ImGui::Button("Get Address###GetAddressEnabled", ImVec2(ImGui::GetContentRegionAvail().x / 2, 0.0f)))
 						getAddressResult = ErectusMemory::GetAddress(Settings::utilities.addressFormId);
 
 					ImGui::PopStyleColor(3);
@@ -1515,27 +1493,27 @@ void Gui::OverlayMenuTabUtilities()
 					ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(1.0f, 0.0f, 0.0f, 0.5f));
 
 					ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-					ImGui::Button("Get Address###GetAddressDisabled", ImVec2(224.0f, 0.0f));
+					ImGui::Button("Get Address###GetAddressDisabled", ImVec2(ImGui::GetContentRegionAvail().x / 2, 0.0f));
 					ImGui::PopItemFlag();
 
 					ImGui::PopStyleColor(3);
 				}
 			}
 
-			ImGui::SameLine(235.0f);
+			ImGui::SameLine();
 
 			{
-				ImGui::SetNextItemWidth(80.0f);
+				ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x / 2);
 
 				if (ImGui::InputScalar("###AddressFormIdText", ImGuiDataType_U32, &Settings::utilities.addressFormId,
 					nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal))
 					getAddressResult = 0;
 			}
 
-			ImGui::SameLine(318.0f);
+			ImGui::SameLine();
 
 			{
-				ImGui::SetNextItemWidth(141.0f);
+				ImGui::SetNextItemWidth(-FLT_MIN);
 
 				auto inputText = fmt::format("{:16X}", getAddressResult);
 				ImGui::InputText("###AddressPointerText", &inputText, ImGuiInputTextFlags_ReadOnly);
@@ -1546,20 +1524,20 @@ void Gui::OverlayMenuTabUtilities()
 		{
 			ButtonToggle("Source FormId###SwapperSourceFormIdToggle", swapperSourceToggle);
 
-			ImGui::SameLine(235.0f);
+			ImGui::SameLine();
 
 			{
-				ImGui::SetNextItemWidth(224.0f);
+				ImGui::SetNextItemWidth(-FLT_MIN);
 				ImGui::InputScalar("###SwapperSourceFormIdText", ImGuiDataType_U32, &Settings::swapper.sourceFormId,
 					nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal);
 			}
 
 			ButtonToggle("Destination FormId###SwapperDestinationFormIdToggle", swapperDestinationToggle);
 
-			ImGui::SameLine(235.0f);
+			ImGui::SameLine();
 
 			{
-				ImGui::SetNextItemWidth(224.0f);
+				ImGui::SetNextItemWidth(-FLT_MIN);
 				ImGui::InputScalar("###SwapperDestinationFormIdText", ImGuiDataType_U32, &Settings::swapper.destinationFormId,
 					nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal);
 			}
@@ -1570,7 +1548,7 @@ void Gui::OverlayMenuTabUtilities()
 				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 1.0f, 0.0f, 0.4f));
 				ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 1.0f, 0.0f, 0.5f));
 
-				if (ImGui::Button("Edit Reference (Overwrite Destination)###EditReferenceEnabled", ImVec2(451.0f, 0.0f)))
+				if (ImGui::Button("Edit Reference (Overwrite Destination)###EditReferenceEnabled", ImVec2(-FLT_MIN, 0.0f)))
 				{
 					if (ErectusMemory::ReferenceSwap(Settings::swapper.sourceFormId, Settings::swapper.destinationFormId))
 					{
@@ -1589,7 +1567,7 @@ void Gui::OverlayMenuTabUtilities()
 				ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(1.0f, 0.0f, 0.0f, 0.5f));
 
 				ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-				ImGui::Button("Edit Reference (Overwrite Destination)###EditReferenceDisabled", ImVec2(451.0f, 0.0f));
+				ImGui::Button("Edit Reference (Overwrite Destination)###EditReferenceDisabled", ImVec2(-FLT_MIN, 0.0f));
 				ImGui::PopItemFlag();
 
 				ImGui::PopStyleColor(3);
@@ -1600,27 +1578,27 @@ void Gui::OverlayMenuTabUtilities()
 		{
 			SmallButtonToggle("Source###TransferSourceFormIdToggle", transferSourceToggle);
 
-			ImGui::SameLine(122.0f);
+			ImGui::SameLine();
 
 			{
-				ImGui::SetNextItemWidth(110.0f);
+				ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x / 3);
 				ImGui::InputScalar("###TransferSourceFormIdText", ImGuiDataType_U32, &Settings::customTransferSettings.sourceFormId,
 					nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal);
 			}
 
-			ImGui::SameLine(235.0f);
+			ImGui::SameLine();
 
 			{
 				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 1.0f, 0.0f, 0.3f));
 				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 1.0f, 0.0f, 0.4f));
 				ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 1.0f, 0.0f, 0.5f));
 
-				if (ImGui::Button("Get Player###TransferSourceLocalPlayer", ImVec2(110.0f, 0.0f)))
+				if (ImGui::Button("Get Player###TransferSourceLocalPlayer", ImVec2(ImGui::GetContentRegionAvail().x / 2, 0.0f)))
 					Settings::customTransferSettings.sourceFormId = ErectusMemory::GetLocalPlayerFormId();
 
-				ImGui::SameLine(349.0f);
+				ImGui::SameLine();
 
-				if (ImGui::Button("Get STASH###TransferSourceSTASH", ImVec2(110.0f, 0.0f)))
+				if (ImGui::Button("Get STASH###TransferSourceSTASH", ImVec2(-FLT_MIN, 0.0f)))
 					Settings::customTransferSettings.sourceFormId = ErectusMemory::GetStashFormId();
 
 				ImGui::PopStyleColor(3);
@@ -1628,10 +1606,10 @@ void Gui::OverlayMenuTabUtilities()
 
 			SmallButtonToggle("Destination###TransferDestinationFormIdToggle", transferDestinationToggle);
 
-			ImGui::SameLine(122.0f);
+			ImGui::SameLine();
 
 			{
-				ImGui::SetNextItemWidth(110.0f);
+				ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x / 3);
 				ImGui::InputScalar("###TransferDestinationFormIdText", ImGuiDataType_U32, &Settings::customTransferSettings.destinationFormId,
 					nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal);
 			}
@@ -1640,12 +1618,12 @@ void Gui::OverlayMenuTabUtilities()
 				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 1.0f, 0.0f, 0.3f));
 				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 1.0f, 0.0f, 0.4f));
 				ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 1.0f, 0.0f, 0.5f));
-				ImGui::SameLine(235.0f);
-				if (ImGui::Button("Get Player###TransferDestinationLocalPlayer", ImVec2(110.0f, 0.0f)))
+				ImGui::SameLine();
+				if (ImGui::Button("Get Player###TransferDestinationLocalPlayer", ImVec2(ImGui::GetContentRegionAvail().x / 2, 0.0f)))
 					Settings::customTransferSettings.destinationFormId = ErectusMemory::GetLocalPlayerFormId();
 
-				ImGui::SameLine(349.0f);
-				if (ImGui::Button("Get STASH###TransferDestinationSTASH", ImVec2(110.0f, 0.0f)))
+				ImGui::SameLine();
+				if (ImGui::Button("Get STASH###TransferDestinationSTASH", ImVec2(-FLT_MIN, 0.0f)))
 					Settings::customTransferSettings.destinationFormId = ErectusMemory::GetStashFormId();
 				ImGui::PopStyleColor(3);
 			}
@@ -1666,7 +1644,7 @@ void Gui::OverlayMenuTabUtilities()
 				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 1.0f, 0.0f, 0.4f));
 				ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 1.0f, 0.0f, 0.5f));
 
-				if (ImGui::Button("Transfer Items###TransferItemsEnabled", ImVec2(451.0f, 0.0f)))
+				if (ImGui::Button("Transfer Items###TransferItemsEnabled", ImVec2(-FLT_MIN, 0.0f)))
 					ErectusMemory::TransferItems(Settings::customTransferSettings.sourceFormId, Settings::customTransferSettings.destinationFormId);
 
 				ImGui::PopStyleColor(3);
@@ -1678,7 +1656,7 @@ void Gui::OverlayMenuTabUtilities()
 				ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(1.0f, 0.0f, 0.0f, 0.5f));
 
 				ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-				ImGui::Button("Transfer Items###TransferItemsDisabled", ImVec2(451.0f, 0.0f));
+				ImGui::Button("Transfer Items###TransferItemsDisabled", ImVec2(-FLT_MIN, 0.0f));
 				ImGui::PopItemFlag();
 
 				ImGui::PopStyleColor(3);
@@ -1694,8 +1672,8 @@ void Gui::OverlayMenuTabUtilities()
 					auto toggleLabel = fmt::format("Transfer Whitelist Slot: {0:d}", i);
 					ButtonToggle(toggleLabel.c_str(), Settings::customTransferSettings.whitelisted[i]);
 
-					ImGui::SameLine(235.0f);
-					ImGui::SetNextItemWidth(224.0f);
+					ImGui::SameLine();
+					ImGui::SetNextItemWidth(-FLT_MIN);
 
 					auto inputLabel = fmt::format("###ItemTransferWhitelist{:d}", i);
 					ImGui::InputScalar(inputLabel.c_str(), ImGuiDataType_U32, &Settings::customTransferSettings.whitelist[i],
@@ -1710,8 +1688,8 @@ void Gui::OverlayMenuTabUtilities()
 					auto toggleLabel = fmt::format("Transfer Blacklist Slot: {0:d}", i);
 					ButtonToggle(toggleLabel.c_str(), Settings::customTransferSettings.blacklisted[i]);
 
-					ImGui::SameLine(235.0f);
-					ImGui::SetNextItemWidth(224.0f);
+					ImGui::SameLine();
+					ImGui::SetNextItemWidth(-FLT_MIN);
 
 					auto inputLabel = fmt::format("###ItemTransferBlacklist{:d}", i);
 					ImGui::InputScalar(inputLabel.c_str(), ImGuiDataType_U32, &Settings::customTransferSettings.blacklist[i],
@@ -1724,14 +1702,14 @@ void Gui::OverlayMenuTabUtilities()
 		{
 			ButtonToggle("Automatic Nuke Codes", Settings::customNukeCodeSettings.automaticNukeCodes);
 
-			ImGui::SameLine(235.0f);
+			ImGui::SameLine();
 
 			{
 				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 1.0f, 0.0f, 0.3f));
 				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 1.0f, 0.0f, 0.4f));
 				ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 1.0f, 0.0f, 0.5f));
 
-				if (ImGui::Button("Get Nuke Codes", ImVec2(224.0f, 0.0f)))
+				if (ImGui::Button("Get Nuke Codes", ImVec2(-FLT_MIN, 0.0f)))
 					ErectusMemory::UpdateNukeCodes();
 
 				ImGui::PopStyleColor(3);
@@ -1746,7 +1724,6 @@ void Gui::OverlayMenuTabUtilities()
 			text = format("{} - Charlie", fmt::join(ErectusMemory::charlieCode, " "));
 			ImGui::Text(text.c_str());
 		}
-
 		ImGui::EndTabItem();
 	}
 }
@@ -1761,43 +1738,43 @@ void Gui::OverlayMenuTabTeleporter()
 			if (ImGui::CollapsingHeader(teleportHeaderText.c_str()))
 			{
 				{
-					ImGui::SetNextItemWidth(110.0f);
+					ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x / 4);
 					auto inputLabel = fmt::format("###TeleportDestinationX{:d}", i);
 					ImGui::InputFloat(inputLabel.c_str(), &Settings::teleporter.entries[i].destination[0]);
 				}
 
-				ImGui::SameLine(122.0f);
+				ImGui::SameLine();
 
 				{
-					ImGui::SetNextItemWidth(110.0f);
+					ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x / 3);
 					auto inputLabel = fmt::format("###TeleportDestinationY{:d}", i);
 					ImGui::InputFloat(inputLabel.c_str(), &Settings::teleporter.entries[i].destination[1]);
 				}
 
-				ImGui::SameLine(235.0f);
+				ImGui::SameLine();
 
 				{
-					ImGui::SetNextItemWidth(110.0f);
+					ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x / 2);
 					auto inputLabel = fmt::format("###TeleportDestinationZ{:d}", i);
 					ImGui::InputFloat(inputLabel.c_str(), &Settings::teleporter.entries[i].destination[2]);
 				}
 
-				ImGui::SameLine(349.0f);
+				ImGui::SameLine();
 
 				{
-					ImGui::SetNextItemWidth(110.0f);
+					ImGui::SetNextItemWidth(-FLT_MIN);
 					auto inputLabel = fmt::format("###TeleportDestinationW{:d}", i);
 					ImGui::InputFloat(inputLabel.c_str(), &Settings::teleporter.entries[i].destination[3]);
 				}
 
 				{
-					ImGui::SetNextItemWidth(110.0f);
+					ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x / 4);
 					auto inputLabel = fmt::format("###TeleportCellFormId{:d}", i);
 					ImGui::InputScalar(inputLabel.c_str(), ImGuiDataType_U32, &Settings::teleporter.entries[i].cellFormId,
 						nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal);
 				}
 
-				ImGui::SameLine(122.0f);
+				ImGui::SameLine();
 
 				{
 					auto buttonLabel = fmt::format("Set Position###TeleportDestination{:d}", i);
@@ -1807,7 +1784,7 @@ void Gui::OverlayMenuTabTeleporter()
 						ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 1.0f, 0.0f, 0.4f));
 						ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 1.0f, 0.0f, 0.5f));
 
-						if (ImGui::Button(buttonLabel.c_str(), ImVec2(110.0f, 0.0f)))
+						if (ImGui::Button(buttonLabel.c_str(), ImVec2(ImGui::GetContentRegionAvail().x / 3, 0.0f)))
 							ErectusMemory::GetTeleportPosition(i);
 
 						ImGui::PopStyleColor(3);
@@ -1819,21 +1796,21 @@ void Gui::OverlayMenuTabTeleporter()
 						ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(1.0f, 0.0f, 0.0f, 0.5f));
 
 						ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-						ImGui::Button(buttonLabel.c_str(), ImVec2(110.0f, 0.0f));
+						ImGui::Button(buttonLabel.c_str(), ImVec2(ImGui::GetContentRegionAvail().x / 3, 0.0f));
 						ImGui::PopItemFlag();
 
 						ImGui::PopStyleColor(3);
 					}
 				}
 
-				ImGui::SameLine(235.0f);
+				ImGui::SameLine();
 
 				{
 					auto buttonLabel = fmt::format("Lock###DisableSaving{:d}", i);
-					SmallButtonToggle(buttonLabel.c_str(), Settings::teleporter.entries[i].disableSaving);
+					ButtonToggle(buttonLabel.c_str(), Settings::teleporter.entries[i].disableSaving);
 				}
 
-				ImGui::SameLine(349.0f);
+				ImGui::SameLine();
 
 				if (Settings::teleporter.entries[i].cellFormId)
 				{
@@ -1842,7 +1819,7 @@ void Gui::OverlayMenuTabTeleporter()
 					ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 1.0f, 0.0f, 0.5f));
 
 					auto buttonLabel = fmt::format("Teleport###TeleportRequestEnabled{:d}", i);
-					if (ImGui::Button(buttonLabel.c_str(), ImVec2(110.0f, 0.0f)))
+					if (ImGui::Button(buttonLabel.c_str(), ImVec2(-FLT_MIN, 0.0f)))
 						ErectusMemory::RequestTeleport(i);
 					ImGui::PopStyleColor(3);
 				}
@@ -1854,7 +1831,7 @@ void Gui::OverlayMenuTabTeleporter()
 					ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(1.0f, 0.0f, 0.0f, 0.5f));
 
 					auto buttonLabel = fmt::format("Teleport###TeleportRequestDisabled{:d}", i);
-					ImGui::Button(buttonLabel.c_str(), ImVec2(110.0f, 0.0f));
+					ImGui::Button(buttonLabel.c_str(), ImVec2(-FLT_MIN, 0.0f));
 					ImGui::PopStyleColor(3);
 					ImGui::PopItemFlag();
 				}

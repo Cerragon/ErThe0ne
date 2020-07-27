@@ -32,6 +32,10 @@ bool Renderer::Init(const HWND hwnd)
 	ImGui::GetIO().ConfigWindowsMoveFromTitleBarOnly = true;
 	ImGui::GetIO().IniFilename = nullptr;
 
+	ImGui::GetStyle().FrameRounding = 0.f;
+	ImGui::GetStyle().WindowRounding = 0.f;
+	ImGui::GetStyle().ItemSpacing = ImVec2(4, 4);
+
 	LoadFonts();
 
 	return true;
