@@ -6,7 +6,6 @@
 
 //overlay
 constexpr LPCSTR OVERLAY_WINDOW_NAME = "Er";
-constexpr LPCSTR OVERLAY_WINDOW_CLASS = "ErCLS";
 
 //Offsets
 

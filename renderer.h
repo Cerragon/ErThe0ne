@@ -6,27 +6,29 @@
 
 class Renderer final {
 public:
-	static int BeginScene();
-	static void EndScene();
+	static bool Init(HWND hwnd);
+	static void Shutdown();
 
-	static bool Init();
-	static void Cleanup();
-	static bool DrawTextA(const char* text, float* position, const float* color, float alpha);
+	static bool BeginFrame();
+	static bool EndFrame();
 
-	inline static LPD3DXSPRITE d3DxSprite = nullptr;
-	inline static LPDIRECT3DDEVICE9 d3D9Device = nullptr;
-	inline static bool deviceResetQueued = false;
+	static void Resize(unsigned width, unsigned height);
+
+	static bool RenderText(const char* text, float* position, const float* color, float alpha);
+
+	inline static LPDIRECT3DDEVICE9EX d3dDevice = nullptr;
 
 private:
-	static bool Reset(HRESULT deviceState);
+	static bool CreateDevice(HWND hwnd);
+	static void CleanupDevice();
+	static void ResetDevice();
 
-	inline static D3DPRESENT_PARAMETERS d3D9Parameters = { };
+	static void LoadFonts();
 
-	inline static LPDIRECT3D9 d3D9Interface = nullptr;
-	inline static LPD3DXFONT d3DxFont = nullptr;
+	inline static D3DPRESENT_PARAMETERS d3d9Parameters = { };
+	inline static LPDIRECT3D9EX d3D9Interface = nullptr;
 
-	inline static bool deviceResetState = false;
-	inline static int deviceResetCounter = 0;
-
+	inline static bool resetRequested = false;
+	
 	virtual void Dummy() = 0;
 };

@@ -11,7 +11,6 @@
 #include "utils.h"
 
 #include "fmt/format.h"
-#include "imgui/imgui_impl_dx9.h"
 #include "imgui/imgui_impl_win32.h"
 #include "imgui/imgui_internal.h"
 #include "imgui/imgui_stdlib.h"
@@ -19,32 +18,19 @@
 
 void Gui::Render()
 {
-	ImGui_ImplDX9_NewFrame();
-	ImGui_ImplWin32_NewFrame();
-	ImGui::NewFrame();
+	if (!(gApp->mode == App::Mode::Overlay))
+		Menu();
 
-	ProcessMenu();
-	OverlayMenu();
-	RenderOverlay();
-
-	ImGui::EndFrame();
-	ImGui::Render();
-	ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
+	if (gApp->mode != App::Mode::Standalone)
+		RenderOverlay();
 }
 
 void Gui::RenderOverlay()
 {
-	if (!App::overlayActive)
-		return;
-
-	Renderer::d3DxSprite->Begin(D3DXSPRITE_ALPHABLEND);
-
 	RenderEntities();
 	RenderPlayers();
 
 	RenderInfoBox();
-
-	Renderer::d3DxSprite->End();
 }
 
 void Gui::RenderEntities()
@@ -312,7 +298,7 @@ void Gui::RenderActors(const CustomEntry& entry, const EspSettings::Actors& sett
 		if (Settings::utilities.debugEsp)
 			itemText = fmt::format("{0:08x}\n{1:08x}", entry.entityFormId, entry.baseObjectFormId);
 
-		Renderer::DrawTextA(itemText.c_str(), screen, color, alpha);
+		Renderer::RenderText(itemText.c_str(), screen, color, alpha);
 	}
 }
 
@@ -403,7 +389,7 @@ void Gui::RenderItems(const CustomEntry& entry, const EspSettings::Items& settin
 		if (Settings::utilities.debugEsp)
 			itemText = fmt::format("{0:16x}\n{1:08x}\n{2:16x}\n{3:08x}", entry.entityPtr, entry.entityFormId, entry.baseObjectPtr, entry.baseObjectFormId);
 
-		Renderer::DrawTextA(itemText.c_str(), screen, settings.color, alpha);
+		Renderer::RenderText(itemText.c_str(), screen, settings.color, alpha);
 	}
 }
 
@@ -429,22 +415,22 @@ void Gui::RenderInfoBox()
 		featureText = fmt::format("Cell FormId: {:08x}", localPlayer.cellFormId);
 		infoTexts.emplace_back(featureText, true);
 
-		featureText = fmt::format("X: {:f}", localPlayer.position[0]);
+		featureText = fmt::format("X: {:.2f}", localPlayer.position[0]);
 		infoTexts.emplace_back(featureText, true);
 
-		featureText = fmt::format("Y: {:f}", localPlayer.position[1]);
+		featureText = fmt::format("Y: {:.2f}", localPlayer.position[1]);
 		infoTexts.emplace_back(featureText, true);
 
-		featureText = fmt::format("Z: {:f}", localPlayer.position[2]);
+		featureText = fmt::format("Z: {:.2f}", localPlayer.position[2]);
 		infoTexts.emplace_back(featureText, true);
 
-		featureText = fmt::format("Yaw: {:f}", localPlayer.yaw);
+		featureText = fmt::format("Yaw: {:.2f}", localPlayer.yaw);
 		infoTexts.emplace_back(featureText, true);
 
-		featureText = fmt::format("Pitch: {:f}", localPlayer.pitch);
+		featureText = fmt::format("Pitch: {:.2f}", localPlayer.pitch);
 		infoTexts.emplace_back(featureText, true);
 
-		featureText = fmt::format("Health: {:f}", localPlayer.currentHealth);
+		featureText = fmt::format("Health: {:.2f}", localPlayer.currentHealth);
 		infoTexts.emplace_back(featureText, true);
 	}
 
@@ -470,15 +456,19 @@ void Gui::RenderInfoBox()
 		infoTexts.emplace_back(featureText, featureState);
 	}
 
+	featureText = fmt::format("FPS: {:.2f}", ImGui::GetIO().Framerate);
+	featureState = true;
+	infoTexts.emplace_back(featureText, featureState);
+
 	if (infoTexts.empty())
 		return;
-	
+
 	ImGui::SetNextWindowPos(ImVec2(10.f, 10.f), ImGuiCond_FirstUseEver);
 	if (ImGui::Begin("##infobox", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav))
 	{
-		for (const auto& item : infoTexts)
+		for (const auto&[text, enabled] : infoTexts)
 		{
-			ImGui::TextColored(item.second ? enabledTextColor : disabledTextColor, item.first.c_str());
+			ImGui::TextColored(enabled ? enabledTextColor : disabledTextColor, text.c_str());
 		}
 	}
 	ImGui::End();
@@ -489,20 +479,20 @@ void Gui::MenuBar()
 	if (ImGui::BeginMenuBar())
 	{
 		if (ImGui::MenuItem("Exit"))
-			App::CloseWnd();
+			gApp->Shutdown();
 
-		if (ErectusProcess::processMenuActive)
+		if (mode == Menu::ProcessMenu)
 		{
 			if (ImGui::MenuItem("Overlay Menu"))
-				App::SetOverlayMenu();
+				mode = Menu::SettingsMenu;
+		}
+		else
+		{
+			if (ImGui::MenuItem("Process Menu"))
+				mode = Menu::ProcessMenu;
 		}
 
-		if (App::overlayMenuActive) {
-			if (ImGui::MenuItem("Process Menu"))
-				ErectusProcess::SetProcessMenu();
-		}
-		
-		if (!ErectusProcess::pid)
+		if (gApp->mode == App::Mode::Standalone)
 		{
 			ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
 			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
@@ -515,93 +505,109 @@ void Gui::MenuBar()
 		else
 		{
 			if (ImGui::MenuItem("Overlay"))
-				App::SetOverlayPosition(false, true);
+				gApp->ToggleOverlay();
 		}
-		
+
 		ImGui::EndMenuBar();
 	}
 }
 
-void Gui::ProcessMenu()
+void Gui::Menu()
 {
-	if (!ErectusProcess::processMenuActive)
-		return;
-
-	ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
-	ImGui::SetNextWindowSize(ImVec2(static_cast<float>(App::windowSize[0]), static_cast<float>(App::windowSize[1])));
-	ImGui::SetNextWindowCollapsed(false);
-
-	if (ImGui::Begin("Erectus - Process Menu", nullptr, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize))
+	auto windowFlags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoResize;
+	if (gApp->mode == App::Mode::Standalone)
+		windowFlags |= ImGuiWindowFlags_NoTitleBar;
+	
+	if (ImGui::Begin(OVERLAY_WINDOW_NAME, nullptr, windowFlags))
 	{
 		MenuBar();
 
-		ImGui::SetNextItemWidth(-16.f);
-		auto processText = ErectusProcess::pid ? "Fallout76.exe - " + std::to_string(ErectusProcess::pid) : "No  process selected.";
-		if (ImGui::BeginCombo("###ProcessList", processText.c_str()))
+		if (mode == Menu::ProcessMenu)
+			ProcessMenu();
+		else if (mode == Menu::SettingsMenu)
+			SettingsMenu();
+
+		//auto resize host window if in standalone mode
+		if (gApp->mode == App::Mode::Standalone)
 		{
-			for (auto item : ErectusProcess::GetProcesses())
-			{
-				processText = item ? "Fallout76.exe - " + std::to_string(item) : "NONE";
-				if (ImGui::Selectable(processText.c_str()))
-					ErectusProcess::AttachToProcess(item);
-			}
+			ImGui::SetWindowPos(ImVec2(0.0f, 0.0f));
 
-			ImGui::EndCombo();
+			auto  requestedSize = ImGui::GetWindowSize();
+			if (requestedSize.x != 32 && requestedSize.y != 32)
+				gApp->appWindow->SetSize(requestedSize.x, requestedSize.y);
 		}
-
-		ImGui::Separator();
-		switch (ErectusProcess::processErrorId)
-		{
-		case 0:
-			ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), ErectusProcess::processError.c_str());
-			break;
-		case 1:
-			ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), ErectusProcess::processError.c_str());
-			break;
-		case 2:
-			ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), ErectusProcess::processError.c_str());
-			break;
-		default:
-			ImGui::Text(ErectusProcess::processError.c_str());
-			break;
-		}
-
-		ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-		ImGui::Columns(2);
-		ImGui::Separator();
-		ImGui::Text("Overlay Menu Keybind");
-		ImGui::NextColumn();
-		ImGui::Text("CTRL+ENTER");
-		ImGui::NextColumn();
-		ImGui::Separator();
-		ImGui::Text("ImGui (D3D9) FPS");
-		ImGui::NextColumn();
-		ImGui::Text("%.1f", ImGui::GetIO().Framerate);
-		ImGui::NextColumn();
-		ImGui::Separator();
-		ImGui::Text("PID (Process Id)");
-		ImGui::NextColumn();
-		ImGui::Text("%lu", ErectusProcess::pid);
-		ImGui::NextColumn();
-		ImGui::Separator();
-		ImGui::Text("HWND (Window)");
-		ImGui::NextColumn();
-		ImGui::Text("%p", ErectusProcess::hWnd);
-		ImGui::NextColumn();
-		ImGui::Separator();
-		ImGui::Text("Base Address");
-		ImGui::NextColumn();
-		ImGui::Text("%016llX", ErectusProcess::exe);
-		ImGui::NextColumn();
-		ImGui::Separator();
-		ImGui::Text("HANDLE");
-		ImGui::NextColumn();
-		ImGui::Text("%p", ErectusProcess::handle);
-		ImGui::Columns(1);
-		ImGui::Separator();
-		ImGui::PopItemFlag();
 	}
 	ImGui::End();
+}
+void Gui::ProcessMenu()
+{
+	ImGui::SetWindowSize(ImVec2(384, 224));
+	
+	ImGui::SetNextItemWidth(-16.f);
+	auto processText = ErectusProcess::pid ? "Fallout76.exe - " + std::to_string(ErectusProcess::pid) : "No  process selected.";
+	if (ImGui::BeginCombo("###ProcessList", processText.c_str()))
+	{
+		for (auto item : ErectusProcess::GetProcesses())
+		{
+			processText = item ? "Fallout76.exe - " + std::to_string(item) : "NONE";
+			if (ImGui::Selectable(processText.c_str()))
+				gApp->Attach(item);
+		}
+
+		ImGui::EndCombo();
+	}
+
+	ImGui::Separator();
+	switch (ErectusProcess::processErrorId)
+	{
+	case 0:
+		ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), ErectusProcess::processError.c_str());
+		break;
+	case 1:
+		ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), ErectusProcess::processError.c_str());
+		break;
+	case 2:
+		ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), ErectusProcess::processError.c_str());
+		break;
+	default:
+		ImGui::Text(ErectusProcess::processError.c_str());
+		break;
+	}
+
+	ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+	ImGui::Columns(2);
+	ImGui::Separator();
+	ImGui::Text("Overlay Menu Keybind");
+	ImGui::NextColumn();
+	ImGui::Text("CTRL+ENTER");
+	ImGui::NextColumn();
+	ImGui::Separator();
+	ImGui::Text("ImGui (D3D9) FPS");
+	ImGui::NextColumn();
+	ImGui::Text("%.1f", ImGui::GetIO().Framerate);
+	ImGui::NextColumn();
+	ImGui::Separator();
+	ImGui::Text("PID (Process Id)");
+	ImGui::NextColumn();
+	ImGui::Text("%lu", ErectusProcess::pid);
+	ImGui::NextColumn();
+	ImGui::Separator();
+	ImGui::Text("HWND (Window)");
+	ImGui::NextColumn();
+	ImGui::Text("%p", ErectusProcess::hWnd);
+	ImGui::NextColumn();
+	ImGui::Separator();
+	ImGui::Text("Base Address");
+	ImGui::NextColumn();
+	ImGui::Text("%016llX", ErectusProcess::exe);
+	ImGui::NextColumn();
+	ImGui::Separator();
+	ImGui::Text("HANDLE");
+	ImGui::NextColumn();
+	ImGui::Text("%p", ErectusProcess::handle);
+	ImGui::Columns(1);
+	ImGui::Separator();
+	ImGui::PopItemFlag();
 }
 
 void Gui::ButtonToggle(const char* label, bool& state)
@@ -642,7 +648,7 @@ void Gui::LargeButtonToggle(const char* label, bool& state)
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(1.0f, 0.0f, 0.0f, 0.3f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 0.0f, 0.0f, 0.4f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(1.0f, 0.0f, 0.0f, 0.5f));
-		if (ImGui::Button(label, ImVec2(ImGui::GetContentRegionAvail().x + 1.f, 0)))
+		if (ImGui::Button(label, ImVec2(-FLT_MIN, 0)))
 			state = true;
 		ImGui::PopStyleColor(3);
 	}
@@ -672,72 +678,72 @@ void Gui::SmallButtonToggle(const char* label, bool& state)
 
 void Gui::EspSettings(EspSettings::Actors& actorEsp)
 {
-		ImGui::PushID(&actorEsp);
-		ImGui::Columns(2, nullptr, false);
-		
-		LargeButtonToggle("ESP Enabled", actorEsp.enabled);
-		ImGui::NextColumn();
-		ImGui::SetNextItemWidth(-FLT_MIN);
-		ImGui::SliderInt("##Distance", &actorEsp.enabledDistance, 0, 3000, "Distance: %d");
-		ImGui::NextColumn();
+	ImGui::PushID(&actorEsp);
+	ImGui::Columns(2, nullptr, false);
 
-		LargeButtonToggle("Draw Alive", actorEsp.drawAlive);
-		ImGui::NextColumn();
-		ImGui::SetNextItemWidth(-FLT_MIN);
-		ImGui::ColorEdit3("##AliveColor", actorEsp.aliveColor);
-		Utils::ValidateRgb(actorEsp.aliveColor);
-		ImGui::NextColumn();
+	LargeButtonToggle("ESP Enabled", actorEsp.enabled);
+	ImGui::NextColumn();
+	ImGui::SetNextItemWidth(-FLT_MIN);
+	ImGui::SliderInt("##Distance", &actorEsp.enabledDistance, 0, 3000, "Distance: %d");
+	ImGui::NextColumn();
 
-		LargeButtonToggle("Draw Downed", actorEsp.drawDowned);
-		ImGui::NextColumn();
-		ImGui::SetNextItemWidth(-FLT_MIN);
-		ImGui::ColorEdit3("##DownedColor", actorEsp.downedColor);
-		Utils::ValidateRgb(actorEsp.downedColor);
-		ImGui::NextColumn();
+	LargeButtonToggle("Draw Alive", actorEsp.drawAlive);
+	ImGui::NextColumn();
+	ImGui::SetNextItemWidth(-FLT_MIN);
+	ImGui::ColorEdit3("##AliveColor", actorEsp.aliveColor);
+	Utils::ValidateRgb(actorEsp.aliveColor);
+	ImGui::NextColumn();
 
-		LargeButtonToggle("Draw Dead", actorEsp.drawDead);
-		ImGui::NextColumn();
-		ImGui::SetNextItemWidth(-FLT_MIN);
-		ImGui::ColorEdit3("##DeadColor", actorEsp.deadColor);
-		Utils::ValidateRgb(actorEsp.deadColor);
-		ImGui::NextColumn();
+	LargeButtonToggle("Draw Downed", actorEsp.drawDowned);
+	ImGui::NextColumn();
+	ImGui::SetNextItemWidth(-FLT_MIN);
+	ImGui::ColorEdit3("##DownedColor", actorEsp.downedColor);
+	Utils::ValidateRgb(actorEsp.downedColor);
+	ImGui::NextColumn();
 
-		LargeButtonToggle("Draw Unknown", actorEsp.drawUnknown);
-		ImGui::NextColumn();
-		ImGui::SetNextItemWidth(-FLT_MIN);
-		ImGui::ColorEdit3("##UnknownColor", actorEsp.unknownColor);
-		Utils::ValidateRgb(actorEsp.unknownColor);
-		ImGui::NextColumn();
+	LargeButtonToggle("Draw Dead", actorEsp.drawDead);
+	ImGui::NextColumn();
+	ImGui::SetNextItemWidth(-FLT_MIN);
+	ImGui::ColorEdit3("##DeadColor", actorEsp.deadColor);
+	Utils::ValidateRgb(actorEsp.deadColor);
+	ImGui::NextColumn();
 
-		LargeButtonToggle("Draw Enabled", actorEsp.drawEnabled);
-		ImGui::NextColumn();
-		ImGui::SetNextItemWidth(-FLT_MIN);
-		ImGui::SliderFloat("##EnabledAlpha", &actorEsp.enabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
-		ImGui::NextColumn();
+	LargeButtonToggle("Draw Unknown", actorEsp.drawUnknown);
+	ImGui::NextColumn();
+	ImGui::SetNextItemWidth(-FLT_MIN);
+	ImGui::ColorEdit3("##UnknownColor", actorEsp.unknownColor);
+	Utils::ValidateRgb(actorEsp.unknownColor);
+	ImGui::NextColumn();
 
-		LargeButtonToggle("Draw Disabled", actorEsp.drawDisabled);
-		ImGui::NextColumn();
-		ImGui::SetNextItemWidth(-FLT_MIN);
-		ImGui::SliderFloat("##DisabledAlpha", &actorEsp.disabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
-		ImGui::NextColumn();
+	LargeButtonToggle("Draw Enabled", actorEsp.drawEnabled);
+	ImGui::NextColumn();
+	ImGui::SetNextItemWidth(-FLT_MIN);
+	ImGui::SliderFloat("##EnabledAlpha", &actorEsp.enabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
+	ImGui::NextColumn();
 
-		LargeButtonToggle("Draw Named", actorEsp.drawNamed);
-		ImGui::NextColumn();
-		LargeButtonToggle("Draw Unnamed", actorEsp.drawUnnamed);
-		ImGui::NextColumn();
+	LargeButtonToggle("Draw Disabled", actorEsp.drawDisabled);
+	ImGui::NextColumn();
+	ImGui::SetNextItemWidth(-FLT_MIN);
+	ImGui::SliderFloat("##DisabledAlpha", &actorEsp.disabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
+	ImGui::NextColumn();
 
-		LargeButtonToggle("Show Name", actorEsp.showName);
-		ImGui::NextColumn();
-		LargeButtonToggle("Show Distance", actorEsp.showDistance);
-		ImGui::NextColumn();
+	LargeButtonToggle("Draw Named", actorEsp.drawNamed);
+	ImGui::NextColumn();
+	LargeButtonToggle("Draw Unnamed", actorEsp.drawUnnamed);
+	ImGui::NextColumn();
 
-		LargeButtonToggle("Show Alive Health", actorEsp.showHealth);
-		ImGui::NextColumn();
-		LargeButtonToggle("Show Dead Health", actorEsp.showDeadHealth);
-		ImGui::NextColumn();
-	
-		ImGui::Columns();
-		ImGui::PopID();
+	LargeButtonToggle("Show Name", actorEsp.showName);
+	ImGui::NextColumn();
+	LargeButtonToggle("Show Distance", actorEsp.showDistance);
+	ImGui::NextColumn();
+
+	LargeButtonToggle("Show Alive Health", actorEsp.showHealth);
+	ImGui::NextColumn();
+	LargeButtonToggle("Show Dead Health", actorEsp.showDeadHealth);
+	ImGui::NextColumn();
+
+	ImGui::Columns();
+	ImGui::PopID();
 }
 
 void Gui::EspSettings(EspSettings::Items& itemEsp)
@@ -762,23 +768,23 @@ void Gui::EspSettings(EspSettings::Items& itemEsp)
 	ImGui::SetNextItemWidth(-FLT_MIN);
 	ImGui::SliderFloat("##EnabledAlpha", &itemEsp.enabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
 	ImGui::NextColumn();
-	
+
 	LargeButtonToggle("Draw Disabled", itemEsp.drawDisabled);
 	ImGui::NextColumn();
 	ImGui::SetNextItemWidth(-FLT_MIN);
 	ImGui::SliderFloat("##DisabledAlpha", &itemEsp.disabledAlpha, 0.0f, 1.0f, "Alpha: %.2f");
 	ImGui::NextColumn();
-	
+
 	LargeButtonToggle("Draw Named", itemEsp.drawNamed);
 	ImGui::NextColumn();
 	LargeButtonToggle("Draw Unnamed", itemEsp.drawUnnamed);
 	ImGui::NextColumn();
-	
+
 	LargeButtonToggle("Show Name", itemEsp.showName);
 	ImGui::NextColumn();
 	LargeButtonToggle("Show Distance", itemEsp.showDistance);
 	ImGui::NextColumn();
-	
+
 	ImGui::Columns();
 	ImGui::PopID();
 }
@@ -835,13 +841,13 @@ void Gui::OverlayMenuTabEsp()
 
 		if (ImGui::CollapsingHeader("Junk ESP"))
 			EspSettings(Settings::esp.junk);
-		
+
 		if (ImGui::CollapsingHeader("Magazine ESP"))
 			EspSettings(Settings::esp.magazines);
-		
+
 		if (ImGui::CollapsingHeader("Bobblehead ESP"))
 			EspSettings(Settings::esp.bobbleheads);
-			
+
 		if (ImGui::CollapsingHeader("Item ESP"))
 			EspSettings(Settings::esp.items);
 
@@ -853,7 +859,7 @@ void Gui::OverlayMenuTabEsp()
 			ImGui::SameLine(235.0f);
 			LargeButtonToggle("Draw Unknown Plans", Settings::esp.plansExt.unknownRecipesEnabled);
 		}
-	
+
 		if (ImGui::CollapsingHeader("Flora ESP Settings"))
 		{
 			EspSettings(Settings::esp.flora);
@@ -1201,7 +1207,7 @@ void Gui::OverlayMenuTabCombat()
 		if (ImGui::CollapsingHeader("Weapon Editor"))
 		{
 			ImGui::Columns(2, nullptr, false);
-			
+
 			LargeButtonToggle("No Recoil", Settings::weapons.noRecoil);
 			ImGui::NextColumn();
 			LargeButtonToggle("Infinite Ammo", Settings::weapons.infiniteAmmo);
@@ -1211,47 +1217,47 @@ void Gui::OverlayMenuTabCombat()
 			ImGui::NextColumn();
 			LargeButtonToggle("Instant Reload", Settings::weapons.instantReload);
 			ImGui::NextColumn();
-			
+
 			LargeButtonToggle("No Sway", Settings::weapons.noSway);
 			ImGui::NextColumn();
 			LargeButtonToggle("Automatic Flag###WeaponAutomatic", Settings::weapons.automaticflag);
 			ImGui::NextColumn();
-			
+
 			LargeButtonToggle("Capacity###WeaponCapacityEnabled", Settings::weapons.capacityEnabled);
 			ImGui::NextColumn();
 			ImGui::SetNextItemWidth(-FLT_MIN);
 			ImGui::SliderInt("###WeaponCapacity", &Settings::weapons.capacity, 0, 999, "Capacity: %d");
 			ImGui::NextColumn();
-			
+
 			LargeButtonToggle("Speed###WeaponSpeedEnabled", Settings::weapons.speedEnabled);
 			ImGui::NextColumn();
 			ImGui::SetNextItemWidth(-FLT_MIN);
 			ImGui::SliderFloat("###WeaponSpeed", &Settings::weapons.speed, 0.0f, 100.0f, "Speed: %.2f");
 			ImGui::NextColumn();
-			
+
 			LargeButtonToggle("Reach###WeaponReachEnabled", Settings::weapons.reachEnabled);
 			ImGui::NextColumn();
 			ImGui::SetNextItemWidth(-FLT_MIN);
 			ImGui::SliderFloat("###WeaponReach", &Settings::weapons.reach, 0.0f, 999.0f, "Reach: %.2f");
 			ImGui::NextColumn();
-			
+
 			ImGui::Columns();
 		}
 
 		if (ImGui::CollapsingHeader("Targeting Settings"))
 		{
 			LargeButtonToggle("NPC Targeting (Keybind: T)", Settings::targetting.lockNpCs);
-			
+
 			ButtonToggle("Damage Redirection", Settings::targetting.dmgRedirect);
 			ImGui::SameLine(235.0f);
 			LargeButtonToggle("Send Damage", Settings::targetting.dmgSend);
 
 			LargeButtonToggle("Also target NPCs with unknown state###TargetUnknown", Settings::targetting.targetUnknown);
 			LargeButtonToggle("Ignore Essential NPCs###IgnoreEssentialNPCs", Settings::targetting.ignoreEssentialNpcs);
-			
+
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::SliderFloat("###TargetLockingFOV", &Settings::targetting.lockingFov, 5.0f, 40.0f, "Targeting FOV: %.2f");
-						
+
 			ImGui::SameLine(235.0f);
 			ImGui::SetNextItemWidth(224.0f);
 			ImGui::ColorEdit3("###TargetLockingColor", Settings::targetting.lockedColor);
@@ -1868,52 +1874,22 @@ void Gui::OverlayMenuTabBitMsgWriter()
 	}
 }
 
-void Gui::OverlayMenu()
+void Gui::SettingsMenu()
 {
-	if (!App::overlayMenuActive)
-		return;
-
-	ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
-	ImGui::SetNextWindowSize(ImVec2(static_cast<float>(App::windowSize[0]), static_cast<float>(App::windowSize[1])));
-	ImGui::SetNextWindowCollapsed(false);
-
-	if (ImGui::Begin("Overlay Menu", nullptr,
-		ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysVerticalScrollbar))
+	ImGui::SetWindowSize(ImVec2(480, 720));
+	
+	if (ImGui::BeginTabBar("###OverlayMenuTabBar", ImGuiTabBarFlags_None))
 	{
-		MenuBar();
+		OverlayMenuTabEsp();
+		OverlayMenuLooter();
+		OverlayMenuTabCombat();
+		OverlayMenuTabPlayer();
+		OverlayMenuTabInfoBox();
+		OverlayMenuTabUtilities();
+		OverlayMenuTabTeleporter();
+		OverlayMenuTabBitMsgWriter();
 
-		if (ImGui::BeginTabBar("###OverlayMenuTabBar", ImGuiTabBarFlags_None))
-		{
-			OverlayMenuTabEsp();
-			OverlayMenuLooter();
-			OverlayMenuTabCombat();
-			OverlayMenuTabPlayer();
-			OverlayMenuTabInfoBox();
-			OverlayMenuTabUtilities();
-			OverlayMenuTabTeleporter();
-			OverlayMenuTabBitMsgWriter();
-
-			ImGui::EndTabBar();
-		}
+		ImGui::EndTabBar();
 	}
-	ImGui::End();
 }
 
-bool Gui::Init()
-{
-	ImGui::CreateContext();
-	if (!ImGui_ImplWin32_Init(App::appHwnd))
-		return false;
-
-	if (!ImGui_ImplDX9_Init(Renderer::d3D9Device))
-		return false;
-
-	return true;
-}
-
-void Gui::Shutdown()
-{
-	ImGui_ImplDX9_Shutdown();
-	ImGui_ImplWin32_Shutdown();
-	ImGui::DestroyContext();
-}

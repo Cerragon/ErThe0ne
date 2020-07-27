@@ -142,6 +142,7 @@
     <ClCompile Include="ErectusMemory.cpp" />
     <ClCompile Include="ErectusProcess.cpp" />
     <ClCompile Include="threads.cpp" />
+    <ClCompile Include="Window.cpp" />
     <ClCompile Include="_main.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -176,6 +177,7 @@
     <ClInclude Include="settings.h" />
     <ClInclude Include="threads.h" />
     <ClInclude Include="utils.h" />
+    <ClInclude Include="Window.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

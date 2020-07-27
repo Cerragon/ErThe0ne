@@ -1,33 +1,50 @@
 #pragma once
+#include <memory>
 #include <Windows.h>
+
+#include "Window.hpp"
 
 class App final {
 public:
-	static int CreateWnd(HINSTANCE hInstance);
-	static void CloseWnd();
+	enum class Mode
+	{
+		Standalone,
+		Attached,
+		Overlay
+	};
+	
+	App(HINSTANCE hInstance, LPCSTR windowTitle);
+	~App();
+	[[nodiscard]] const HINSTANCE& GetAppInstance() const { return appInstance; }
+	
+	void Run();
+	void Shutdown();
 
-	static LRESULT CALLBACK WndCallback(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-
-	static bool SetOverlayPosition(bool topmost, bool layered);
-	static void SetOverlayMenu();
-
-	static void RegisterHotkeys();
-
-	inline static unsigned int windowSize[2] = { 0, 0 };
-	inline static int windowPosition[2] = { 0, 0 };
-	inline static bool overlayMenuActive = false;
-	inline static bool overlayActive = false;
-	inline static bool overlayForeground = false;
-
-	inline static HWND appHwnd = nullptr;
-
+	void Attach(DWORD pid);
+	void Detach();
+	void ToggleOverlay();
+	
+	std::unique_ptr<Window> appWindow;
+	Mode mode = Mode::Standalone;
+	void OnWindowChanged() const;
+	
 private:
-	static void OnHotkey(WPARAM hotkeyId);
-	static void ToggleOverlay();
-	static void Render();
+	void SetMode(Mode newMode);
 
-	inline static HINSTANCE mHInstance = nullptr;
-	inline static int windowTopmostCounter = 0;
+	void RegisterHotkeys();
+	void UnRegisterHotkeys();
+	void OnHotkey(WPARAM hotkeyId);
 
-	virtual void Dummy() = 0;
+	void Init(LPCSTR windowTitle);
+
+	void Update();
+	void Render() const;
+	bool SnapToWindow(HWND hwnd) const;
+
+	const HINSTANCE appInstance;
+
+	bool continueRunning = true;
+	bool started = false;
 };
+
+inline App* gApp = nullptr; //fixme

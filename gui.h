@@ -7,10 +7,13 @@ class Gui final {
 public:
 	static void Render();
 
-	static bool Init();
-	static void Shutdown();
-
 private:
+	enum class Menu
+	{
+		ProcessMenu,
+		SettingsMenu,
+	} inline static mode = Menu::ProcessMenu;
+	
 	static void ButtonToggle(const char* label, bool& state);
 	static void LargeButtonToggle(const char* label, bool& state);
 	static void SmallButtonToggle(const char* label, bool& state);
@@ -26,6 +29,7 @@ private:
 	static void OverlayMenuTabTeleporter();
 	static void OverlayMenuTabBitMsgWriter();
 	static void MenuBar();
+	static void Menu();
 	static void OverlayMenuLooter();
 	
 	static void RenderOverlay();
@@ -38,7 +42,7 @@ private:
 	static void RenderItems(const CustomEntry& entry, const EspSettings::Items& settings);
 
 	static void ProcessMenu();
-	static void OverlayMenu();
+	static void SettingsMenu();
 
 	inline static bool swapperSourceToggle = false;
 	inline static bool swapperDestinationToggle = false;

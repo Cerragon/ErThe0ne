@@ -7,7 +7,6 @@
 
 class ErectusProcess final {
 public:
-	static void SetProcessMenu();
 	static void ResetProcessData();
 	static bool AttachToProcess(DWORD processId);
 	static void SetProcessError(int errorId, const char* error);
@@ -17,11 +16,6 @@ public:
 	static bool HwndValid(DWORD processId);
 
 	inline static std::string processError;
-
-	inline static int processValidCounter = 0;
-	inline static bool processMenuActive = false;
-	inline static bool processSelected = false;
-
 	inline static int processErrorId = 0;
 
 	inline static HANDLE handle = nullptr;

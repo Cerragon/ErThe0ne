@@ -2,170 +2,163 @@
 
 #include "imgui/imgui_impl_dx9.h"
 #include "app.h"
+#include "imgui/imgui_impl_win32.h"
+#include "fmt/format.h"
 
-
-bool Renderer::DrawTextA(const char* text, float* position, const float* color, const float alpha)
+bool Renderer::RenderText(const char* text, float* position, const float* color, const float alpha)
 {
 	if (text == nullptr)
-	{
 		return false;
-	}
 
 	if (alpha <= 0.0f)
-	{
 		return false;
-	}
 
-	DWORD format = DT_NOCLIP | DT_CENTER;
-
-	LONG longPosition[2] = { LONG(position[0]), LONG(position[1]) };
-
-	RECT background = { longPosition[0] + 1L, longPosition[1] + 1L, longPosition[0] + 1L, longPosition[1] + 1L };
-	d3DxFont->DrawTextA(d3DxSprite, text, -1, &background, format, D3DCOLOR_COLORVALUE(0.0f, 0.0f, 0.0f, alpha));
-
-	RECT foreground = { longPosition[0], longPosition[1], longPosition[0], longPosition[1] };
-	d3DxFont->DrawTextA(d3DxSprite, text, -1, &foreground, format, D3DCOLOR_COLORVALUE(color[0], color[1], color[2], alpha));
+	//this uses imgui's background to render our sprites :)
+	ImGui::GetBackgroundDrawList()->AddText(ImGui::GetIO().Fonts->Fonts[1], 13.f, ImVec2(position[0], position[1]), ImColor(color[0], color[1], color[2], alpha), text, nullptr);
 
 	return true;
 }
 
-bool Renderer::Reset(const HRESULT deviceState)
+bool Renderer::Init(const HWND hwnd)
 {
-	if (deviceState == D3DERR_DEVICELOST)
-	{
-		deviceResetCounter++;
-		if (deviceResetCounter > 600)
-		{
-			deviceResetCounter = 0;
-			return false;
-		}
-	}
-	else
-	{
-		MoveWindow(App::appHwnd, App::windowPosition[0], App::windowPosition[1],
-			App::windowSize[0], App::windowSize[1], FALSE);
+	if (!CreateDevice(hwnd))
+		return false;
 
-		d3D9Parameters.BackBufferWidth = App::windowSize[0];
-		d3D9Parameters.BackBufferHeight = App::windowSize[1];
+	ImGui::CreateContext();
 
-		if (deviceResetState == false)
-		{
-			deviceResetState = true;
-			deviceResetCounter = 0;
-			d3DxSprite->OnLostDevice();
-			d3DxFont->OnLostDevice();
-			ImGui_ImplDX9_InvalidateDeviceObjects();
-		}
+	ImGui_ImplWin32_Init(hwnd);
+	ImGui_ImplDX9_Init(d3dDevice);
 
-		if (d3D9Device->Reset(&d3D9Parameters) == D3D_OK)
-		{
-			deviceResetState = false;
-			deviceResetQueued = false;
-			d3DxSprite->OnResetDevice();
-			d3DxFont->OnResetDevice();
-			ImGui_ImplDX9_CreateDeviceObjects();
-		}
+	ImGui::GetIO().ConfigWindowsMoveFromTitleBarOnly = true;
+	ImGui::GetIO().IniFilename = nullptr;
 
-		MoveWindow(App::appHwnd, App::windowPosition[0], App::windowPosition[1],
-			App::windowSize[0], App::windowSize[1], FALSE);
-	}
+	LoadFonts();
 
 	return true;
 }
 
-int Renderer::BeginScene()
+bool Renderer::CreateDevice(const HWND hwnd)
 {
-	const auto deviceState = d3D9Device->TestCooperativeLevel();
-
-	if (deviceResetQueued)
-	{
-		if (Reset(deviceState))
-			return 1;
-
-		return 99;
-	}
-
-	switch (deviceState)
-	{
-	case D3D_OK:
-		d3D9Device->Clear(0, nullptr, D3DCLEAR_TARGET, D3DCOLOR_COLORVALUE(0.0f, 0.0f, 0.0f, 0.0f), 1.0f, 0);
-		d3D9Device->BeginScene();
-
-		return 0;
-
-	case D3DERR_DEVICENOTRESET:
-	case D3DERR_DEVICELOST:
-		deviceResetQueued = true;
-		return 1;
-	default:
-		return 99;
-	}
-}
-
-void Renderer::EndScene()
-{
-	d3D9Device->EndScene();
-	d3D9Device->Present(nullptr, nullptr, nullptr, nullptr);
-}
-
-bool Renderer::Init()
-{
-	d3D9Parameters = {
-		.BackBufferWidth = App::windowSize[0],
-		.BackBufferHeight = App::windowSize[1],
-		.BackBufferFormat = D3DFMT_A8R8G8B8,
-		.BackBufferCount = 1,
-		.MultiSampleType = D3DMULTISAMPLE_NONE,
-		.MultiSampleQuality = 0,
-		.SwapEffect = D3DSWAPEFFECT_DISCARD,
-		.hDeviceWindow = App::appHwnd,
-		.Windowed = TRUE,
-		.EnableAutoDepthStencil = TRUE,
-		.AutoDepthStencilFormat = D3DFMT_D16,
-		.Flags = 0,
-		.FullScreen_RefreshRateInHz = 0,
-		.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE,
-	};
-
-	d3D9Interface = Direct3DCreate9(D3D_SDK_VERSION);
+	Direct3DCreate9Ex(D3D_SDK_VERSION, &d3D9Interface);
 	if (d3D9Interface == nullptr)
 		return false;
 
-	if (d3D9Interface->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, nullptr, D3DCREATE_HARDWARE_VERTEXPROCESSING, &d3D9Parameters, &d3D9Device) != D3D_OK)
-		return false;
+	d3d9Parameters = {
+		.BackBufferFormat = D3DFMT_A8R8G8B8,
+		.BackBufferCount = 0,
+		.MultiSampleType = D3DMULTISAMPLE_NONE,
+		.MultiSampleQuality = 0,
+		.SwapEffect = D3DSWAPEFFECT_DISCARD,
+		.hDeviceWindow = hwnd,
+		.Windowed = 1,
+		.EnableAutoDepthStencil = 1,
+		.AutoDepthStencilFormat = D3DFMT_D16,
+		.Flags = 0,
+		.FullScreen_RefreshRateInHz = 0,
+		.PresentationInterval = D3DPRESENT_INTERVAL_ONE,
+	};
 
-	if (D3DXCreateSprite(d3D9Device, &d3DxSprite) != D3D_OK)
-		return false;
-
-	if (D3DXCreateFont(d3D9Device, 0, 0, 0, 0, FALSE, DEFAULT_CHARSET, OUT_CHARACTER_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH, "System", &d3DxFont) != D3D_OK)
+	if (d3D9Interface->CreateDeviceEx(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, nullptr, D3DCREATE_HARDWARE_VERTEXPROCESSING, &d3d9Parameters, nullptr, &d3dDevice) != D3D_OK)
 		return false;
 
 	return true;
 }
 
-void Renderer::Cleanup()
+void Renderer::Shutdown()
 {
-	if (d3D9Interface != nullptr)
+	ImGui_ImplDX9_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	ImGui::DestroyContext();
+
+	CleanupDevice();
+}
+
+bool Renderer::BeginFrame()
+{
+	ImGui_ImplDX9_NewFrame();
+	ImGui_ImplWin32_NewFrame();
+	ImGui::NewFrame();
+
+	return true;
+}
+
+bool Renderer::EndFrame()
+{
+	ImGui::EndFrame();
+
+	auto d3dresult = d3dDevice->TestCooperativeLevel();
+	if (d3dresult == D3DERR_DEVICELOST)
+		return false;
+
+	if (resetRequested || d3dresult == D3DERR_DEVICENOTRESET)
+	{
+		ResetDevice();
+		return  false;
+	}
+
+	if (d3dDevice->BeginScene() >= 0)
+	{
+		ImGui::Render();
+		ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
+		d3dDevice->EndScene();
+	}
+	auto result = d3dDevice->Present(nullptr, nullptr, nullptr, nullptr);
+
+	// Handle loss of D3D9 device
+	if (result == D3DERR_DEVICELOST && d3dDevice->TestCooperativeLevel() == D3DERR_DEVICENOTRESET)
+		ResetDevice();
+
+	return true;
+}
+
+void Renderer::CleanupDevice()
+{
+	if (d3dDevice)
+	{
+		d3dDevice->Release();
+		d3dDevice = nullptr;
+	}
+
+	if (d3D9Interface)
 	{
 		d3D9Interface->Release();
 		d3D9Interface = nullptr;
 	}
+}
 
-	if (d3D9Device != nullptr)
-	{
-		d3D9Device->Release();
-		d3D9Device = nullptr;
-	}
+void Renderer::ResetDevice()
+{
+	resetRequested = false;
 
-	if (d3DxSprite != nullptr)
-	{
-		d3DxSprite->Release();
-		d3DxSprite = nullptr;
-	}
+	if (d3dDevice == nullptr)
+		return;
 
-	if (d3DxFont != nullptr)
+	ImGui_ImplDX9_InvalidateDeviceObjects();
+	auto hr = d3dDevice->Reset(&d3d9Parameters);
+	if (hr == D3DERR_INVALIDCALL)
+		IM_ASSERT(0);
+
+	LoadFonts();
+}
+
+void Renderer::LoadFonts()
+{
+	auto io = ImGui::GetIO();
+	io.Fonts->AddFontDefault();
+#pragma warning(suppress : 4996)
+	io.Fonts->AddFontFromFileTTF(fmt::format("{}\\Fonts\\arialbd.ttf", std::getenv("WINDIR")).c_str(), 13.f);
+	ImGui_ImplDX9_CreateDeviceObjects();
+
+}
+
+void Renderer::Resize(const unsigned width, const unsigned height)
+{
+	if (d3d9Parameters.BackBufferWidth != width || d3d9Parameters.BackBufferHeight != 0)
 	{
-		d3DxFont->Release();
-		d3DxFont = nullptr;
+		d3d9Parameters.BackBufferWidth = width;
+		d3d9Parameters.BackBufferHeight = height;
+
+		//the actual Reset() is deferred until BeginScene(), because we might be in the middle of imgui rendering loop
+		resetRequested = true;
 	}
 }

@@ -2,48 +2,137 @@
 #include "gui.h"
 #include "renderer.h"
 #include "common.h"
-#include "resource.h"
 #include "settings.h"
 #include "threads.h"
 
 #include <thread>
 
-#include <dwmapi.h>
-#pragma comment(lib, "dwmapi.lib")
-
 #include "ErectusProcess.h"
 #include "Looter.h"
+#include "Window.hpp"
 
 
-// ReSharper disable once CppInconsistentNaming
-extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-
-
-// ReSharper disable once CppParameterMayBeConst
-// ReSharper disable once CppParameterMayBeConst
-LRESULT CALLBACK App::WndCallback(HWND hwnd, const UINT uMsg, const WPARAM wParam, const LPARAM lParam)
+App::App(const HINSTANCE hInstance, const LPCSTR windowTitle) : appInstance(hInstance)
 {
-	if (ImGui_ImplWin32_WndProcHandler(hwnd, uMsg, wParam, lParam))
-		return 1;
+	Init(windowTitle);
+}
 
-	switch (uMsg)
+App::~App()
+{
+	Detach();
+	Renderer::Shutdown();
+	Settings::Write();
+}
+
+void App::Init(LPCSTR windowTitle)
+{
+	appWindow = std::make_unique<Window>(this, windowTitle);
+
+	if (!Renderer::Init(appWindow->GetHwnd()))
+		return;
+
+	Settings::Read();
+}
+
+void App::Shutdown()
+{
+	continueRunning = false;
+
+	//everything should be  handled by destructors...
+}
+
+void App::Run()
+{
+	started = true;
+
+	MSG msg;
+
+	while (continueRunning)
 	{
-	case WM_HOTKEY:
-		OnHotkey(wParam);
-	case WM_KEYDOWN:
-		return 0;
-	case WM_PAINT:
+		Update();
 		Render();
-		return 0;
-	case WM_CLOSE:
-		DestroyWindow(hwnd);
-		return 0;
-	case WM_DESTROY:
-		PostQuitMessage(0);
-		return 0;
-	default:
-		return DefWindowProc(hwnd, uMsg, wParam, lParam);
+		
+		while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
+		{
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+			
+			switch (msg.message)
+			{
+			case WM_QUIT:
+				continueRunning = false;
+				break;
+			case WM_HOTKEY:
+				OnHotkey(msg.wParam);
+				break;
+			default:
+				break;
+			}
+		}
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(8));
 	}
+}
+
+void App::OnWindowChanged() const
+{
+	if (!started)
+		return;
+
+	RECT rect;
+	GetClientRect(appWindow->GetHwnd(), &rect);
+	Renderer::Resize(rect.right - rect.left, rect.bottom - rect.top);
+}
+
+void App::SetMode(const Mode newMode)
+{
+	switch (newMode)
+	{
+	case Mode::Standalone:
+		UnRegisterHotkeys();
+		appWindow->SetStyle(Window::Styles::Standalone);
+		mode = Mode::Standalone;
+		break;
+	case Mode::Overlay:
+		RegisterHotkeys();
+		appWindow->SetStyle(Window::Styles::Overlay);
+		SetForegroundWindow(ErectusProcess::hWnd);
+		mode = Mode::Overlay;
+		break;
+	case Mode::Attached:
+		if (!SnapToWindow(ErectusProcess::hWnd))
+		{
+			Detach();
+			return;
+		}
+		RegisterHotkeys();
+		appWindow->SetStyle(Window::Styles::Attached);
+		SetForegroundWindow(appWindow->GetHwnd());
+		mode = Mode::Attached;
+		break;
+	}
+}
+
+void App::Attach(const DWORD pid)
+{
+	if(!ErectusProcess::AttachToProcess(pid))
+	{
+		Detach();
+		return;
+	}
+
+	SetMode(Mode::Attached);
+}
+
+void App::Detach()
+{
+	while(!Threads::ThreadDestruction() && Threads::threadDestructionCounter < 900)
+	{
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+	}
+	ErectusProcess::ResetProcessData();
+
+	SetMode(Mode::Standalone);
 }
 
 void App::OnHotkey(const WPARAM hotkeyId)
@@ -74,70 +163,48 @@ void App::OnHotkey(const WPARAM hotkeyId)
 	}
 }
 
+void App::UnRegisterHotkeys()
+{
+	if (!gApp || !gApp->appWindow)
+		return;
+	
+	for (const auto& [hotkeyId, hotkey] : HOTKEYS)
+	{
+		UnregisterHotKey(gApp->appWindow->GetHwnd(), static_cast<int>(hotkeyId));
+	}
+}
 void App::RegisterHotkeys()
 {
-	for (auto item : HOTKEYS)
+	for (const auto& [hotkeyId, hotkey] : HOTKEYS)
 	{
-		RegisterHotKey(appHwnd, static_cast<int>(item.first), item.second.modifiers, item.second.vk);
+		RegisterHotKey(gApp->appWindow->GetHwnd(), static_cast<int>(hotkeyId), hotkey.modifiers, hotkey.vk);
 	}
 }
 
 void App::ToggleOverlay()
 {
-	if (!ErectusProcess::processSelected)
-		return;
-
-	if (overlayMenuActive)
-		SetOverlayPosition(false, true);
-	else
-		SetOverlayMenu();
-}
-void App::Render() {
-	switch (Renderer::BeginScene()) {
-	case 0: //OK
-		break;
-	case 1: //TRY LATER
-		return;
-	case 99: //FATAL ERROR
-	default:
-		CloseWnd();
-	}
-
-	Gui::Render();
-
-	Renderer::EndScene();
-
-	if (ErectusProcess::processSelected)
+	switch (mode)
 	{
-		ErectusProcess::processValidCounter++;
-		if (ErectusProcess::processValidCounter > 20)
-		{
-			ErectusProcess::processValidCounter = 0;
-			if (WaitForSingleObject(ErectusProcess::handle, 0) != WAIT_TIMEOUT)
-			{
-				ErectusProcess::ResetProcessData();
-			}
-
-			if (overlayActive)
-			{
-				if (ErectusProcess::hWnd == GetForegroundWindow())
-				{
-					overlayForeground = true;
-					if (!SetOverlayPosition(true, true))
-						ErectusProcess::SetProcessMenu();
-				}
-				else
-				{
-					overlayForeground = false;
-					if (!SetOverlayPosition(false, false))
-						ErectusProcess::SetProcessMenu();
-				}
-			}
-		}
-
-		if (!Threads::threadCreationState)
-			Threads::threadCreationState = Threads::CreateProcessThreads();
+	case Mode::Attached:
+		SetMode(Mode::Overlay);
+		break;
+	case Mode::Overlay:
+		SetMode(Mode::Attached);
+		break;
+	default:
+		break;
 	}
+}
+void App::Update()
+{
+	if (mode != Mode::Standalone && !IsWindow(ErectusProcess::hWnd))
+	{
+		Detach();
+		return;
+	}
+
+	if (mode != Mode::Standalone)
+		Threads::CreateProcessThreads();
 
 	if (Threads::threadDestructionQueued)
 	{
@@ -147,191 +214,34 @@ void App::Render() {
 			if (Threads::threadDestructionCounter > 900)
 			{
 				Threads::threadDestructionCounter = 0;
-				CloseWnd();
+				gApp->Shutdown();
 			}
 		}
 	}
-
-	//ghetto run once per frame
-	std::this_thread::sleep_for(std::chrono::milliseconds(16));
 }
 
-void App::SetOverlayMenu()
+void App::Render() const
 {
-	if (windowSize[0] != 480 || windowSize[1] != 480)
-	{
-		windowSize[0] = 480;
-		windowSize[1] = 720;
+	Renderer::BeginFrame();
+	if (mode == Mode::Attached)
+		Renderer::d3dDevice->Clear(0, nullptr, D3DCLEAR_TARGET, D3DCOLOR_ARGB(128, 0, 0, 0), 1.0f, 0);
 
-		Renderer::deviceResetQueued = true;
-		SetWindowPos(appHwnd, HWND_NOTOPMOST, windowPosition[0], windowPosition[1], windowSize[0], windowSize[1], 0);
-	}
-
-	int bufferPosition[2];
-	bufferPosition[0] = GetSystemMetrics(SM_CXSCREEN) / 2 - windowSize[0] / 2;
-	bufferPosition[1] = GetSystemMetrics(SM_CYSCREEN) / 2 - windowSize[1] / 2;
-
-	if (windowPosition[0] != bufferPosition[0] || windowPosition[1] != bufferPosition[1])
-	{
-		windowPosition[0] = bufferPosition[0];
-		windowPosition[1] = bufferPosition[1];
-
-		MoveWindow(appHwnd, windowPosition[0], windowPosition[1], windowSize[0], windowSize[1], FALSE);
-		if (!Renderer::deviceResetQueued)
-			SetWindowPos(appHwnd, HWND_NOTOPMOST, windowPosition[0], windowPosition[1], windowSize[0], windowSize[1], 0);
-	}
-
-	auto style = GetWindowLongPtr(appHwnd, GWL_EXSTYLE);
-
-	if (style & WS_EX_LAYERED)
-	{
-		style &= ~WS_EX_LAYERED;
-		SetWindowLongPtr(appHwnd, GWL_EXSTYLE, style);
-	}
-
-	if (style & WS_EX_TOPMOST)
-		SetWindowPos(appHwnd, HWND_NOTOPMOST, windowPosition[0], windowPosition[1], windowSize[0], windowSize[1], 0);
-
-	ErectusProcess::processMenuActive = false;
-	overlayMenuActive = true;
-	overlayActive = false;
+	if (mode == Mode::Overlay)
+		Renderer::d3dDevice->Clear(0, nullptr, D3DCLEAR_TARGET, D3DCOLOR_ARGB(0, 0, 0, 0), 1.0f, 0);
+	
+	Gui::Render();
+	Renderer::EndFrame();
 }
 
-int App::CreateWnd(const HINSTANCE hInstance)
+bool App::SnapToWindow(const HWND hwnd) const
 {
-	mHInstance = hInstance;
-
-	WNDCLASSEX wndClass{
-		.cbSize = sizeof(WNDCLASSEX),
-		.style = CS_VREDRAW | CS_HREDRAW,
-		.lpfnWndProc = WndCallback,
-		.cbClsExtra = 0,
-		.cbWndExtra = 0,
-		.hInstance = mHInstance,
-		.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON1)),
-		.hCursor = nullptr,
-		.hbrBackground = CreateSolidBrush(RGB(0x00, 0x00, 0x00)),
-		.lpszMenuName = nullptr,
-		.lpszClassName = OVERLAY_WINDOW_CLASS,
-		.hIconSm = nullptr
-	};
-
-	if (!RegisterClassEx(&wndClass))
-	{
-		return 1;
-	}
-
-	windowSize[0] = 384;
-	windowSize[1] = 224;
-	windowPosition[0] = GetSystemMetrics(SM_CXSCREEN) / 2 - windowSize[0] / 2;
-	windowPosition[1] = GetSystemMetrics(SM_CYSCREEN) / 2 - windowSize[1] / 2;
-	appHwnd = CreateWindowEx(WS_EX_TRANSPARENT | WS_EX_LAYERED, wndClass.lpszClassName, OVERLAY_WINDOW_NAME, WS_POPUP, windowPosition[0], windowPosition[1], windowSize[0], windowSize[1], nullptr, nullptr, wndClass.hInstance, nullptr);
-
-	if (appHwnd == nullptr)
-	{
-		UnregisterClass(wndClass.lpszClassName, wndClass.hInstance);
-		return 2;
-	}
-
-	MARGINS overlayMargins = { -1, -1, -1, -1 };
-	DwmExtendFrameIntoClientArea(appHwnd, &overlayMargins);
-	SetLayeredWindowAttributes(appHwnd, RGB(0x00, 0x00, 0x00), 0xFF, LWA_ALPHA);
-	SetWindowLongPtr(appHwnd, GWL_EXSTYLE, WS_EX_TRANSPARENT);
-
-	return 0;
-}
-
-void App::CloseWnd() {
-	if (appHwnd != nullptr)
-	{
-		SendMessage(appHwnd, WM_CLOSE, 0, 0);
-	}
-	UnregisterClass(OVERLAY_WINDOW_CLASS, mHInstance);
-}
-
-bool App::SetOverlayPosition(const bool topmost, const bool layered)
-{
-	RECT windowRect;
-	RECT clientRect;
-
-	if (!ErectusProcess::HwndValid(ErectusProcess::pid) || !GetWindowRect(ErectusProcess::hWnd, &windowRect) || !GetClientRect(ErectusProcess::hWnd, &clientRect))
-	{
-		overlayActive = false;
+	RECT targetClientRect;
+	if (!GetClientRect(hwnd, &targetClientRect) || IsRectEmpty(&targetClientRect))
 		return false;
-	}
+	appWindow->SetSize(targetClientRect.right - targetClientRect.left, targetClientRect.bottom - targetClientRect.top);
 
-	unsigned int size[2];
-	size[0] = clientRect.right;
-	size[1] = clientRect.bottom;
+	ClientToScreen(hwnd, reinterpret_cast<POINT*>(&targetClientRect));
+	appWindow->SetPosition(targetClientRect.left, targetClientRect.top);
 
-	int position[2];
-	position[0] = windowRect.left - (clientRect.right + windowRect.left - windowRect.right) / 2;
-	position[1] = windowRect.top - (clientRect.bottom + windowRect.top - windowRect.bottom) / 2;
-
-	if (GetWindowLongPtr(ErectusProcess::hWnd, GWL_STYLE) & WS_BORDER)
-	{
-		auto buffer = GetSystemMetrics(SM_CYCAPTION) / 2;
-		buffer += buffer & 1;
-		position[1] += buffer;
-	}
-
-	if (GetMenu(ErectusProcess::hWnd) != nullptr)
-	{
-		auto buffer = GetSystemMetrics(SM_CYMENU) / 2;
-		buffer += buffer & 1;
-		position[1] += buffer;
-	}
-
-	if (position[0] != windowPosition[0] || position[1] != windowPosition[1])
-	{
-		windowPosition[0] = position[0];
-		windowPosition[1] = position[1];
-		MoveWindow(appHwnd, windowPosition[0], windowPosition[1], windowSize[0], windowSize[1], 0);
-	}
-
-	if (size[0] != windowSize[0] || size[1] != windowSize[1])
-	{
-		windowSize[0] = size[0];
-		windowSize[1] = size[1];
-		Renderer::deviceResetQueued = true;
-	}
-
-	if (topmost || layered)
-	{
-		auto style = GetWindowLongPtr(appHwnd, GWL_EXSTYLE);
-
-		if (topmost && !(style & WS_EX_TOPMOST))
-		{
-			SetWindowPos(appHwnd, HWND_TOPMOST, windowPosition[0], windowPosition[1], windowSize[0], windowSize[1], 0);
-			windowTopmostCounter++;
-			if (windowTopmostCounter > 3)
-			{
-				windowTopmostCounter = 0;
-				ErectusProcess::SetProcessError(0, "Process State: Overlay not topmost");
-				overlayActive = false;
-				return false;
-			}
-		}
-		else if (!topmost && style & WS_EX_TOPMOST)
-			SetWindowPos(appHwnd, HWND_NOTOPMOST, windowPosition[0], windowPosition[1], windowSize[0], windowSize[1], 0);
-		else
-			windowTopmostCounter = 0;
-
-		if (layered && !(style & WS_EX_LAYERED))
-		{
-			style |= WS_EX_LAYERED;
-			SetWindowLongPtr(appHwnd, GWL_EXSTYLE, style);
-			SetLayeredWindowAttributes(appHwnd, RGB(0, 0, 0), 255, LWA_ALPHA | LWA_COLORKEY);
-		}
-		else if (!layered && style & WS_EX_LAYERED)
-		{
-			style &= ~WS_EX_LAYERED;
-			SetWindowLongPtr(appHwnd, GWL_EXSTYLE, style);
-		}
-	}
-
-	ErectusProcess::processMenuActive = false;
-	overlayMenuActive = false;
-	overlayActive = true;
 	return true;
 }

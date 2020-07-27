@@ -122,7 +122,7 @@ DWORD WINAPI Threads::LockingThread([[maybe_unused]] LPVOID lpParameter)
 			}
 			weaponIdRefreshCooldown--;
 			
-			if (App::overlayForeground && GetAsyncKeyState('T'))
+			if (gApp->mode == App::Mode::Overlay && GetAsyncKeyState('T'))
 			{
 				targetLockingKeyPressed = true;
 				if (targetLockingCooldown > 0)
@@ -280,7 +280,7 @@ DWORD WINAPI Threads::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 
 		if (Settings::melee.enabled)
 		{
-			if (App::overlayForeground && GetAsyncKeyState('U'))
+			if (gApp->mode == App::Mode::Overlay && GetAsyncKeyState('U'))
 			{
 				meleeCounter++;
 				if (meleeCounter > meleeThreshold)
