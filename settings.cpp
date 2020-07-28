@@ -38,10 +38,6 @@ EspSettings Settings::esp.npcs = {
 };
 */
 
-
-//utils
-WeaponEditorSettings Settings::weapons = defaultWeaponSettings;
-
 void Settings::GetDword(const std::string& section, const std::string& key, DWORD& value, const DWORD deflt)
 {
 	if (!ini.has(section))
@@ -433,33 +429,37 @@ void Settings::SetLooterSettings()
 
 void Settings::GetWeaponSettings()
 {
-	GetBool("WeaponEditorSettings", "WeaponNoRecoil", weapons.noRecoil, defaultWeaponSettings.noRecoil);
-	GetBool("WeaponEditorSettings", "WeaponNoSpread", weapons.noSpread, defaultWeaponSettings.noSpread);
-	GetBool("WeaponEditorSettings", "WeaponNoSway", weapons.noSway, defaultWeaponSettings.noSway);
-	GetBool("WeaponEditorSettings", "WeaponInfiniteAmmo", weapons.infiniteAmmo, defaultWeaponSettings.infiniteAmmo);
-	GetBool("WeaponEditorSettings", "WeaponInstantReload", weapons.instantReload, defaultWeaponSettings.instantReload);
-	GetBool("WeaponEditorSettings", "WeaponAutomaticflag", weapons.automaticflag, defaultWeaponSettings.automaticflag);
-	GetBool("WeaponEditorSettings", "WeaponCapacityEnabled", weapons.capacityEnabled, defaultWeaponSettings.capacityEnabled);
-	GetSliderInt("WeaponEditorSettings", "WeaponCapacity", weapons.capacity, defaultWeaponSettings.capacity, 0, 999);
-	GetBool("WeaponEditorSettings", "WeaponSpeedEnabled", weapons.speedEnabled, defaultWeaponSettings.speedEnabled);
-	GetSliderFloat("WeaponEditorSettings", "WeaponSpeed", weapons.speed, defaultWeaponSettings.speed, 0.0f, 100.0f);
-	GetBool("WeaponEditorSettings", "WeaponReachEnabled", weapons.reachEnabled, defaultWeaponSettings.reachEnabled);
-	GetSliderFloat("WeaponEditorSettings", "WeaponReach", weapons.reach, defaultWeaponSettings.reach, 0.0f, 999.0f);
+	GetBool("WeaponEditorSettings", "WeaponNoRecoil", weapons.noRecoil, weapons.noRecoil);
+	GetBool("WeaponEditorSettings", "WeaponNoSpread", weapons.noSpread, weapons.noSpread);
+	GetBool("WeaponEditorSettings", "WeaponNoSway", weapons.noSway, weapons.noSway);
+	GetBool("WeaponEditorSettings", "WeaponInfiniteAmmo", weapons.infiniteAmmo, weapons.infiniteAmmo);
+	GetBool("WeaponEditorSettings", "WeaponInstantReload", weapons.instantReload, weapons.instantReload);
+	GetBool("WeaponEditorSettings", "WeaponAutomaticflag", weapons.automaticflag, weapons.automaticflag);
+	GetBool("WeaponEditorSettings", "WeaponCapacityEnabled", weapons.capacityEnabled, weapons.capacityEnabled);
+	GetSliderInt("WeaponEditorSettings", "WeaponCapacity", weapons.capacity, weapons.capacity, 0, 999);
+	GetBool("WeaponEditorSettings", "WeaponSpeedEnabled", weapons.speedEnabled, weapons.speedEnabled);
+	GetSliderFloat("WeaponEditorSettings", "WeaponSpeed", weapons.speed, weapons.speed, 1.0f, 100.0f);
+	GetBool("WeaponEditorSettings", "WeaponReachEnabled", weapons.reachEnabled, weapons.reachEnabled);
+	GetSliderFloat("WeaponEditorSettings", "WeaponReach", weapons.reach, weapons.reach, 1.0f, 999.0f);
+	GetBool("WeaponEditorSettings", "WeaponRangeEnabled", weapons.rangeEnabled, weapons.rangeEnabled);
+	GetSliderFloat("WeaponEditorSettings", "WeaponRange", weapons.range, weapons.range, 0.f, 5000.0f);
 }
 void Settings::SetWeaponSettings()
 {
-	SetBool("WeaponEditorSettings", "WeaponNoRecoil", weapons.noRecoil, defaultWeaponSettings.noRecoil);
-	SetBool("WeaponEditorSettings", "WeaponNoSpread", weapons.noSpread, defaultWeaponSettings.noSpread);
-	SetBool("WeaponEditorSettings", "WeaponNoSway", weapons.noSway, defaultWeaponSettings.noSway);
-	SetBool("WeaponEditorSettings", "WeaponInfiniteAmmo", weapons.infiniteAmmo, defaultWeaponSettings.infiniteAmmo);
-	SetBool("WeaponEditorSettings", "WeaponInstantReload", weapons.instantReload, defaultWeaponSettings.instantReload);
-	SetBool("WeaponEditorSettings", "WeaponAutomaticflag", weapons.automaticflag, defaultWeaponSettings.automaticflag);
-	SetBool("WeaponEditorSettings", "WeaponCapacityEnabled", weapons.capacityEnabled, defaultWeaponSettings.capacityEnabled);
-	SetSliderInt("WeaponEditorSettings", "WeaponCapacity", weapons.capacity, defaultWeaponSettings.capacity, 0, 999);
-	SetBool("WeaponEditorSettings", "WeaponSpeedEnabled", weapons.speedEnabled, defaultWeaponSettings.speedEnabled);
-	SetSliderFloat("WeaponEditorSettings", "WeaponSpeed", weapons.speed, defaultWeaponSettings.speed, 0.0f, 100.0f);
-	SetBool("WeaponEditorSettings", "WeaponReachEnabled", weapons.reachEnabled, defaultWeaponSettings.reachEnabled);
-	SetSliderFloat("WeaponEditorSettings", "WeaponReach", weapons.reach, defaultWeaponSettings.reach, 0.0f, 999.0f);
+	SetBool("WeaponEditorSettings", "WeaponNoRecoil", weapons.noRecoil, weapons.noRecoil);
+	SetBool("WeaponEditorSettings", "WeaponNoSpread", weapons.noSpread, weapons.noSpread);
+	SetBool("WeaponEditorSettings", "WeaponNoSway", weapons.noSway, weapons.noSway);
+	SetBool("WeaponEditorSettings", "WeaponInfiniteAmmo", weapons.infiniteAmmo, weapons.infiniteAmmo);
+	SetBool("WeaponEditorSettings", "WeaponInstantReload", weapons.instantReload, weapons.instantReload);
+	SetBool("WeaponEditorSettings", "WeaponAutomaticflag", weapons.automaticflag, weapons.automaticflag);
+	SetBool("WeaponEditorSettings", "WeaponCapacityEnabled", weapons.capacityEnabled, weapons.capacityEnabled);
+	SetSliderInt("WeaponEditorSettings", "WeaponCapacity", weapons.capacity, weapons.capacity, 0, 999);
+	SetBool("WeaponEditorSettings", "WeaponSpeedEnabled", weapons.speedEnabled, weapons.speedEnabled);
+	SetSliderFloat("WeaponEditorSettings", "WeaponSpeed", weapons.speed, weapons.speed, 1.0f, 100.0f);
+	SetBool("WeaponEditorSettings", "WeaponReachEnabled", weapons.reachEnabled, weapons.reachEnabled);
+	SetSliderFloat("WeaponEditorSettings", "WeaponReach", weapons.reach, weapons.reach, 1.0f, 999.0f);
+	SetBool("WeaponEditorSettings", "WeaponRangeEnabled", weapons.rangeEnabled, weapons.rangeEnabled);
+	SetSliderFloat("WeaponEditorSettings", "WeaponRange", weapons.range, weapons.range, 0.f, 5000.0f);
 }
 
 void Settings::GetTargetSettings()

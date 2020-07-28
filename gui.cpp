@@ -3,7 +3,6 @@
 #include "app.h"
 #include "common.h"
 #include "settings.h"
-#include "renderer.h"
 
 #include "ErectusProcess.h"
 #include "ErectusMemory.h"
@@ -14,7 +13,6 @@
 #include "imgui/imgui_impl_win32.h"
 #include "imgui/imgui_internal.h"
 #include "imgui/imgui_stdlib.h"
-
 
 void Gui::Render()
 {
@@ -298,8 +296,19 @@ void Gui::RenderActors(const CustomEntry& entry, const EspSettings::Actors& sett
 		if (Settings::utilities.debugEsp)
 			itemText = fmt::format("{0:08x}\n{1:08x}", entry.entityFormId, entry.baseObjectFormId);
 
-		Renderer::RenderText(itemText.c_str(), screen, color, alpha);
+		RenderText(itemText.c_str(), screen, color, alpha);
 	}
+}
+
+void Gui::RenderText(const char* text, float* position, const float* color, const float alpha)
+{
+	if (text == nullptr)
+		return;
+
+	if (alpha <= 0.0f)
+		return;
+
+	ImGui::GetBackgroundDrawList()->AddText(ImGui::GetIO().Fonts->Fonts[1], 13.f, ImVec2(position[0], position[1]), ImColor(color[0], color[1], color[2], alpha), text, nullptr);
 }
 
 void Gui::RenderItems(const CustomEntry& entry, const EspSettings::Items& settings)
@@ -389,7 +398,7 @@ void Gui::RenderItems(const CustomEntry& entry, const EspSettings::Items& settin
 		if (Settings::utilities.debugEsp)
 			itemText = fmt::format("{0:16x}\n{1:08x}\n{2:16x}\n{3:08x}", entry.entityPtr, entry.entityFormId, entry.baseObjectPtr, entry.baseObjectFormId);
 
-		Renderer::RenderText(itemText.c_str(), screen, settings.color, alpha);
+		RenderText(itemText.c_str(), screen, settings.color, alpha);
 	}
 }
 
@@ -466,7 +475,7 @@ void Gui::RenderInfoBox()
 	ImGui::SetNextWindowPos(ImVec2(10.f, 10.f), ImGuiCond_FirstUseEver);
 	if (ImGui::Begin("##infobox", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav))
 	{
-		for (const auto&[text, enabled] : infoTexts)
+		for (const auto& [text, enabled] : infoTexts)
 		{
 			ImGui::TextColored(enabled ? enabledTextColor : disabledTextColor, text.c_str());
 		}
@@ -517,7 +526,7 @@ void Gui::Menu()
 	auto windowFlags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoResize;
 	if (gApp->mode == App::Mode::Standalone)
 		windowFlags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove;
-	
+
 	if (ImGui::Begin(OVERLAY_WINDOW_NAME, nullptr, windowFlags))
 	{
 		MenuBar();
@@ -542,7 +551,7 @@ void Gui::Menu()
 void Gui::ProcessMenu()
 {
 	ImGui::SetWindowSize(ImVec2(384, 224));
-	
+
 	ImGui::SetNextItemWidth(-16.f);
 	auto processText = ErectusProcess::pid ? "Fallout76.exe - " + std::to_string(ErectusProcess::pid) : "No  process selected.";
 	if (ImGui::BeginCombo("###ProcessList", processText.c_str()))
@@ -1200,13 +1209,19 @@ void Gui::OverlayMenuTabCombat()
 			LargeButtonToggle("Speed###WeaponSpeedEnabled", Settings::weapons.speedEnabled);
 			ImGui::NextColumn();
 			ImGui::SetNextItemWidth(-FLT_MIN);
-			ImGui::SliderFloat("###WeaponSpeed", &Settings::weapons.speed, 0.0f, 100.0f, "Speed: %.2f");
+			ImGui::SliderFloat("###WeaponSpeed", &Settings::weapons.speed, 1.0f, 100.0f, "Speed: %.2f");
 			ImGui::NextColumn();
 
 			LargeButtonToggle("Reach###WeaponReachEnabled", Settings::weapons.reachEnabled);
 			ImGui::NextColumn();
 			ImGui::SetNextItemWidth(-FLT_MIN);
-			ImGui::SliderFloat("###WeaponReach", &Settings::weapons.reach, 0.0f, 999.0f, "Reach: %.2f");
+			ImGui::SliderFloat("###WeaponReach", &Settings::weapons.reach, 1.0f, 999.0f, "Reach: %.0f");
+			ImGui::NextColumn();
+
+			LargeButtonToggle("Range###WeaponRangeEnabled", Settings::weapons.rangeEnabled);
+			ImGui::NextColumn();
+			ImGui::SetNextItemWidth(-FLT_MIN);
+			ImGui::SliderFloat("###WeaponRange", &Settings::weapons.range, 0.0f, 5000.f, "Range: %.0f");
 			ImGui::NextColumn();
 
 			ImGui::Columns();
@@ -1854,7 +1869,7 @@ void Gui::OverlayMenuTabBitMsgWriter()
 void Gui::SettingsMenu()
 {
 	ImGui::SetWindowSize(ImVec2(480, 720));
-	
+
 	if (ImGui::BeginTabBar("###OverlayMenuTabBar", ImGuiTabBarFlags_None))
 	{
 		OverlayMenuTabEsp();

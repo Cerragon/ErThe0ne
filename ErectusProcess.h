@@ -24,7 +24,7 @@ public:
 	inline static DWORD pid = 0;
 
 	static bool Rpm(DWORD64 src, void* dst, size_t size);
-	static bool Wpm(DWORD64 dst, void* src, size_t size);
+	static bool Wpm(DWORD64 dst, const void* src, size_t size);
 	static DWORD64 AllocEx(size_t size);
 	static bool FreeEx(DWORD64 src);
 

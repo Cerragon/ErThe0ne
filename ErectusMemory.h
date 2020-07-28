@@ -445,45 +445,6 @@ public:
 	DWORD64 clientState;//0x8
 };
 
-class Weapon
-{
-public:
-	DWORD64 vtable;//0x08
-	BYTE padding0008[0x18];
-	DWORD formId;//0x20
-	BYTE padding0024[0x19C];
-	DWORD64 keywordArrayPtr;//0x1C0
-	int keywordArraySize;//0x1C8
-	BYTE padding01D0[0xE0];
-	DWORD64 aimModelPtr;//0x2B0
-	BYTE padding02B8[0x44];
-	float reloadSpeed;//0x2FC
-	BYTE padding0300[0x4];
-	float speed;//0x304
-	float reach;//0x308
-	BYTE padding030C[0x2C];
-	float actionPointCost;//0x338
-	BYTE padding033C[0x24];
-	BYTE flagA;//0x360
-	BYTE flagB;//0x361
-	BYTE flagC;//0x362
-	BYTE flagD;//0x363
-	BYTE padding0364[0x1C];
-	short capacity;//0x380
-};
-
-class AimModel
-{
-public:
-	DWORD64 vtable;//0x8
-	BYTE padding0008[0x18];
-	DWORD formId;//0x20
-	BYTE padding0024[0x4];
-	BYTE spreadData[0x18];//0x28
-	BYTE recoilData[0x24];//0x40
-	float sway;//0x64
-};
-
 class Chargen
 {
 public:
@@ -491,13 +452,6 @@ public:
 	float thin;//0x28
 	float muscular;//0x2C
 	float large;//0x30
-};
-
-class OldWeapon
-{
-public:
-	Weapon* weaponData;
-	AimModel* aimModelData;
 };
 
 class CustomEntry
@@ -806,17 +760,8 @@ public:
 	static bool SetOpkData(DWORD64 opkPage, bool enabled);
 	static bool OnePositionKill(DWORD64* opkPage, bool* opkPageValid, bool state);
 	
-	//weapon editor
-	static void DeleteOldWeaponList();
-	static bool UpdateOldWeaponData();
-	static bool WeaponEditingEnabled();
-	static bool EditWeapon(int index, bool revertWeaponData);
-	inline static bool oldWeaponListUpdated = false;
-	inline static int oldWeaponListCounter = 0;
-	inline static int oldWeaponListSize = 0;
-
 	//infinite ammo
-	static bool InfiniteAmmo(bool state);
+
 
 	//item transfer
 	static bool CheckItemTransferList();
@@ -899,7 +844,5 @@ private:
 
 	static bool VtableSwap(DWORD64 dst, DWORD64 src);
 	
-	inline static OldWeapon* oldWeaponList = nullptr;
-
 	virtual void Dummy() = 0;
 };

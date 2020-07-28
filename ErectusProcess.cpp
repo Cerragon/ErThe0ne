@@ -80,7 +80,7 @@ bool ErectusProcess::Rpm(const DWORD64 src, void* dst, const size_t size)
 	return ReadProcessMemory(handle, reinterpret_cast<void*>(src), dst, size, nullptr);
 }
 
-bool ErectusProcess::Wpm(const DWORD64 dst, void* src, const size_t size)
+bool ErectusProcess::Wpm(const DWORD64 dst, const void* src, const size_t size)
 {
 	return WriteProcessMemory(handle, reinterpret_cast<void*>(dst), src, size, nullptr);
 }

@@ -5,20 +5,6 @@
 #include "imgui/imgui_impl_win32.h"
 #include "fmt/format.h"
 
-bool Renderer::RenderText(const char* text, float* position, const float* color, const float alpha)
-{
-	if (text == nullptr)
-		return false;
-
-	if (alpha <= 0.0f)
-		return false;
-
-	//this uses imgui's background to render our sprites :)
-	ImGui::GetBackgroundDrawList()->AddText(ImGui::GetIO().Fonts->Fonts[1], 13.f, ImVec2(position[0], position[1]), ImColor(color[0], color[1], color[2], alpha), text, nullptr);
-
-	return true;
-}
-
 bool Renderer::Init(const HWND hwnd)
 {
 	if (!CreateDevice(hwnd))

@@ -219,18 +219,23 @@ struct EspSettings
 class WeaponEditorSettings
 {
 public:
-	bool noRecoil;
-	bool noSpread;
-	bool noSway;
-	bool infiniteAmmo;
-	bool instantReload;
-	bool automaticflag;
-	bool capacityEnabled;
-	int capacity;
-	bool speedEnabled;
-	float speed;
-	bool reachEnabled;
-	float reach;
+	bool infiniteAmmo = false;
+	
+	bool noRecoil = false;
+	bool noSpread = false;
+	bool noSway = false;
+	bool instantReload = false;
+	bool automaticflag = false;
+	bool capacityEnabled = false;
+	int capacity = 250;
+	bool speedEnabled = false;
+	float speed = 1.f;
+	bool reachEnabled = false;
+	float reach = 1.f;
+	bool rangeEnabled;
+	float range = 256;
+
+	[[nodiscard]] bool IsEnabled() const { return noRecoil || noSpread || noSway || instantReload || automaticflag || capacityEnabled || speedEnabled || reachEnabled || rangeEnabled; }//ignoring infiniteAmmo on purpose!!!
 };
 class TargetingSettings
 {
@@ -363,7 +368,7 @@ public:
 	inline static MessageWriterSettings msgWriter = {};
 
 	//utils
-	static WeaponEditorSettings weapons;
+	inline static WeaponEditorSettings weapons = {};
 	inline static TargetingSettings targetting = {};
 	inline static PlayerEditorSettings localPlayer = {};
 	inline static OpkSettings opk = {};
@@ -374,9 +379,6 @@ public:
 	inline static NukeCodeSettings customNukeCodeSettings = {};
 	inline static MeleeSettings melee = { false,10,20 };
 	inline static ChargenSettings characterEditor = { false,0.33f,0.33f,0.33f };
-	inline static WeaponEditorSettings defaultWeaponSettings{
-		false, false, false, false, false, false, false, 250, false, 2.0f, false, 500.0f
-	};
 
 private:
 	static void GetItemSettings(const std::string& section, EspSettings::Items& value, const EspSettings::Items& deflt);

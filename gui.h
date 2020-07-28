@@ -41,6 +41,8 @@ private:
 	static void RenderActors(const CustomEntry& entry, const EspSettings::Actors& settings);
 	static void RenderItems(const CustomEntry& entry, const EspSettings::Items& settings);
 
+	static void RenderText(const char* text, float* position, const float* color, float alpha);
+
 	static void ProcessMenu();
 	static void SettingsMenu();
 

@@ -14,8 +14,6 @@ public:
 
 	static void Resize(unsigned width, unsigned height);
 
-	static bool RenderText(const char* text, float* position, const float* color, float alpha);
-
 	inline static LPDIRECT3DDEVICE9EX d3dDevice = nullptr;
 
 private:

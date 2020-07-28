@@ -8,6 +8,7 @@
 #include "ErectusMemory.h"
 #include "ErectusProcess.h"
 #include "Looter.h"
+#include "WeaponEditor.h"
 
 DWORD WINAPI Threads::BufferEntityListThread([[maybe_unused]] LPVOID lpParameter)
 {
@@ -43,43 +44,15 @@ DWORD WINAPI Threads::WeaponEditorThread([[maybe_unused]] LPVOID lpParameter)
 {
 	while (!threadDestructionState)
 	{
-		ErectusMemory::oldWeaponListCounter++;
-		if (ErectusMemory::oldWeaponListCounter > 60)
-		{
-			ErectusMemory::oldWeaponListCounter = 0;
-			if (!ErectusMemory::oldWeaponListUpdated)
-				ErectusMemory::oldWeaponListUpdated = ErectusMemory::UpdateOldWeaponData();
+		WeaponEditor::EditWeapons(true);
+		
+		WeaponEditor::InfiniteAmmo(Settings::weapons.infiniteAmmo);
 
-			if (ErectusMemory::oldWeaponListUpdated)
-			{
-				auto revertWeapons = true;
-				if (ErectusMemory::WeaponEditingEnabled())
-					revertWeapons = false;
-
-				for (auto i = 0; i < ErectusMemory::oldWeaponListSize; i++)
-				{
-					if (threadDestructionState)
-						break;
-					ErectusMemory::EditWeapon(i, revertWeapons);
-				}
-			}
-			ErectusMemory::InfiniteAmmo(Settings::weapons.infiniteAmmo);
-		}
-
-		std::this_thread::sleep_for(std::chrono::milliseconds(16));
+		std::this_thread::sleep_for(std::chrono::milliseconds(60 * 16));
 	}
 
-	if (ErectusMemory::oldWeaponListUpdated)
-	{
-		for (auto i = 0; i < ErectusMemory::oldWeaponListSize; i++)
-		{
-			ErectusMemory::EditWeapon(i, true);
-		}
-	}
-
-	ErectusMemory::InfiniteAmmo(false);
-
-	ErectusMemory::DeleteOldWeaponList();
+	WeaponEditor::EditWeapons(false);
+	WeaponEditor::InfiniteAmmo(false);
 
 	weaponEditorThreadActive = false;
 
@@ -107,7 +80,7 @@ DWORD WINAPI Threads::LockingThread([[maybe_unused]] LPVOID lpParameter)
 
 	while (!threadDestructionState)
 	{
-		
+
 		if (Settings::targetting.lockNpCs)
 		{
 			auto currentTargetValid = false;
@@ -121,7 +94,7 @@ DWORD WINAPI Threads::LockingThread([[maybe_unused]] LPVOID lpParameter)
 				weaponId = ErectusMemory::GetFavoritedWeaponId(BYTE(Settings::targetting.favoriteIndex));
 			}
 			weaponIdRefreshCooldown--;
-			
+
 			if (gApp->mode == App::Mode::Overlay && GetAsyncKeyState('T'))
 			{
 				targetLockingKeyPressed = true;
@@ -143,7 +116,7 @@ DWORD WINAPI Threads::LockingThread([[maybe_unused]] LPVOID lpParameter)
 				{
 					if (!(entity.flag & CUSTOM_ENTRY_NPC) || !Settings::targetting.lockNpCs)
 						continue;
-					
+
 					TesObjectRefr entityData{};
 					if (!ErectusProcess::Rpm(entity.entityPtr, &entityData, sizeof entityData))
 						continue;
@@ -161,7 +134,7 @@ DWORD WINAPI Threads::LockingThread([[maybe_unused]] LPVOID lpParameter)
 						if (degrees < closestEntityDegrees)
 						{
 							closestEntityDegrees = degrees;
-							closestEntityPtr     = entity.entityPtr;
+							closestEntityPtr = entity.entityPtr;
 						}
 					}
 				}
@@ -293,7 +266,7 @@ DWORD WINAPI Threads::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 			else
 				meleeThreshold = 0;
 		}
-		
+
 		std::this_thread::sleep_for(std::chrono::milliseconds(16));
 	}
 
