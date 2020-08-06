@@ -134,6 +134,7 @@
     <ClCompile Include="imgui\imgui_widgets.cpp" />
     <ClCompile Include="Looter.cpp" />
     <ClCompile Include="MsgSender.cpp" />
+    <ClCompile Include="PlayerStatsEditor.cpp" />
     <ClCompile Include="utils.cpp" />
     <ClCompile Include="renderer.cpp" />
     <ClCompile Include="gui.cpp" />
@@ -173,6 +174,7 @@
     <ClInclude Include="ini.h" />
     <ClInclude Include="Looter.h" />
     <ClInclude Include="MsgSender.h" />
+    <ClInclude Include="PlayerStatsEditor.h" />
     <ClInclude Include="renderer.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="settings.h" />

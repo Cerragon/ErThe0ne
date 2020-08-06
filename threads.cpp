@@ -8,6 +8,7 @@
 #include "ErectusMemory.h"
 #include "ErectusProcess.h"
 #include "Looter.h"
+#include "PlayerStatsEditor.h"
 #include "WeaponEditor.h"
 
 DWORD WINAPI Threads::BufferEntityListThread([[maybe_unused]] LPVOID lpParameter)
@@ -80,7 +81,6 @@ DWORD WINAPI Threads::LockingThread([[maybe_unused]] LPVOID lpParameter)
 
 	while (!threadDestructionState)
 	{
-
 		if (Settings::targetting.lockNpCs)
 		{
 			auto currentTargetValid = false;
@@ -190,9 +190,6 @@ DWORD WINAPI Threads::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 	auto meleeCounter = 0;
 	auto meleeThreshold = 0;
 
-	DWORD64 actorValuePage = 0;
-	auto actorValuePageValid = false;
-
 	DWORD64 opkPage = 0;
 	auto opkPageValid = false;
 
@@ -218,17 +215,9 @@ DWORD WINAPI Threads::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 
 		ErectusMemory::PositionSpoofing(positionSpoofingToggle);
 		ErectusMemory::Noclip(noclipToggle);
-
-		ErectusMemory::ActorValue(&actorValuePage, &actorValuePageValid, true);
-		if (loopCount % 60 == 0) { //every 60 loops
-			ErectusMemory::SetActorValueMaximum(0x000002C2, 100.0f, static_cast<float>(Settings::localPlayer.strength), Settings::localPlayer.strengthEnabled);
-			ErectusMemory::SetActorValueMaximum(0x000002C3, 100.0f, static_cast<float>(Settings::localPlayer.perception), Settings::localPlayer.perceptionEnabled);
-			ErectusMemory::SetActorValueMaximum(0x000002C4, 100.0f, static_cast<float>(Settings::localPlayer.endurance), Settings::localPlayer.enduranceEnabled);
-			ErectusMemory::SetActorValueMaximum(0x000002C5, 100.0f, static_cast<float>(Settings::localPlayer.charisma), Settings::localPlayer.charismaEnabled);
-			ErectusMemory::SetActorValueMaximum(0x000002C6, 100.0f, static_cast<float>(Settings::localPlayer.agility), Settings::localPlayer.agilityEnabled);
-			ErectusMemory::SetActorValueMaximum(0x000002C7, 100.0f, static_cast<float>(Settings::localPlayer.intelligence), Settings::localPlayer.intelligenceEnabled);
-			ErectusMemory::SetActorValueMaximum(0x000002C8, 100.0f, static_cast<float>(Settings::localPlayer.luck), Settings::localPlayer.luckEnabled);
-		}
+				
+		if (loopCount % 30 == 0) //every 60 loops
+			PlayerStatsEditor::Edit(true);
 
 		ErectusMemory::FreezeActionPoints(&freezeApPage, &freezeApPageValid, true);
 		ErectusMemory::OnePositionKill(&opkPage, &opkPageValid, true);
@@ -272,18 +261,8 @@ DWORD WINAPI Threads::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 
 	ErectusMemory::PositionSpoofing(false);
 	ErectusMemory::Noclip(false);
-	ErectusMemory::ActorValue(&actorValuePage, &actorValuePageValid, false);
 
-	if (actorValuePage)
-		ErectusProcess::FreeEx(actorValuePage);
-
-	ErectusMemory::SetActorValueMaximum(0x000002C2, 100.0f, static_cast<float>(Settings::localPlayer.strength), false);
-	ErectusMemory::SetActorValueMaximum(0x000002C3, 100.0f, static_cast<float>(Settings::localPlayer.perception), false);
-	ErectusMemory::SetActorValueMaximum(0x000002C4, 100.0f, static_cast<float>(Settings::localPlayer.endurance), false);
-	ErectusMemory::SetActorValueMaximum(0x000002C5, 100.0f, static_cast<float>(Settings::localPlayer.charisma), false);
-	ErectusMemory::SetActorValueMaximum(0x000002C6, 100.0f, static_cast<float>(Settings::localPlayer.agility), false);
-	ErectusMemory::SetActorValueMaximum(0x000002C7, 100.0f, static_cast<float>(Settings::localPlayer.intelligence), false);
-	ErectusMemory::SetActorValueMaximum(0x000002C8, 100.0f, static_cast<float>(Settings::localPlayer.luck), false);
+	PlayerStatsEditor::Edit(false);
 
 	ErectusMemory::OnePositionKill(&opkPage, &opkPageValid, false);
 

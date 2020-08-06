@@ -240,8 +240,8 @@ void Looter::LootContainer(const ItemInfo& item, const TesObjectRefr& player)
 		TransferMessage transferMessageData = {
 			.vtable = ErectusProcess::exe + VTABLE_REQUESTTRANSFERITEMMSG,
 			.sourceEntityId = item.refr.formId,
-			.playerEntityId = 0xE0000E4A,
-			.bShouldSendResult = true,
+			.playerEntityId = 0,
+			.bShouldSendResult = false,
 			.destEntityId = player.formId,
 			.itemServerHandleId = entries[i].itemId,
 			.stashAccessEntityId = 0x00000000,

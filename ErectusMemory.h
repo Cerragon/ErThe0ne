@@ -779,9 +779,6 @@ public:
 
 	static bool PositionSpoofing(bool state);
 
-	static bool ActorValue(DWORD64* actorValuePage, bool* actorValuePageValid, bool state);
-	static bool SetActorValueMaximum(DWORD formId, float defaultValue, float customValue, bool state);
-
 	static bool MeleeAttack();
 	static bool ChargenEditing();
 
@@ -804,6 +801,7 @@ public:
 	static void GetCustomEntityData(const TesItem& referenceData, DWORD64* entityFlag, DWORD64* entityNamePtr, int* enabledDistance);
 	static bool CheckFormIdArray(DWORD formId, const bool* enabledArray, const DWORD* formIdArray, int size);
 	static DWORD64 RttiGetNamePtr(DWORD64 vtable);
+	static bool VtableSwap(DWORD64 dst, DWORD64 src);
 
 	static ItemInfo GetItemInfo(const TesObjectRefr& entity, const TesItem& base);
 
@@ -834,8 +832,6 @@ private:
 	static std::string GetInstancedItemName(DWORD64 displayPtr);
 
 	static std::string GetEntityName(DWORD64 ptr);
-
-	static bool VtableSwap(DWORD64 dst, DWORD64 src);
-	
+		
 	virtual void Dummy() = 0;
 };

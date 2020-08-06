@@ -19,7 +19,9 @@ constexpr auto OFFSET_GET_PTR_A2 = 0x03CB4190UL;//1.3.3.24
 constexpr auto OFFSET_NUKE_CODE = 0x05A67A18UL;//1.3.3.24
 
 //wpm
-constexpr auto OFFSET_CHARGEN = 0x05B1F9A0UL;//1.3.2.10 + 0x05B0CD60UL?
+
+//chargen
+constexpr auto OFFSET_CHARGEN = 0x05B48040UL;//1.3.3.24- wrong or broken
 
 //remote threads and/or function patching
 
@@ -27,12 +29,12 @@ constexpr auto OFFSET_CHARGEN = 0x05B1F9A0UL;//1.3.2.10 + 0x05B0CD60UL?
 constexpr auto OFFSET_REDIRECTION = 0x01805D4BUL;//1.3.3.24
 constexpr auto OFFSET_REDIRECTION_JMP = 0x01805BDBUL;//1.3.3.24
 
-constexpr auto OFFSET_MESSAGE_SENDER = 0x0148CA00UL;//1.3.3.24-
-constexpr auto OFFSET_FAKE_MESSAGE = 0x01406FE7UL;//1.3.3.24-
-constexpr auto OFFSET_ENTITY_ID = 0x05122400UL;//1.3.3.24-
+constexpr auto OFFSET_MESSAGE_SENDER = 0x0148CA00UL;//1.3.3.24
+constexpr auto OFFSET_FAKE_MESSAGE = 0x01406FE7UL;//1.3.3.24
+constexpr auto OFFSET_ENTITY_ID = 0x05122400UL;//1.3.3.24
 
-constexpr auto OFFSET_ACTOR_VALUE = 0x0167C230UL;//1.3.2.10 -
-constexpr auto OFFSET_MELEE_ATTACK = 0x01685BE0UL;//1.3.2.10 -
+constexpr auto OFFSET_ACTOR_VALUE = 0x0168CED0UL;//1.3.3.24
+constexpr auto OFFSET_MELEE_ATTACK = 0x01696880UL;//1.3.3.24
 
 //opk
 constexpr auto OFFSET_OPK = 0x0299E80DUL;//1.3.3.24
@@ -41,14 +43,14 @@ constexpr auto OFFSET_OPK = 0x0299E80DUL;//1.3.3.24
 constexpr auto OFFSET_AV_REGEN = 0x0168D28FUL;//1.3.3.24
 
 //position spoofing
-constexpr auto OFFSET_SERVER_POSITION = 0x01469D25UL;//1.3.2.10 + 0x0146B121UL? -
+constexpr auto OFFSET_SERVER_POSITION = 0x01478325UL;//1.3.3.24
 
 //noclip
-constexpr auto OFFSET_CHAR_CONTROLLER = 0x05D6E120UL;//1.3.2.10 -
-constexpr auto OFFSET_NOCLIP_A = 0x02975798UL;//1.3.2.10 -
-constexpr auto OFFSET_NOCLIP_B = 0x02975750UL;//1.3.2.10 + 0x02965510UL? -
-constexpr auto OFFSET_NOCLIP_C = 0x015F9441UL;//1.3.2.10 + 0x01602D91UL? -
-constexpr auto OFFSET_NOCLIP_D = 0x015F9471UL;//1.3.2.10 + 0x01602DC1UL? -
+constexpr auto OFFSET_CHAR_CONTROLLER = 0x05D96AA0UL;//1.3.3.24
+constexpr auto OFFSET_NOCLIP_A = 0x02990858UL;//1.3.3.24
+constexpr auto OFFSET_NOCLIP_B = 0x02990810UL;//1.3.3.24
+constexpr auto OFFSET_NOCLIP_C = 0x01609FE1UL;//1.3.3.24
+constexpr auto OFFSET_NOCLIP_D = 0x0160A011UL;//1.3.3.24
 
 //infinite ammo
 constexpr auto OFFSET_INFINITE_AMMO = 0x00CD48B6UL;//1.3.3.24
