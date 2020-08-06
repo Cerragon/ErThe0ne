@@ -53,7 +53,7 @@ void WeaponEditor::EditWeapons(bool enabled)
 		//if there's a backup it means we've already edited the weapon, let's take original values as the base for editing
 		if (originalWeaponValues.contains(originalValues.weaponData.formId))
 			originalValues = originalWeaponValues.at(originalValues.weaponData.formId);
-		
+
 		//check if we want to edit stuff, if so -> backup the original + set new
 		auto newValues = originalValues;
 
@@ -61,7 +61,7 @@ void WeaponEditor::EditWeapons(bool enabled)
 			newValues.weaponData.reloadSpeed = 100.f; //this is basically reload ANIMATION speed multiplier
 		if (Settings::weapons.automaticflag)
 			newValues.weaponData.flagB |= 1 << 7;
-		if (Settings::weapons.capacityEnabled)
+		if (Settings::weapons.capacityEnabled && originalValues.weaponData.capacity != 0) // capacity == 0 => melee weapon
 			newValues.weaponData.capacity = static_cast<short>(Settings::weapons.capacity);
 		if (Settings::weapons.speedEnabled)
 			newValues.weaponData.speed = Settings::weapons.speed;
@@ -77,7 +77,7 @@ void WeaponEditor::EditWeapons(bool enabled)
 		if (Settings::weapons.noSpread)
 			std::fill(std::begin(newValues.aimModelData.spreadData), std::end(newValues.aimModelData.spreadData), 0x00);
 		if (Settings::weapons.noSway)
-			newValues.aimModelData.sway = 100.0f;
+			newValues.aimModelData.sway = 100.f;
 
 		//backup the original value if we're going to edit sthg; if a backup already exists it will fail silently
 		if (!(newValues.weaponData == originalValues.weaponData) || !(newValues.aimModelData == originalValues.aimModelData))

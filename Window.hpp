@@ -34,7 +34,7 @@ private:
 		DWORD style;
 		DWORD styleEx;
 	};
-	const std::map<Styles, WndStyles> STYLES = {
+	const std::map<Styles, WndStyles> styles = {
 		{ Styles::Standalone, { WS_SYSMENU | WS_CAPTION, 0 } },
 		{ Styles::Attached, { WS_POPUP,  WS_EX_TOPMOST } },
 		{ Styles::Overlay, { WS_POPUP,  WS_EX_TOPMOST | WS_EX_LAYERED | WS_EX_TRANSPARENT } } //layered+transparent = clickthrough

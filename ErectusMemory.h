@@ -759,9 +759,6 @@ public:
 	//opk
 	static bool SetOpkData(DWORD64 opkPage, bool enabled);
 	static bool OnePositionKill(DWORD64* opkPage, bool* opkPageValid, bool state);
-	
-	//infinite ammo
-
 
 	//item transfer
 	static bool CheckItemTransferList();
@@ -826,8 +823,6 @@ private:
 	static bool IsMagazine(const TesItem& tesItem);
 	static bool IsTreasureMap(const TesItem& referenceData);
 	static bool IsRecipeKnown(DWORD formId);
-	
-	static int GetOldWeaponIndex(DWORD formId);
 
 	static bool MovePlayer();
 
@@ -837,8 +832,6 @@ private:
 	static bool SendHitsToServer(Hits* hitsData, size_t hitsDataSize);
 	static DWORD64 GetNukeCodePtr(DWORD formId);
 	static std::string GetInstancedItemName(DWORD64 displayPtr);
-	
-	static DWORD64 GetCameraPtr();
 
 	static std::string GetEntityName(DWORD64 ptr);
 

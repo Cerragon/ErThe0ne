@@ -10,51 +10,63 @@ constexpr LPCSTR OVERLAY_WINDOW_NAME = "Er";
 //Offsets
 
 //just rpm
-constexpr auto OFFSET_LOCAL_PLAYER = 0x05B1D518UL;//1.3.2.10
-constexpr auto OFFSET_ENTITY_LIST = 0x05902898UL;//1.3.2.10
-constexpr auto OFFSET_MAIN = 0x05B7B4F8UL;//1.3.2.10
-constexpr auto OFFSET_CAMERA = 0x06B1F760UL;//1.3.2.10
-constexpr auto OFFSET_GET_PTR_A1 = 0x05908C68UL;//1.3.2.10
-constexpr auto OFFSET_GET_PTR_A2 = 0x03C92020UL;//1.3.2.10
-constexpr auto OFFSET_NUKE_CODE = 0x05A3F078UL;//1.3.2.10
+constexpr auto OFFSET_LOCAL_PLAYER = 0x05B45BB0UL;//1.3.3.24
+constexpr auto OFFSET_ENTITY_LIST = 0x592B008UL;//1.3.3.24
+constexpr auto OFFSET_MAIN = 0x05BA3BA8UL;//1.3.3.24
+constexpr auto OFFSET_CAMERA = 0x05BE8B40UL;//1.3.3.24
+constexpr auto OFFSET_GET_PTR_A1 = 0x059313E8UL;//1.3.3.24
+constexpr auto OFFSET_GET_PTR_A2 = 0x03CB4190UL;//1.3.3.24
+constexpr auto OFFSET_NUKE_CODE = 0x05A67A18UL;//1.3.3.24
 
 //wpm
 constexpr auto OFFSET_CHARGEN = 0x05B1F9A0UL;//1.3.2.10 + 0x05B0CD60UL?
 
 //remote threads and/or function patching
-constexpr auto OFFSET_MESSAGE_SENDER = 0x0147D8D0UL;//1.3.2.10
-constexpr auto OFFSET_FAKE_MESSAGE = 0x013F9017UL;//1.3.2.10
-constexpr auto OFFSET_REDIRECTION = 0x017F52FBUL;//1.3.2.10
-constexpr auto OFFSET_REDIRECTION_JMP = 0x017F518DUL;//1.3.2.10
-constexpr auto OFFSET_ENTITY_ID = 0x050F9C80UL;//1.3.2.10
-constexpr auto OFFSET_ACTOR_VALUE = 0x0167C230UL;//1.3.2.10 +
-constexpr auto OFFSET_MELEE_ATTACK = 0x01685BE0UL;//1.3.2.10 +
-constexpr auto OFFSET_OPK = 0x0298374DUL;//1.3.2.10
-constexpr auto OFFSET_AV_REGEN = 0x0167C5EFUL;//1.3.2.10
-constexpr auto OFFSET_SERVER_POSITION = 0x01469D25UL;//1.3.2.10 + 0x0146B121UL?
-constexpr auto OFFSET_CHAR_CONTROLLER = 0x05D6E120UL;//1.3.2.10
-constexpr auto OFFSET_NOCLIP_A = 0x02975798UL;//1.3.2.10 +
-constexpr auto OFFSET_NOCLIP_B = 0x02975750UL;//1.3.2.10 + 0x02965510UL?
-constexpr auto OFFSET_NOCLIP_C = 0x015F9441UL;//1.3.2.10 + 0x01602D91UL?
-constexpr auto OFFSET_NOCLIP_D = 0x015F9471UL;//1.3.2.10 + 0x01602DC1UL?
-constexpr auto OFFSET_INFINITE_AMMO = 0x00CB4316UL;//1.3.2.10
 
-constexpr auto OFFSET_DATA_HANDLER = 0x058FEFE8UL;//1.3.2.10
+//dmg redirection
+constexpr auto OFFSET_REDIRECTION = 0x01805D4BUL;//1.3.3.24
+constexpr auto OFFSET_REDIRECTION_JMP = 0x01805BDBUL;//1.3.3.24
+
+constexpr auto OFFSET_MESSAGE_SENDER = 0x0148CA00UL;//1.3.3.24-
+constexpr auto OFFSET_FAKE_MESSAGE = 0x01406FE7UL;//1.3.3.24-
+constexpr auto OFFSET_ENTITY_ID = 0x05122400UL;//1.3.3.24-
+
+constexpr auto OFFSET_ACTOR_VALUE = 0x0167C230UL;//1.3.2.10 -
+constexpr auto OFFSET_MELEE_ATTACK = 0x01685BE0UL;//1.3.2.10 -
+
+//opk
+constexpr auto OFFSET_OPK = 0x0299E80DUL;//1.3.3.24
+
+//infinite AP
+constexpr auto OFFSET_AV_REGEN = 0x0168D28FUL;//1.3.3.24
+
+//position spoofing
+constexpr auto OFFSET_SERVER_POSITION = 0x01469D25UL;//1.3.2.10 + 0x0146B121UL? -
+
+//noclip
+constexpr auto OFFSET_CHAR_CONTROLLER = 0x05D6E120UL;//1.3.2.10 -
+constexpr auto OFFSET_NOCLIP_A = 0x02975798UL;//1.3.2.10 -
+constexpr auto OFFSET_NOCLIP_B = 0x02975750UL;//1.3.2.10 + 0x02965510UL? -
+constexpr auto OFFSET_NOCLIP_C = 0x015F9441UL;//1.3.2.10 + 0x01602D91UL? -
+constexpr auto OFFSET_NOCLIP_D = 0x015F9471UL;//1.3.2.10 + 0x01602DC1UL? -
+
+//infinite ammo
+constexpr auto OFFSET_INFINITE_AMMO = 0x00CD48B6UL;//1.3.3.24
+
+//weapon editor
+constexpr auto OFFSET_DATA_HANDLER = 0x05927760UL;//1.3.3.24
 
 //vtables
-constexpr auto VTABLE_REQUESTACTIVATEREFMSG = 0x03AD5C70UL;//1.3.2.10
-constexpr auto VTABLE_REQUESTTRANSFERITEMMSG = 0x03AEA2B8UL;//1.3.2.10
-constexpr auto VTABLE_REQUESTTELEPORTTOLOCATIONMSG = 0x03ADE020UL;//1.3.2.10
-constexpr auto VTABLE_CLIENTSTATEMSG = 0x03ADDC00UL;//1.3.2.10
-constexpr auto VTABLE_REQUESTHITSONACTORS = 0x03AD58A0UL;//1.3.2.10
-
-
+constexpr auto VTABLE_REQUESTACTIVATEREFMSG = 0x03AF7B50UL;//1.3.3.24 
+constexpr auto VTABLE_REQUESTTRANSFERITEMMSG = 0x03B0C1F8UL;//1.3.3.24 
+constexpr auto VTABLE_REQUESTTELEPORTTOLOCATIONMSG = 0x03AFFF0UL;//1.3.3.24 
+constexpr auto VTABLE_CLIENTSTATEMSG = 0x03AFFAE0UL;//1.3.3.24 
+constexpr auto VTABLE_REQUESTHITSONACTORS = 0x03AF7780UL;//1.3.3.24 
 
 enum class HotKeys : int
 {
 	PositionSpoofingToggle,
 	NoclipToggle,
-	OpkPlayersToggle,
 	OpkNpcsToggle,
 	Loot,
 	ToggleOverlay,

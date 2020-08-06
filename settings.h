@@ -279,6 +279,8 @@ public:
 	int agility = 9001;
 	bool luckEnabled = false;
 	int luck = 9001;
+
+	[[nodiscard]] bool IsEnabled() const { return actionPointsEnabled || strengthEnabled || perceptionEnabled || enduranceEnabled || charismaEnabled || intelligenceEnabled || agilityEnabled || luckEnabled; }
 };
 class OpkSettings
 {

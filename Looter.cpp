@@ -345,6 +345,7 @@ void Looter::Loot()
 			LootGroundItem(item, localPlayer);
 		}
 	}
+	lootItemsRequested = false;
 }
 
 bool Looter::ContainerValid(const TesItem& referenceData)

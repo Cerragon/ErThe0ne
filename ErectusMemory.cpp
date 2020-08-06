@@ -131,15 +131,6 @@ DWORD64 ErectusMemory::GetPtr(const DWORD formId)
 	return ptr;
 }
 
-DWORD64 ErectusMemory::GetCameraPtr()
-{
-	DWORD64 cameraPtr;
-	if (!ErectusProcess::Rpm(ErectusProcess::exe + OFFSET_CAMERA, &cameraPtr, sizeof cameraPtr))
-		return 0;
-
-	return cameraPtr;
-}
-
 BYTE ErectusMemory::CheckHealthFlag(const BYTE healthFlag)
 {
 	auto flag = healthFlag;
@@ -1030,7 +1021,7 @@ bool ErectusMemory::DamageRedirection(const DWORD64 targetPtr, DWORD64* targetin
 	BYTE pageJmpOff[] = { 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC };
 	BYTE pageJmpCheck[sizeof pageJmpOff];
 
-	BYTE redirectionOn[] = { 0xE9, 0x8D, 0xFE, 0xFF, 0xFF };
+	BYTE redirectionOn[] = { 0xE9, 0x8B, 0xFE, 0xFF, 0xFF }; //this should be calculated tbh, it's a relative jmp: "jmp (OFFSET_REDIRECTION_JMP - OFFSET_REDIRECTION)"
 	BYTE redirectionOff[] = { 0x48, 0x8B, 0x5C, 0x24, 0x50 };
 	BYTE redirectionCheck[sizeof redirectionOff];
 
@@ -1250,6 +1241,9 @@ void ErectusMemory::Noclip(const bool state)
 
 bool ErectusMemory::ActorValue(DWORD64* actorValuePage, bool* actorValuePageValid, const bool state)
 {
+	if (!*actorValuePage && !Settings::localPlayer.IsEnabled())
+		return false;
+	
 	if (!*actorValuePage)
 	{
 		const auto page = ErectusProcess::AllocEx(sizeof(ActorValueHook));
@@ -1340,6 +1334,9 @@ bool ErectusMemory::ActorValue(DWORD64* actorValuePage, bool* actorValuePageVali
 
 bool ErectusMemory::SetActorValueMaximum(const DWORD formId, const float defaultValue, const float customValue, const bool state)
 {
+	return false; //fixme
+
+	
 	const auto actorValuePtr = GetPtr(formId);
 	if (!Utils::Valid(actorValuePtr))
 		return false;
@@ -1370,6 +1367,9 @@ bool ErectusMemory::SetActorValueMaximum(const DWORD formId, const float default
 
 bool ErectusMemory::OnePositionKill(DWORD64* opkPage, bool* opkPageValid, const bool state)
 {
+	if (!*opkPage && !Settings::opk.enabled)
+		return false;
+	
 	if (!*opkPage)
 	{
 		const auto page = ErectusProcess::AllocEx(sizeof(Opk));
@@ -1751,6 +1751,9 @@ void ErectusMemory::UpdateNukeCodes()
 
 bool ErectusMemory::FreezeActionPoints(DWORD64* freezeApPage, bool* freezeApPageValid, const bool state)
 {
+	if (!*freezeApPage && !Settings::localPlayer.freezeApEnabled)
+		return false;
+	
 	if (!*freezeApPage)
 	{
 		const auto page = ErectusProcess::AllocEx(sizeof(FreezeAp));
@@ -2504,7 +2507,11 @@ bool ErectusMemory::ChargenEditing()
 Camera ErectusMemory::GetCameraInfo()
 {
 	Camera result = {};
-	const auto cameraPtr = GetCameraPtr();
+
+	DWORD64 cameraPtr;
+	if (!ErectusProcess::Rpm(ErectusProcess::exe + OFFSET_CAMERA, &cameraPtr, sizeof cameraPtr))
+		return result;
+
 	if (!Utils::Valid(cameraPtr))
 		return result;
 

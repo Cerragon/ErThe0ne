@@ -116,11 +116,11 @@ void Window::SetStyle(const Styles newStyle)
 
 	currentStyle = newStyle;
 
-	SetWindowLong(mainWindow, GWL_STYLE, STYLES.at(currentStyle).style);
-	SetWindowLong(mainWindow, GWL_EXSTYLE, STYLES.at(currentStyle).styleEx);
+	SetWindowLong(mainWindow, GWL_STYLE, styles.at(currentStyle).style);
+	SetWindowLong(mainWindow, GWL_EXSTYLE, styles.at(currentStyle).styleEx);
 
 	MARGINS margins{ -1, -1, -1, -1 };
 	DwmExtendFrameIntoClientArea(mainWindow, &margins);
 
-	SetWindowPos(mainWindow, STYLES.at(currentStyle).styleEx & WS_EX_TOPMOST ? HWND_TOPMOST : HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW | SWP_FRAMECHANGED);
+	SetWindowPos(mainWindow, styles.at(currentStyle).styleEx & WS_EX_TOPMOST ? HWND_TOPMOST : HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW | SWP_FRAMECHANGED);
 }
