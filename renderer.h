@@ -27,6 +27,6 @@ private:
 	inline static LPDIRECT3D9EX d3D9Interface = nullptr;
 
 	inline static bool resetRequested = false;
-	
+
 	virtual void Dummy() = 0;
 };

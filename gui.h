@@ -13,11 +13,11 @@ private:
 		ProcessMenu,
 		SettingsMenu,
 	} inline static mode = Menu::ProcessMenu;
-	
+
 	static void ButtonToggle(const char* label, bool& state);
 	static void LargeButtonToggle(const char* label, bool& state);
 	static void SmallButtonToggle(const char* label, bool& state);
-	
+
 	static void EspSettings(EspSettings::Actors& actorEsp);
 	static void EspSettings(EspSettings::Items& itemEsp);
 
@@ -31,7 +31,7 @@ private:
 	static void MenuBar();
 	static void Menu();
 	static void OverlayMenuLooter();
-	
+
 	static void RenderOverlay();
 	static void RenderInfoBox();
 
@@ -53,6 +53,6 @@ private:
 
 	inline static DWORD64 getPtrResult = 0;
 	inline static DWORD64 getAddressResult = 0;
-	
+
 	virtual void Dummy() = 0;
 };

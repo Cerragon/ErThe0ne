@@ -9,4 +9,3 @@ public:
 private:
 	virtual void Dummy() = 0;
 };
-

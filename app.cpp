@@ -51,12 +51,12 @@ void App::Run()
 	{
 		Update();
 		Render();
-		
+
 		while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
 		{
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
-			
+
 			switch (msg.message)
 			{
 			case WM_QUIT:
@@ -69,7 +69,6 @@ void App::Run()
 				break;
 			}
 		}
-
 		std::this_thread::sleep_for(std::chrono::milliseconds(8));
 	}
 }
@@ -115,18 +114,17 @@ void App::SetMode(const Mode newMode)
 
 void App::Attach(const DWORD pid)
 {
-	if(!ErectusProcess::AttachToProcess(pid))
+	if (!ErectusProcess::AttachToProcess(pid))
 	{
 		Detach();
 		return;
 	}
-
 	SetMode(Mode::Attached);
 }
 
 void App::Detach()
 {
-	while(!Threads::ThreadDestruction() && Threads::threadDestructionCounter < 900)
+	while (!Threads::ThreadDestruction() && Threads::threadDestructionCounter < 900)
 	{
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
@@ -167,7 +165,7 @@ void App::UnRegisterHotkeys()
 {
 	if (!gApp || !gApp->appWindow)
 		return;
-	
+
 	for (const auto& [hotkeyId, hotkey] : HOTKEYS)
 	{
 		UnregisterHotKey(gApp->appWindow->GetHwnd(), static_cast<int>(hotkeyId));
@@ -228,7 +226,7 @@ void App::Render() const
 
 	if (mode == Mode::Overlay)
 		Renderer::d3dDevice->Clear(0, nullptr, D3DCLEAR_TARGET, D3DCOLOR_ARGB(0, 0, 0, 0), 1.0f, 0);
-	
+
 	Gui::Render();
 	Renderer::EndFrame();
 }
@@ -238,6 +236,7 @@ bool App::SnapToWindow(const HWND hwnd) const
 	RECT targetClientRect;
 	if (!GetClientRect(hwnd, &targetClientRect) || IsRectEmpty(&targetClientRect))
 		return false;
+
 	appWindow->SetSize(targetClientRect.right - targetClientRect.left, targetClientRect.bottom - targetClientRect.top);
 
 	ClientToScreen(hwnd, reinterpret_cast<POINT*>(&targetClientRect));

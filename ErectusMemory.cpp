@@ -168,7 +168,6 @@ DWORD64 ErectusMemory::GetLocalPlayerPtr(const bool checkMainMenu)
 		if (localPlayerData.formId == 0x00000014)
 			return 0;
 	}
-
 	return localPlayerPtr;
 }
 
@@ -232,7 +231,6 @@ std::vector<DWORD64> ErectusMemory::GetEntityPtrList()
 
 		result.insert(result.end(), objectPtrArray.get(), objectPtrArray.get() + itemArraySize);
 	}
-
 	return  result;
 }
 
@@ -289,7 +287,6 @@ bool ErectusMemory::CheckFormIdArray(const DWORD formId, const bool* enabledArra
 		if (formId == formIdArray[i])
 			return enabledArray[i];
 	}
-
 	return false;
 }
 
@@ -341,7 +338,6 @@ bool ErectusMemory::CheckReferenceKeywordBook(const TesItem& referenceData, cons
 
 		return true;
 	}
-
 	return false;
 }
 
@@ -369,7 +365,6 @@ bool ErectusMemory::CheckReferenceKeywordMisc(const TesItem& referenceData, cons
 
 		return true;
 	}
-
 	return false;
 }
 
@@ -541,15 +536,15 @@ ItemInfo ErectusMemory::GetItemInfo(const TesObjectRefr& entity, const TesItem& 
 
 void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* entityFlag, DWORD64* entityNamePtr, int* enabledDistance)
 {
-	if (auto found1 = Settings::esp.blacklist.find(referenceData.formId); found1 != Settings::esp.blacklist.end()) {
-		if (found1->second) {
+	if (auto found = Settings::esp.blacklist.find(referenceData.formId); found != Settings::esp.blacklist.end()) {
+		if (found->second) {
 			*entityFlag |= CUSTOM_ENTRY_INVALID;
 			return;
 		}
 	}
 
-	if (auto found2 = Settings::esp.whitelist.find(referenceData.formId); found2 != Settings::esp.whitelist.end()) {
-		if (found2->second)
+	if (auto found = Settings::esp.whitelist.find(referenceData.formId); found != Settings::esp.whitelist.end()) {
+		if (found->second)
 			*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
 	}
 
@@ -1101,6 +1096,7 @@ bool ErectusMemory::DamageRedirection(const DWORD64 targetPtr, DWORD64* targetin
 		return ErectusProcess::Wpm(ErectusProcess::exe + OFFSET_REDIRECTION_JMP, &pageJmpOn, sizeof pageJmpOn);
 	if (isExiting && !memcmp(pageJmpCheck, pageJmpOn, sizeof pageJmpOn))
 		return ErectusProcess::Wpm(ErectusProcess::exe + OFFSET_REDIRECTION_JMP, &pageJmpOff, sizeof pageJmpOff);
+
 	return true;
 }
 
@@ -1244,7 +1240,7 @@ bool ErectusMemory::OnePositionKill(DWORD64* opkPage, bool* opkPageValid, const 
 {
 	if (!*opkPage && !Settings::opk.enabled)
 		return false;
-	
+
 	if (!*opkPage)
 	{
 		const auto page = ErectusProcess::AllocEx(sizeof(Opk));
@@ -1305,7 +1301,6 @@ bool ErectusMemory::OnePositionKill(DWORD64* opkPage, bool* opkPageValid, const 
 			*opkPageValid = false;
 		}
 	}
-
 	return true;
 }
 
@@ -1325,7 +1320,6 @@ bool ErectusMemory::CheckOpkDistance(const DWORD64 opkPage)
 	const auto distance = Utils::GetDistance(opkData.opkNpcPosition, editedOrigin);
 	if (distance > 20.0f)
 		return false;
-
 
 	return true;
 }
@@ -1440,7 +1434,6 @@ bool ErectusMemory::ReferenceSwap(DWORD& sourceFormId, DWORD& destinationFormId)
 		destinationFormId = 0x00000000;
 		return false;
 	}
-
 	return ErectusProcess::Wpm(destinationAddress, &sourcePointer, sizeof sourcePointer);
 }
 
@@ -1451,7 +1444,6 @@ bool ErectusMemory::CheckItemTransferList()
 		if (Settings::customTransferSettings.whitelist[i] && Settings::customTransferSettings.whitelisted[i])
 			return true;
 	}
-
 	return false;
 }
 
@@ -1541,7 +1533,6 @@ bool ErectusMemory::TransferItems(const DWORD sourceFormId, const DWORD destinat
 		};
 		MsgSender::Send(&transferMessageData, sizeof transferMessageData);
 	}
-
 	return true;
 }
 
@@ -1587,7 +1578,6 @@ bool ErectusMemory::RequestTeleport(const int index)
 		.rotationZ = Settings::teleporter.entries[index].destination[3],
 		.cellPtr = cellPtr
 	};
-
 	return MsgSender::Send(&requestTeleportMessageData, sizeof requestTeleportMessageData);
 }
 
@@ -1628,7 +1618,7 @@ bool ErectusMemory::FreezeActionPoints(DWORD64* freezeApPage, bool* freezeApPage
 {
 	if (!*freezeApPage && !Settings::localPlayer.freezeApEnabled)
 		return false;
-	
+
 	if (!*freezeApPage)
 	{
 		const auto page = ErectusProcess::AllocEx(sizeof(FreezeAp));
@@ -1709,7 +1699,6 @@ bool ErectusMemory::FreezeActionPoints(DWORD64* freezeApPage, bool* freezeApPage
 			}
 		}
 	}
-
 	return true;
 }
 
@@ -2008,7 +1997,6 @@ bool ErectusMemory::GetNukeCode(const DWORD formId, std::array<int, 8>& nukeCode
 		}
 		nukeCode[i] = static_cast<int>(nukeCodeArray[i * 2 + 1]);
 	}
-
 	return true;
 }
 
@@ -2057,7 +2045,6 @@ DWORD ErectusMemory::GetFavoritedWeaponId(const BYTE favouriteIndex)
 
 		return itemData[i].itemId;
 	}
-
 	return 0;
 }
 
@@ -2160,7 +2147,6 @@ std::string ErectusMemory::GetInstancedItemName(const DWORD64 displayPtr)
 		result = GetEntityName(extraTextDisplayDataData.instancedNamePtr);
 		return result;
 	}
-
 	return result;
 }
 
@@ -2230,7 +2216,6 @@ std::unordered_map<int, std::string> ErectusMemory::GetFavoritedWeapons()
 
 		result[itemData[i].favoriteIndex + 1] = fmt::format("[{}] {}", FavoriteIndex2Slot(itemData[i].favoriteIndex), weaponName);
 	}
-
 	return result;
 }
 

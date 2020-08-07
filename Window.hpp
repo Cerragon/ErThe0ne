@@ -14,7 +14,7 @@ public:
 		Attached,
 		Overlay
 	};
-	
+
 	Window(App* app, LPCSTR windowTitle);
 	~Window();
 	LRESULT __stdcall MsgProc(HWND hWnd, unsigned int msg, WPARAM wParam, LPARAM lParam) const;
@@ -22,13 +22,13 @@ public:
 	[[nodiscard]] HWND GetHwnd() const { return mainWindow; }
 
 	void SetPosition(LONG x, LONG y) const;
-	std::pair<LONG, LONG> GetSize() const;
+	[[nodiscard]] std::pair<LONG, LONG> GetSize() const;
 	void SetSize(LONG x, LONG y) const;
 	void SetStyle(Styles newStyle);
 
 private:
 	void Init(LPCSTR windowTitle);
-	
+
 	struct WndStyles
 	{
 		DWORD style;

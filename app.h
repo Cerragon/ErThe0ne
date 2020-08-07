@@ -12,22 +12,22 @@ public:
 		Attached,
 		Overlay
 	};
-	
+
 	App(HINSTANCE hInstance, LPCSTR windowTitle);
 	~App();
 	[[nodiscard]] const HINSTANCE& GetAppInstance() const { return appInstance; }
-	
+
 	void Run();
 	void Shutdown();
 
 	void Attach(DWORD pid);
 	void Detach();
 	void ToggleOverlay();
-	
+
 	std::unique_ptr<Window> appWindow;
 	Mode mode = Mode::Standalone;
 	void OnWindowChanged() const;
-	
+
 private:
 	void SetMode(Mode newMode);
 

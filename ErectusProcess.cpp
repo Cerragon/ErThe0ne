@@ -180,14 +180,14 @@ DWORD64 ErectusProcess::GetModuleBaseAddress(const DWORD pid, const char* module
 
 bool ErectusProcess::AttachToProcess(const DWORD processId)
 {
-	if(pid == processId)
+	if (pid == processId)
 		return  true;
 
 	ResetProcessData();
 
 	if (processId == 0)
 		return false;
-	
+
 	pid = processId;
 
 	exe = GetModuleBaseAddress(pid, "Fallout76.exe");
@@ -205,6 +205,6 @@ bool ErectusProcess::AttachToProcess(const DWORD processId)
 	}
 
 	SetProcessError(1, "Process State: Process selected");
-	
+
 	return true;
 }

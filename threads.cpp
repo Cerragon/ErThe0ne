@@ -46,7 +46,7 @@ DWORD WINAPI Threads::WeaponEditorThread([[maybe_unused]] LPVOID lpParameter)
 	while (!threadDestructionState)
 	{
 		WeaponEditor::EditWeapons(true);
-		
+
 		WeaponEditor::InfiniteAmmo(Settings::weapons.infiniteAmmo);
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(60 * 16));
@@ -207,19 +207,14 @@ DWORD WINAPI Threads::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 		if (noclipToggle && Settings::localPlayer.noclipEnabled && Settings::localPlayer.clientState)
 			ErectusMemory::SetClientState(2);
 
-		if ((positionSpoofingToggle || noclipToggle) && Settings::localPlayer.automaticClientState)
-		{
-			if (loopCount % 60 == 0) //every 60 loops
-				ErectusMemory::SetClientState(2);
-		}
-
 		ErectusMemory::PositionSpoofing(positionSpoofingToggle);
+
 		ErectusMemory::Noclip(noclipToggle);
-				
-		if (loopCount % 30 == 0) //every 60 loops
-			PlayerStatsEditor::Edit(true);
+
+		PlayerStatsEditor::Edit(true);
 
 		ErectusMemory::FreezeActionPoints(&freezeApPage, &freezeApPageValid, true);
+
 		ErectusMemory::OnePositionKill(&opkPage, &opkPageValid, true);
 
 		if (opkPageValid)

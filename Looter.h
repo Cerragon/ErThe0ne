@@ -16,7 +16,7 @@ private:
 	static bool ShouldLootFloraLeveled(const LeveledList& list);
 	static bool ShouldLootFlora(const ItemInfo& item);
 	static bool ShouldLootItem(const ItemInfo& item, DWORD64 displayPtr);
-	
+
 	static void LootGroundItem(const ItemInfo& item, const TesObjectRefr& player);
 	static void LootContainer(const ItemInfo& item, const TesObjectRefr& player);
 	static void LootFlora(const ItemInfo& item, const TesObjectRefr& player);

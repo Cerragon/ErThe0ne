@@ -7,7 +7,7 @@ class WeaponEditor
 public:
 	static void EditWeapons(bool enabled);
 	static bool InfiniteAmmo(bool enabled);
-	
+
 private:
 	struct WeaponInfo
 	{
@@ -68,4 +68,3 @@ private:
 
 	inline static std::unordered_map<DWORD, WeaponInfo> originalWeaponValues = {};
 };
-

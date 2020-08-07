@@ -697,16 +697,16 @@ enum class ItemTypes
 	Npc,
 	Container,
 	Flora,
-	
+
 	Weapons,
 	Apparel,
-	
+
 	Misc,
 
 	Aid,
 	AidBobblehead,
 	AidMagazine,
-	
+
 	NotesKnownPlan,
 	NotesUnknownPlan,
 	NotesTreasureMap,
@@ -721,7 +721,7 @@ enum class ItemTypes
 struct ItemInfo
 {
 	ItemTypes type;
-	
+
 	DWORD64 namePtr;
 	TesObjectRefr refr;
 	TesItem base;
@@ -738,7 +738,7 @@ public:
 	static DWORD GetFavoritedWeaponId(BYTE favouriteIndex);
 	static char FavoriteIndex2Slot(BYTE favoriteIndex);
 	static bool SendDamage(DWORD64 targetPtr, DWORD weaponId, BYTE* shotsHit, BYTE* shotsFired, BYTE count);
-	
+
 	//nuke codes
 	static void UpdateNukeCodes();
 	inline static std::array<int, 8> alphaCode = { };
@@ -763,13 +763,13 @@ public:
 	//item transfer
 	static bool CheckItemTransferList();
 	static bool TransferItems(DWORD sourceFormId, DWORD destinationFormId);
-	
+
 	//esp
 	static bool UpdateBufferEntityList();
 	static bool UpdateBufferPlayerList();
 	inline static std::vector<CustomEntry> entityDataBuffer{};
 	inline static std::vector<CustomEntry> playerDataBuffer{};
-	
+
 	static DWORD GetLocalPlayerFormId();
 	static DWORD GetStashFormId();
 
@@ -785,7 +785,7 @@ public:
 	static bool InsideInteriorCell();
 	static LocalPlayerInfo GetLocalPlayerInfo();
 	static Camera GetCameraInfo();
-	
+
 	static bool IsFloraHarvested(BYTE harvestFlagA, BYTE harvestFlagB);
 
 	static BYTE CheckHealthFlag(BYTE healthFlag);
@@ -813,7 +813,7 @@ private:
 	static bool CheckReferenceKeywordMisc(const TesItem& referenceData, DWORD formId);
 	static bool CheckWhitelistedFlux(const TesItem& referenceData);
 	static bool CheckReferenceItem(const TesItem& referenceData);
-	
+
 	static bool IsJunk(const TesItem& referenceData);
 	static bool IsMod(const TesItem& referenceData);
 	static bool IsPlan(const TesItem& referenceData);
@@ -832,6 +832,6 @@ private:
 	static std::string GetInstancedItemName(DWORD64 displayPtr);
 
 	static std::string GetEntityName(DWORD64 ptr);
-		
+
 	virtual void Dummy() = 0;
 };

@@ -1,7 +1,7 @@
 #include "utils.h"
 #include "app.h"
 
-int Utils::GetTextLength(const char *text)
+int Utils::GetTextLength(const char* text)
 {
 	if (text == nullptr)
 		return 0;
@@ -31,7 +31,7 @@ void Utils::ValidateFloat(float& value, const float min, const float max)
 		value = max;
 }
 
-void Utils::ValidateRgb(float *value)
+void Utils::ValidateRgb(float* value)
 {
 	for (auto i = 0; i < 3; i++)
 	{
@@ -43,16 +43,16 @@ bool Utils::Valid(const DWORD64 ptr)
 {
 	if (ptr < 0x10000UL || ptr > 0xF000000000000ULL || ptr & 1)
 		return false;
-	
+
 	return true;
 }
 
-float Utils::GetDistance(const float *a1, const float *a2)
+float Utils::GetDistance(const float* a1, const float* a2)
 {
 	return sqrtf(powf(a1[0] - a2[0], 2.0f) + powf(a1[1] - a2[1], 2.0f) + powf(a1[2] - a2[2], 2.0f));
 }
 
-void Utils::ProjectView(float *dst, const float *forward, const float *origin, const float distance)
+void Utils::ProjectView(float* dst, const float* forward, const float* origin, const float distance)
 {
 	dst[0] = origin[0] + forward[0] * distance;
 	dst[1] = origin[1] + forward[1] * distance;
@@ -64,14 +64,14 @@ float Utils::RadiansToDegrees(const float radians)
 	return radians * (180.0f / 3.14159265f);
 }
 
-float Utils::GetDegrees(float *src, float *forward, float *origin)
+float Utils::GetDegrees(float* src, float* forward, float* origin)
 {
 	float buffer[3];
 	ProjectView(buffer, forward, origin, GetDistance(src, origin));
 	return RadiansToDegrees(sinf(GetDistance(src, buffer) / GetDistance(origin, buffer)));
 }
 
-bool Utils::WorldToScreen(const float *view, const float *position, float *screen)
+bool Utils::WorldToScreen(const float* view, const float* position, float* screen)
 {
 	float buffer[4];
 	buffer[0] = view[0] * position[0] + -view[1] * -position[1] + view[2] * position[2] + view[3];
@@ -94,6 +94,6 @@ int Utils::GetRangedInt(const int min, const int max)
 {
 	if (min < max)
 		return rand() % (1 + (max - min)) + (max - (max - min));
-	
+
 	return min;
 }

@@ -220,7 +220,7 @@ class WeaponEditorSettings
 {
 public:
 	bool infiniteAmmo = false;
-	
+
 	bool noRecoil = false;
 	bool noSpread = false;
 	bool noSway = false;
@@ -232,7 +232,7 @@ public:
 	float speed = 1.f;
 	bool reachEnabled = false;
 	float reach = 1.f;
-	bool rangeEnabled;
+	bool rangeEnabled = false;
 	float range = 256;
 
 	[[nodiscard]] bool IsEnabled() const { return noRecoil || noSpread || noSway || instantReload || automaticflag || capacityEnabled || speedEnabled || reachEnabled || rangeEnabled; }//ignoring infiniteAmmo on purpose!!!
@@ -423,7 +423,7 @@ private:
 	static void SetChargenSettings();
 	static void GetBitMsgWriterSettings();
 	static void SetBitMsgWriterSettings();
-	
+
 	static void GetDword(const std::string& section, const std::string& key, DWORD& value, DWORD deflt);
 	static void SetDword(const std::string& section, const std::string& key, DWORD value, DWORD deflt);
 	static void GetInt(const std::string& section, const std::string& key, int& value, int deflt);

@@ -8,6 +8,9 @@
 
 bool PlayerStatsEditor::Edit(const bool enabled)
 {
+	//this actually hooks an onValueChanged event for stats instead of writing the value directly
+	//if the values don't get updated "by themselves", you have to trigger an update for the stat f.ex. reequip a piece of unyielding gear etc.
+
 	if (!actorValuePage && !Settings::localPlayer.IsEnabled())
 		return false;
 
@@ -86,8 +89,8 @@ bool PlayerStatsEditor::Edit(const bool enabled)
 		SetActorValueMaximum(0x000002C3, 100.0f, static_cast<float>(Settings::localPlayer.perception), Settings::localPlayer.perceptionEnabled);
 		SetActorValueMaximum(0x000002C4, 100.0f, static_cast<float>(Settings::localPlayer.endurance), Settings::localPlayer.enduranceEnabled);
 		SetActorValueMaximum(0x000002C5, 100.0f, static_cast<float>(Settings::localPlayer.charisma), Settings::localPlayer.charismaEnabled);
-		SetActorValueMaximum(0x000002C6, 100.0f, static_cast<float>(Settings::localPlayer.agility), Settings::localPlayer.agilityEnabled);
-		SetActorValueMaximum(0x000002C7, 100.0f, static_cast<float>(Settings::localPlayer.intelligence), Settings::localPlayer.intelligenceEnabled);
+		SetActorValueMaximum(0x000002C6, 100.0f, static_cast<float>(Settings::localPlayer.intelligence), Settings::localPlayer.intelligenceEnabled);
+		SetActorValueMaximum(0x000002C7, 100.0f, static_cast<float>(Settings::localPlayer.agility), Settings::localPlayer.agilityEnabled);
 		SetActorValueMaximum(0x000002C8, 100.0f, static_cast<float>(Settings::localPlayer.luck), Settings::localPlayer.luckEnabled);
 	}
 	else
@@ -96,8 +99,8 @@ bool PlayerStatsEditor::Edit(const bool enabled)
 		SetActorValueMaximum(0x000002C3, 100.0f, static_cast<float>(Settings::localPlayer.perception), false);
 		SetActorValueMaximum(0x000002C4, 100.0f, static_cast<float>(Settings::localPlayer.endurance), false);
 		SetActorValueMaximum(0x000002C5, 100.0f, static_cast<float>(Settings::localPlayer.charisma), false);
-		SetActorValueMaximum(0x000002C6, 100.0f, static_cast<float>(Settings::localPlayer.agility), false);
-		SetActorValueMaximum(0x000002C7, 100.0f, static_cast<float>(Settings::localPlayer.intelligence), false);
+		SetActorValueMaximum(0x000002C6, 100.0f, static_cast<float>(Settings::localPlayer.intelligence), false);
+		SetActorValueMaximum(0x000002C7, 100.0f, static_cast<float>(Settings::localPlayer.agility), false);
 		SetActorValueMaximum(0x000002C8, 100.0f, static_cast<float>(Settings::localPlayer.luck), false);
 
 		if (actorValueFunction != ErectusProcess::exe + OFFSET_ACTOR_VALUE)
@@ -123,11 +126,11 @@ bool PlayerStatsEditor::SetActorValueMaximum(const DWORD formId, const float def
 {
 	if (!actorValuePage || !actorValuePageValid)
 		return false;
-	
+
 	const auto actorValuePtr = ErectusMemory::GetPtr(formId);
 	if (!Utils::Valid(actorValuePtr))
 		return false;
-	
+
 	ActorValueInformation actorValueData{};
 	if (!ErectusProcess::Rpm(actorValuePtr, &actorValueData, sizeof actorValueData))
 		return false;

@@ -10,34 +10,6 @@
 mINI::INIFile file("Erectus.ini");
 mINI::INIStructure ini;
 
-//esp
-/*
-EspSettings Settings::esp.npcs = {
-		true,					//Enabled
-	1500,					//EnabledDistance
-	true,					//DrawAlive
-	{ 0.5f, 1.0f, 1.0f },	//AliveColor
-	false,					//DrawDowned
-	{ 0.7f, 0.7f, 1.0f },	//DownedColor
-	false,					//DrawDead
-	{ 1.0f, 0.5f, 0.5f },	//DeadColor
-	false,					//DrawUnknown
-	{ 1.0f, 0.5f, 1.0f },	//UnknownColor
-	true,					//DrawEnabled;
-	1.0f,					//EnabledAlpha;
-	false,					//DrawDisabled;
-	0.5f,					//DisabledAlpha;
-	true,					//DrawNamed;
-	false,					//DrawUnnamed;
-	true,					//ShowName;
-	true,					//ShowDistance;
-	true,					//ShowHealth
-	false,					//ShowDeadHealth
-	true,					//TextShadowed;
-	true,					//TextCentered;
-};
-*/
-
 void Settings::GetDword(const std::string& section, const std::string& key, DWORD& value, const DWORD deflt)
 {
 	if (!ini.has(section))
@@ -328,9 +300,9 @@ void Settings::GetLooterSettings()
 	GetBool("Looter", "aidBobbleheads", looter.selection.aid.bobbleheads, false);
 
 	GetBool("Looter", "miscAll", looter.selection.misc.all, false);
-	
+
 	GetBool("Looter", "holoAll", looter.selection.holo.all, false);
-	
+
 	GetBool("Looter", "notesAll", looter.selection.notes.all, false);
 	GetBool("Looter", "notesTreasureMaps", looter.selection.notes.treasureMaps, false);
 	GetBool("Looter", "notesPlansKnown", looter.selection.notes.plansKnown, false);
@@ -347,14 +319,14 @@ void Settings::GetLooterSettings()
 	{
 		GetBool("Looter", fmt::format("flora{:x}", component.first), component.second, false);
 	}
-	
+
 	GetBool("Looter", "modsAll", looter.selection.mods.all, false);
 
 	GetBool("Looter", "ammoAll", looter.selection.ammo.all, false);
 
 	GetBool("Looter", "otherCaps", looter.selection.other.caps, false);
 
-	for(const auto& item : ini["LooterWhitelist"])
+	for (const auto& item : ini["LooterWhitelist"])
 	{
 		looter.selection.whitelist.emplace(stoul(item.first, nullptr, 16), static_cast<bool>(stoi(item.second)));
 	}
@@ -397,7 +369,7 @@ void Settings::SetLooterSettings()
 	SetBool("Looter", "notesPlansUnknown", looter.selection.notes.plansUnknown, false);
 
 	SetBool("Looter", "junkAll", looter.selection.junk.all, false);
-	for(const auto& component : looter.selection.junk.components)
+	for (const auto& component : looter.selection.junk.components)
 	{
 		SetBool("Looter", fmt::format("junk{:x}", component.first), component.second, false);
 	}
@@ -415,7 +387,7 @@ void Settings::SetLooterSettings()
 	SetBool("Looter", "otherCaps", looter.selection.other.caps, false);
 
 	ini.remove("LooterWhitelist");
-	for(const auto& item : looter.selection.whitelist)
+	for (const auto& item : looter.selection.whitelist)
 	{
 		SetBool("LooterWhitelist", fmt::format("{:x}", item.first), item.second, false);
 	}
@@ -815,7 +787,7 @@ void Settings::Read()
 	GetInfoBoxSettings();
 	GetLooterSettings();
 	GetEspSettings();
-	
+
 	GetWeaponSettings();
 	GetTargetSettings();
 	GetLocalPlayerSettings();
@@ -838,7 +810,7 @@ void Settings::Write()
 	SetInfoBoxSettings();
 	SetLooterSettings();
 	SetEspSettings();
-	
+
 	SetWeaponSettings();
 	SetTargetSettings();
 	SetLocalPlayerSettings();

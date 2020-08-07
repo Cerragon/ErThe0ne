@@ -31,7 +31,7 @@ bool Looter::ShouldLootJunk(const ItemInfo& item)
 		if (!ErectusProcess::Rpm(components[i].componentReferencePtr, &componentData, sizeof componentData))
 			continue;
 
-		if (Settings::looter.selection.junk.components.find(componentData.formId)->second)
+		if (Settings::looter.selection.junk.components.contains(componentData.formId) && Settings::looter.selection.junk.components.find(componentData.formId)->second)
 			return true;
 	}
 
@@ -63,7 +63,7 @@ bool Looter::ShouldLootFloraLeveled(const LeveledList& list)
 			if (ShouldLootFloraLeveled(innerList))
 				return true;
 		}
-		else if (Settings::looter.selection.flora.components.find(referenceData.formId)->second)
+		else if (Settings::looter.selection.flora.components.contains(referenceData.formId) && Settings::looter.selection.flora.components.find(referenceData.formId)->second)
 			return true;
 	}
 
@@ -87,7 +87,7 @@ bool Looter::ShouldLootFlora(const ItemInfo& item)
 		memcpy(&leveledListData, &harvestedData, sizeof leveledListData);
 		return ShouldLootFloraLeveled(leveledListData);
 	}
-	return Settings::looter.selection.flora.components.find(harvestedData.formId)->second;
+	return Settings::looter.selection.flora.components.contains(harvestedData.formId) && Settings::looter.selection.flora.components.find(harvestedData.formId)->second;
 }
 
 bool Looter::ShouldLootItem(const ItemInfo& item, const DWORD64 displayPtr = 0)
@@ -152,6 +152,9 @@ void Looter::LootGroundItem(const ItemInfo& item, const TesObjectRefr& player)
 	if (!MsgSender::IsEnabled())
 		return;
 
+	if (!Settings::looter.looters.items)
+		return;
+
 	if (!ShouldLootItem(item))
 		return;
 
@@ -169,6 +172,12 @@ void Looter::LootGroundItem(const ItemInfo& item, const TesObjectRefr& player)
 
 void Looter::LootContainer(const ItemInfo& item, const TesObjectRefr& player)
 {
+	if (!MsgSender::IsEnabled())
+		return;
+
+	if (!Settings::looter.looters.containers)
+		return;
+
 	switch (item.type)
 	{
 	case ItemTypes::Npc:
@@ -256,6 +265,9 @@ void Looter::LootContainer(const ItemInfo& item, const TesObjectRefr& player)
 void Looter::LootFlora(const ItemInfo& item, const TesObjectRefr& player)
 {
 	if (!MsgSender::IsEnabled())
+		return;
+
+	if (!Settings::looter.looters.flora)
 		return;
 
 	if (ErectusMemory::IsFloraHarvested(item.refr.harvestFlagA, item.refr.harvestFlagB))

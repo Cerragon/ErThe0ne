@@ -1884,4 +1884,3 @@ void Gui::SettingsMenu()
 		ImGui::EndTabBar();
 	}
 }
-
