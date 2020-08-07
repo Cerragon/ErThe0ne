@@ -81,7 +81,7 @@ bool Looter::ShouldLootFlora(const ItemInfo& item)
 	TesItem harvestedData{};
 	if (!ErectusProcess::Rpm(item.base.harvestedPtr, &harvestedData, sizeof harvestedData))
 		return false;
-	if (item.base.formType == static_cast<BYTE>(FormTypes::TesLevItem))
+	if (harvestedData.formType == static_cast<BYTE>(FormTypes::TesLevItem))
 	{
 		LeveledList leveledListData{};
 		memcpy(&leveledListData, &harvestedData, sizeof leveledListData);
@@ -152,7 +152,7 @@ void Looter::LootGroundItem(const ItemInfo& item, const TesObjectRefr& player)
 	if (!MsgSender::IsEnabled())
 		return;
 
-	if (!Settings::looter.looters.items)
+	if (!Settings::looter.looters.groundItems)
 		return;
 
 	if (!ShouldLootItem(item))
@@ -175,12 +175,12 @@ void Looter::LootContainer(const ItemInfo& item, const TesObjectRefr& player)
 	if (!MsgSender::IsEnabled())
 		return;
 
-	if (!Settings::looter.looters.containers)
-		return;
-
 	switch (item.type)
 	{
 	case ItemTypes::Npc:
+		if (!Settings::looter.looters.npcs)
+			return;
+		
 		if (item.refr.formId == 0x00000007 || ErectusMemory::CheckHealthFlag(item.refr.healthFlag) != 0x3)
 			return;
 		if (Utils::GetDistance(item.refr.position, player.position) * 0.01f > 76.f)
@@ -188,6 +188,9 @@ void Looter::LootContainer(const ItemInfo& item, const TesObjectRefr& player)
 		break;
 
 	case ItemTypes::Container:
+		if (!Settings::looter.looters.containers)
+			return;
+		
 		if (Utils::GetDistance(item.refr.position, player.position) * 0.01f > 6.f)
 			return;
 		if (!ContainerValid(item.base))
@@ -296,7 +299,7 @@ void Looter::Loot()
 
 	if (Settings::looter.mode == LooterSettings::Mode::Disabled || Settings::looter.mode == LooterSettings::Mode::Keybind && !lootItemsRequested)
 		return;
-	if (!Settings::looter.looters.npcs && !Settings::looter.looters.items && !Settings::looter.looters.containers && !Settings::looter.looters.flora)
+	if (!Settings::looter.looters.npcs && !Settings::looter.looters.groundItems && !Settings::looter.looters.containers && !Settings::looter.looters.flora)
 		return;
 	if (!Settings::looter.selection.IsEnabled())
 		return;
@@ -329,7 +332,7 @@ void Looter::Loot()
 				continue;
 			break;
 		case (static_cast<BYTE>(FormTypes::TesObjectRefr)):
-			if (!Settings::looter.looters.items && !Settings::looter.looters.containers && !Settings::looter.looters.flora)
+			if (!Settings::looter.looters.groundItems && !Settings::looter.looters.containers && !Settings::looter.looters.flora)
 				continue;
 			break;
 		default:

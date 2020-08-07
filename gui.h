@@ -22,15 +22,15 @@ private:
 	static void EspSettings(EspSettings::Items& itemEsp);
 
 	static void OverlayMenuTabEsp();
-	static void OverlayMenuTabInfoBox();
+	static void OverlayMenuTabLooter();
 	static void OverlayMenuTabCombat();
 	static void OverlayMenuTabPlayer();
 	static void OverlayMenuTabUtilities();
 	static void OverlayMenuTabTeleporter();
 	static void OverlayMenuTabBitMsgWriter();
+
 	static void MenuBar();
 	static void Menu();
-	static void OverlayMenuLooter();
 
 	static void RenderOverlay();
 	static void RenderInfoBox();

@@ -260,20 +260,6 @@ void Settings::SetItemSettings(const std::string& section, EspSettings::Items& v
 	SetBool(section, "ShowDistance", value.showDistance, deflt.showDistance);
 }
 
-
-void Settings::GetInfoBoxSettings()
-{
-	GetBool("InfoBox", "drawPlayerInfo", infobox.drawPlayerInfo, false);
-	GetBool("InfoBox", "drawPositionSpoofingStatus", infobox.drawPositionSpoofingStatus, false);
-	GetBool("InfoBox", "drawNukeCodes", infobox.drawNukeCodes, false);
-}
-void Settings::SetInfoBoxSettings()
-{
-	SetBool("InfoBox", "drawPlayerInfo", infobox.drawPlayerInfo, false);
-	SetBool("InfoBox", "drawPositionSpoofingStatus", infobox.drawPositionSpoofingStatus, false);
-	SetBool("InfoBox", "drawNukeCodes", infobox.drawNukeCodes, false);
-}
-
 void Settings::GetLooterSettings()
 {
 	auto modeInt = 0;
@@ -281,7 +267,7 @@ void Settings::GetLooterSettings()
 	looter.mode = static_cast<LooterSettings::Mode>(modeInt);
 
 	GetBool("Looter", "lootersNpc", looter.looters.npcs, false);
-	GetBool("Looter", "lootersItems", looter.looters.items, false);
+	GetBool("Looter", "lootersGroundItems", looter.looters.groundItems, false);
 	GetBool("Looter", "lootersContainers", looter.looters.containers, false);
 	GetBool("Looter", "lootersFlora", looter.looters.flora, false);
 
@@ -341,7 +327,7 @@ void Settings::SetLooterSettings()
 	SetInt("Looter", "mode", static_cast<int>(looter.mode), 0);
 
 	SetBool("Looter", "lootersNpc", looter.looters.npcs, false);
-	SetBool("Looter", "lootersItems", looter.looters.items, false);
+	SetBool("Looter", "lootersGroundItems", looter.looters.groundItems, false);
 	SetBool("Looter", "lootersContainers", looter.looters.containers, false);
 	SetBool("Looter", "lootersFlora", looter.looters.flora, false);
 
@@ -716,9 +702,26 @@ void Settings::GetBitMsgWriterSettings()
 {
 	GetBool("BitMsgWriter", "AllowMessages", msgWriter.enabled, false);
 }
+
 void Settings::SetBitMsgWriterSettings()
 {
 	SetBool("BitMsgWriter", "AllowMessages", msgWriter.enabled, false);
+}
+
+void Settings::GetInfoBoxSettings()
+{
+	GetBool("esp.infoBox", "drawPlayerInfo", esp.infobox.drawPlayerInfo, false);
+	GetBool("esp.infoBox", "drawPositionSpoofingStatus", esp.infobox.drawPositionSpoofingStatus, false);
+	GetBool("esp.infoBox", "drawNukeCodes", esp.infobox.drawNukeCodes, false);
+	GetBool("esp.infoBox", "drawFPS", esp.infobox.drawFps, false);
+}
+
+void Settings::SetInfoBoxSettings()
+{
+	SetBool("esp.infoBox", "drawPlayerInfo", esp.infobox.drawPlayerInfo, false);
+	SetBool("esp.infoBox", "drawPositionSpoofingStatus", esp.infobox.drawPositionSpoofingStatus, false);
+	SetBool("esp.infoBox", "drawNukeCodes", esp.infobox.drawNukeCodes, false);
+	SetBool("esp.infoBox", "drawFPS", esp.infobox.drawFps, false);
 }
 
 void Settings::GetEspSettings()
@@ -738,6 +741,7 @@ void Settings::GetEspSettings()
 	GetLegendarySettings();
 	GetKnownRecipeSettings();
 	GetFluxSettings();
+	GetInfoBoxSettings();
 
 	for (const auto& item : ini["EspWhitelist"])
 	{
@@ -766,6 +770,7 @@ void Settings::SetEspSettings()
 	SetLegendarySettings();
 	SetKnownRecipeSettings();
 	SetFluxSettings();
+	SetInfoBoxSettings();
 
 	ini.remove("EspWhitelist");
 	for (const auto& item : esp.whitelist)
@@ -784,7 +789,6 @@ void Settings::Read()
 {
 	file.read(ini);
 
-	GetInfoBoxSettings();
 	GetLooterSettings();
 	GetEspSettings();
 
@@ -807,7 +811,6 @@ void Settings::Write()
 {
 	file.read(ini);
 
-	SetInfoBoxSettings();
 	SetLooterSettings();
 	SetEspSettings();
 

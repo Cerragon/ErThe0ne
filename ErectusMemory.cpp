@@ -2002,7 +2002,6 @@ bool ErectusMemory::GetNukeCode(const DWORD formId, std::array<int, 8>& nukeCode
 
 DWORD ErectusMemory::GetFavoritedWeaponId(const BYTE favouriteIndex)
 {
-
 	if (Settings::targetting.favoriteIndex >= 12)
 		return 0;
 

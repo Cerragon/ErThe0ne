@@ -412,7 +412,7 @@ void Gui::RenderInfoBox()
 	ImVec4 enabledTextColor = { 0.f, 1.f, 0.f, 1.f };
 	ImVec4 disabledTextColor = { 1.f, 0.f, 0.f, 1.f };
 
-	if (Settings::infobox.drawPlayerInfo) {
+	if (Settings::esp.infobox.drawPlayerInfo) {
 		auto localPlayer = ErectusMemory::GetLocalPlayerInfo();
 
 		featureText = fmt::format("Player FormId: {:08x}", localPlayer.formId);
@@ -443,14 +443,14 @@ void Gui::RenderInfoBox()
 		infoTexts.emplace_back(featureText, true);
 	}
 
-	if (Settings::infobox.drawPositionSpoofingStatus)
+	if (Settings::esp.infobox.drawPositionSpoofingStatus)
 	{
 		featureText = fmt::format("Position Spoofing (Active): {0:d} (Height: {1:d})", static_cast<int>(Threads::positionSpoofingToggle), Settings::localPlayer.positionSpoofingHeight);
 		featureState = ErectusMemory::InsideInteriorCell() ? false : Settings::localPlayer.positionSpoofingEnabled;
 		infoTexts.emplace_back(featureText, featureState);
 	}
 
-	if (Settings::infobox.drawNukeCodes)
+	if (Settings::esp.infobox.drawNukeCodes)
 	{
 		featureText = format("{} - Alpha", fmt::join(ErectusMemory::alphaCode, " "));
 		featureState = ErectusMemory::alphaCode == std::array<int, 8>{} ? false : true;
@@ -465,13 +465,17 @@ void Gui::RenderInfoBox()
 		infoTexts.emplace_back(featureText, featureState);
 	}
 
-	featureText = fmt::format("FPS: {:.2f}", ImGui::GetIO().Framerate);
-	featureState = true;
-	infoTexts.emplace_back(featureText, featureState);
+	if (Settings::esp.infobox.drawFps)
+	{
+		featureText = fmt::format("FPS: {:.2f}", ImGui::GetIO().Framerate);
+		featureState = true;
+		infoTexts.emplace_back(featureText, featureState);
+	}
 
 	if (infoTexts.empty())
 		return;
 
+	ImGui::SetNextWindowBgAlpha(.3f);
 	ImGui::SetNextWindowPos(ImVec2(10.f, 10.f), ImGuiCond_FirstUseEver);
 	if (ImGui::Begin("##infobox", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav))
 	{
@@ -855,7 +859,7 @@ void Gui::OverlayMenuTabEsp()
 		if (ImGui::CollapsingHeader("Item ESP"))
 			EspSettings(Settings::esp.items);
 
-		if (ImGui::CollapsingHeader("Plan/Recipe ESP Settings"))
+		if (ImGui::CollapsingHeader("Plan/Recipe ESP"))
 		{
 			EspSettings(Settings::esp.plans);
 
@@ -864,7 +868,7 @@ void Gui::OverlayMenuTabEsp()
 			LargeButtonToggle("Draw Unknown Plans", Settings::esp.plansExt.unknownRecipesEnabled);
 		}
 
-		if (ImGui::CollapsingHeader("Flora ESP Settings"))
+		if (ImGui::CollapsingHeader("Flora ESP"))
 		{
 			EspSettings(Settings::esp.flora);
 
@@ -875,10 +879,18 @@ void Gui::OverlayMenuTabEsp()
 			LargeButtonToggle("Draw Raw Violet Flux Yielding Flora", Settings::esp.floraExt.violetFluxEnabled);
 		}
 
-		if (ImGui::CollapsingHeader("Entity ESP Settings"))
+		if (ImGui::CollapsingHeader("Entity ESP"))
 			EspSettings(Settings::esp.entities);
 
-		if (ImGui::CollapsingHeader("Whitelist"))
+		if (ImGui::CollapsingHeader("InfoBox"))
+		{
+			LargeButtonToggle("Draw Local Player Data", Settings::esp.infobox.drawPlayerInfo);
+			LargeButtonToggle("Draw Position Status", Settings::esp.infobox.drawPositionSpoofingStatus);
+			LargeButtonToggle("Draw Nuke Codes", Settings::esp.infobox.drawNukeCodes);
+			LargeButtonToggle("Draw Overlay FPS", Settings::esp.infobox.drawFps);
+		}
+
+		if (ImGui::CollapsingHeader("ESP Whitelist"))
 		{
 			ImGui::Columns(2, nullptr, false);
 
@@ -920,7 +932,7 @@ void Gui::OverlayMenuTabEsp()
 			ImGui::Columns();
 		}
 
-		if (ImGui::CollapsingHeader("Blacklist"))
+		if (ImGui::CollapsingHeader("ESP Blacklist"))
 		{
 			ImGui::Columns(2, nullptr, false);
 
@@ -965,19 +977,7 @@ void Gui::OverlayMenuTabEsp()
 	}
 }
 
-void Gui::OverlayMenuTabInfoBox()
-{
-	if (ImGui::BeginTabItem("InfoBox###InfoBoxTab"))
-	{
-		LargeButtonToggle("Draw Local Player Data", Settings::infobox.drawPlayerInfo);
-		LargeButtonToggle("Draw Position Status", Settings::infobox.drawPositionSpoofingStatus);
-		LargeButtonToggle("Draw Nuke Codes", Settings::infobox.drawNukeCodes);
-
-		ImGui::EndTabItem();
-	}
-}
-
-void Gui::OverlayMenuLooter()
+void Gui::OverlayMenuTabLooter()
 {
 	if (ImGui::BeginTabItem("Looter"))
 	{
@@ -994,7 +994,7 @@ void Gui::OverlayMenuLooter()
 		if (ImGui::CollapsingHeader("Looters"))
 		{
 			LargeButtonToggle("Loot NPCs (76m)", Settings::looter.looters.npcs);
-			LargeButtonToggle("Loot Items (76m)", Settings::looter.looters.items);
+			LargeButtonToggle("Loot Ground Items (76m)", Settings::looter.looters.groundItems);
 			LargeButtonToggle("Loot Containers (6m)", Settings::looter.looters.containers);
 			LargeButtonToggle("Harvest Flora (6m)", Settings::looter.looters.flora);
 		}
@@ -1087,7 +1087,7 @@ void Gui::OverlayMenuLooter()
 				LargeButtonToggle("Caps##other", Settings::looter.selection.other.caps);
 			}
 
-			if (ImGui::CollapsingHeader("Whitelist"))
+			if (ImGui::CollapsingHeader("Looter Whitelist"))
 			{
 				ImGui::Columns(2, nullptr, false);
 
@@ -1129,7 +1129,7 @@ void Gui::OverlayMenuLooter()
 				ImGui::Columns();
 			}
 
-			if (ImGui::CollapsingHeader("Blacklist"))
+			if (ImGui::CollapsingHeader("Looter Blacklist"))
 			{
 				ImGui::Columns(2, nullptr, false);
 
@@ -1337,7 +1337,7 @@ void Gui::OverlayMenuTabCombat()
 		}
 
 		if (ImGui::CollapsingHeader("One Position Kill"))
-			LargeButtonToggle("OPK NPCs (Keybind: CTRL+N)", Settings::opk.enabled);
+			LargeButtonToggle("OPK (Keybind: CTRL+N)", Settings::opk.enabled);
 
 		ImGui::EndTabItem();
 	}
@@ -1873,10 +1873,9 @@ void Gui::SettingsMenu()
 	if (ImGui::BeginTabBar("###OverlayMenuTabBar", ImGuiTabBarFlags_None))
 	{
 		OverlayMenuTabEsp();
-		OverlayMenuLooter();
+		OverlayMenuTabLooter();
 		OverlayMenuTabCombat();
 		OverlayMenuTabPlayer();
-		OverlayMenuTabInfoBox();
 		OverlayMenuTabUtilities();
 		OverlayMenuTabTeleporter();
 		OverlayMenuTabBitMsgWriter();

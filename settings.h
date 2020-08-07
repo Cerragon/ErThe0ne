@@ -6,12 +6,6 @@
 
 #include "common.h"
 
-struct InfoBoxSettings
-{
-	bool drawPlayerInfo;
-	bool drawPositionSpoofingStatus;
-	bool drawNukeCodes;
-};
 struct LooterSettings
 {
 	enum class Mode
@@ -23,7 +17,7 @@ struct LooterSettings
 
 	struct Looters {
 		bool npcs;
-		bool items;
+		bool groundItems;
 		bool containers;
 		bool flora;
 	} looters{};
@@ -212,6 +206,14 @@ struct EspSettings
 		bool unknownRecipesEnabled = true;
 	} plansExt;
 
+	struct InfoBoxSettings
+	{
+		bool drawPlayerInfo = false;
+		bool drawPositionSpoofingStatus = false;
+		bool drawNukeCodes = false;
+		bool drawFps = false;
+	} infobox;
+
 	std::map<DWORD, bool> whitelist, blacklist;
 };
 
@@ -366,7 +368,6 @@ public:
 
 	inline static EspSettings esp = {};
 	inline static LooterSettings looter = {};
-	inline static InfoBoxSettings infobox = {};
 	inline static MessageWriterSettings msgWriter = {};
 
 	//utils
