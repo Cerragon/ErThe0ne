@@ -9,7 +9,12 @@ public:
 
 	static void RequestLootItems() { lootItemsRequested = true; }
 
+
+	inline static std::unordered_set<DWORD> lootedEntities = {};
+
 private:
+	static bool ProcessEntity(const TesObjectRefr& entity, const LocalPlayerInfo& localPlayer);
+
 	static bool ContainerValid(const TesItem& referenceData);
 	static BYTE GetLegendaryRank(DWORD64 displayPtr);
 	static bool ShouldLootJunk(const ItemInfo& item);
@@ -17,11 +22,12 @@ private:
 	static bool ShouldLootFlora(const ItemInfo& item);
 	static bool ShouldLootItem(const ItemInfo& item, DWORD64 displayPtr);
 
-	static void LootGroundItem(const ItemInfo& item, const TesObjectRefr& player);
-	static void LootContainer(const ItemInfo& item, const TesObjectRefr& player);
-	static void LootFlora(const ItemInfo& item, const TesObjectRefr& player);
+	static bool LootGroundItem(const ItemInfo& item, const LocalPlayerInfo& player);
+	static bool LootContainer(const ItemInfo& item, const LocalPlayerInfo& player);
+	static bool LootFlora(const ItemInfo& item, const LocalPlayerInfo& player);
 
 	inline static bool lootItemsRequested = false;
-
+	inline static DWORD lastPlayerCellFormId = 0;
+	
 	virtual void Dummy() = 0;
 };

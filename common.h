@@ -21,7 +21,7 @@ constexpr auto OFFSET_NUKE_CODE = 0x05A67A18UL;//1.3.3.24
 //wpm
 
 //chargen
-constexpr auto OFFSET_CHARGEN = 0x05B48040UL;//1.3.3.24- wrong or broken
+constexpr auto OFFSET_CHARGEN = 0x05B480D0UL;//1.3.3.24+
 
 //remote threads and/or function patching
 

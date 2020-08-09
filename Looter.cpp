@@ -147,19 +147,19 @@ bool Looter::ShouldLootItem(const ItemInfo& item, const DWORD64 displayPtr = 0)
 	}
 }
 
-void Looter::LootGroundItem(const ItemInfo& item, const TesObjectRefr& player)
+bool Looter::LootGroundItem(const ItemInfo& item, const LocalPlayerInfo& player)
 {
 	if (!MsgSender::IsEnabled())
-		return;
+		return false;
 
 	if (!Settings::looter.looters.groundItems)
-		return;
+		return false;
 
 	if (!ShouldLootItem(item))
-		return;
+		return false;
 
 	if (Utils::GetDistance(item.refr.position, player.position) * 0.01f > 76.f)
-		return;
+		return false;
 
 	RequestActivateRefMessage requestActivateRefMessageData{
 		.vtable = ErectusProcess::exe + VTABLE_REQUESTACTIVATEREFMSG,
@@ -168,52 +168,54 @@ void Looter::LootGroundItem(const ItemInfo& item, const TesObjectRefr& player)
 		.forceActivate = 0
 	};
 	MsgSender::Send(&requestActivateRefMessageData, sizeof requestActivateRefMessageData);
+
+	return true;
 }
 
-void Looter::LootContainer(const ItemInfo& item, const TesObjectRefr& player)
+bool Looter::LootContainer(const ItemInfo& item, const LocalPlayerInfo& player)
 {
 	if (!MsgSender::IsEnabled())
-		return;
+		return false;
 
 	switch (item.type)
 	{
 	case ItemTypes::Npc:
 		if (!Settings::looter.looters.npcs)
-			return;
-		
+			return false;
+
 		if (item.refr.formId == 0x00000007 || ErectusMemory::CheckHealthFlag(item.refr.healthFlag) != 0x3)
-			return;
+			return false;
 		if (Utils::GetDistance(item.refr.position, player.position) * 0.01f > 76.f)
-			return;
+			return false;
 		break;
 
 	case ItemTypes::Container:
 		if (!Settings::looter.looters.containers)
-			return;
-		
+			return false;
+
 		if (Utils::GetDistance(item.refr.position, player.position) * 0.01f > 6.f)
-			return;
+			return false;
 		if (!ContainerValid(item.base))
-			return;
+			return false;
 		break;
 
 	default:
-		return;
+		return false;
 	}
 
 	if (!Utils::Valid(item.refr.inventoryPtr))
-		return;
+		return false;
 
 	Inventory inventory{};
 	if (!ErectusProcess::Rpm(item.refr.inventoryPtr, &inventory, sizeof inventory))
-		return;
+		return false;
 	if (!Utils::Valid(inventory.entryArrayBegin) || inventory.entryArrayEnd <= inventory.entryArrayBegin)
-		return;
+		return false;
 
 	auto entryArraySize = (inventory.entryArrayEnd - inventory.entryArrayBegin) / sizeof(InventoryEntry);
 	auto entries = std::make_unique<InventoryEntry[]>(entryArraySize);
 	if (!ErectusProcess::Rpm(inventory.entryArrayBegin, entries.get(), entryArraySize * sizeof(InventoryEntry)))
-		return;
+		return false;
 
 	for (DWORD64 i = 0; i < entryArraySize; i++)
 	{
@@ -263,24 +265,25 @@ void Looter::LootContainer(const ItemInfo& item, const TesObjectRefr& player)
 		};
 		MsgSender::Send(&transferMessageData, sizeof transferMessageData);
 	}
+	return true;
 }
 
-void Looter::LootFlora(const ItemInfo& item, const TesObjectRefr& player)
+bool Looter::LootFlora(const ItemInfo& item, const LocalPlayerInfo& player)
 {
 	if (!MsgSender::IsEnabled())
-		return;
+		return false;
 
 	if (!Settings::looter.looters.flora)
-		return;
+		return false;
 
 	if (ErectusMemory::IsFloraHarvested(item.refr.harvestFlagA, item.refr.harvestFlagB))
-		return;
+		return false;
 
 	if (Utils::GetDistance(item.refr.position, player.position) * 0.01f > 6.f)
-		return;
+		return false;
 
 	if (!ShouldLootItem(item))
-		return;
+		return false;
 
 	RequestActivateRefMessage requestActivateRefMessageData{
 		.vtable = ErectusProcess::exe + VTABLE_REQUESTACTIVATEREFMSG,
@@ -289,8 +292,52 @@ void Looter::LootFlora(const ItemInfo& item, const TesObjectRefr& player)
 		.forceActivate = 0
 	};
 	MsgSender::Send(&requestActivateRefMessageData, sizeof requestActivateRefMessageData);
+
+	return true;
 }
 
+
+bool Looter::ProcessEntity(const TesObjectRefr& entity, const LocalPlayerInfo& localPlayer)
+{
+	if (!Utils::Valid(entity.baseObjectPtr))
+		return false;
+
+	if (entity.spawnFlag != 0x02)
+		return false;
+
+	switch (entity.formType)
+	{
+	case (static_cast<BYTE>(FormTypes::TesActor)):
+		if (!Settings::looter.looters.npcs || ErectusMemory::CheckHealthFlag(entity.healthFlag) != 0x3)
+			return false;
+		break;
+	case (static_cast<BYTE>(FormTypes::TesObjectRefr)):
+		if (!Settings::looter.looters.groundItems && !Settings::looter.looters.containers && !Settings::looter.looters.flora)
+			return false;
+		break;
+	default:
+		return false;
+	}
+
+	TesItem baseItem{};
+	if (!ErectusProcess::Rpm(entity.baseObjectPtr, &baseItem, sizeof baseItem))
+		return false;
+
+	auto item = ErectusMemory::GetItemInfo(entity, baseItem);
+	switch (item.type)
+	{
+	case ItemTypes::Npc:
+	case ItemTypes::Container:
+		return LootContainer(item, localPlayer); //might want to reevaluate that; may cause containers to be ignored incorrectly in subsequent runs if the 6m loot radius is inaccurate
+	case ItemTypes::Flora:
+		return LootFlora(item, localPlayer);
+	case ItemTypes::Invalid:
+	case ItemTypes::Other:
+		return false;
+	default:
+		return LootGroundItem(item, localPlayer);
+	}
+}
 
 void Looter::Loot()
 {
@@ -304,14 +351,16 @@ void Looter::Loot()
 	if (!Settings::looter.selection.IsEnabled())
 		return;
 
-	auto localPlayerPtr = ErectusMemory::GetLocalPlayerPtr(true);
-	if (!Utils::Valid(localPlayerPtr))
+	auto playerInfo = ErectusMemory::GetLocalPlayerInfo();
+	if (playerInfo.formId == 0x00000014 || playerInfo.currentHealth == 0) //not loaded yet
 		return;
-
-	TesObjectRefr localPlayer{};
-	if (!ErectusProcess::Rpm(localPlayerPtr, &localPlayer, sizeof localPlayer))
-		return;
-
+	
+	if(playerInfo.cellFormId != lastPlayerCellFormId)
+	{
+		lootedEntities.clear();
+		lastPlayerCellFormId = playerInfo.cellFormId;
+	}
+			
 	auto entityPtrs = ErectusMemory::GetEntityPtrList();
 	for (const auto& entityPtr : entityPtrs)
 	{
@@ -319,46 +368,11 @@ void Looter::Loot()
 		if (!ErectusProcess::Rpm(entityPtr, &entity, sizeof entity))
 			continue;
 
-		if (!Utils::Valid(entity.baseObjectPtr))
+		if (lootedEntities.contains(entity.formId))
 			continue;
 
-		if (entity.spawnFlag != 0x02)
-			continue;
-
-		switch (entity.formType)
-		{
-		case (static_cast<BYTE>(FormTypes::TesActor)):
-			if (!Settings::looter.looters.npcs || ErectusMemory::CheckHealthFlag(entity.healthFlag) != 0x3)
-				continue;
-			break;
-		case (static_cast<BYTE>(FormTypes::TesObjectRefr)):
-			if (!Settings::looter.looters.groundItems && !Settings::looter.looters.containers && !Settings::looter.looters.flora)
-				continue;
-			break;
-		default:
-			continue;
-		}
-
-		TesItem baseItem{};
-		if (!ErectusProcess::Rpm(entity.baseObjectPtr, &baseItem, sizeof baseItem))
-			continue;
-
-		auto item = ErectusMemory::GetItemInfo(entity, baseItem);
-		switch (item.type)
-		{
-		case ItemTypes::Npc:
-		case ItemTypes::Container:
-			LootContainer(item, localPlayer);
-			break;
-		case ItemTypes::Flora:
-			LootFlora(item, localPlayer);
-			break;
-		case ItemTypes::Invalid:
-		case ItemTypes::Other:
-			break;
-		default:
-			LootGroundItem(item, localPlayer);
-		}
+		if(ProcessEntity(entity, playerInfo))
+			lootedEntities.emplace(entity.formId);
 	}
 	lootItemsRequested = false;
 }

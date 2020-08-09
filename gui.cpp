@@ -6,6 +6,7 @@
 
 #include "ErectusProcess.h"
 #include "ErectusMemory.h"
+#include "Looter.h"
 #include "threads.h"
 #include "utils.h"
 
@@ -475,7 +476,7 @@ void Gui::RenderInfoBox()
 	if (infoTexts.empty())
 		return;
 
-	ImGui::SetNextWindowBgAlpha(.3f);
+	ImGui::SetNextWindowBgAlpha(.7f);
 	ImGui::SetNextWindowPos(ImVec2(10.f, 10.f), ImGuiCond_FirstUseEver);
 	if (ImGui::Begin("##infobox", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav))
 	{
