@@ -6,7 +6,6 @@
 
 #include "ErectusProcess.h"
 #include "ErectusMemory.h"
-#include "Looter.h"
 #include "threads.h"
 #include "utils.h"
 
@@ -1237,7 +1236,10 @@ void Gui::OverlayMenuTabCombat()
 			LargeButtonToggle("Send Damage", Settings::targetting.dmgSend);
 
 			LargeButtonToggle("Also target NPCs with unknown state###TargetUnknown", Settings::targetting.targetUnknown);
-			LargeButtonToggle("Ignore Essential NPCs###IgnoreEssentialNPCs", Settings::targetting.ignoreEssentialNpcs);
+
+			ButtonToggle("Ignore Essential NPCs###IgnoreEssentialNPCs", Settings::targetting.ignoreEssentialNpcs);
+			ImGui::SameLine();
+			LargeButtonToggle("Ignore non-hostile NPCs", Settings::targetting.ignoreNonHostileNpcs);
 
 			ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x / 2);
 			ImGui::SliderFloat("###TargetLockingFOV", &Settings::targetting.lockingFov, 5.0f, 40.0f, "Targeting FOV: %.2f");

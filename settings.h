@@ -248,6 +248,7 @@ public:
 	bool targetUnknown = false;
 	float lockingFov = 20.0f;
 	bool ignoreEssentialNpcs = true;
+	bool ignoreNonHostileNpcs = true;
 	float lockedColor[3] = { 1.0f, 0.0f, 1.0f };
 	bool retargeting = false;
 	int cooldown = 1;

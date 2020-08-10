@@ -36,6 +36,18 @@ enum class FormTypes : BYTE
 	PlayerCharacter = 0xB5 //also used in REFR objects, ref to player
 };
 
+class TesWorldSpace
+{
+public:
+	BYTE pad0000[32]; //0x0000
+	DWORD formId; //0x0020
+	BYTE pad0024[2]; //0x0024
+	BYTE formType; //0x0026
+	BYTE pad0027[353]; //0x0027
+	DWORD64 skyCellPtr; //0x0188
+	BYTE pad0190[120]; //0x0190
+};
+
 class TesObjectRefr
 {
 public:
@@ -142,18 +154,25 @@ public:
 	//ActorCoreSnapshotComponent
 	DWORD64 actorCorevtable;//0x0
 	BYTE actorCorePadding0008[0x98];
-	//ActorServerAuthSnapshotData
+	//ActorServerAuthSnapshotData    // 0x38 isInvulnerable, 0x3C isProtected, 0x3D IsPlayerProtected, 0x130 hostileState, 0x138 reconScopeTargetState
 	DWORD64 vtable;//0xA0
-	BYTE padding0008[0x33];
+	BYTE padding0008[0x30];
+	BYTE isInvulnerable;//0x38
+	BYTE unk0039;//0x39
+	BYTE unk003A;//0x3A
 	BYTE isEssential;//0x3B
-	BYTE padding003C[0x34];
+	BYTE isProtected;//0x3C
+	BYTE isPlayerProtected;//0x3D
+	BYTE padding003C[0x32];
 	float maxHealth;//0x70
 	float modifiedHealth;//0x74
 	BYTE padding0078[0x4];
 	float lostHealth;//0x7C
 	BYTE padding0080[0xA0];
 	BYTE epicRank;//0x120
-	BYTE padding0121[0x7];
+	BYTE padding0121[0xF];
+	DWORD64 hostileState;//0x130
+	DWORD64 reconScopeTargetState;//0x138
 };
 
 class TesObjectCell
@@ -798,6 +817,7 @@ public:
 
 	static DWORD64 GetLocalPlayerPtr(bool checkMainMenu);
 	static std::vector<DWORD64> GetEntityPtrList();
+
 	static void GetCustomEntityData(const TesItem& referenceData, DWORD64* entityFlag, DWORD64* entityNamePtr, int* enabledDistance);
 	static bool CheckFormIdArray(DWORD formId, const bool* enabledArray, const DWORD* formIdArray, int size);
 	static DWORD64 RttiGetNamePtr(DWORD64 vtable);
@@ -806,6 +826,8 @@ public:
 	static ItemInfo GetItemInfo(const TesObjectRefr& entity, const TesItem& base);
 
 private:
+	static std::vector<DWORD64> CellGetEntityPtrs(const TesObjectCell& cell);
+	static TesObjectCell GetSkyCell();
 	static bool GetNukeCode(DWORD formId, std::array<int, 8>& nukeCode);
 	static std::string GetPlayerName(const ClientAccount& clientAccountData);
 

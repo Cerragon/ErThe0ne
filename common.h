@@ -17,6 +17,7 @@ constexpr auto OFFSET_CAMERA = 0x05BE8B40UL;//1.3.3.24
 constexpr auto OFFSET_GET_PTR_A1 = 0x059313E8UL;//1.3.3.24
 constexpr auto OFFSET_GET_PTR_A2 = 0x03CB4190UL;//1.3.3.24
 constexpr auto OFFSET_NUKE_CODE = 0x05A67A18UL;//1.3.3.24
+constexpr auto OFFSET_MAIN_WORLDSPACE = 0x05A6AE10UL;//1.3.3.24
 
 //wpm
 

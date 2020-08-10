@@ -428,6 +428,7 @@ void Settings::GetTargetSettings()
 	GetBool("TargetSettings", "TargetUnknown", targetting.targetUnknown, targetting.targetUnknown);
 	GetSliderFloat("TargetSettings", "LockingFOV", targetting.lockingFov, targetting.lockingFov, 5.0f, 40.0f);
 	GetBool("TargetSettings", "IgnoreEssentialNPCs", targetting.ignoreEssentialNpcs, targetting.ignoreEssentialNpcs);
+	GetBool("TargetSettings", "IgnoreNonHostileNPCs", targetting.ignoreNonHostileNpcs, targetting.ignoreNonHostileNpcs);
 	GetRgb("TargetSettings", "LockingColor", targetting.lockedColor, targetting.lockedColor);
 	GetBool("TargetSettings", "Retargeting", targetting.retargeting, targetting.retargeting);
 	GetSliderInt("TargetSettings", "Cooldown", targetting.cooldown, targetting.cooldown, 0, 120);
@@ -448,6 +449,7 @@ void Settings::SetTargetSettings()
 	SetBool("TargetSettings", "TargetUnknown", targetting.targetUnknown, targetting.targetUnknown);
 	SetSliderFloat("TargetSettings", "LockingFOV", targetting.lockingFov, targetting.lockingFov, 5.0f, 40.0f);
 	SetBool("TargetSettings", "IgnoreEssentialNPCs", targetting.ignoreEssentialNpcs, targetting.ignoreEssentialNpcs);
+	SetBool("TargetSettings", "IgnoreNonHostileNPCs", targetting.ignoreNonHostileNpcs, targetting.ignoreNonHostileNpcs);
 	SetRgb("TargetSettings", "LockingColor", targetting.lockedColor, targetting.lockedColor);
 	SetBool("TargetSettings", "Retargeting", targetting.retargeting, targetting.retargeting);
 	SetSliderInt("TargetSettings", "Cooldown", targetting.cooldown, targetting.cooldown, 0, 120);

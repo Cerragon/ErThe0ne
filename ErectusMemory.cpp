@@ -173,7 +173,7 @@ DWORD64 ErectusMemory::GetLocalPlayerPtr(const bool checkMainMenu)
 
 std::vector<DWORD64> ErectusMemory::GetEntityPtrList()
 {
-	std::vector<DWORD64> result;
+	std::vector<DWORD64> result = {};
 
 	DWORD64 entityListTypePtr;
 	if (!ErectusProcess::Rpm(ErectusProcess::exe + OFFSET_ENTITY_LIST, &entityListTypePtr, sizeof entityListTypePtr))
@@ -219,19 +219,58 @@ std::vector<DWORD64> ErectusMemory::GetEntityPtrList()
 		TesObjectCell cell{};
 		if (!ErectusProcess::Rpm(cellPtrArray[i], &cell, sizeof TesObjectCell))
 			continue;
-		if (cell.loadedState != 7) // attached == 7
-			continue;
-		if (!Utils::Valid(cell.objectListBeginPtr) || !Utils::Valid(cell.objectListEndPtr))
-			continue;
 
-		auto itemArraySize = (cell.objectListEndPtr - cell.objectListBeginPtr) / sizeof(DWORD64);
-		auto objectPtrArray = std::make_unique<DWORD64[]>(itemArraySize);
-		if (!ErectusProcess::Rpm(cell.objectListBeginPtr, objectPtrArray.get(), itemArraySize * sizeof DWORD64))
-			continue;
+		auto entities = CellGetEntityPtrs(cell);
 
-		result.insert(result.end(), objectPtrArray.get(), objectPtrArray.get() + itemArraySize);
+		result.reserve(result.size() + entities.size());
+		result.insert(result.end(), entities.begin(), entities.end());
 	}
+
+	auto skycellEntitites = CellGetEntityPtrs(GetSkyCell());
+	result.reserve(result.size() + skycellEntitites.size());
+	result.insert(result.end(), skycellEntitites.begin(), skycellEntitites.end());
+
 	return  result;
+}
+
+std::vector<DWORD64> ErectusMemory::CellGetEntityPtrs(const TesObjectCell& cell)
+{
+	std::vector<DWORD64> result = {};
+
+	if (cell.loadedState != 7) // attached == 7
+		return result;
+
+	if (!Utils::Valid(cell.objectListBeginPtr) || !Utils::Valid(cell.objectListEndPtr))
+		return result;
+
+	auto itemArraySize = (cell.objectListEndPtr - cell.objectListBeginPtr) / sizeof(DWORD64);
+	auto objectPtrArray = std::make_unique<DWORD64[]>(itemArraySize);
+	if (!ErectusProcess::Rpm(cell.objectListBeginPtr, objectPtrArray.get(), itemArraySize * sizeof DWORD64))
+		return result;
+
+	result.reserve(itemArraySize);
+	result.insert(result.end(), objectPtrArray.get(), objectPtrArray.get() + itemArraySize);
+
+	return result;
+}
+
+TesObjectCell ErectusMemory::GetSkyCell()
+{
+	TesObjectCell result = {};
+
+	DWORD64 worldspacePtr = 0;
+	if (!ErectusProcess::Rpm(ErectusProcess::exe + OFFSET_MAIN_WORLDSPACE, &worldspacePtr, sizeof worldspacePtr))
+		return result;
+	if (!Utils::Valid(worldspacePtr))
+		return result;
+
+	TesWorldSpace worldspace = {};
+	if (!ErectusProcess::Rpm(worldspacePtr, &worldspace, sizeof worldspace))
+		return result;
+
+	ErectusProcess::Rpm(worldspace.skyCellPtr, &result, sizeof result);
+
+	return result;
 }
 
 bool ErectusMemory::IsRecipeKnown(const DWORD formId)
@@ -767,7 +806,7 @@ std::string ErectusMemory::GetEntityName(const DWORD64 ptr)
 
 bool ErectusMemory::UpdateBufferEntityList()
 {
-	std::vector<CustomEntry> entities{};
+	std::vector<CustomEntry> entities = {};
 
 	auto localPlayerPtr = GetLocalPlayerPtr(true);
 	if (!Utils::Valid(localPlayerPtr))
@@ -869,7 +908,7 @@ std::string ErectusMemory::GetPlayerName(const ClientAccount& clientAccountData)
 
 bool ErectusMemory::UpdateBufferPlayerList()
 {
-	std::vector<CustomEntry> players{};
+	std::vector<CustomEntry> players = {};
 
 	auto localPlayerPtr = GetLocalPlayerPtr(true);
 	if (!Utils::Valid(localPlayerPtr))
@@ -966,6 +1005,7 @@ bool ErectusMemory::UpdateBufferPlayerList()
 
 	return playerDataBuffer.empty() ? false : true;
 }
+
 bool ErectusMemory::IsTargetValid(const DWORD64 targetPtr)
 {
 	TesObjectRefr target{};
@@ -983,12 +1023,15 @@ bool ErectusMemory::IsTargetValid(const TesObjectRefr& targetData)
 	if (targetData.spawnFlag != 0x02)
 		return false;
 
-	if (Settings::targetting.ignoreEssentialNpcs)
+	if (Settings::targetting.ignoreEssentialNpcs || Settings::targetting.ignoreNonHostileNpcs)
 	{
 		ActorSnapshotComponent actorSnapshotComponentData{};
 		if (GetActorSnapshotComponentData(targetData, &actorSnapshotComponentData))
 		{
-			if (actorSnapshotComponentData.isEssential)
+			if (actorSnapshotComponentData.isEssential && Settings::targetting.ignoreEssentialNpcs)
+				return false;
+
+			if (actorSnapshotComponentData.hostileState == 0 && Settings::targetting.ignoreNonHostileNpcs)
 				return false;
 		}
 	}
