@@ -30,7 +30,7 @@ public:
 
 private:
 	static BOOL HwndEnumFunc(HWND hwnd, LPARAM lParam);
-	static DWORD64 GetModuleBaseAddress(DWORD pid, const char* module);
+	static DWORD64 GetModuleBaseAddress(DWORD procId, const char* module);
 
 	virtual void Dummy() = 0;
 };

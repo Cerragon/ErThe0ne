@@ -46,8 +46,8 @@ bool MsgSender::Send(void* message, const size_t size)
 	}
 
 	const auto paramAddress = allocAddress + sizeof ExternalFunction::ASM;
-	auto* const thread = CreateRemoteThread(ErectusProcess::handle, nullptr, 0, LPTHREAD_START_ROUTINE(allocAddress),
-		LPVOID(paramAddress), 0, nullptr);
+	auto* const thread = CreateRemoteThread(ErectusProcess::handle, nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(allocAddress),
+		reinterpret_cast<LPVOID>(paramAddress), 0, nullptr);
 
 	if (thread == nullptr)
 	{

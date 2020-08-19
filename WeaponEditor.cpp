@@ -33,7 +33,7 @@ void WeaponEditor::EditWeapons(bool enabled)
 	if (!ErectusProcess::Rpm(weaponList.arrayPtr, weaponPtrArray.get(), weaponList.arraySize * sizeof(DWORD64)))
 		return;
 
-	for (auto i = 0; i < weaponList.arraySize; i++)
+	for (std::size_t i = 0; i < weaponList.arraySize; i++)
 	{
 		if (!Utils::Valid(weaponPtrArray[i]))
 			continue;

@@ -4,6 +4,7 @@
 
 #include "common.h"
 #include "ErectusProcess.h"
+#include "Game.h"
 #include "MsgSender.h"
 #include "settings.h"
 #include "utils.h"
@@ -20,7 +21,7 @@ bool Looter::ShouldLootJunk(const ItemInfo& item)
 	if (!ErectusProcess::Rpm(item.base.componentArrayPtr, components.get(), item.base.componentArraySize * sizeof(Component)))
 		return false;
 
-	for (auto i = 0; i < item.base.componentArraySize; i++)
+	for (std::size_t i = 0; i < item.base.componentArraySize; i++)
 	{
 		if (!Utils::Valid(components[i].componentReferencePtr))
 			continue;
@@ -224,13 +225,12 @@ bool Looter::LootContainer(const ItemInfo& item, const LocalPlayerInfo& player)
 		if (!Utils::Valid(entries[i].displayPtr) || entries[i].iterations < entries[i].displayPtr) //???
 			continue;
 
-		TesItem baseItem{};
-		if (!ErectusProcess::Rpm(entries[i].referencePtr, &baseItem, sizeof baseItem))
-			continue;
-		if (baseItem.recordFlagA >> 2 & 1) //???
-			continue;
+		TesObjectRefr ref = { .baseObjectPtr = entries[i].referencePtr };
 
-		auto inventoryItem = ErectusMemory::GetItemInfo(TesObjectRefr(), baseItem);
+//		if (baseItem.recordFlagA >> 2 & 1) //???
+//			continue;
+
+		auto inventoryItem = ErectusMemory::GetItemInfo(ref);
 		if (!ShouldLootItem(inventoryItem, entries[i].displayPtr))
 			continue;
 
@@ -319,11 +319,7 @@ bool Looter::ProcessEntity(const TesObjectRefr& entity, const LocalPlayerInfo& l
 		return false;
 	}
 
-	TesItem baseItem{};
-	if (!ErectusProcess::Rpm(entity.baseObjectPtr, &baseItem, sizeof baseItem))
-		return false;
-
-	auto item = ErectusMemory::GetItemInfo(entity, baseItem);
+	auto item = ErectusMemory::GetItemInfo(entity);
 	switch (item.type)
 	{
 	case ItemTypes::Npc:
@@ -360,19 +356,19 @@ void Looter::Loot()
 		lootedEntities.clear();
 		lastPlayerCellFormId = playerInfo.cellFormId;
 	}
-			
-	auto entityPtrs = ErectusMemory::GetEntityPtrList();
-	for (const auto& entityPtr : entityPtrs)
+
+	auto cells = Game::GetLoadedAreaManager().GetLoadedCells();
+	for(const auto& cell : cells)
 	{
-		TesObjectRefr entity{};
-		if (!ErectusProcess::Rpm(entityPtr, &entity, sizeof entity))
-			continue;
+		auto entities = cell.GetObjectRefs();
+		for(const auto& entity : entities)
+		{
+			if (lootedEntities.contains(entity.formId))
+				continue;
 
-		if (lootedEntities.contains(entity.formId))
-			continue;
-
-		if(ProcessEntity(entity, playerInfo))
-			lootedEntities.emplace(entity.formId);
+			if (ProcessEntity(entity, playerInfo))
+				lootedEntities.emplace(entity.formId);
+		}
 	}
 	lootItemsRequested = false;
 }

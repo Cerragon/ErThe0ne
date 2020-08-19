@@ -93,7 +93,7 @@ DWORD64 ErectusProcess::AllocEx(const size_t size)
 	//3) switch to PAGE_EXECUTE_READ
 	//4) create the remote thread
 	//see https://reverseengineering.stackexchange.com/questions/3482/does-code-injected-into-process-memory-always-belong-to-a-page-with-rwx-access
-	return DWORD64(VirtualAllocEx(handle, nullptr, size, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE));
+	return reinterpret_cast<DWORD64>(VirtualAllocEx(handle, nullptr, size, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE));
 }
 
 bool ErectusProcess::FreeEx(const DWORD64 src)
@@ -132,7 +132,7 @@ bool ErectusProcess::HwndValid(const DWORD processId)
 		return false;
 	}
 
-	EnumWindows(WNDENUMPROC(HwndEnumFunc), pid);
+	EnumWindows(static_cast<WNDENUMPROC>(HwndEnumFunc), pid);
 	if (hWnd == nullptr)
 	{
 		SetProcessError(2, "Process State: HWND (Window) invalid");
@@ -156,9 +156,9 @@ bool ErectusProcess::HwndValid(const DWORD processId)
 	return true;
 }
 
-DWORD64 ErectusProcess::GetModuleBaseAddress(const DWORD pid, const char* module)
+DWORD64 ErectusProcess::GetModuleBaseAddress(const DWORD procId, const char* module)
 {
-	auto* const hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, pid);
+	auto* const hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, procId);
 	if (hSnapshot == INVALID_HANDLE_VALUE)
 		return 0;
 
@@ -170,7 +170,7 @@ DWORD64 ErectusProcess::GetModuleBaseAddress(const DWORD pid, const char* module
 		if (!strcmp(lpme.szModule, module))
 		{
 			CloseHandle(hSnapshot);
-			return DWORD64(lpme.modBaseAddr);
+			return reinterpret_cast<DWORD64>(lpme.modBaseAddr);
 		}
 	}
 

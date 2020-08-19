@@ -68,28 +68,36 @@ void Gui::RenderPlayers()
 
 void Gui::RenderActors(const CustomEntry& entry, const EspSettings::Actors& settings)
 {
+	if (!settings.drawEnabled && !settings.drawDisabled)
+		return;
+
+	if (settings.enabledAlpha == 0.0f && settings.disabledAlpha == 0.0f)
+		return;
+
+	if (!settings.drawNamed && !settings.drawUnnamed)
+		return;
+
+	TesObjectRefr entityData = {};
+	if (!ErectusProcess::Rpm(entry.entityPtr, &entityData, sizeof entityData))
+		return;
+	
 	auto health = -1;
-	BYTE epicRank = 0;
+
+	ActorSnapshotComponent actorSnapshotComponentData{};
+	if (ErectusMemory::GetActorSnapshotComponentData(entityData, &actorSnapshotComponentData))
+		health = static_cast<int>(actorSnapshotComponentData.maxHealth + actorSnapshotComponentData.modifiedHealth + actorSnapshotComponentData.lostHealth);
+
 	auto allowNpc = false;
 	if (entry.flag & CUSTOM_ENTRY_NPC)
 	{
-		TesObjectRefr npcData{};
-		if (!ErectusProcess::Rpm(entry.entityPtr, &npcData, sizeof npcData))
-			return;
-
-		ActorSnapshotComponent actorSnapshotComponentData{};
-		if (ErectusMemory::GetActorSnapshotComponentData(npcData, &actorSnapshotComponentData))
-		{
-			health = static_cast<int>(actorSnapshotComponentData.maxHealth + actorSnapshotComponentData.modifiedHealth + actorSnapshotComponentData.lostHealth);
-			epicRank = actorSnapshotComponentData.epicRank;
-			if (epicRank)
+			if (actorSnapshotComponentData.epicRank)
 			{
-				switch (ErectusMemory::CheckHealthFlag(npcData.healthFlag))
+				switch (ErectusMemory::CheckHealthFlag(entityData.healthFlag))
 				{
 				case 0x01: //Alive
 				case 0x02: //Downed
 				case 0x03: //Dead
-					switch (epicRank)
+					switch (actorSnapshotComponentData.epicRank)
 					{
 					case 1:
 						allowNpc = Settings::esp.npcsExt.overrideLivingOneStar;
@@ -103,35 +111,15 @@ void Gui::RenderActors(const CustomEntry& entry, const EspSettings::Actors& sett
 					default:
 						break;
 					}
+					break;
 				default:
 					break;
 				}
 			}
-		}
 	}
 
 	if (!settings.enabled && !allowNpc)
 		return;
-
-	if (!settings.drawEnabled && !settings.drawDisabled)
-		return;
-
-	if (settings.enabledAlpha == 0.0f && settings.disabledAlpha == 0.0f)
-		return;
-
-	if (!settings.drawNamed && !settings.drawUnnamed)
-		return;
-
-	TesObjectRefr entityData{};
-	if (!ErectusProcess::Rpm(entry.entityPtr, &entityData, sizeof entityData))
-		return;
-
-	if (entry.flag & CUSTOM_ENTRY_PLAYER)
-	{
-		ActorSnapshotComponent actorSnapshotComponentData{};
-		if (ErectusMemory::GetActorSnapshotComponentData(entityData, &actorSnapshotComponentData))
-			health = static_cast<int>(actorSnapshotComponentData.maxHealth + actorSnapshotComponentData.modifiedHealth + actorSnapshotComponentData.lostHealth);
-	}
 
 	if (entry.flag & CUSTOM_ENTRY_UNNAMED)
 	{
@@ -172,7 +160,7 @@ void Gui::RenderActors(const CustomEntry& entry, const EspSettings::Actors& sett
 		showHealthText = settings.showHealth;
 		if (allowNpc)
 		{
-			switch (epicRank)
+			switch (actorSnapshotComponentData.epicRank)
 			{
 			case 1:
 				color = Settings::esp.npcsExt.livingOneStarColor;
@@ -200,7 +188,7 @@ void Gui::RenderActors(const CustomEntry& entry, const EspSettings::Actors& sett
 		showHealthText = settings.showHealth;
 		if (allowNpc)
 		{
-			switch (epicRank)
+			switch (actorSnapshotComponentData.epicRank)
 			{
 			case 1:
 				color = Settings::esp.npcsExt.livingOneStarColor;
@@ -228,7 +216,7 @@ void Gui::RenderActors(const CustomEntry& entry, const EspSettings::Actors& sett
 		showHealthText = settings.showDeadHealth;
 		if (allowNpc)
 		{
-			switch (epicRank)
+			switch (actorSnapshotComponentData.epicRank)
 			{
 			case 1:
 				color = Settings::esp.npcsExt.deadOneStarColor;
@@ -1285,10 +1273,10 @@ void Gui::OverlayMenuTabCombat()
 				std::string favoritedWeaponsPreview = "[?] No Weapon Selected";
 				if (Settings::targetting.favoriteIndex < 12)
 				{
-					favoritedWeaponsPreview = ErectusMemory::GetFavoritedWeaponText(BYTE(Settings::targetting.favoriteIndex));
+					favoritedWeaponsPreview = ErectusMemory::GetFavoritedWeaponText(static_cast<BYTE>(Settings::targetting.favoriteIndex));
 					if (favoritedWeaponsPreview.empty())
 					{
-						favoritedWeaponsPreview = fmt::format("[{}] Favorited Item Invalid", ErectusMemory::FavoriteIndex2Slot(BYTE(Settings::targetting.favoriteIndex)));
+						favoritedWeaponsPreview = fmt::format("[{}] Favorited Item Invalid", ErectusMemory::FavoriteIndex2Slot(static_cast<BYTE>(Settings::targetting.favoriteIndex)));
 					}
 				}
 

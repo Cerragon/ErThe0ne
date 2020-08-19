@@ -1,6 +1,6 @@
 #pragma once
 #include <map>
-#include <windows.h>
+#include <Windows.h>
 
 class App;
 
@@ -15,7 +15,7 @@ public:
 		Overlay
 	};
 
-	Window(App* app, LPCSTR windowTitle);
+	Window(App* appInstance, LPCSTR windowTitle);
 	~Window();
 	LRESULT __stdcall MsgProc(HWND hWnd, unsigned int msg, WPARAM wParam, LPARAM lParam) const;
 

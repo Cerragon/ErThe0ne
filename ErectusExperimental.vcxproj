@@ -126,15 +126,20 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="format.cc" />
+    <ClCompile Include="Game.cpp" />
     <ClCompile Include="imgui\imgui.cpp" />
     <ClCompile Include="imgui\imgui_draw.cpp" />
     <ClCompile Include="imgui\imgui_impl_dx9.cpp" />
     <ClCompile Include="imgui\imgui_impl_win32.cpp" />
     <ClCompile Include="imgui\imgui_stdlib.cpp" />
     <ClCompile Include="imgui\imgui_widgets.cpp" />
+    <ClCompile Include="LoadedAreaManager.cpp" />
     <ClCompile Include="Looter.cpp" />
     <ClCompile Include="MsgSender.cpp" />
     <ClCompile Include="PlayerStatsEditor.cpp" />
+    <ClCompile Include="TesItem.cpp" />
+    <ClCompile Include="TesObjectCell.cpp" />
+    <ClCompile Include="TesObjectRefr.cpp" />
     <ClCompile Include="utils.cpp" />
     <ClCompile Include="renderer.cpp" />
     <ClCompile Include="gui.cpp" />
@@ -161,6 +166,7 @@
     <ClInclude Include="fmt\core.h" />
     <ClInclude Include="fmt\format-inl.h" />
     <ClInclude Include="fmt\format.h" />
+    <ClInclude Include="Game.h" />
     <ClInclude Include="gui.h" />
     <ClInclude Include="imgui\imconfig.h" />
     <ClInclude Include="imgui\imgui.h" />
@@ -172,12 +178,16 @@
     <ClInclude Include="imgui\imstb_textedit.h" />
     <ClInclude Include="imgui\imstb_truetype.h" />
     <ClInclude Include="ini.h" />
+    <ClInclude Include="LoadedAreaManager.h" />
     <ClInclude Include="Looter.h" />
     <ClInclude Include="MsgSender.h" />
     <ClInclude Include="PlayerStatsEditor.h" />
     <ClInclude Include="renderer.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="settings.h" />
+    <ClInclude Include="TesItem.h" />
+    <ClInclude Include="TesObjectCell.h" />
+    <ClInclude Include="TesObjectRefr.h" />
     <ClInclude Include="threads.h" />
     <ClInclude Include="utils.h" />
     <ClInclude Include="WeaponEditor.h" />

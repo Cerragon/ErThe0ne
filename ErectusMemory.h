@@ -6,6 +6,8 @@
 #include <unordered_set>
 #include <array>
 
+#include "TesObjectCell.h"
+
 enum class FormTypes : BYTE
 {
 	BgsTextureSet = 0x10,
@@ -46,57 +48,6 @@ public:
 	BYTE pad0027[353]; //0x0027
 	DWORD64 skyCellPtr; //0x0188
 	BYTE pad0190[120]; //0x0190
-};
-
-class TesObjectRefr
-{
-public:
-	DWORD64 vtable;//0x0
-	BYTE padding0008[0x8];
-	BYTE harvestFlagA;//0x10
-	BYTE padding0011[0x8];
-	BYTE harvestFlagB;//0x19
-	BYTE padding001A[0x6];
-	DWORD formId;//0x20
-	BYTE padding0024[0x2];//0x24
-	BYTE formType;//0x26
-	BYTE padding0027[0x11];//0x27
-	BYTE idValue[4];//0x38
-	BYTE padding003C[0x14];
-	DWORD64 vtable0050;//0x50
-	BYTE padding0058[0x8];
-	float pitch;//0x60
-	BYTE padding0064[0x4];
-	float yaw;//0x68
-	BYTE padding006C[0x4];
-	float position[3];//0x70
-	BYTE padding007C[0x4];
-	DWORD64 inventoryPtr;//0x80
-	BYTE padding0088[0x8];
-	DWORD64 actorCorePtr;//0x90
-	BYTE padding0098[0x10];
-	DWORD64 cellPtr;//0xA8
-	DWORD64 skeletonPtr;//0xB0
-	DWORD64 baseObjectPtr;//0xB8
-	BYTE padding00C0[0xE];
-	BYTE spawnFlag;//0xCE
-	BYTE padding00Cf[0xC9];
-	BYTE movementFlag;//0x198
-	BYTE sprintFlag;//0x199
-	BYTE healthFlag;//0x19A
-	BYTE padding019B[0xA89];
-	DWORD formId0C24;//0xC24
-};
-
-class LoadedAreaManager
-{
-public:
-	BYTE padding0000[0x80];
-	DWORD64 interiorCellArrayBegin;//0x80
-	DWORD64 interiorCellArrayEnd;//0x88
-	BYTE padding0090[0x18];
-	DWORD64 exteriorCellArrayBegin;//0xA8
-	DWORD64 exteriorCellArrayEnd;//0xB0
 };
 
 class Camera
@@ -175,17 +126,6 @@ public:
 	DWORD64 reconScopeTargetState;//0x138
 };
 
-class TesObjectCell
-{
-public:
-	BYTE padding0000[0x68];
-	DWORD64 isInterior;
-	BYTE loadedState;
-	BYTE padding0071[0x2F];
-	DWORD64 objectListBeginPtr;//0xA0
-	DWORD64 objectListEndPtr;//0xA8
-};
-
 class TransferMessage
 {
 public:
@@ -213,44 +153,6 @@ public:
 	int clientAccountArraySizeA;//0x50
 	BYTE padding0054[0x4];
 	int clientAccountArraySizeB;//0x58
-};
-
-class TesItem
-{
-public:
-	DWORD64 vtable;//0x0
-	BYTE padding0008[0x10];
-	BYTE recordFlagA;//0x18
-	BYTE padding0019[0x7];
-	DWORD formId;//0x20
-	BYTE padding0024[0x2];//0x24
-	BYTE formType;//0x26
-	BYTE padding0027[0x71];//0x27
-	DWORD64 namePtr0098;//0x98
-	BYTE padding00A0[0x10];
-	DWORD64 namePtr00B0;//0xB0
-	DWORD64 keywordArrayData00B8;//0xB8
-	DWORD64 keywordArrayData00C0;//0xC0
-	BYTE padding00B8[0x19];
-	BYTE omodFlag;//0xE1
-	BYTE padding00E2[0xE];
-	DWORD64 factionArrayPtr;//0xF0
-	BYTE padding00F8[0x8];
-	int factionArraySize;//0x100
-	BYTE padding0104[0x5C];
-	DWORD64 namePtr0160;//0x160
-	BYTE padding0168[0x48];
-	DWORD64 keywordArrayData01B0;//0x1B0
-	DWORD64 keywordArrayData01B8;//0x1B8
-	DWORD64 keywordArrayData01C0;//0x1C0
-	BYTE padding01C4[0x10];
-	BYTE planFlag;//0x1D8
-	BYTE padding01D9[0xF];
-	DWORD64 componentArrayPtr;//0x1E8
-	BYTE padding01F0[0x8];
-	int componentArraySize;//0x1F8
-	BYTE padding01Fc[0x14];
-	DWORD64 harvestedPtr;//0x210
 };
 
 class LeveledList
@@ -816,17 +718,15 @@ public:
 	inline static DWORD64 targetLockedEntityPtr = 0;
 
 	static DWORD64 GetLocalPlayerPtr(bool checkMainMenu);
-	static std::vector<DWORD64> GetEntityPtrList();
 
 	static void GetCustomEntityData(const TesItem& referenceData, DWORD64* entityFlag, DWORD64* entityNamePtr, int* enabledDistance);
 	static bool CheckFormIdArray(DWORD formId, const bool* enabledArray, const DWORD* formIdArray, int size);
 	static DWORD64 RttiGetNamePtr(DWORD64 vtable);
 	static bool VtableSwap(DWORD64 dst, DWORD64 src);
 
-	static ItemInfo GetItemInfo(const TesObjectRefr& entity, const TesItem& base);
+	static ItemInfo GetItemInfo(const TesObjectRefr& entity);
 
 private:
-	static std::vector<DWORD64> CellGetEntityPtrs(const TesObjectCell& cell);
 	static TesObjectCell GetSkyCell();
 	static bool GetNukeCode(DWORD formId, std::array<int, 8>& nukeCode);
 	static std::string GetPlayerName(const ClientAccount& clientAccountData);
@@ -834,8 +734,8 @@ private:
 	static bool CheckReferenceKeywordBook(const TesItem& referenceData, DWORD formId);
 	static bool CheckReferenceKeywordMisc(const TesItem& referenceData, DWORD formId);
 	static bool CheckWhitelistedFlux(const TesItem& referenceData);
-	static bool CheckReferenceItem(const TesItem& referenceData);
-
+	
+	static bool IsItem(const TesItem& referenceData);
 	static bool IsJunk(const TesItem& referenceData);
 	static bool IsMod(const TesItem& referenceData);
 	static bool IsPlan(const TesItem& referenceData);

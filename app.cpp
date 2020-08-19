@@ -189,7 +189,7 @@ void App::ToggleOverlay()
 	case Mode::Overlay:
 		SetMode(Mode::Attached);
 		break;
-	default:
+	case Mode::Standalone:
 		break;
 	}
 }

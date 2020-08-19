@@ -11,6 +11,8 @@
 #include <set>
 
 #include "ErectusProcess.h"
+#include "Game.h"
+#include "LoadedAreaManager.h"
 #include "MsgSender.h"
 
 DWORD64 ErectusMemory::GetAddress(const DWORD formId)
@@ -62,7 +64,7 @@ DWORD64 ErectusMemory::GetAddress(const DWORD formId)
 
 	//hash = crc32hash(formId)
 	DWORD hash = 0;
-	for (auto i = 0; i < sizeof formId; i++)
+	for (size_t i = 0; i < sizeof formId; i++)
 	{
 		const auto v4 = (hash ^ formId >> i * 0x8) & 0xFF;
 
@@ -169,89 +171,6 @@ DWORD64 ErectusMemory::GetLocalPlayerPtr(const bool checkMainMenu)
 			return 0;
 	}
 	return localPlayerPtr;
-}
-
-std::vector<DWORD64> ErectusMemory::GetEntityPtrList()
-{
-	std::vector<DWORD64> result = {};
-
-	DWORD64 entityListTypePtr;
-	if (!ErectusProcess::Rpm(ErectusProcess::exe + OFFSET_ENTITY_LIST, &entityListTypePtr, sizeof entityListTypePtr))
-		return result;
-	if (!Utils::Valid(entityListTypePtr))
-		return result;
-
-	//1) Get LoadedAreaManager
-	LoadedAreaManager manager{};
-	if (!ErectusProcess::Rpm(entityListTypePtr, &manager, sizeof manager))
-		return result;
-	if (!Utils::Valid(manager.interiorCellArrayBegin) || !Utils::Valid(manager.interiorCellArrayEnd) || !Utils::Valid(manager.exteriorCellArrayBegin) || !Utils::Valid(manager.exteriorCellArrayEnd))
-		return result;
-
-	DWORD64 cellPtrArrayPtr;
-	int cellPtrArraySize;
-
-	//2) Select  interior or exterior objectlist
-	if (manager.interiorCellArrayBegin != manager.interiorCellArrayEnd)
-	{
-		cellPtrArrayPtr = manager.interiorCellArrayBegin;
-		cellPtrArraySize = 2;
-	}
-	else if (manager.exteriorCellArrayBegin != manager.exteriorCellArrayEnd)
-	{
-		cellPtrArrayPtr = manager.exteriorCellArrayBegin;
-		cellPtrArraySize = 50;
-	}
-	else return result; // sthg went wrong
-
-	//3) Read the array of pointers to cells
-	auto cellPtrArray = std::make_unique<DWORD64[]>(cellPtrArraySize);
-	if (!ErectusProcess::Rpm(cellPtrArrayPtr, cellPtrArray.get(), cellPtrArraySize * sizeof DWORD64))
-		return result;
-
-	//4) Read each cell and push object pointers into objectPtrs
-	//this is actually a linked list presenting as an array, odd entries are just pointers to 'next' element, so we skip them
-	for (auto i = 0; i < cellPtrArraySize; i++)
-	{
-		if (i % 2 != 0)
-			continue;
-
-		TesObjectCell cell{};
-		if (!ErectusProcess::Rpm(cellPtrArray[i], &cell, sizeof TesObjectCell))
-			continue;
-
-		auto entities = CellGetEntityPtrs(cell);
-
-		result.reserve(result.size() + entities.size());
-		result.insert(result.end(), entities.begin(), entities.end());
-	}
-
-	auto skycellEntitites = CellGetEntityPtrs(GetSkyCell());
-	result.reserve(result.size() + skycellEntitites.size());
-	result.insert(result.end(), skycellEntitites.begin(), skycellEntitites.end());
-
-	return  result;
-}
-
-std::vector<DWORD64> ErectusMemory::CellGetEntityPtrs(const TesObjectCell& cell)
-{
-	std::vector<DWORD64> result = {};
-
-	if (cell.loadedState != 7) // attached == 7
-		return result;
-
-	if (!Utils::Valid(cell.objectListBeginPtr) || !Utils::Valid(cell.objectListEndPtr))
-		return result;
-
-	auto itemArraySize = (cell.objectListEndPtr - cell.objectListBeginPtr) / sizeof(DWORD64);
-	auto objectPtrArray = std::make_unique<DWORD64[]>(itemArraySize);
-	if (!ErectusProcess::Rpm(cell.objectListBeginPtr, objectPtrArray.get(), itemArraySize * sizeof DWORD64))
-		return result;
-
-	result.reserve(itemArraySize);
-	result.insert(result.end(), objectPtrArray.get(), objectPtrArray.get() + itemArraySize);
-
-	return result;
 }
 
 TesObjectCell ErectusMemory::GetSkyCell()
@@ -438,7 +357,7 @@ bool ErectusMemory::IsTreasureMap(const TesItem& referenceData)
 	return TREASUREMAP_FORMIDS.contains(referenceData.formId);
 }
 
-bool ErectusMemory::CheckReferenceItem(const TesItem& referenceData)
+bool ErectusMemory::IsItem(const TesItem& referenceData)
 {
 	switch (referenceData.formType)
 	{
@@ -462,14 +381,14 @@ bool ErectusMemory::IsMagazine(const TesItem& tesItem)
 	return CheckReferenceKeywordBook(tesItem, 0x001D4A70);
 }
 
-ItemInfo ErectusMemory::GetItemInfo(const TesObjectRefr& entity, const TesItem& base)
+ItemInfo ErectusMemory::GetItemInfo(const TesObjectRefr& entity)
 {
 	ItemInfo result = {};
 
 	result.refr = entity;
-	result.base = base;
+	result.base = entity.GetBaseObject();
 
-	switch (base.formType)
+	switch (result.base.formType)
 	{
 	case (static_cast<byte>(FormTypes::BgsIdleMarker)):
 	case (static_cast<byte>(FormTypes::BgsStaticCollection)):
@@ -484,86 +403,86 @@ ItemInfo ErectusMemory::GetItemInfo(const TesObjectRefr& entity, const TesItem& 
 		break;
 
 	case (static_cast<byte>(FormTypes::TesNpc)):
-		result.namePtr = base.namePtr0160;
+		result.namePtr = result.base.namePtr0160;
 		result.type = ItemTypes::Npc;
 		break;
 
 	case (static_cast<byte>(FormTypes::TesObjectCont)):
-		result.namePtr = base.namePtr00B0;
+		result.namePtr = result.base.namePtr00B0;
 		result.type = ItemTypes::Container;
 		break;
 
 	case (static_cast<byte>(FormTypes::TesObjectMisc)):
-		result.namePtr = base.namePtr0098;
-		if (IsJunk(base))
+		result.namePtr = result.base.namePtr0098;
+		if (IsJunk(result.base))
 			result.type = ItemTypes::Junk;
-		else if (IsMod(base))
+		else if (IsMod(result.base))
 			result.type = ItemTypes::Mod;
-		else if (IsBobblehead(base))
+		else if (IsBobblehead(result.base))
 			result.type = ItemTypes::AidBobblehead;
 		else
 			result.type = ItemTypes::Misc;
 		break;
 
 	case (static_cast<byte>(FormTypes::TesObjectBook)):
-		result.namePtr = base.namePtr0098;
-		if (IsPlan(base))
+		result.namePtr = result.base.namePtr0098;
+		if (IsPlan(result.base))
 		{
-			if (IsRecipeKnown(base.formId))
+			if (IsRecipeKnown(result.base.formId))
 				result.type = ItemTypes::NotesKnownPlan;
 			else
 				result.type = ItemTypes::NotesUnknownPlan;
 		}
-		else if (IsMagazine(base))
+		else if (IsMagazine(result.base))
 			result.type = ItemTypes::AidMagazine;
-		else if (IsTreasureMap(base))
+		else if (IsTreasureMap(result.base))
 			result.type = ItemTypes::NotesTreasureMap;
 		else
 			result.type = ItemTypes::Notes;
 		break;
 
 	case (static_cast<byte>(FormTypes::TesFlora)):
-		result.namePtr = base.namePtr0098;
+		result.namePtr = result.base.namePtr0098;
 		result.type = ItemTypes::Flora;
 		break;
 
 	case (static_cast<byte>(FormTypes::TesObjectWeap)):
-		result.namePtr = base.namePtr0098;
+		result.namePtr = result.base.namePtr0098;
 		result.type = ItemTypes::Weapons;
 		break;
 
 	case (static_cast<byte>(FormTypes::TesObjectArmo)):
-		result.namePtr = base.namePtr0098;
+		result.namePtr = result.base.namePtr0098;
 		result.type = ItemTypes::Apparel;
 		break;
 
 	case (static_cast<byte>(FormTypes::TesAmmo)):
-		result.namePtr = base.namePtr0098;
+		result.namePtr = result.base.namePtr0098;
 		result.type = ItemTypes::Ammo;
 		break;
 
 	case (static_cast<byte>(FormTypes::AlchemyItem)):
-		result.namePtr = base.namePtr0098;
+		result.namePtr = result.base.namePtr0098;
 		result.type = ItemTypes::Aid;
 		break;
 
 	case (static_cast<BYTE>(FormTypes::BgsNote)):
-		result.namePtr = base.namePtr0098;
+		result.namePtr = result.base.namePtr0098;
 		result.type = ItemTypes::Notes;
 		break;
 
 	case (static_cast<BYTE>(FormTypes::TesUtilityItem)):
-		result.namePtr = base.namePtr0098;
+		result.namePtr = result.base.namePtr0098;
 		result.type = ItemTypes::Aid;
 		break;
 
 	case (static_cast<BYTE>(FormTypes::TesKey)):
-		result.namePtr = base.namePtr0098;
+		result.namePtr = result.base.namePtr0098;
 		result.type = ItemTypes::Misc;
 		break;
 
 	case (static_cast<BYTE>(FormTypes::CurrencyObject)):
-		result.namePtr = base.namePtr0098;
+		result.namePtr = result.base.namePtr0098;
 		result.type = ItemTypes::Currency;
 		break;
 
@@ -727,7 +646,7 @@ void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* e
 			*entityFlag |= CUSTOM_ENTRY_INVALID;
 		break;
 	default:
-		if (CheckReferenceItem(referenceData))
+		if (IsItem(referenceData))
 		{
 			*entityFlag |= CUSTOM_ENTRY_ITEM;
 			*entityFlag |= CUSTOM_ENTRY_VALID_ITEM;
@@ -816,60 +735,57 @@ bool ErectusMemory::UpdateBufferEntityList()
 	if (!ErectusProcess::Rpm(localPlayerPtr, &localPlayer, sizeof localPlayer))
 		return false;
 
-	auto bufferList = GetEntityPtrList();
-	if (bufferList.empty())
-		return false;
+	auto cells = Game::GetLoadedAreaManager().GetLoadedCells();
+	cells.push_back(GetSkyCell());
 
-	for (auto entityPtr : bufferList)
+	for(const auto& cell : cells)
 	{
-		if (!Utils::Valid(entityPtr))
-			continue;
-		if (entityPtr == localPlayerPtr)
-			continue;
-
-		TesObjectRefr entityData{};
-		if (!ErectusProcess::Rpm(entityPtr, &entityData, sizeof entityData))
-			continue;
-		if (!Utils::Valid(entityData.baseObjectPtr))
-			continue;
-
-		if (entityData.formType == static_cast<BYTE>(FormTypes::PlayerCharacter))
-			continue;
-
-		TesItem referenceData{};
-		if (!ErectusProcess::Rpm(entityData.baseObjectPtr, &referenceData, sizeof referenceData))
-			continue;
-
-		auto entityFlag = CUSTOM_ENTRY_DEFAULT;
-		DWORD64 entityNamePtr = 0;
-		auto enabledDistance = 0;
-
-		GetCustomEntityData(referenceData, &entityFlag, &entityNamePtr, &enabledDistance);
-		if (entityFlag & CUSTOM_ENTRY_INVALID)
-			continue;
-
-		auto distance = Utils::GetDistance(entityData.position, localPlayer.position);
-		auto normalDistance = static_cast<int>(distance * 0.01f);
-		if (normalDistance > enabledDistance)
-			continue;
-
-		auto entityName = GetEntityName(entityNamePtr);
-		if (entityName.empty())
+		auto objects = cell.GetObjectRefs();
+		entities.reserve(entities.size() + objects.size());
+		for(const auto& object : objects)
 		{
-			entityFlag |= CUSTOM_ENTRY_UNNAMED;
-			entityName = fmt::format("{0:X} [{1:X}]", entityData.formId, referenceData.formType);
+			if (!Utils::Valid(object.baseObjectPtr))
+				continue;
+
+			if (object.formType == static_cast<BYTE>(FormTypes::PlayerCharacter))
+				continue;
+
+			TesItem referenceData{};
+			if (!ErectusProcess::Rpm(object.baseObjectPtr, &referenceData, sizeof referenceData))
+				continue;
+
+			auto entityFlag = CUSTOM_ENTRY_DEFAULT;
+			DWORD64 entityNamePtr = 0;
+			auto enabledDistance = 0;
+
+			GetCustomEntityData(referenceData, &entityFlag, &entityNamePtr, &enabledDistance);
+			if (entityFlag & CUSTOM_ENTRY_INVALID)
+				continue;
+
+			auto distance = Utils::GetDistance(object.position, localPlayer.position);
+			auto normalDistance = static_cast<int>(distance * 0.01f);
+			if (normalDistance > enabledDistance)
+				continue;
+
+			auto entityName = GetEntityName(entityNamePtr);
+			if (entityName.empty())
+			{
+				entityFlag |= CUSTOM_ENTRY_UNNAMED;
+				entityName = fmt::format("{0:X} [{1:X}]", object.formId, referenceData.formType);
+			}
+
+			CustomEntry entry{
+				.entityPtr = object.ptr,
+				.baseObjectPtr = object.baseObjectPtr,
+				.entityFormId = object.formId,
+				.baseObjectFormId = referenceData.formId,
+				.flag = entityFlag,
+				.name = entityName
+			};
+
+			entities.push_back(entry);
 		}
-
-		CustomEntry entry{
-			.entityPtr = entityPtr,
-			.baseObjectPtr = entityData.baseObjectPtr,
-			.entityFormId = entityData.formId,
-			.baseObjectFormId = referenceData.formId,
-			.flag = entityFlag,
-			.name = entityName
-		};
-
-		entities.push_back(entry);
+		
 	}
 	entityDataBuffer = entities;
 
@@ -1864,8 +1780,8 @@ bool ErectusMemory::SendHitsToServer(Hits* hitsData, const size_t hitsDataSize)
 	}
 
 	const auto paramAddress = allocAddress + sizeof ExternalFunction::ASM;
-	auto* const thread = CreateRemoteThread(ErectusProcess::handle, nullptr, 0, LPTHREAD_START_ROUTINE(allocAddress),
-		LPVOID(paramAddress), 0, nullptr);
+	auto* const thread = CreateRemoteThread(ErectusProcess::handle, nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(allocAddress),
+		reinterpret_cast<LPVOID>(paramAddress), 0, nullptr);
 
 	if (thread == nullptr)
 	{
@@ -2346,8 +2262,8 @@ bool ErectusMemory::MeleeAttack()
 	}
 
 	const auto paramAddress = allocAddress + sizeof ExternalFunction::ASM;
-	auto* const thread = CreateRemoteThread(ErectusProcess::handle, nullptr, 0, LPTHREAD_START_ROUTINE(allocAddress),
-		LPVOID(paramAddress), 0, nullptr);
+	auto* const thread = CreateRemoteThread(ErectusProcess::handle, nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(allocAddress),
+		reinterpret_cast<LPVOID>(paramAddress), 0, nullptr);
 
 	if (thread == nullptr)
 	{

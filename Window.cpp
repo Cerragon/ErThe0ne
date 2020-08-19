@@ -19,7 +19,7 @@ LRESULT CALLBACK mainWndProc(const HWND hWnd, const unsigned int msg, const WPAR
 	return gWindow->MsgProc(hWnd, msg, wParam, lParam);
 }
 
-Window::Window(App* const app, const LPCSTR windowTitle) : app(app)
+Window::Window(App* const appInstance, const LPCSTR windowTitle) : app(appInstance)
 {
 	gWindow = this;
 	Init(windowTitle);

@@ -91,7 +91,7 @@ DWORD WINAPI Threads::LockingThread([[maybe_unused]] LPVOID lpParameter)
 			if (weaponIdRefreshCooldown == 0)
 			{
 				weaponIdRefreshCooldown = 60;
-				weaponId = ErectusMemory::GetFavoritedWeaponId(BYTE(Settings::targetting.favoriteIndex));
+				weaponId = ErectusMemory::GetFavoritedWeaponId(static_cast<BYTE>(Settings::targetting.favoriteIndex));
 			}
 			weaponIdRefreshCooldown--;
 

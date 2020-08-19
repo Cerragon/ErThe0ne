@@ -28,6 +28,12 @@
     <Filter Include="Source Files\imgui">
       <UniqueIdentifier>{81f63692-92bd-418a-a1eb-9f88366b673e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\gameObjects">
+      <UniqueIdentifier>{0f3e53a1-c5df-4a46-8a2e-290b185dc8a2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\gameObjects">
+      <UniqueIdentifier>{97ec1ff7-4ae5-413b-9391-4c86ddd9169c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ErectusMemory.cpp">
@@ -92,6 +98,21 @@
     </ClCompile>
     <ClCompile Include="PlayerStatsEditor.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Game.cpp">
+      <Filter>Source Files\gameObjects</Filter>
+    </ClCompile>
+    <ClCompile Include="LoadedAreaManager.cpp">
+      <Filter>Source Files\gameObjects</Filter>
+    </ClCompile>
+    <ClCompile Include="TesObjectCell.cpp">
+      <Filter>Source Files\gameObjects</Filter>
+    </ClCompile>
+    <ClCompile Include="TesObjectRefr.cpp">
+      <Filter>Source Files\gameObjects</Filter>
+    </ClCompile>
+    <ClCompile Include="TesItem.cpp">
+      <Filter>Source Files\gameObjects</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -188,6 +209,21 @@
     </ClInclude>
     <ClInclude Include="PlayerStatsEditor.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Game.h">
+      <Filter>Header Files\gameObjects</Filter>
+    </ClInclude>
+    <ClInclude Include="LoadedAreaManager.h">
+      <Filter>Header Files\gameObjects</Filter>
+    </ClInclude>
+    <ClInclude Include="TesObjectCell.h">
+      <Filter>Header Files\gameObjects</Filter>
+    </ClInclude>
+    <ClInclude Include="TesObjectRefr.h">
+      <Filter>Header Files\gameObjects</Filter>
+    </ClInclude>
+    <ClInclude Include="TesItem.h">
+      <Filter>Header Files\gameObjects</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
