@@ -22,7 +22,7 @@ constexpr auto OFFSET_MAIN_WORLDSPACE = 0x05B5C480UL;//1.3.3.31
 //wpm
 
 //chargen
-constexpr auto OFFSET_CHARGEN = 0x05C47710UL;//1.3.3.31-
+constexpr auto OFFSET_CHARGEN = 0x05C47680UL;//1.3.3.31
 
 //remote threads and/or function patching
 
@@ -34,7 +34,7 @@ constexpr auto OFFSET_MESSAGE_SENDER = 0x0150C2D0UL;//1.3.3.31
 constexpr auto OFFSET_FAKE_MESSAGE = 0x01486537UL;//1.3.3.31
 constexpr auto OFFSET_ENTITY_ID = 0x05212700UL;//1.3.3.31
 
-constexpr auto OFFSET_ACTOR_VALUE = 0x0170C040UL;//1.3.3.31-
+constexpr auto OFFSET_ACTOR_VALUE = 0x0170CA50UL;//1.3.3.31
 constexpr auto OFFSET_MELEE_ATTACK = 0x01716400UL;//1.3.3.31
 
 //opk
@@ -50,8 +50,8 @@ constexpr auto OFFSET_SERVER_POSITION = 0x014F7A95UL;//1.3.3.31
 constexpr auto OFFSET_CHAR_CONTROLLER = 0x05E9AD90UL;//1.3.3.31
 constexpr auto OFFSET_NOCLIP_A = 0x02A11CC8UL;//1.3.3.31
 constexpr auto OFFSET_NOCLIP_B = 0x02A11C80UL;//1.3.3.31
-constexpr auto OFFSET_NOCLIP_C = 0x01689821UL;//1.3.3.31
-constexpr auto OFFSET_NOCLIP_D = 0x0170C040UL;//1.3.3.31
+constexpr auto OFFSET_NOCLIP_C = 0x016897F1UL;//1.3.3.31
+constexpr auto OFFSET_NOCLIP_D = 0x01689821UL;//1.3.3.31
 
 //infinite ammo
 constexpr auto OFFSET_INFINITE_AMMO = 0x00D50E26UL;//1.3.3.31
