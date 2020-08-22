@@ -2,6 +2,7 @@
 #include <Windows.h>
 #include "ErectusMemory.h"
 #include "settings.h"
+#include "imgui/imgui.h"
 
 class Gui final {
 public:
@@ -41,7 +42,7 @@ private:
 	static void RenderActors(const CustomEntry& entry, const EspSettings::Actors& settings);
 	static void RenderItems(const CustomEntry& entry, const EspSettings::Items& settings);
 
-	static void RenderText(const char* text, float* position, const float* color, float alpha);
+	static void RenderText(const char* text, const ImVec2& position, ImU32 color);
 
 	static void ProcessMenu();
 	static void SettingsMenu();

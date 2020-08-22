@@ -133,7 +133,7 @@ DWORD64 ErectusMemory::GetPtr(const DWORD formId)
 	return ptr;
 }
 
-BYTE ErectusMemory::CheckHealthFlag(const BYTE healthFlag)
+BYTE ErectusMemory::CheckHealthFlag(const char healthFlag)
 {
 	auto flag = healthFlag;
 	flag &= ~(1 << 7);
@@ -694,7 +694,7 @@ std::string ErectusMemory::GetEntityName(const DWORD64 ptr)
 	if (!Utils::Valid(ptr))
 		return result;
 
-	auto nameLength = 0;
+	std::size_t nameLength = 0;
 	auto namePtr = ptr;
 
 	if (!ErectusProcess::Rpm(namePtr + 0x10, &nameLength, sizeof nameLength))
@@ -798,7 +798,7 @@ std::string ErectusMemory::GetPlayerName(const ClientAccount& clientAccountData)
 	if (!clientAccountData.nameLength)
 		return result;
 
-	const auto playerNameSize = clientAccountData.nameLength + 1;
+	const std::size_t playerNameSize = clientAccountData.nameLength + 1;
 	auto playerName = std::make_unique<char[]>(playerNameSize);
 
 	if (clientAccountData.nameLength > 15)
@@ -854,7 +854,7 @@ bool ErectusMemory::UpdateBufferPlayerList()
 	if (!Utils::Valid(clientAccountManagerData.clientAccountArrayPtr))
 		return false;
 
-	auto clientAccountArraySize = 0;
+	std::size_t clientAccountArraySize = 0;
 	clientAccountArraySize += clientAccountManagerData.clientAccountArraySizeA;
 	clientAccountArraySize += clientAccountManagerData.clientAccountArraySizeB;
 	if (!clientAccountArraySize)
@@ -964,7 +964,7 @@ bool ErectusMemory::IsTargetValid(const TesObjectRefr& targetData)
 	}
 }
 
-bool ErectusMemory::IsFloraHarvested(const BYTE harvestFlagA, const BYTE harvestFlagB)
+bool ErectusMemory::IsFloraHarvested(const char harvestFlagA, const char harvestFlagB)
 {
 	return harvestFlagA >> 5 & 1 || harvestFlagB >> 5 & 1;
 }
@@ -1913,7 +1913,7 @@ DWORD64 ErectusMemory::GetNukeCodePtr(const DWORD formId)
 		return 0;
 
 	DWORD64 nukeCodePtr = 0;
-	for (auto i = 0; i < questTextList.arraySize; i++)
+	for (std::size_t i = 0; i < questTextList.arraySize; i++)
 	{
 		if (!Utils::Valid(questTextArray[i]))
 			continue;

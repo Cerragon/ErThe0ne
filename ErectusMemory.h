@@ -707,9 +707,9 @@ public:
 	static LocalPlayerInfo GetLocalPlayerInfo();
 	static Camera GetCameraInfo();
 
-	static bool IsFloraHarvested(BYTE harvestFlagA, BYTE harvestFlagB);
+	static bool IsFloraHarvested(char harvestFlagA, char harvestFlagB);
 
-	static BYTE CheckHealthFlag(BYTE healthFlag);
+	static BYTE CheckHealthFlag(char healthFlag);
 	static bool GetActorSnapshotComponentData(const TesObjectRefr& entityData, ActorSnapshotComponent* actorSnapshotComponentData);
 
 	static bool IsTargetValid(DWORD64 targetPtr);

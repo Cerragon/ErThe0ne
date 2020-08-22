@@ -10,7 +10,6 @@
 #include "utils.h"
 
 #include "fmt/format.h"
-#include "imgui/imgui_impl_win32.h"
 #include "imgui/imgui_internal.h"
 #include "imgui/imgui_stdlib.h"
 
@@ -80,7 +79,7 @@ void Gui::RenderActors(const CustomEntry& entry, const EspSettings::Actors& sett
 	TesObjectRefr entityData = {};
 	if (!ErectusProcess::Rpm(entry.entityPtr, &entityData, sizeof entityData))
 		return;
-	
+
 	auto health = -1;
 
 	ActorSnapshotComponent actorSnapshotComponentData{};
@@ -90,32 +89,32 @@ void Gui::RenderActors(const CustomEntry& entry, const EspSettings::Actors& sett
 	auto allowNpc = false;
 	if (entry.flag & CUSTOM_ENTRY_NPC)
 	{
-			if (actorSnapshotComponentData.epicRank)
+		if (actorSnapshotComponentData.epicRank)
+		{
+			switch (ErectusMemory::CheckHealthFlag(entityData.healthFlag))
 			{
-				switch (ErectusMemory::CheckHealthFlag(entityData.healthFlag))
+			case 0x01: //Alive
+			case 0x02: //Downed
+			case 0x03: //Dead
+				switch (actorSnapshotComponentData.epicRank)
 				{
-				case 0x01: //Alive
-				case 0x02: //Downed
-				case 0x03: //Dead
-					switch (actorSnapshotComponentData.epicRank)
-					{
-					case 1:
-						allowNpc = Settings::esp.npcsExt.overrideLivingOneStar;
-						break;
-					case 2:
-						allowNpc = Settings::esp.npcsExt.overrideLivingTwoStar;
-						break;
-					case 3:
-						allowNpc = Settings::esp.npcsExt.overrideLivingThreeStar;
-						break;
-					default:
-						break;
-					}
+				case 1:
+					allowNpc = Settings::esp.npcsExt.overrideLivingOneStar;
+					break;
+				case 2:
+					allowNpc = Settings::esp.npcsExt.overrideLivingTwoStar;
+					break;
+				case 3:
+					allowNpc = Settings::esp.npcsExt.overrideLivingThreeStar;
 					break;
 				default:
 					break;
 				}
+				break;
+			default:
+				break;
 			}
+		}
 	}
 
 	if (!settings.enabled && !allowNpc)
@@ -259,8 +258,8 @@ void Gui::RenderActors(const CustomEntry& entry, const EspSettings::Actors& sett
 	if (entry.entityPtr == ErectusMemory::targetLockedEntityPtr)
 		color = Settings::targetting.lockedColor;
 
-	float screen[2] = { 0.0f, 0.0f };
-	if (!Utils::WorldToScreen(cameraData.view, entityData.position, screen))
+	ImVec2 screenPosition = { 0.f, 0.f };
+	if (!Utils::WorldToScreen(cameraData.view, entityData.position, screenPosition))
 		return;
 
 	std::string itemText;
@@ -284,19 +283,27 @@ void Gui::RenderActors(const CustomEntry& entry, const EspSettings::Actors& sett
 		if (Settings::utilities.debugEsp)
 			itemText = fmt::format("{0:08x}\n{1:08x}", entry.entityFormId, entry.baseObjectFormId);
 
-		RenderText(itemText.c_str(), screen, color, alpha);
+		RenderText(itemText.c_str(), screenPosition, IM_COL32(color[0] * 255.f, color[1] * 255.f, color[2] * 255.f, alpha * 255.f));
 	}
 }
 
-void Gui::RenderText(const char* text, float* position, const float* color, const float alpha)
+void Gui::RenderText(const char* text, const ImVec2& position, const ImU32 color)
 {
 	if (text == nullptr)
 		return;
 
-	if (alpha <= 0.0f)
-		return;
+	//centering
+	auto* font = ImGui::GetIO().Fonts->Fonts[1];
+	auto  textSize = font->CalcTextSizeA(13.f, FLT_MAX, 0.f, text);
+	ImVec2 pos = { position.x - textSize.x / 2.f, position.y - textSize.y / 2.f };
 
-	ImGui::GetBackgroundDrawList()->AddText(ImGui::GetIO().Fonts->Fonts[1], 13.f, ImVec2(position[0], position[1]), ImColor(color[0], color[1], color[2], alpha), text, nullptr);
+	//outline
+	ImGui::GetBackgroundDrawList()->AddText(font, 13.f, {pos.x + 1.f, pos.y + 1.f}, IM_COL32_BLACK, text);
+	ImGui::GetBackgroundDrawList()->AddText(font, 13.f, {pos.x + 1.f, pos.y - 1.f}, IM_COL32_BLACK, text);
+	ImGui::GetBackgroundDrawList()->AddText(font, 13.f, {pos.x - 1.f, pos.y + 1.f}, IM_COL32_BLACK, text);
+	ImGui::GetBackgroundDrawList()->AddText(font, 13.f, {pos.x - 1.f, pos.y - 1.f}, IM_COL32_BLACK, text);
+
+	ImGui::GetBackgroundDrawList()->AddText(font, 13.f, pos, color, text);
 }
 
 void Gui::RenderItems(const CustomEntry& entry, const EspSettings::Items& settings)
@@ -369,8 +376,8 @@ void Gui::RenderItems(const CustomEntry& entry, const EspSettings::Items& settin
 	if (normalDistance > settings.enabledDistance)
 		return;
 
-	float screen[2] = { 0.0f, 0.0f };
-	if (!Utils::WorldToScreen(cameraData.view, entityData.position, screen))
+	ImVec2 screenPosition = { 0.f, 0.f };
+	if (!Utils::WorldToScreen(cameraData.view, entityData.position, screenPosition))
 		return;
 
 	std::string itemText{};
@@ -386,7 +393,7 @@ void Gui::RenderItems(const CustomEntry& entry, const EspSettings::Items& settin
 		if (Settings::utilities.debugEsp)
 			itemText = fmt::format("{0:16x}\n{1:08x}\n{2:16x}\n{3:08x}", entry.entityPtr, entry.entityFormId, entry.baseObjectPtr, entry.baseObjectFormId);
 
-		RenderText(itemText.c_str(), screen, settings.color, alpha);
+		RenderText(itemText.c_str(), screenPosition, IM_COL32(settings.color[0] * 255.f, settings.color[1] * 255.f, settings.color[2] * 255.f, alpha * 255.f));
 	}
 }
 
@@ -892,7 +899,7 @@ void Gui::OverlayMenuTabEsp()
 				auto inputLabel = fmt::format("##espWhiteList{0:x}Item", item.first);
 				auto key = item.first;
 				auto value = item.second;
-				if (ImGui::InputScalar(inputLabel.c_str(), ImGuiDataType_U32, &key, nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_EnterReturnsTrue))
+				if (ImGui::InputScalar(inputLabel.c_str(), ImGuiDataType_U32, &key, nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal) && ImGui::IsItemDeactivated())
 				{
 					Settings::esp.whitelist.erase(item.first);
 					if (key)
@@ -910,7 +917,7 @@ void Gui::OverlayMenuTabEsp()
 
 				ImGui::NextColumn();
 
-				if (ImGui::InputScalar("##espWhiteListNewItem", ImGuiDataType_U32, &key, nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_EnterReturnsTrue))
+				if (ImGui::InputScalar("##espWhiteListNewItem", ImGuiDataType_U32, &key, nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal) && ImGui::IsItemDeactivated())
 				{
 					if (key)
 						Settings::esp.whitelist.try_emplace(key, value);
@@ -934,7 +941,7 @@ void Gui::OverlayMenuTabEsp()
 				auto inputLabel = fmt::format("##espBlackList{0:x}Item", item.first);
 				auto key = item.first;
 				auto value = item.second;
-				if (ImGui::InputScalar(inputLabel.c_str(), ImGuiDataType_U32, &key, nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_EnterReturnsTrue))
+				if (ImGui::InputScalar(inputLabel.c_str(), ImGuiDataType_U32, &key, nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal) && ImGui::IsItemDeactivated())
 				{
 					Settings::esp.blacklist.erase(item.first);
 					if (key)
@@ -952,7 +959,7 @@ void Gui::OverlayMenuTabEsp()
 
 				ImGui::NextColumn();
 
-				if (ImGui::InputScalar("##espBlackListNewItem", ImGuiDataType_U32, &key, nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_EnterReturnsTrue))
+				if (ImGui::InputScalar("##espBlackListNewItem", ImGuiDataType_U32, &key, nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal) && ImGui::IsItemDeactivated())
 				{
 					if (key)
 						Settings::esp.blacklist.try_emplace(key, value);
@@ -1089,7 +1096,7 @@ void Gui::OverlayMenuTabLooter()
 					auto inputLabel = fmt::format("##whiteList{0:x}Item", item.first);
 					auto key = item.first;
 					auto value = item.second;
-					if (ImGui::InputScalar(inputLabel.c_str(), ImGuiDataType_U32, &key, nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_EnterReturnsTrue))
+					if (ImGui::InputScalar(inputLabel.c_str(), ImGuiDataType_U32, &key, nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal) && ImGui::IsItemDeactivated())
 					{
 						Settings::looter.selection.whitelist.erase(item.first);
 						if (key)
@@ -1107,7 +1114,7 @@ void Gui::OverlayMenuTabLooter()
 
 					ImGui::NextColumn();
 
-					if (ImGui::InputScalar("##whiteListNewItem", ImGuiDataType_U32, &key, nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_EnterReturnsTrue))
+					if (ImGui::InputScalar("##whiteListNewItem", ImGuiDataType_U32, &key, nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal) && ImGui::IsItemDeactivated())
 					{
 						if (key)
 							Settings::looter.selection.whitelist.try_emplace(key, value);
@@ -1131,7 +1138,7 @@ void Gui::OverlayMenuTabLooter()
 					auto inputLabel = fmt::format("##blackList{0:x}Item", item.first);
 					auto key = item.first;
 					auto value = item.second;
-					if (ImGui::InputScalar(inputLabel.c_str(), ImGuiDataType_U32, &key, nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_EnterReturnsTrue))
+					if (ImGui::InputScalar(inputLabel.c_str(), ImGuiDataType_U32, &key, nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal) && ImGui::IsItemDeactivated())
 					{
 						Settings::looter.selection.blacklist.erase(item.first);
 						if (key)
@@ -1149,7 +1156,7 @@ void Gui::OverlayMenuTabLooter()
 
 					ImGui::NextColumn();
 
-					if (ImGui::InputScalar("##blackListNewItem", ImGuiDataType_U32, &key, nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_EnterReturnsTrue))
+					if (ImGui::InputScalar("##blackListNewItem", ImGuiDataType_U32, &key, nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal) && ImGui::IsItemDeactivated())
 					{
 						if (key)
 							Settings::looter.selection.blacklist.try_emplace(key, value);

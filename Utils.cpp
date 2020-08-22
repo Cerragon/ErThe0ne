@@ -71,22 +71,23 @@ float Utils::GetDegrees(float* src, float* forward, float* origin)
 	return RadiansToDegrees(sinf(GetDistance(src, buffer) / GetDistance(origin, buffer)));
 }
 
-bool Utils::WorldToScreen(const float* view, const float* position, float* screen)
+bool Utils::WorldToScreen(const float* view, const float* position, ImVec2& screenPos)
 {
 	float buffer[4];
 	buffer[0] = view[0] * position[0] + -view[1] * -position[1] + view[2] * position[2] + view[3];
 	buffer[1] = view[4] * position[0] + -view[5] * -position[1] + view[6] * position[2] + view[7];
 	//Buffer[2] = View[8] * Position[0] + -View[9] * -Position[1] + View[10] * Position[2] + View[11];
 	buffer[3] = view[12] * position[0] + -view[13] * -position[1] + view[14] * position[2] + view[15];
-	if (buffer[3] < 0.1f) return false;
+	if (buffer[3] < 0.1f)
+		return false;
 
 	float halfWindowSize[2];
 	auto [width, height] = gApp->appWindow->GetSize();
 	halfWindowSize[0] = static_cast<float>(width) * 0.5f;
 	halfWindowSize[1] = static_cast<float>(height) * 0.5f;
 
-	screen[0] = halfWindowSize[0] + halfWindowSize[0] * buffer[0] / buffer[3];
-	screen[1] = halfWindowSize[1] - halfWindowSize[1] * buffer[1] / buffer[3];
+	screenPos.x = halfWindowSize[0] + halfWindowSize[0] * buffer[0] / buffer[3];
+	screenPos.y = halfWindowSize[1] - halfWindowSize[1] * buffer[1] / buffer[3];
 	return true;
 }
 

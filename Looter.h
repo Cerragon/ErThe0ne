@@ -9,7 +9,6 @@ public:
 
 	static void RequestLootItems() { lootItemsRequested = true; }
 
-
 	inline static std::unordered_set<DWORD> lootedEntities = {};
 
 private:

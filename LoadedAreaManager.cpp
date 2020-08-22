@@ -35,7 +35,7 @@ std::vector<TesObjectCell> LoadedAreaManager::GetLoadedCells() const
 
 	//3) Read each cell
 	//this is actually a linked list presenting as an array, odd entries are just pointers to 'next' element, so we skip them
-	for (auto i = 0; i < cellPtrArraySize; i++)
+	for (std::size_t i = 0; i < cellPtrArraySize; i++)
 	{
 		if (i % 2 != 0)
 			continue;

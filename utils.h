@@ -1,5 +1,6 @@
 #pragma once
 #include <Windows.h>
+#include "imgui/imgui.h"
 
 class Utils final {
 public:
@@ -14,7 +15,7 @@ public:
 
 	static float GetDistance(const float* a1, const float* a2);
 	static float GetDegrees(float* src, float* forward, float* origin);
-	static bool WorldToScreen(const float* view, const float* position, float* screen);
+	static bool WorldToScreen(const float* view, const float* position, ImVec2& screenPos);
 	static void ProjectView(float* dst, const float* forward, const float* origin, float distance);
 
 private:

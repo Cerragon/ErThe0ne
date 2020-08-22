@@ -99,13 +99,14 @@ void App::SetMode(const Mode newMode)
 		mode = Mode::Overlay;
 		break;
 	case Mode::Attached:
+		appWindow->SetStyle(Window::Styles::Attached);
+
 		if (!SnapToWindow(ErectusProcess::hWnd))
 		{
 			Detach();
 			return;
 		}
 		RegisterHotkeys();
-		appWindow->SetStyle(Window::Styles::Attached);
 		SetForegroundWindow(appWindow->GetHwnd());
 		mode = Mode::Attached;
 		break;

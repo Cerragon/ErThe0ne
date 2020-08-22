@@ -93,19 +93,16 @@ std::pair<LONG, LONG> Window::GetSize() const
 
 void Window::SetSize(const LONG x, const LONG y) const
 {
-	if (currentStyle == Styles::Overlay)
-		return;
 	RECT  rect = {};
 	GetClientRect(mainWindow, &rect);
 
 	if (x == rect.right - rect.left && y == rect.bottom - rect.top)
 		return;
 
-	//adjusting for clientsize vs windowsize
 	rect.right = rect.left + x;
 	rect.bottom = rect.top + y;
-	AdjustWindowRect(&rect, GetWindowLong(mainWindow, GWL_STYLE), FALSE);
 
+	AdjustWindowRect(&rect, GetWindowLong(mainWindow, GWL_STYLE), FALSE);
 	SetWindowPos(mainWindow, nullptr, 0, 0, rect.right - rect.left, rect.bottom - rect.top, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
 }
 
