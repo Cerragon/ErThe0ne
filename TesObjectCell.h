@@ -4,11 +4,13 @@
 
 #include "TesObjectRefr.h"
 
-
 class TesObjectCell
 {
 public:
-	char padding0000[0x68];
+	std::uintptr_t vtable;
+	char padding0008[0x18];
+	std::uint32_t formId;
+	char padding0024[0x40];
 	std::uintptr_t isInterior;
 	char loadedState;
 	char padding0071[0x2F];

@@ -2,6 +2,8 @@
 #include <memory>
 #include <Windows.h>
 
+
+#include "common.h"
 #include "Window.hpp"
 
 class App final {
@@ -33,7 +35,7 @@ private:
 
 	void RegisterHotkeys();
 	void UnRegisterHotkeys();
-	void OnHotkey(WPARAM hotkeyId);
+	void OnHotkey(HotKey hotkey);
 
 	void Init(LPCSTR windowTitle);
 

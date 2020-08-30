@@ -6,6 +6,7 @@
 
 #include "ErectusProcess.h"
 #include "ErectusMemory.h"
+#include "Game.h"
 #include "threads.h"
 #include "utils.h"
 
@@ -24,48 +25,50 @@ void Gui::Render()
 
 void Gui::RenderOverlay()
 {
-	RenderEntities();
-	RenderPlayers();
+	const auto cameraData = ErectusMemory::GetCameraInfo();
+
+	RenderEntities(cameraData);
+	RenderPlayers(cameraData);
 
 	RenderInfoBox();
 }
 
-void Gui::RenderEntities()
+void Gui::RenderEntities(const Camera& cameraData)
 {
 	auto entities = ErectusMemory::entityDataBuffer;
 	for (const auto& entity : entities)
 	{
 		if (entity.flag & CUSTOM_ENTRY_ENTITY)
-			RenderItems(entity, Settings::esp.entities);
+			RenderItems(entity, cameraData, Settings::esp.entities);
 		else if (entity.flag & CUSTOM_ENTRY_JUNK)
-			RenderItems(entity, Settings::esp.junk);
+			RenderItems(entity, cameraData, Settings::esp.junk);
 		else if (entity.flag & CUSTOM_ENTRY_ITEM)
-			RenderItems(entity, Settings::esp.items);
+			RenderItems(entity, cameraData, Settings::esp.items);
 		else if (entity.flag & CUSTOM_ENTRY_CONTAINER)
-			RenderItems(entity, Settings::esp.containers);
+			RenderItems(entity, cameraData, Settings::esp.containers);
 		else if (entity.flag & CUSTOM_ENTRY_PLAN)
-			RenderItems(entity, Settings::esp.plans);
+			RenderItems(entity, cameraData, Settings::esp.plans);
 		else if (entity.flag & CUSTOM_ENTRY_MAGAZINE)
-			RenderItems(entity, Settings::esp.magazines);
+			RenderItems(entity, cameraData, Settings::esp.magazines);
 		else if (entity.flag & CUSTOM_ENTRY_BOBBLEHEAD)
-			RenderItems(entity, Settings::esp.bobbleheads);
+			RenderItems(entity, cameraData, Settings::esp.bobbleheads);
 		else if (entity.flag & CUSTOM_ENTRY_FLORA)
-			RenderItems(entity, Settings::esp.flora);
+			RenderItems(entity, cameraData, Settings::esp.flora);
 		else if (entity.flag & CUSTOM_ENTRY_NPC)
-			RenderActors(entity, Settings::esp.npcs);
+			RenderActors(entity, cameraData, Settings::esp.npcs);
 	}
 }
 
-void Gui::RenderPlayers()
+void Gui::RenderPlayers(const Camera& cameraData)
 {
 	auto players = ErectusMemory::playerDataBuffer;
 	for (const auto& player : players) {
 		if (player.flag & CUSTOM_ENTRY_PLAYER)
-			RenderActors(player, Settings::esp.players);
+			RenderActors(player, cameraData, Settings::esp.players);
 	}
 }
 
-void Gui::RenderActors(const CustomEntry& entry, const EspSettings::Actors& settings)
+void Gui::RenderActors(const CustomEntry& entry, const Camera& cameraData, const EspSettings::Actors& settings)
 {
 	if (!settings.drawEnabled && !settings.drawDisabled)
 		return;
@@ -80,23 +83,19 @@ void Gui::RenderActors(const CustomEntry& entry, const EspSettings::Actors& sett
 	if (!ErectusProcess::Rpm(entry.entityPtr, &entityData, sizeof entityData))
 		return;
 
-	auto health = -1;
-
-	ActorSnapshotComponent actorSnapshotComponentData{};
-	if (ErectusMemory::GetActorSnapshotComponentData(entityData, &actorSnapshotComponentData))
-		health = static_cast<int>(actorSnapshotComponentData.maxHealth + actorSnapshotComponentData.modifiedHealth + actorSnapshotComponentData.lostHealth);
+	auto epicRank = entityData.GetEpicRank();
 
 	auto allowNpc = false;
 	if (entry.flag & CUSTOM_ENTRY_NPC)
 	{
-		if (actorSnapshotComponentData.epicRank)
+		if (epicRank)
 		{
-			switch (ErectusMemory::CheckHealthFlag(entityData.healthFlag))
+			switch (entityData.GetActorState())
 			{
-			case 0x01: //Alive
-			case 0x02: //Downed
-			case 0x03: //Dead
-				switch (actorSnapshotComponentData.epicRank)
+			case ActorState::Alive:
+			case ActorState::Downed:
+			case ActorState::Dead:
+				switch (epicRank)
 				{
 				case 1:
 					allowNpc = Settings::esp.npcsExt.overrideLivingOneStar;
@@ -111,7 +110,7 @@ void Gui::RenderActors(const CustomEntry& entry, const EspSettings::Actors& sett
 					break;
 				}
 				break;
-			default:
+			case ActorState::Unknown:
 				break;
 			}
 		}
@@ -153,13 +152,13 @@ void Gui::RenderActors(const CustomEntry& entry, const EspSettings::Actors& sett
 
 	auto legendaryAlpha = 1.0f;
 
-	switch (ErectusMemory::CheckHealthFlag(entityData.healthFlag))
+	switch (entityData.GetActorState())
 	{
-	case 0x01: //Alive
+	case ActorState::Alive:
 		showHealthText = settings.showHealth;
 		if (allowNpc)
 		{
-			switch (actorSnapshotComponentData.epicRank)
+			switch (epicRank)
 			{
 			case 1:
 				color = Settings::esp.npcsExt.livingOneStarColor;
@@ -183,11 +182,11 @@ void Gui::RenderActors(const CustomEntry& entry, const EspSettings::Actors& sett
 		else if (settings.drawAlive)
 			color = settings.aliveColor;
 		break;
-	case 0x02: //Downed
+	case ActorState::Downed:
 		showHealthText = settings.showHealth;
 		if (allowNpc)
 		{
-			switch (actorSnapshotComponentData.epicRank)
+			switch (epicRank)
 			{
 			case 1:
 				color = Settings::esp.npcsExt.livingOneStarColor;
@@ -211,11 +210,11 @@ void Gui::RenderActors(const CustomEntry& entry, const EspSettings::Actors& sett
 		else if (settings.drawDowned)
 			color = settings.downedColor;
 		break;
-	case 0x03: //Dead
+	case ActorState::Dead:
 		showHealthText = settings.showDeadHealth;
 		if (allowNpc)
 		{
-			switch (actorSnapshotComponentData.epicRank)
+			switch (epicRank)
 			{
 			case 1:
 				color = Settings::esp.npcsExt.deadOneStarColor;
@@ -239,7 +238,7 @@ void Gui::RenderActors(const CustomEntry& entry, const EspSettings::Actors& sett
 		else if (settings.drawDead)
 			color = settings.deadColor;
 		break;
-	default: //Unknown
+	case ActorState::Unknown:
 		showHealthText = settings.showHealth;
 		if (settings.drawUnknown)
 			color = settings.unknownColor;
@@ -249,10 +248,8 @@ void Gui::RenderActors(const CustomEntry& entry, const EspSettings::Actors& sett
 	if (color == nullptr)
 		return;
 
-	auto cameraData = ErectusMemory::GetCameraInfo();
-	auto distance = Utils::GetDistance(entityData.position, cameraData.origin);
-	auto normalDistance = static_cast<int>(distance * 0.01f);
-	if (normalDistance > settings.enabledDistance)
+	auto distance = static_cast<int>(entityData.position.DistanceTo(cameraData.origin) * 0.01f);
+	if (distance > settings.enabledDistance)
 		return;
 
 	if (entry.entityPtr == ErectusMemory::targetLockedEntityPtr)
@@ -262,26 +259,27 @@ void Gui::RenderActors(const CustomEntry& entry, const EspSettings::Actors& sett
 	if (!Utils::WorldToScreen(cameraData.view, entityData.position, screenPosition))
 		return;
 
+	auto health = entityData.GetCurrentHealth();
 	std::string itemText;
 	if (settings.showName && showHealthText && settings.showDistance) //Name, Health, Distance
-		itemText = fmt::format("{0}\n{1:d} hp [{2:d} m]", entry.name, health, normalDistance);
+		itemText = format(FMT_STRING("{0}\n{1:.0f} hp [{2:d} m]"), entry.name, health, distance);
 	else if (settings.showName && showHealthText && !settings.showDistance) //Name, Health
-		itemText = fmt::format("{0}\n{1:d} hp", entry.name, health);
+		itemText = format(FMT_STRING("{0}\n{1:.0f} hp"), entry.name, health);
 	else if (settings.showName && !showHealthText && settings.showDistance) //Name, Distance
-		itemText = fmt::format("{0}\n[{1:d} m]", entry.name, normalDistance);
+		itemText = format(FMT_STRING("{0}\n[{1:d} m]"), entry.name, distance);
 	else if (!settings.showName && showHealthText && settings.showDistance) //Health, Distance
-		itemText = fmt::format("{0:d} hp [{1:d} m]", health, normalDistance);
+		itemText = format(FMT_STRING("{0:.0f} hp [{1:d} m]"), health, distance);
 	else if (settings.showName && !showHealthText && !settings.showDistance) //Name
 		itemText = entry.name;
 	else if (!settings.showName && showHealthText && !settings.showDistance) //Health
-		itemText = fmt::format("{:d} hp", health);
+		itemText = format(FMT_STRING("{:.0f} hp"), health);
 	else if (!settings.showName && !showHealthText && settings.showDistance) //Distance
-		itemText = fmt::format("[{:d} m]", normalDistance);
+		itemText = format(FMT_STRING("[{:d} m]"), distance);
 
 	if (!itemText.empty())
 	{
 		if (Settings::utilities.debugEsp)
-			itemText = fmt::format("{0:08x}\n{1:08x}", entry.entityFormId, entry.baseObjectFormId);
+			itemText = format(FMT_STRING("{0:08x}\n{1:08x}"), entry.entityFormId, entry.baseObjectFormId);
 
 		RenderText(itemText.c_str(), screenPosition, IM_COL32(color[0] * 255.f, color[1] * 255.f, color[2] * 255.f, alpha * 255.f));
 	}
@@ -294,19 +292,19 @@ void Gui::RenderText(const char* text, const ImVec2& position, const ImU32 color
 
 	//centering
 	auto* font = ImGui::GetIO().Fonts->Fonts[1];
-	auto  textSize = font->CalcTextSizeA(13.f, FLT_MAX, 0.f, text);
-	ImVec2 pos = { position.x - textSize.x / 2.f, position.y - textSize.y / 2.f };
+	const auto  textSize = font->CalcTextSizeA(13.f, FLT_MAX, 0.f, text);
+	const ImVec2 pos = { position.x - textSize.x / 2.f, position.y - textSize.y / 2.f };
 
 	//outline
-	ImGui::GetBackgroundDrawList()->AddText(font, 13.f, {pos.x + 1.f, pos.y + 1.f}, IM_COL32_BLACK, text);
-	ImGui::GetBackgroundDrawList()->AddText(font, 13.f, {pos.x + 1.f, pos.y - 1.f}, IM_COL32_BLACK, text);
-	ImGui::GetBackgroundDrawList()->AddText(font, 13.f, {pos.x - 1.f, pos.y + 1.f}, IM_COL32_BLACK, text);
-	ImGui::GetBackgroundDrawList()->AddText(font, 13.f, {pos.x - 1.f, pos.y - 1.f}, IM_COL32_BLACK, text);
+	ImGui::GetBackgroundDrawList()->AddText(font, 13.f, { pos.x + 1.f, pos.y + 1.f }, IM_COL32_BLACK, text);
+	ImGui::GetBackgroundDrawList()->AddText(font, 13.f, { pos.x + 1.f, pos.y - 1.f }, IM_COL32_BLACK, text);
+	ImGui::GetBackgroundDrawList()->AddText(font, 13.f, { pos.x - 1.f, pos.y + 1.f }, IM_COL32_BLACK, text);
+	ImGui::GetBackgroundDrawList()->AddText(font, 13.f, { pos.x - 1.f, pos.y - 1.f }, IM_COL32_BLACK, text);
 
 	ImGui::GetBackgroundDrawList()->AddText(font, 13.f, pos, color, text);
 }
 
-void Gui::RenderItems(const CustomEntry& entry, const EspSettings::Items& settings)
+void Gui::RenderItems(const CustomEntry& entry, const Camera& cameraData, const EspSettings::Items& settings)
 {
 	if (!(entry.flag & CUSTOM_ENTRY_WHITELISTED) && !settings.enabled)
 		return;
@@ -369,11 +367,8 @@ void Gui::RenderItems(const CustomEntry& entry, const EspSettings::Items& settin
 	if (alpha == 0.f)
 		return;
 
-	auto cameraData = ErectusMemory::GetCameraInfo();
-
-	const auto distance = Utils::GetDistance(entityData.position, cameraData.origin);
-	const auto normalDistance = static_cast<int>(distance * 0.01f);
-	if (normalDistance > settings.enabledDistance)
+	const auto distance = static_cast<int>(entityData.position.DistanceTo(cameraData.origin) * 0.01f);
+	if (distance > settings.enabledDistance)
 		return;
 
 	ImVec2 screenPosition = { 0.f, 0.f };
@@ -382,16 +377,16 @@ void Gui::RenderItems(const CustomEntry& entry, const EspSettings::Items& settin
 
 	std::string itemText{};
 	if (settings.showName && settings.showDistance)
-		itemText = fmt::format("{0}\n[{1:d} m]", entry.name, normalDistance);
+		itemText = format(FMT_STRING("{0}\n[{1:d} m]"), entry.name, distance);
 	else if (settings.showName && !settings.showDistance)
 		itemText = entry.name;
 	else if (!settings.showName && settings.showDistance)
-		itemText = fmt::format("[{0:d} m]", normalDistance);
+		itemText = format(FMT_STRING("[{0:d} m]"), distance);
 
 	if (!itemText.empty())
 	{
 		if (Settings::utilities.debugEsp)
-			itemText = fmt::format("{0:16x}\n{1:08x}\n{2:16x}\n{3:08x}", entry.entityPtr, entry.entityFormId, entry.baseObjectPtr, entry.baseObjectFormId);
+			itemText = format(FMT_STRING("{0:16x}\n{1:08x}\n{2:16x}\n{3:08x}"), entry.entityPtr, entry.entityFormId, entry.baseObjectPtr, entry.baseObjectFormId);
 
 		RenderText(itemText.c_str(), screenPosition, IM_COL32(settings.color[0] * 255.f, settings.color[1] * 255.f, settings.color[2] * 255.f, alpha * 255.f));
 	}
@@ -408,61 +403,61 @@ void Gui::RenderInfoBox()
 	ImVec4 disabledTextColor = { 1.f, 0.f, 0.f, 1.f };
 
 	if (Settings::esp.infobox.drawPlayerInfo) {
-		auto localPlayer = ErectusMemory::GetLocalPlayerInfo();
+		auto player = Game::GetLocalPlayer();
 
-		featureText = fmt::format("Player FormId: {:08x}", localPlayer.formId);
+		featureText = format(FMT_STRING("Player FormId: {:08x}"), player.formId);
 		infoTexts.emplace_back(featureText, true);
 
-		featureText = fmt::format("STASH FormId: {:08x}", localPlayer.stashFormId);
+		featureText = format(FMT_STRING("STASH FormId: {:08x}"), player.playerStashFormId);
 		infoTexts.emplace_back(featureText, true);
 
-		featureText = fmt::format("Cell FormId: {:08x}", localPlayer.cellFormId);
+		featureText = format(FMT_STRING("Cell FormId: {:08x}"), player.GetCurrentCell().formId);
 		infoTexts.emplace_back(featureText, true);
 
-		featureText = fmt::format("X: {:.2f}", localPlayer.position[0]);
+		featureText = format(FMT_STRING("X: {:.2f}"), player.position.x);
 		infoTexts.emplace_back(featureText, true);
 
-		featureText = fmt::format("Y: {:.2f}", localPlayer.position[1]);
+		featureText = format(FMT_STRING("Y: {:.2f}"), player.position.y);
 		infoTexts.emplace_back(featureText, true);
 
-		featureText = fmt::format("Z: {:.2f}", localPlayer.position[2]);
+		featureText = format(FMT_STRING("Z: {:.2f}"), player.position.z);
 		infoTexts.emplace_back(featureText, true);
 
-		featureText = fmt::format("Yaw: {:.2f}", localPlayer.yaw);
+		featureText = format(FMT_STRING("Yaw: {:.2f}"), player.yaw);
 		infoTexts.emplace_back(featureText, true);
 
-		featureText = fmt::format("Pitch: {:.2f}", localPlayer.pitch);
+		featureText = format(FMT_STRING("Pitch: {:.2f}"), player.pitch);
 		infoTexts.emplace_back(featureText, true);
 
-		featureText = fmt::format("Health: {:.2f}", localPlayer.currentHealth);
+		featureText = format(FMT_STRING("Health: {:.2f}"), player.GetCurrentHealth());
 		infoTexts.emplace_back(featureText, true);
 	}
 
 	if (Settings::esp.infobox.drawPositionSpoofingStatus)
 	{
-		featureText = fmt::format("Position Spoofing (Active): {0:d} (Height: {1:d})", static_cast<int>(Threads::positionSpoofingToggle), Settings::localPlayer.positionSpoofingHeight);
-		featureState = ErectusMemory::InsideInteriorCell() ? false : Settings::localPlayer.positionSpoofingEnabled;
+		featureText = format(FMT_STRING("Position Spoofing (Active): {0:d} (Height: {1:d})"), static_cast<int>(Threads::positionSpoofingToggle), Settings::localPlayer.positionSpoofingHeight);
+		featureState = Settings::localPlayer.positionSpoofingEnabled;
 		infoTexts.emplace_back(featureText, featureState);
 	}
 
 	if (Settings::esp.infobox.drawNukeCodes)
 	{
-		featureText = format("{} - Alpha", fmt::join(ErectusMemory::alphaCode, " "));
+		featureText = format(FMT_STRING("{} - Alpha"), fmt::join(ErectusMemory::alphaCode, " "));
 		featureState = ErectusMemory::alphaCode == std::array<int, 8>{} ? false : true;
 		infoTexts.emplace_back(featureText, featureState);
 
-		featureText = format("{} - Bravo", fmt::join(ErectusMemory::bravoCode, " "));
+		featureText = format(FMT_STRING("{} - Bravo"), fmt::join(ErectusMemory::bravoCode, " "));
 		featureState = ErectusMemory::bravoCode == std::array<int, 8>{} ? false : true;
 		infoTexts.emplace_back(featureText, featureState);
 
-		featureText = format("{} - Charlie", fmt::join(ErectusMemory::charlieCode, " "));
+		featureText = format(FMT_STRING("{} - Charlie"), fmt::join(ErectusMemory::charlieCode, " "));
 		featureState = ErectusMemory::charlieCode == std::array<int, 8>{} ? false : true;
 		infoTexts.emplace_back(featureText, featureState);
 	}
 
 	if (Settings::esp.infobox.drawFps)
 	{
-		featureText = fmt::format("FPS: {:.2f}", ImGui::GetIO().Framerate);
+		featureText = format(FMT_STRING("FPS: {:.2f}"), ImGui::GetIO().Framerate);
 		featureState = true;
 		infoTexts.emplace_back(featureText, featureState);
 	}
@@ -540,9 +535,9 @@ void Gui::Menu()
 		{
 			ImGui::SetWindowPos(ImVec2(0.0f, 0.0f));
 
-			auto  requestedSize = ImGui::GetWindowSize();
+			const auto  requestedSize = ImGui::GetWindowSize();
 			if (requestedSize.x != 32 && requestedSize.y != 32)
-				gApp->appWindow->SetSize(requestedSize.x, requestedSize.y);
+				gApp->appWindow->SetSize(static_cast<LONG>(requestedSize.x), static_cast<LONG>(requestedSize.y));
 		}
 	}
 	ImGui::End();
@@ -566,6 +561,7 @@ void Gui::ProcessMenu()
 	}
 
 	ImGui::Separator();
+
 	switch (ErectusProcess::processErrorId)
 	{
 	case 0:
@@ -592,7 +588,7 @@ void Gui::ProcessMenu()
 	ImGui::Separator();
 	ImGui::Text("ImGui (D3D9) FPS");
 	ImGui::NextColumn();
-	ImGui::Text("%.1f", ImGui::GetIO().Framerate);
+	ImGui::Text("%.2f", ImGui::GetIO().Framerate);
 	ImGui::NextColumn();
 	ImGui::Separator();
 	ImGui::Text("PID (Process Id)");
@@ -889,19 +885,19 @@ void Gui::OverlayMenuTabEsp()
 		{
 			ImGui::Columns(2, nullptr, false);
 
-			for (auto& item : Settings::esp.whitelist)
+			for (auto& [formId, isEnabled] : Settings::esp.whitelist)
 			{
-				auto toggleLabel = fmt::format("Enabled##espwhiteList{0:x}Enabled", item.first);
-				LargeButtonToggle(toggleLabel.c_str(), item.second);
+				auto toggleLabel = format(FMT_STRING("Enabled##espwhiteList{0:x}Enabled"), formId);
+				LargeButtonToggle(toggleLabel.c_str(), isEnabled);
 
 				ImGui::NextColumn();
 
-				auto inputLabel = fmt::format("##espWhiteList{0:x}Item", item.first);
-				auto key = item.first;
-				auto value = item.second;
+				auto inputLabel = format(FMT_STRING("##espWhiteList{0:x}Item"), formId);
+				auto key = formId;
+				auto value = isEnabled;
 				if (ImGui::InputScalar(inputLabel.c_str(), ImGuiDataType_U32, &key, nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal) && ImGui::IsItemDeactivated())
 				{
-					Settings::esp.whitelist.erase(item.first);
+					Settings::esp.whitelist.erase(formId);
 					if (key)
 						Settings::esp.whitelist.try_emplace(key, value);
 				}
@@ -931,19 +927,19 @@ void Gui::OverlayMenuTabEsp()
 		{
 			ImGui::Columns(2, nullptr, false);
 
-			for (auto& item : Settings::esp.blacklist)
+			for (auto& [formId, isEnabled] : Settings::esp.blacklist)
 			{
-				auto toggleLabel = fmt::format("Enabled##espBlackList{0:x}Enabled", item.first);
-				LargeButtonToggle(toggleLabel.c_str(), item.second);
+				auto toggleLabel = format(FMT_STRING("Enabled##espBlackList{0:x}Enabled"), formId);
+				LargeButtonToggle(toggleLabel.c_str(), isEnabled);
 
 				ImGui::NextColumn();
 
-				auto inputLabel = fmt::format("##espBlackList{0:x}Item", item.first);
-				auto key = item.first;
-				auto value = item.second;
+				auto inputLabel = format(FMT_STRING("##espBlackList{0:x}Item"), formId);
+				auto key = formId;
+				auto value = isEnabled;
 				if (ImGui::InputScalar(inputLabel.c_str(), ImGuiDataType_U32, &key, nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal) && ImGui::IsItemDeactivated())
 				{
-					Settings::esp.blacklist.erase(item.first);
+					Settings::esp.blacklist.erase(formId);
 					if (key)
 						Settings::esp.blacklist.try_emplace(key, value);
 				}
@@ -1042,10 +1038,10 @@ void Gui::OverlayMenuTabLooter()
 				LargeButtonToggle("All##junk", Settings::looter.selection.junk.all);
 
 				ImGui::Columns(2, nullptr, false);
-				for (auto& component : Settings::looter.selection.junk.components)
+				for (auto& [formId, isEnabled] : Settings::looter.selection.junk.components)
 				{
-					auto label = fmt::format("{}##junk", JUNK_COMPONENT_NAMES.find(component.first)->second);
-					LargeButtonToggle(label.c_str(), component.second);
+					auto label = format(FMT_STRING("{}##junk"), JUNK_COMPONENT_NAMES.find(formId)->second);
+					LargeButtonToggle(label.c_str(), isEnabled);
 
 					ImGui::NextColumn();
 				}
@@ -1057,10 +1053,10 @@ void Gui::OverlayMenuTabLooter()
 				LargeButtonToggle("All##flora", Settings::looter.selection.flora.all);
 
 				ImGui::Columns(2, nullptr, false);
-				for (auto& component : Settings::looter.selection.flora.components)
+				for (auto& [formId, isEnabled] : Settings::looter.selection.flora.components)
 				{
-					auto label = fmt::format("{}##flora", FLORA_COMPONENT_NAMES.find(component.first)->second);
-					LargeButtonToggle(label.c_str(), component.second);
+					auto label = format(FMT_STRING("{}##flora"), FLORA_COMPONENT_NAMES.find(formId)->second);
+					LargeButtonToggle(label.c_str(), isEnabled);
 
 					ImGui::NextColumn();
 				}
@@ -1086,19 +1082,19 @@ void Gui::OverlayMenuTabLooter()
 			{
 				ImGui::Columns(2, nullptr, false);
 
-				for (auto& item : Settings::looter.selection.whitelist)
+				for (auto& [formId, isEnabled] : Settings::looter.selection.whitelist)
 				{
-					auto toggleLabel = fmt::format("Enabled##whiteList{0:x}Enabled", item.first);
-					LargeButtonToggle(toggleLabel.c_str(), item.second);
+					auto toggleLabel = format(FMT_STRING("Enabled##whiteList{0:x}Enabled"), formId);
+					LargeButtonToggle(toggleLabel.c_str(), isEnabled);
 
 					ImGui::NextColumn();
 
-					auto inputLabel = fmt::format("##whiteList{0:x}Item", item.first);
-					auto key = item.first;
-					auto value = item.second;
+					auto inputLabel = format(FMT_STRING("##whiteList{0:x}Item"), formId);
+					auto key = formId;
+					auto value = isEnabled;
 					if (ImGui::InputScalar(inputLabel.c_str(), ImGuiDataType_U32, &key, nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal) && ImGui::IsItemDeactivated())
 					{
-						Settings::looter.selection.whitelist.erase(item.first);
+						Settings::looter.selection.whitelist.erase(formId);
 						if (key)
 							Settings::looter.selection.whitelist.try_emplace(key, value);
 					}
@@ -1128,19 +1124,19 @@ void Gui::OverlayMenuTabLooter()
 			{
 				ImGui::Columns(2, nullptr, false);
 
-				for (auto& item : Settings::looter.selection.blacklist)
+				for (auto& [formId, isEnabled] : Settings::looter.selection.blacklist)
 				{
-					auto toggleLabel = fmt::format("Enabled##blackList{0:x}Enabled", item.first);
-					LargeButtonToggle(toggleLabel.c_str(), item.second);
+					auto toggleLabel = format(FMT_STRING("Enabled##blackList{0:x}Enabled"), formId);
+					LargeButtonToggle(toggleLabel.c_str(), isEnabled);
 
 					ImGui::NextColumn();
 
-					auto inputLabel = fmt::format("##blackList{0:x}Item", item.first);
-					auto key = item.first;
-					auto value = item.second;
+					auto inputLabel = format(FMT_STRING("##blackList{0:x}Item"), formId);
+					auto key = formId;
+					auto value = isEnabled;
 					if (ImGui::InputScalar(inputLabel.c_str(), ImGuiDataType_U32, &key, nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal) && ImGui::IsItemDeactivated())
 					{
-						Settings::looter.selection.blacklist.erase(item.first);
+						Settings::looter.selection.blacklist.erase(formId);
 						if (key)
 							Settings::looter.selection.blacklist.try_emplace(key, value);
 					}
@@ -1250,13 +1246,13 @@ void Gui::OverlayMenuTabCombat()
 
 			{
 				ImGui::SetNextItemWidth(-FLT_MIN);
-				auto sliderText = fmt::format("Cooldown: {0:d} ({1:d} ms)", Settings::targetting.cooldown, Settings::targetting.cooldown * 16);
+				const auto sliderText = format(FMT_STRING("Cooldown: {0:d} ({1:d} ms)"), Settings::targetting.cooldown, Settings::targetting.cooldown * 16);
 				ImGui::SliderInt("###TargetLockingCooldown", &Settings::targetting.cooldown, 0, 120, sliderText.c_str());
 			}
 
 			{
 				ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x / 2);
-				auto sliderText = fmt::format("Send Damage (Min): {0:d} ({1:d} ms)", Settings::targetting.sendDamageMin, Settings::targetting.sendDamageMin * 16);
+				const auto sliderText = format(FMT_STRING("Send Damage (Min): {0:d} ({1:d} ms)"), Settings::targetting.sendDamageMin, Settings::targetting.sendDamageMin * 16);
 				if (ImGui::SliderInt("###SendDamageMin", &Settings::targetting.sendDamageMin, 1, 60, sliderText.c_str()))
 				{
 					if (Settings::targetting.sendDamageMax < Settings::targetting.sendDamageMin)
@@ -1268,7 +1264,7 @@ void Gui::OverlayMenuTabCombat()
 
 			{
 				ImGui::SetNextItemWidth(-FLT_MIN);
-				auto sliderText = fmt::format("Send Damage (Max): {0:d} ({1:d} ms)", Settings::targetting.sendDamageMax, Settings::targetting.sendDamageMax * 16);
+				const auto sliderText = format(FMT_STRING("Send Damage (Max): {0:d} ({1:d} ms)"), Settings::targetting.sendDamageMax, Settings::targetting.sendDamageMax * 16);
 				if (ImGui::SliderInt("###SendDamageMax", &Settings::targetting.sendDamageMax, 1, 60, sliderText.c_str()))
 				{
 					if (Settings::targetting.sendDamageMax < Settings::targetting.sendDamageMin)
@@ -1283,19 +1279,19 @@ void Gui::OverlayMenuTabCombat()
 					favoritedWeaponsPreview = ErectusMemory::GetFavoritedWeaponText(static_cast<BYTE>(Settings::targetting.favoriteIndex));
 					if (favoritedWeaponsPreview.empty())
 					{
-						favoritedWeaponsPreview = fmt::format("[{}] Favorited Item Invalid", ErectusMemory::FavoriteIndex2Slot(static_cast<BYTE>(Settings::targetting.favoriteIndex)));
+						favoritedWeaponsPreview = format(FMT_STRING("[{}] Favorited Item Invalid"), ErectusMemory::FavoriteIndex2Slot(static_cast<BYTE>(Settings::targetting.favoriteIndex)));
 					}
 				}
 
 				ImGui::SetNextItemWidth(-FLT_MIN);
 				if (ImGui::BeginCombo("###BeginTempCombo", favoritedWeaponsPreview.c_str()))
 				{
-					for (const auto& item : ErectusMemory::GetFavoritedWeapons())
+					for (const auto& [itemIndex, itemName] : ErectusMemory::GetFavoritedWeapons())
 					{
-						if (ImGui::Selectable(item.second.c_str()))
+						if (ImGui::Selectable(itemName.c_str()))
 						{
-							if (item.first)
-								Settings::targetting.favoriteIndex = item.first - 1;
+							if (itemIndex)
+								Settings::targetting.favoriteIndex = itemIndex - 1;
 							else
 								Settings::targetting.favoriteIndex = 12;
 						}
@@ -1313,7 +1309,7 @@ void Gui::OverlayMenuTabCombat()
 
 			{
 				ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x / 2);
-				auto sliderText = fmt::format("Melee Speed (Min): {0:d} ({1:d} ms)", Settings::melee.speedMin, Settings::melee.speedMin * 16);
+				const auto sliderText = format(FMT_STRING("Melee Speed (Min): {0:d} ({1:d} ms)"), Settings::melee.speedMin, Settings::melee.speedMin * 16);
 				if (ImGui::SliderInt("###MeleeSpeedMin", &Settings::melee.speedMin, 1, 60, sliderText.c_str()))
 				{
 					if (Settings::melee.speedMax < Settings::melee.speedMin)
@@ -1325,7 +1321,7 @@ void Gui::OverlayMenuTabCombat()
 
 			{
 				ImGui::SetNextItemWidth(-FLT_MIN);
-				auto sliderText = fmt::format("Melee Speed (Max): {0:d} ({1:d} ms)", Settings::melee.speedMax, Settings::melee.speedMax * 16);
+				const auto sliderText = format(FMT_STRING("Melee Speed (Max): {0:d} ({1:d} ms)"), Settings::melee.speedMax, Settings::melee.speedMax * 16);
 				if (ImGui::SliderInt("###MeleeSpeedMax", &Settings::melee.speedMax, 1, 60, sliderText.c_str()))
 				{
 					if (Settings::melee.speedMax < Settings::melee.speedMin)
@@ -1483,7 +1479,7 @@ void Gui::OverlayMenuTabUtilities()
 
 			{
 				ImGui::SetNextItemWidth(-FLT_MIN);
-				auto inputText = fmt::format("{:16X}", getPtrResult);
+				auto inputText = format(FMT_STRING("{:16X}"), getPtrResult);
 				ImGui::InputText("###PtrPointerText", &inputText, ImGuiInputTextFlags_ReadOnly);
 			}
 
@@ -1528,7 +1524,7 @@ void Gui::OverlayMenuTabUtilities()
 			{
 				ImGui::SetNextItemWidth(-FLT_MIN);
 
-				auto inputText = fmt::format("{:16X}", getAddressResult);
+				auto inputText = format(FMT_STRING("{:16X}"), getAddressResult);
 				ImGui::InputText("###AddressPointerText", &inputText, ImGuiInputTextFlags_ReadOnly);
 			}
 		}
@@ -1607,12 +1603,12 @@ void Gui::OverlayMenuTabUtilities()
 				ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 1.0f, 0.0f, 0.5f));
 
 				if (ImGui::Button("Get Player###TransferSourceLocalPlayer", ImVec2(ImGui::GetContentRegionAvail().x / 2, 0.0f)))
-					Settings::customTransferSettings.sourceFormId = ErectusMemory::GetLocalPlayerFormId();
+					Settings::customTransferSettings.sourceFormId = Game::GetLocalPlayer().formId;
 
 				ImGui::SameLine();
 
 				if (ImGui::Button("Get STASH###TransferSourceSTASH", ImVec2(-FLT_MIN, 0.0f)))
-					Settings::customTransferSettings.sourceFormId = ErectusMemory::GetStashFormId();
+					Settings::customTransferSettings.sourceFormId = Game::GetLocalPlayer().GetStashFormId();
 
 				ImGui::PopStyleColor(3);
 			}
@@ -1633,11 +1629,11 @@ void Gui::OverlayMenuTabUtilities()
 				ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 1.0f, 0.0f, 0.5f));
 				ImGui::SameLine();
 				if (ImGui::Button("Get Player###TransferDestinationLocalPlayer", ImVec2(ImGui::GetContentRegionAvail().x / 2, 0.0f)))
-					Settings::customTransferSettings.destinationFormId = ErectusMemory::GetLocalPlayerFormId();
+					Settings::customTransferSettings.destinationFormId = Game::GetLocalPlayer().formId;
 
 				ImGui::SameLine();
 				if (ImGui::Button("Get STASH###TransferDestinationSTASH", ImVec2(-FLT_MIN, 0.0f)))
-					Settings::customTransferSettings.destinationFormId = ErectusMemory::GetStashFormId();
+					Settings::customTransferSettings.destinationFormId = Game::GetLocalPlayer().GetStashFormId();
 				ImGui::PopStyleColor(3);
 			}
 
@@ -1682,13 +1678,13 @@ void Gui::OverlayMenuTabUtilities()
 			{
 				for (auto i = 0; i < 32; i++)
 				{
-					auto toggleLabel = fmt::format("Transfer Whitelist Slot: {0:d}", i);
+					auto toggleLabel = format(FMT_STRING("Transfer Whitelist Slot: {0:d}"), i);
 					ButtonToggle(toggleLabel.c_str(), Settings::customTransferSettings.whitelisted[i]);
 
 					ImGui::SameLine();
 					ImGui::SetNextItemWidth(-FLT_MIN);
 
-					auto inputLabel = fmt::format("###ItemTransferWhitelist{:d}", i);
+					auto inputLabel = format(FMT_STRING("###ItemTransferWhitelist{:d}"), i);
 					ImGui::InputScalar(inputLabel.c_str(), ImGuiDataType_U32, &Settings::customTransferSettings.whitelist[i],
 						nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal);
 				}
@@ -1698,13 +1694,13 @@ void Gui::OverlayMenuTabUtilities()
 			{
 				for (auto i = 0; i < 32; i++)
 				{
-					auto toggleLabel = fmt::format("Transfer Blacklist Slot: {0:d}", i);
+					auto toggleLabel = format(FMT_STRING("Transfer Blacklist Slot: {0:d}"), i);
 					ButtonToggle(toggleLabel.c_str(), Settings::customTransferSettings.blacklisted[i]);
 
 					ImGui::SameLine();
 					ImGui::SetNextItemWidth(-FLT_MIN);
 
-					auto inputLabel = fmt::format("###ItemTransferBlacklist{:d}", i);
+					auto inputLabel = format(FMT_STRING("###ItemTransferBlacklist{:d}"), i);
 					ImGui::InputScalar(inputLabel.c_str(), ImGuiDataType_U32, &Settings::customTransferSettings.blacklist[i],
 						nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal);
 				}
@@ -1747,12 +1743,12 @@ void Gui::OverlayMenuTabTeleporter()
 	{
 		for (auto i = 0; i < 16; i++)
 		{
-			auto teleportHeaderText = fmt::format("Teleport Slot: {0:d}", i);
+			auto teleportHeaderText = format(FMT_STRING("Teleport Slot: {0:d}"), i);
 			if (ImGui::CollapsingHeader(teleportHeaderText.c_str()))
 			{
 				{
 					ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x / 4);
-					auto inputLabel = fmt::format("###TeleportDestinationX{:d}", i);
+					auto inputLabel = format(FMT_STRING("###TeleportDestinationX{:d}"), i);
 					ImGui::InputFloat(inputLabel.c_str(), &Settings::teleporter.entries[i].destination[0]);
 				}
 
@@ -1760,7 +1756,7 @@ void Gui::OverlayMenuTabTeleporter()
 
 				{
 					ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x / 3);
-					auto inputLabel = fmt::format("###TeleportDestinationY{:d}", i);
+					auto inputLabel = format(FMT_STRING("###TeleportDestinationY{:d}"), i);
 					ImGui::InputFloat(inputLabel.c_str(), &Settings::teleporter.entries[i].destination[1]);
 				}
 
@@ -1768,7 +1764,7 @@ void Gui::OverlayMenuTabTeleporter()
 
 				{
 					ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x / 2);
-					auto inputLabel = fmt::format("###TeleportDestinationZ{:d}", i);
+					auto inputLabel = format(FMT_STRING("###TeleportDestinationZ{:d}"), i);
 					ImGui::InputFloat(inputLabel.c_str(), &Settings::teleporter.entries[i].destination[2]);
 				}
 
@@ -1776,13 +1772,13 @@ void Gui::OverlayMenuTabTeleporter()
 
 				{
 					ImGui::SetNextItemWidth(-FLT_MIN);
-					auto inputLabel = fmt::format("###TeleportDestinationW{:d}", i);
+					auto inputLabel = format(FMT_STRING("###TeleportDestinationW{:d}"), i);
 					ImGui::InputFloat(inputLabel.c_str(), &Settings::teleporter.entries[i].destination[3]);
 				}
 
 				{
 					ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x / 4);
-					auto inputLabel = fmt::format("###TeleportCellFormId{:d}", i);
+					auto inputLabel = format(FMT_STRING("###TeleportCellFormId{:d}"), i);
 					ImGui::InputScalar(inputLabel.c_str(), ImGuiDataType_U32, &Settings::teleporter.entries[i].cellFormId,
 						nullptr, nullptr, "%08lX", ImGuiInputTextFlags_CharsHexadecimal);
 				}
@@ -1790,7 +1786,7 @@ void Gui::OverlayMenuTabTeleporter()
 				ImGui::SameLine();
 
 				{
-					auto buttonLabel = fmt::format("Set Position###TeleportDestination{:d}", i);
+					auto buttonLabel = format(FMT_STRING("Set Position###TeleportDestination{:d}"), i);
 					if (!Settings::teleporter.entries[i].disableSaving)
 					{
 						ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 1.0f, 0.0f, 0.3f));
@@ -1819,7 +1815,7 @@ void Gui::OverlayMenuTabTeleporter()
 				ImGui::SameLine();
 
 				{
-					auto buttonLabel = fmt::format("Lock###DisableSaving{:d}", i);
+					auto buttonLabel = format(FMT_STRING("Lock###DisableSaving{:d}"), i);
 					ButtonToggle(buttonLabel.c_str(), Settings::teleporter.entries[i].disableSaving);
 				}
 
@@ -1831,7 +1827,7 @@ void Gui::OverlayMenuTabTeleporter()
 					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 1.0f, 0.0f, 0.4f));
 					ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 1.0f, 0.0f, 0.5f));
 
-					auto buttonLabel = fmt::format("Teleport###TeleportRequestEnabled{:d}", i);
+					auto buttonLabel = format(FMT_STRING("Teleport###TeleportRequestEnabled{:d}"), i);
 					if (ImGui::Button(buttonLabel.c_str(), ImVec2(-FLT_MIN, 0.0f)))
 						ErectusMemory::RequestTeleport(i);
 					ImGui::PopStyleColor(3);
@@ -1843,7 +1839,7 @@ void Gui::OverlayMenuTabTeleporter()
 					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 0.0f, 0.0f, 0.4f));
 					ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(1.0f, 0.0f, 0.0f, 0.5f));
 
-					auto buttonLabel = fmt::format("Teleport###TeleportRequestDisabled{:d}", i);
+					auto buttonLabel = format(FMT_STRING("Teleport###TeleportRequestDisabled{:d}"), i);
 					ImGui::Button(buttonLabel.c_str(), ImVec2(-FLT_MIN, 0.0f));
 					ImGui::PopStyleColor(3);
 					ImGui::PopItemFlag();

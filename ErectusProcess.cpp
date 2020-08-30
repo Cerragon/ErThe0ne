@@ -6,7 +6,6 @@
 #include <TlHelp32.h>
 
 #include "ErectusProcess.h"
-#include "ErectusMemory.h"
 #include "MsgSender.h"
 
 

@@ -17,7 +17,7 @@ void Settings::GetDword(const std::string& section, const std::string& key, DWOR
 
 	if (!ini[section].has(key))
 	{
-		ini[section][key] = fmt::format("{:08X}", deflt);
+		ini[section][key] = format(FMT_STRING("{:08X}"), deflt);
 	}
 
 	try
@@ -36,9 +36,9 @@ void Settings::SetDword(const std::string& section, const std::string& key, cons
 
 	if (!ini[section].has(key))
 	{
-		ini[section][key] = fmt::format("{:08x}", deflt);
+		ini[section][key] = format(FMT_STRING("{:08x}"), deflt);
 	}
-	ini[section][key] = fmt::format("{:08x}", value);
+	ini[section][key] = format(FMT_STRING("{:08x}"), value);
 }
 
 void Settings::GetInt(const std::string& section, const std::string& key, int& value, const int deflt)
@@ -123,9 +123,9 @@ void Settings::SetSliderFloat(const std::string& section, const std::string& key
 
 void Settings::GetRgb(const std::string& section, const std::string& key, float* value, const float* deflt)
 {
-	auto keyR = fmt::format("{}R", key);
-	auto keyG = fmt::format("{}G", key);
-	auto keyB = fmt::format("{}B", key);
+	const auto keyR = format(FMT_STRING("{}R"), key);
+	const auto keyG = format(FMT_STRING("{}G"), key);
+	const auto keyB = format(FMT_STRING("{}B"), key);
 
 	GetFloat(section, keyR, value[0], deflt[0]);
 	GetFloat(section, keyG, value[1], deflt[1]);
@@ -136,9 +136,9 @@ void Settings::SetRgb(const std::string& section, const std::string& key, float*
 {
 	Utils::ValidateRgb(value);
 
-	auto keyR = fmt::format("{}R", key);
-	auto keyG = fmt::format("{}G", key);
-	auto keyB = fmt::format("{}B", key);
+	const auto keyR = format(FMT_STRING("{}R"), key);
+	const auto keyG = format(FMT_STRING("{}G"), key);
+	const auto keyB = format(FMT_STRING("{}B"), key);
 
 	SetFloat(section, keyR, value[0], deflt[0]);
 	SetFloat(section, keyG, value[1], deflt[1]);
@@ -147,10 +147,10 @@ void Settings::SetRgb(const std::string& section, const std::string& key, float*
 
 void Settings::GetQuadFloat(const std::string& section, const std::string& key, float* value, const float* deflt)
 {
-	auto keyX = fmt::format("{}X", key);
-	auto keyY = fmt::format("{}Y", key);
-	auto keyZ = fmt::format("{}Z", key);
-	auto keyW = fmt::format("{}W", key);
+	const auto keyX = format(FMT_STRING("{}X"), key);
+	const auto keyY = format(FMT_STRING("{}Y"), key);
+	const auto keyZ = format(FMT_STRING("{}Z"), key);
+	const auto keyW = format(FMT_STRING("{}W"), key);
 
 	GetFloat(section, keyX, value[0], deflt == nullptr ? 0 : deflt[0]);
 	GetFloat(section, keyY, value[1], deflt == nullptr ? 0 : deflt[1]);
@@ -159,10 +159,10 @@ void Settings::GetQuadFloat(const std::string& section, const std::string& key, 
 }
 void Settings::SetQuadFloat(const std::string& section, const std::string& key, float* value, const float* deflt)
 {
-	auto keyX = fmt::format("{}X", key);
-	auto keyY = fmt::format("{}Y", key);
-	auto keyZ = fmt::format("{}Z", key);
-	auto keyW = fmt::format("{}W", key);
+	const auto keyX = format(FMT_STRING("{}X"), key);
+	const auto keyY = format(FMT_STRING("{}Y"), key);
+	const auto keyZ = format(FMT_STRING("{}Z"), key);
+	const auto keyW = format(FMT_STRING("{}W"), key);
 
 	SetFloat(section, keyX, value[0], deflt == nullptr ? 0 : deflt[0]);
 	SetFloat(section, keyY, value[1], deflt == nullptr ? 0 : deflt[1]);
@@ -173,14 +173,14 @@ void Settings::SetQuadFloat(const std::string& section, const std::string& key, 
 void Settings::GetBool(const std::string& section, const std::string& key, bool& value, const bool deflt)
 {
 	auto bufferValue = static_cast<int>(value);
-	auto bufferdeflt = static_cast<int>(deflt);
+	const auto bufferdeflt = static_cast<int>(deflt);
 	GetSliderInt(section, key, bufferValue, bufferdeflt, 0, 1);
 	value = static_cast<bool>(bufferValue);
 }
 void Settings::SetBool(const std::string& section, const std::string& key, const bool& value, const bool deflt)
 {
 	auto bufferValue = static_cast<int>(value);
-	auto bufferdeflt = static_cast<int>(deflt);
+	const auto bufferdeflt = static_cast<int>(deflt);
 	SetSliderInt(section, key, bufferValue, bufferdeflt, 0, 1);
 }
 
@@ -295,15 +295,15 @@ void Settings::GetLooterSettings()
 	GetBool("Looter", "notesPlansUnknown", looter.selection.notes.plansUnknown, false);
 
 	GetBool("Looter", "junkAll", looter.selection.junk.all, false);
-	for (auto& component : looter.selection.junk.components)
+	for (auto& [formId, isEnabled] : looter.selection.junk.components)
 	{
-		GetBool("Looter", fmt::format("junk{:x}", component.first), component.second, false);
+		GetBool("Looter", format(FMT_STRING("junk{:x}"), formId), isEnabled, false);
 	}
 
 	GetBool("Looter", "floraAll", looter.selection.flora.all, false);
-	for (auto& component : looter.selection.flora.components)
+	for (auto& [formId, isEnabled] : looter.selection.flora.components)
 	{
-		GetBool("Looter", fmt::format("flora{:x}", component.first), component.second, false);
+		GetBool("Looter", format(FMT_STRING("flora{:x}"), formId), isEnabled, false);
 	}
 
 	GetBool("Looter", "modsAll", looter.selection.mods.all, false);
@@ -312,14 +312,14 @@ void Settings::GetLooterSettings()
 
 	GetBool("Looter", "otherCaps", looter.selection.other.caps, false);
 
-	for (const auto& item : ini["LooterWhitelist"])
+	for (const auto& [formIdString, isEnabledString] : ini["LooterWhitelist"])
 	{
-		looter.selection.whitelist.emplace(stoul(item.first, nullptr, 16), static_cast<bool>(stoi(item.second)));
+		looter.selection.whitelist.emplace(stoul(formIdString, nullptr, 16), static_cast<bool>(stoi(isEnabledString)));
 	}
 
-	for (const auto& item : ini["LooterBlacklist"])
+	for (const auto& [formIdString, isEnabledString] : ini["LooterBlacklist"])
 	{
-		looter.selection.blacklist.emplace(stoul(item.first, nullptr, 16), static_cast<bool>(stoi(item.second)));
+		looter.selection.blacklist.emplace(stoul(formIdString, nullptr, 16), static_cast<bool>(stoi(isEnabledString)));
 	}
 }
 void Settings::SetLooterSettings()
@@ -355,15 +355,15 @@ void Settings::SetLooterSettings()
 	SetBool("Looter", "notesPlansUnknown", looter.selection.notes.plansUnknown, false);
 
 	SetBool("Looter", "junkAll", looter.selection.junk.all, false);
-	for (const auto& component : looter.selection.junk.components)
+	for (const auto& [formId, isEnabled] : looter.selection.junk.components)
 	{
-		SetBool("Looter", fmt::format("junk{:x}", component.first), component.second, false);
+		SetBool("Looter", format(FMT_STRING("junk{:x}"), formId), isEnabled, false);
 	}
 
 	SetBool("Looter", "floraAll", looter.selection.flora.all, false);
-	for (const auto& component : looter.selection.flora.components)
+	for (const auto& [formId, isEnabled] : looter.selection.flora.components)
 	{
-		SetBool("Looter", fmt::format("flora{:x}", component.first), component.second, false);
+		SetBool("Looter", format(FMT_STRING("flora{:x}"), formId), isEnabled, false);
 	}
 
 	SetBool("Looter", "modsAll", looter.selection.mods.all, false);
@@ -373,15 +373,15 @@ void Settings::SetLooterSettings()
 	SetBool("Looter", "otherCaps", looter.selection.other.caps, false);
 
 	ini.remove("LooterWhitelist");
-	for (const auto& item : looter.selection.whitelist)
+	for (const auto& [formId, isEnabled] : looter.selection.whitelist)
 	{
-		SetBool("LooterWhitelist", fmt::format("{:x}", item.first), item.second, false);
+		SetBool("LooterWhitelist", format(FMT_STRING("{:x}"), formId), isEnabled, false);
 	}
 
 	ini.remove("LooterBlacklist");
-	for (const auto& item : looter.selection.blacklist)
+	for (const auto& [formId, isEnabled] : looter.selection.blacklist)
 	{
-		SetBool("LooterBlacklist", fmt::format("{:x}", item.first), item.second, false);
+		SetBool("LooterBlacklist", format(FMT_STRING("{:x}"), formId), isEnabled, false);
 	}
 }
 
@@ -552,13 +552,13 @@ void Settings::GetTransferSettings()
 	GetBool("TransferSettings", "UseBlacklist", customTransferSettings.useBlacklist, customTransferSettings.useBlacklist);
 	for (auto i = 0; i < 32; i++)
 	{
-		GetBool("TransferSettings", fmt::format("Whitelisted{:d}", i), customTransferSettings.whitelisted[i], customTransferSettings.whitelisted[i]);
-		GetDword("TransferSettings", fmt::format("Whitelist{:d}", i), customTransferSettings.whitelist[i], customTransferSettings.whitelist[i]);
+		GetBool("TransferSettings", format(FMT_STRING("Whitelisted{:d}"), i), customTransferSettings.whitelisted[i], customTransferSettings.whitelisted[i]);
+		GetDword("TransferSettings", format(FMT_STRING("Whitelist{:d}"), i), customTransferSettings.whitelist[i], customTransferSettings.whitelist[i]);
 	}
 	for (auto i = 0; i < 32; i++)
 	{
-		GetBool("TransferSettings", fmt::format("Blacklisted{:d}", i), customTransferSettings.blacklisted[i], customTransferSettings.blacklisted[i]);
-		GetDword("TransferSettings", fmt::format("Blacklist{:d}", i), customTransferSettings.blacklist[i], customTransferSettings.blacklist[i]);
+		GetBool("TransferSettings", format(FMT_STRING("Blacklisted{:d}"), i), customTransferSettings.blacklisted[i], customTransferSettings.blacklisted[i]);
+		GetDword("TransferSettings", format(FMT_STRING("Blacklist{:d}"), i), customTransferSettings.blacklist[i], customTransferSettings.blacklist[i]);
 	}
 }
 void Settings::SetTransferSettings()
@@ -569,13 +569,13 @@ void Settings::SetTransferSettings()
 	SetBool("TransferSettings", "UseBlacklist", customTransferSettings.useBlacklist, customTransferSettings.useBlacklist);
 	for (auto i = 0; i < 32; i++)
 	{
-		SetBool("TransferSettings", fmt::format("Whitelisted{:d}", i), customTransferSettings.whitelisted[i], customTransferSettings.whitelisted[i]);
-		SetDword("TransferSettings", fmt::format("Whitelist{:d}", i), customTransferSettings.whitelist[i], customTransferSettings.whitelist[i]);
+		SetBool("TransferSettings", format(FMT_STRING("Whitelisted{:d}"), i), customTransferSettings.whitelisted[i], customTransferSettings.whitelisted[i]);
+		SetDword("TransferSettings", format(FMT_STRING("Whitelist{:d}"), i), customTransferSettings.whitelist[i], customTransferSettings.whitelist[i]);
 	}
 	for (auto i = 0; i < 32; i++)
 	{
-		SetBool("TransferSettings", fmt::format("Blacklisted{:d}", i), customTransferSettings.blacklisted[i], customTransferSettings.blacklisted[i]);
-		SetDword("TransferSettings", fmt::format("Blacklist{:d}", i), customTransferSettings.blacklist[i], customTransferSettings.blacklist[i]);
+		SetBool("TransferSettings", format(FMT_STRING("Blacklisted{:d}"), i), customTransferSettings.blacklisted[i], customTransferSettings.blacklisted[i]);
+		SetDword("TransferSettings", format(FMT_STRING("Blacklist{:d}"), i), customTransferSettings.blacklist[i], customTransferSettings.blacklist[i]);
 	}
 }
 
@@ -583,18 +583,18 @@ void Settings::GetTeleportSettings()
 {
 	for (auto i = 0; i < 16; i++)
 	{
-		GetQuadFloat("TeleportSettings", fmt::format("Destination{:d}", i), teleporter.entries[i].destination, nullptr);
-		GetDword("TeleportSettings", fmt::format("CellFormId{:d}", i), teleporter.entries[i].cellFormId, 0);
-		GetBool("TeleportSettings", fmt::format("DisableSaving{:d}", i), teleporter.entries[i].disableSaving, false);
+		GetQuadFloat("TeleportSettings", format(FMT_STRING("Destination{:d}"), i), teleporter.entries[i].destination, nullptr);
+		GetDword("TeleportSettings", format(FMT_STRING("CellFormId{:d}"), i), teleporter.entries[i].cellFormId, 0);
+		GetBool("TeleportSettings", format(FMT_STRING("DisableSaving{:d}"), i), teleporter.entries[i].disableSaving, false);
 	}
 }
 void Settings::SetTeleportSettings()
 {
 	for (auto i = 0; i < 16; i++)
 	{
-		SetQuadFloat("TeleportSettings", fmt::format("Destination{:d}", i), teleporter.entries[i].destination, nullptr);
-		SetDword("TeleportSettings", fmt::format("CellFormId{:d}", i), teleporter.entries[i].cellFormId, 0);
-		SetBool("TeleportSettings", fmt::format("DisableSaving{:d}", i), teleporter.entries[i].disableSaving, false);
+		SetQuadFloat("TeleportSettings", format(FMT_STRING("Destination{:d}"), i), teleporter.entries[i].destination, nullptr);
+		SetDword("TeleportSettings", format(FMT_STRING("CellFormId{:d}"), i), teleporter.entries[i].cellFormId, 0);
+		SetBool("TeleportSettings", format(FMT_STRING("DisableSaving{:d}"), i), teleporter.entries[i].disableSaving, false);
 	}
 }
 
@@ -745,14 +745,14 @@ void Settings::GetEspSettings()
 	GetFluxSettings();
 	GetInfoBoxSettings();
 
-	for (const auto& item : ini["EspWhitelist"])
+	for (const auto& [formIdString, isEnabledString] : ini["EspWhitelist"])
 	{
-		esp.whitelist.emplace(stoul(item.first, nullptr, 16), static_cast<bool>(stoi(item.second)));
+		esp.whitelist.emplace(stoul(formIdString, nullptr, 16), static_cast<bool>(stoi(isEnabledString)));
 	}
 
-	for (const auto& item : ini["EspBlacklist"])
+	for (const auto& [formIdString, isEnabledString] : ini["EspBlacklist"])
 	{
-		esp.blacklist.emplace(stoul(item.first, nullptr, 16), static_cast<bool>(stoi(item.second)));
+		esp.blacklist.emplace(stoul(formIdString, nullptr, 16), static_cast<bool>(stoi(isEnabledString)));
 	}
 }
 void Settings::SetEspSettings()
@@ -775,15 +775,15 @@ void Settings::SetEspSettings()
 	SetInfoBoxSettings();
 
 	ini.remove("EspWhitelist");
-	for (const auto& item : esp.whitelist)
+	for (const auto& [formId, isEnabled] : esp.whitelist)
 	{
-		SetBool("EspWhitelist", fmt::format("{:x}", item.first), item.second, false);
+		SetBool("EspWhitelist", format(FMT_STRING("{:x}"), formId), isEnabled, false);
 	}
 
 	ini.remove("EspBlacklist");
-	for (const auto& item : esp.blacklist)
+	for (const auto& [formId, isEnabled] : esp.blacklist)
 	{
-		SetBool("EspBlacklist", fmt::format("{:x}", item.first), item.second, false);
+		SetBool("EspBlacklist", format(FMT_STRING("{:x}"), formId), isEnabled, false);
 	}
 }
 

@@ -29,7 +29,7 @@ std::vector<TesObjectCell> LoadedAreaManager::GetLoadedCells() const
 	else return result; // sthg went wrong
 
 	//2) Read the array of pointers to cells
-	auto cellPtrArray = std::make_unique<DWORD64[]>(cellPtrArraySize);
+	const auto cellPtrArray = std::make_unique<DWORD64[]>(cellPtrArraySize);
 	if (!ErectusProcess::Rpm(cellPtrArrayPtr, cellPtrArray.get(), cellPtrArraySize * sizeof DWORD64))
 		return result;
 

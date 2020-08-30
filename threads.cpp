@@ -130,7 +130,7 @@ DWORD WINAPI Threads::LockingThread([[maybe_unused]] LPVOID lpParameter)
 					}
 					else if (targetLockingKeyPressed && !targetLockingCooldown)
 					{
-						auto degrees = Utils::GetDegrees(entityData.position, cameraData.forward, cameraData.origin);
+						const auto degrees = Utils::GetDegrees(entityData.position, cameraData.forward, cameraData.origin);
 						if (degrees < closestEntityDegrees)
 						{
 							closestEntityDegrees = degrees;

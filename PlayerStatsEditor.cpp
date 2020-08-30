@@ -3,6 +3,7 @@
 #include "common.h"
 #include "ErectusMemory.h"
 #include "ErectusProcess.h"
+#include "Game.h"
 #include "settings.h"
 #include "utils.h"
 
@@ -21,18 +22,12 @@ bool PlayerStatsEditor::Edit(const bool enabled)
 			return false;
 	}
 
-	const auto localPlayerPtr = ErectusMemory::GetLocalPlayerPtr(false);
-	if (!Utils::Valid(localPlayerPtr))
-		return false;
-
-	TesObjectRefr localPlayer{};
-	if (!ErectusProcess::Rpm(localPlayerPtr, &localPlayer, sizeof localPlayer))
-		return false;
-	if (!Utils::Valid(localPlayer.vtable0050))
+	const auto player = Game::GetLocalPlayer();
+	if (!Utils::Valid(player.vtable0050))
 		return false;
 
 	DWORD64 actorValueFunction;
-	if (!ErectusProcess::Rpm(localPlayer.vtable0050 + 0x48, &actorValueFunction, sizeof actorValueFunction))
+	if (!ErectusProcess::Rpm(player.vtable0050 + 0x48, &actorValueFunction, sizeof actorValueFunction))
 		return false;
 	if (!Utils::Valid(actorValueFunction))
 		return false;
@@ -59,7 +54,7 @@ bool PlayerStatsEditor::Edit(const bool enabled)
 
 	if (actorValueFunction != ErectusProcess::exe + OFFSET_ACTOR_VALUE && actorValueFunction != actorValuePage)
 	{
-		if (ErectusMemory::VtableSwap(localPlayer.vtable0050 + 0x48, ErectusProcess::exe + OFFSET_ACTOR_VALUE))
+		if (ErectusMemory::VtableSwap(player.vtable0050 + 0x48, ErectusProcess::exe + OFFSET_ACTOR_VALUE))
 			ErectusProcess::FreeEx(actorValueFunction);
 	}
 
@@ -80,7 +75,7 @@ bool PlayerStatsEditor::Edit(const bool enabled)
 		{
 			if (!ErectusProcess::Wpm(actorValuePage, &actorValueHookData, sizeof actorValueHookData))
 				return false;
-			if (!ErectusMemory::VtableSwap(localPlayer.vtable0050 + 0x48, actorValuePage))
+			if (!ErectusMemory::VtableSwap(player.vtable0050 + 0x48, actorValuePage))
 				return false;
 			actorValuePageValid = true;
 		}
@@ -105,7 +100,7 @@ bool PlayerStatsEditor::Edit(const bool enabled)
 
 		if (actorValueFunction != ErectusProcess::exe + OFFSET_ACTOR_VALUE)
 		{
-			if (ErectusMemory::VtableSwap(localPlayer.vtable0050 + 0x48, ErectusProcess::exe + OFFSET_ACTOR_VALUE))
+			if (ErectusMemory::VtableSwap(player.vtable0050 + 0x48, ErectusProcess::exe + OFFSET_ACTOR_VALUE))
 				ErectusProcess::FreeEx(actorValueFunction);
 		}
 

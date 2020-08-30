@@ -118,6 +118,8 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -179,6 +181,7 @@
     <ClInclude Include="imgui\imstb_truetype.h" />
     <ClInclude Include="ini.h" />
     <ClInclude Include="LoadedAreaManager.h" />
+    <ClInclude Include="LocalPlayer.h" />
     <ClInclude Include="Looter.h" />
     <ClInclude Include="MsgSender.h" />
     <ClInclude Include="PlayerStatsEditor.h" />

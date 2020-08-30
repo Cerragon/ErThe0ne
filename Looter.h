@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "ErectusMemory.h"
+#include "LocalPlayer.h"
 #include "settings.h"
 
 class Looter final
@@ -12,7 +13,7 @@ public:
 	inline static std::unordered_set<DWORD> lootedEntities = {};
 
 private:
-	static bool ProcessEntity(const TesObjectRefr& entity, const LocalPlayerInfo& localPlayer);
+	static bool ProcessEntity(const TesObjectRefr& entity, const LocalPlayer& localPlayer);
 
 	static bool ContainerValid(const TesItem& referenceData);
 	static BYTE GetLegendaryRank(DWORD64 displayPtr);
@@ -21,9 +22,9 @@ private:
 	static bool ShouldLootFlora(const ItemInfo& item);
 	static bool ShouldLootItem(const ItemInfo& item, DWORD64 displayPtr);
 
-	static bool LootGroundItem(const ItemInfo& item, const LocalPlayerInfo& player);
-	static bool LootContainer(const ItemInfo& item, const LocalPlayerInfo& player);
-	static bool LootFlora(const ItemInfo& item, const LocalPlayerInfo& player);
+	static bool LootGroundItem(const ItemInfo& item, const LocalPlayer& player);
+	static bool LootContainer(const ItemInfo& item, const LocalPlayer& player);
+	static bool LootFlora(const ItemInfo& item, const LocalPlayer& player);
 
 	inline static bool lootItemsRequested = false;
 	inline static DWORD lastPlayerCellFormId = 0;

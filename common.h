@@ -66,7 +66,7 @@ constexpr auto VTABLE_REQUESTTELEPORTTOLOCATIONMSG = 0x03BD5750UL;//1.3.3.31
 constexpr auto VTABLE_CLIENTSTATEMSG = 0x03BD5330UL;//1.3.3.31 
 constexpr auto VTABLE_REQUESTHITSONACTORS = 0x03BCD0A0UL;//1.3.3.31 
 
-enum class HotKeys : int
+enum class HotKey : int
 {
 	PositionSpoofingToggle,
 	NoclipToggle,
@@ -81,12 +81,12 @@ struct HotkeyCombination
 	UINT vk;
 };
 
-const std::unordered_map<HotKeys, HotkeyCombination> HOTKEYS{
-	{ HotKeys::PositionSpoofingToggle, HotkeyCombination{MOD_CONTROL | MOD_NOREPEAT, 'L' } },
-	{ HotKeys::NoclipToggle, HotkeyCombination{ MOD_CONTROL | MOD_NOREPEAT, 'Y' } },
-	{ HotKeys::OpkNpcsToggle, HotkeyCombination{ MOD_CONTROL | MOD_NOREPEAT, 'N' } },
-	{ HotKeys::Loot, HotkeyCombination{ MOD_CONTROL | MOD_NOREPEAT, 'R' } },
-	{ HotKeys::ToggleOverlay, HotkeyCombination{ MOD_CONTROL | MOD_NOREPEAT, VK_RETURN } }
+const std::unordered_map<HotKey, HotkeyCombination> HOTKEYS{
+	{ HotKey::PositionSpoofingToggle, HotkeyCombination{MOD_CONTROL | MOD_NOREPEAT, 'L' } },
+	{ HotKey::NoclipToggle, HotkeyCombination{ MOD_CONTROL | MOD_NOREPEAT, 'Y' } },
+	{ HotKey::OpkNpcsToggle, HotkeyCombination{ MOD_CONTROL | MOD_NOREPEAT, 'N' } },
+	{ HotKey::Loot, HotkeyCombination{ MOD_CONTROL | MOD_NOREPEAT, 'R' } },
+	{ HotKey::ToggleOverlay, HotkeyCombination{ MOD_CONTROL | MOD_NOREPEAT, VK_RETURN } }
 };
 
 const std::unordered_map<DWORD, std::string> JUNK_COMPONENT_NAMES = {
@@ -294,3 +294,35 @@ constexpr auto CUSTOM_ENTRY_UNKNOWN_RECIPE = 0x0000000000200000ULL;
 constexpr auto CUSTOM_ENTRY_TREASURE_MAP = 0x0000000000800000ULL;
 constexpr auto CUSTOM_ENTRY_WHITELISTED = 0x4000000000000000ULL;
 constexpr auto CUSTOM_ENTRY_INVALID = 0x8000000000000000ULL;
+
+enum class FormType : BYTE
+{
+	BgsTextureSet = 0x10,
+	TesSound = 0x19,
+	BgsAcousticSpace = 0x1B,
+	TesObjectArmo = 0x26,
+	TesObjectBook = 0x27,
+	TesObjectCont = 0x28,
+	TesObjectLigh = 0x2B,
+	TesObjectMisc = 0x2C,
+	CurrencyObject = 0x2F,
+	TesObjectStat = 0x30,
+	BgsStaticCollection = 0x31,
+	BgsMovableStatic = 0x32,
+	TesFlora = 0x35,
+	TesObjectWeap = 0x37,
+	TesAmmo = 0x38,
+	TesNpc = 0x39,
+	TesKey = 0x3C,
+	AlchemyItem = 0x3D,
+	TesUtilityItem = 0x3E,
+	BgsIdleMarker = 0x3F,
+	BgsNote = 0x40,
+	BgsBendableSpline = 0x43,
+	TesLevItem = 0x48,
+	TesObjectRefr = 0x50,  //used in REFR objects, ref to item
+	TesActor = 0x51, //used in REFR objects, ref to npc
+	PlayerCharacter = 0xB5, //also used in REFR objects, ref to player
+
+	Undefined = UINT8_MAX,
+};

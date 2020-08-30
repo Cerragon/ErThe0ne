@@ -33,7 +33,7 @@ bool MsgSender::Send(void* message, const size_t size)
 		.r9 = 0
 	};
 
-	auto pageData = std::make_unique<BYTE[]>(allocSize);
+	const auto pageData = std::make_unique<BYTE[]>(allocSize);
 	memset(pageData.get(), 0x00, allocSize);
 	memcpy(pageData.get(), &externalFunctionData, sizeof externalFunctionData);
 	memcpy(&pageData.get()[sizeof(ExternalFunction)], message, size);

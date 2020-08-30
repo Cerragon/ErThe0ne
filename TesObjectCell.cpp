@@ -15,8 +15,8 @@ std::vector<TesObjectRefr> TesObjectCell::GetObjectRefs() const
 	if (!Utils::Valid(objectListBeginPtr) || !Utils::Valid(objectListEndPtr))
 		return result;
 
-	auto itemArraySize = (objectListEndPtr - objectListBeginPtr) / sizeof(DWORD64);
-	auto objectPtrArray = std::make_unique<DWORD64[]>(itemArraySize);
+	const auto itemArraySize = (objectListEndPtr - objectListBeginPtr) / sizeof(DWORD64);
+	const auto objectPtrArray = std::make_unique<DWORD64[]>(itemArraySize);
 	if (!ErectusProcess::Rpm(objectListBeginPtr, objectPtrArray.get(), itemArraySize * sizeof DWORD64))
 		return result;
 

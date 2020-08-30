@@ -38,7 +38,7 @@ void App::Shutdown()
 {
 	continueRunning = false;
 
-	//everything should be  handled by destructors...
+	//everything should be  handled by destructor...
 }
 
 void App::Run()
@@ -63,7 +63,7 @@ void App::Run()
 				continueRunning = false;
 				break;
 			case WM_HOTKEY:
-				OnHotkey(msg.wParam);
+				OnHotkey(static_cast<HotKey>(msg.wParam));
 				break;
 			default:
 				break;
@@ -134,30 +134,32 @@ void App::Detach()
 	SetMode(Mode::Standalone);
 }
 
-void App::OnHotkey(const WPARAM hotkeyId)
+void App::OnHotkey(const HotKey hotkey)
 {
-	switch (hotkeyId)
+	auto* const foregroundWnd = GetForegroundWindow();
+	if (foregroundWnd != gApp->appWindow->GetHwnd() && foregroundWnd != ErectusProcess::hWnd)
+		return;
+	
+	switch (hotkey)
 	{
-	case (static_cast<int>(HotKeys::PositionSpoofingToggle)):
+	case HotKey::PositionSpoofingToggle:
 		if (Settings::localPlayer.positionSpoofingEnabled)
 			Threads::positionSpoofingToggle = !Threads::positionSpoofingToggle;
 		break;
-	case (static_cast<int>(HotKeys::NoclipToggle)):
+	case HotKey::NoclipToggle:
 		if (Settings::localPlayer.noclipEnabled)
 			Threads::noclipToggle = !Threads::noclipToggle;
 		break;
-	case (static_cast<int>(HotKeys::OpkNpcsToggle)):
+	case HotKey::OpkNpcsToggle:
 		if (Settings::opk.enabled)
 			Threads::opkNpcsToggle = !Threads::opkNpcsToggle;
 		break;
-	case (static_cast<int>(HotKeys::Loot)):
+	case HotKey::Loot:
 		if (Settings::looter.mode == LooterSettings::Mode::Keybind)
 			Looter::RequestLootItems();
 		break;
-	case (static_cast<int>(HotKeys::ToggleOverlay)):
+	case HotKey::ToggleOverlay:
 		ToggleOverlay();
-		break;
-	default:
 		break;
 	}
 }

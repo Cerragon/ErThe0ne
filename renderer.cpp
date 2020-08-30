@@ -76,7 +76,7 @@ bool Renderer::EndFrame()
 {
 	ImGui::EndFrame();
 
-	auto d3dresult = d3dDevice->TestCooperativeLevel();
+	const auto d3dresult = d3dDevice->TestCooperativeLevel();
 	if (d3dresult == D3DERR_DEVICELOST)
 		return false;
 
@@ -92,7 +92,7 @@ bool Renderer::EndFrame()
 		ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
 		d3dDevice->EndScene();
 	}
-	auto result = d3dDevice->Present(nullptr, nullptr, nullptr, nullptr);
+	const auto result = d3dDevice->Present(nullptr, nullptr, nullptr, nullptr);
 
 	// Handle loss of D3D9 device
 	if (result == D3DERR_DEVICELOST && d3dDevice->TestCooperativeLevel() == D3DERR_DEVICENOTRESET)
@@ -124,7 +124,7 @@ void Renderer::ResetDevice()
 		return;
 
 	ImGui_ImplDX9_InvalidateDeviceObjects();
-	auto hr = d3dDevice->Reset(&d3d9Parameters);
+	const auto hr = d3dDevice->Reset(&d3d9Parameters);
 	if (hr == D3DERR_INVALIDCALL)
 		IM_ASSERT(0);
 
@@ -136,7 +136,7 @@ void Renderer::LoadFonts()
 	auto io = ImGui::GetIO();
 	io.Fonts->AddFontDefault();
 #pragma warning(suppress : 4996)
-	io.Fonts->AddFontFromFileTTF(fmt::format("{}\\Fonts\\arialbd.ttf", std::getenv("WINDIR")).c_str(), 13.f);
+	io.Fonts->AddFontFromFileTTF(format(FMT_STRING("{}\\Fonts\\arialbd.ttf"), std::getenv("WINDIR")).c_str(), 13.f);
 	ImGui_ImplDX9_CreateDeviceObjects();
 
 }

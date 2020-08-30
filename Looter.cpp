@@ -17,7 +17,7 @@ bool Looter::ShouldLootJunk(const ItemInfo& item)
 	if (!Utils::Valid(item.base.componentArrayPtr))
 		return false;
 
-	auto components = std::make_unique<Component[]>(item.base.componentArraySize);
+	const auto components = std::make_unique<Component[]>(item.base.componentArraySize);
 	if (!ErectusProcess::Rpm(item.base.componentArrayPtr, components.get(), item.base.componentArraySize * sizeof(Component)))
 		return false;
 
@@ -44,7 +44,7 @@ bool Looter::ShouldLootFloraLeveled(const LeveledList& list)
 	if (!Utils::Valid(list.listEntryArrayPtr) || !list.listEntryArraySize)
 		return false;
 
-	auto listEntryData = std::make_unique<ListEntry[]>(list.listEntryArraySize);
+	const auto listEntryData = std::make_unique<ListEntry[]>(list.listEntryArraySize);
 
 	if (!ErectusProcess::Rpm(list.listEntryArrayPtr, listEntryData.get(), list.listEntryArraySize * sizeof(ListEntry)))
 		return false;
@@ -57,7 +57,7 @@ bool Looter::ShouldLootFloraLeveled(const LeveledList& list)
 		TesItem referenceData{};
 		if (!ErectusProcess::Rpm(listEntryData[i].referencePtr, &referenceData, sizeof referenceData))
 			continue;
-		if (referenceData.formType == static_cast<BYTE>(FormTypes::TesLevItem))
+		if (referenceData.GetFormType() == FormType::TesLevItem)
 		{
 			LeveledList innerList{};
 			memcpy(&innerList, &referenceData, sizeof innerList);
@@ -82,7 +82,7 @@ bool Looter::ShouldLootFlora(const ItemInfo& item)
 	TesItem harvestedData{};
 	if (!ErectusProcess::Rpm(item.base.harvestedPtr, &harvestedData, sizeof harvestedData))
 		return false;
-	if (harvestedData.formType == static_cast<BYTE>(FormTypes::TesLevItem))
+	if (harvestedData.GetFormType() == FormType::TesLevItem)
 	{
 		LeveledList leveledListData{};
 		memcpy(&leveledListData, &harvestedData, sizeof leveledListData);
@@ -95,12 +95,12 @@ bool Looter::ShouldLootItem(const ItemInfo& item, const DWORD64 displayPtr = 0)
 {
 	BYTE rank;
 
-	if (auto found = Settings::looter.selection.blacklist.find(item.base.formId); found != Settings::looter.selection.blacklist.end()) {
+	if (const auto found = Settings::looter.selection.blacklist.find(item.base.formId); found != Settings::looter.selection.blacklist.end()) {
 		if (found->second)
 			return false;
 	}
 
-	if (auto found = Settings::looter.selection.whitelist.find(item.base.formId); found != Settings::looter.selection.whitelist.end()) {
+	if (const auto found = Settings::looter.selection.whitelist.find(item.base.formId); found != Settings::looter.selection.whitelist.end()) {
 		if (found->second)
 			return true;
 	}
@@ -148,7 +148,7 @@ bool Looter::ShouldLootItem(const ItemInfo& item, const DWORD64 displayPtr = 0)
 	}
 }
 
-bool Looter::LootGroundItem(const ItemInfo& item, const LocalPlayerInfo& player)
+bool Looter::LootGroundItem(const ItemInfo& item, const LocalPlayer& player)
 {
 	if (!MsgSender::IsEnabled())
 		return false;
@@ -159,7 +159,7 @@ bool Looter::LootGroundItem(const ItemInfo& item, const LocalPlayerInfo& player)
 	if (!ShouldLootItem(item))
 		return false;
 
-	if (Utils::GetDistance(item.refr.position, player.position) * 0.01f > 76.f)
+	if (item.refr.position.DistanceTo(player.position) * 0.01f > 76.f)
 		return false;
 
 	RequestActivateRefMessage requestActivateRefMessageData{
@@ -173,7 +173,7 @@ bool Looter::LootGroundItem(const ItemInfo& item, const LocalPlayerInfo& player)
 	return true;
 }
 
-bool Looter::LootContainer(const ItemInfo& item, const LocalPlayerInfo& player)
+bool Looter::LootContainer(const ItemInfo& item, const LocalPlayer& player)
 {
 	if (!MsgSender::IsEnabled())
 		return false;
@@ -184,9 +184,9 @@ bool Looter::LootContainer(const ItemInfo& item, const LocalPlayerInfo& player)
 		if (!Settings::looter.looters.npcs)
 			return false;
 
-		if (item.refr.formId == 0x00000007 || ErectusMemory::CheckHealthFlag(item.refr.healthFlag) != 0x3)
+		if (item.refr.GetFormType() == FormType::PlayerCharacter || item.refr.GetActorState() != ActorState::Dead)
 			return false;
-		if (Utils::GetDistance(item.refr.position, player.position) * 0.01f > 76.f)
+		if (item.refr.position.DistanceTo(player.position) * 0.01f > 76.f)
 			return false;
 		break;
 
@@ -194,7 +194,7 @@ bool Looter::LootContainer(const ItemInfo& item, const LocalPlayerInfo& player)
 		if (!Settings::looter.looters.containers)
 			return false;
 
-		if (Utils::GetDistance(item.refr.position, player.position) * 0.01f > 6.f)
+		if (item.refr.position.DistanceTo(player.position) * 0.01f > 6.f)
 			return false;
 		if (!ContainerValid(item.base))
 			return false;
@@ -268,7 +268,7 @@ bool Looter::LootContainer(const ItemInfo& item, const LocalPlayerInfo& player)
 	return true;
 }
 
-bool Looter::LootFlora(const ItemInfo& item, const LocalPlayerInfo& player)
+bool Looter::LootFlora(const ItemInfo& item, const LocalPlayer& player)
 {
 	if (!MsgSender::IsEnabled())
 		return false;
@@ -279,7 +279,7 @@ bool Looter::LootFlora(const ItemInfo& item, const LocalPlayerInfo& player)
 	if (ErectusMemory::IsFloraHarvested(item.refr.harvestFlagA, item.refr.harvestFlagB))
 		return false;
 
-	if (Utils::GetDistance(item.refr.position, player.position) * 0.01f > 6.f)
+	if (item.refr.position.DistanceTo(player.position) * 0.01f > 6.f)
 		return false;
 
 	if (!ShouldLootItem(item))
@@ -297,7 +297,7 @@ bool Looter::LootFlora(const ItemInfo& item, const LocalPlayerInfo& player)
 }
 
 
-bool Looter::ProcessEntity(const TesObjectRefr& entity, const LocalPlayerInfo& localPlayer)
+bool Looter::ProcessEntity(const TesObjectRefr& entity, const LocalPlayer& localPlayer)
 {
 	if (!Utils::Valid(entity.baseObjectPtr))
 		return false;
@@ -305,13 +305,13 @@ bool Looter::ProcessEntity(const TesObjectRefr& entity, const LocalPlayerInfo& l
 	if (entity.spawnFlag != 0x02)
 		return false;
 
-	switch (entity.formType)
+	switch (entity.GetFormType())
 	{
-	case (static_cast<BYTE>(FormTypes::TesActor)):
-		if (!Settings::looter.looters.npcs || ErectusMemory::CheckHealthFlag(entity.healthFlag) != 0x3)
+	case FormType::TesActor:
+		if (!Settings::looter.looters.npcs || entity.GetActorState() != ActorState::Dead)
 			return false;
 		break;
-	case (static_cast<BYTE>(FormTypes::TesObjectRefr)):
+	case FormType::TesObjectRefr:
 		if (!Settings::looter.looters.groundItems && !Settings::looter.looters.containers && !Settings::looter.looters.flora)
 			return false;
 		break;
@@ -319,7 +319,7 @@ bool Looter::ProcessEntity(const TesObjectRefr& entity, const LocalPlayerInfo& l
 		return false;
 	}
 
-	auto item = ErectusMemory::GetItemInfo(entity);
+	const auto item = ErectusMemory::GetItemInfo(entity);
 	switch (item.type)
 	{
 	case ItemTypes::Npc:
@@ -347,14 +347,15 @@ void Looter::Loot()
 	if (!Settings::looter.selection.IsEnabled())
 		return;
 
-	auto playerInfo = ErectusMemory::GetLocalPlayerInfo();
-	if (playerInfo.formId == 0x00000014 || playerInfo.currentHealth == 0) //not loaded yet
+	const auto player = Game::GetLocalPlayer();
+	if (!player.IsIngame())
 		return;
-	
-	if(playerInfo.cellFormId != lastPlayerCellFormId)
+
+	const auto currentCellFormId = player.GetCurrentCell().formId;
+	if(currentCellFormId != lastPlayerCellFormId)
 	{
 		lootedEntities.clear();
-		lastPlayerCellFormId = playerInfo.cellFormId;
+		lastPlayerCellFormId = currentCellFormId;
 	}
 
 	auto cells = Game::GetLoadedAreaManager().GetLoadedCells();
@@ -366,7 +367,7 @@ void Looter::Loot()
 			if (lootedEntities.contains(entity.formId))
 				continue;
 
-			if (ProcessEntity(entity, playerInfo))
+			if (ProcessEntity(entity, player))
 				lootedEntities.emplace(entity.formId);
 		}
 	}
@@ -434,7 +435,7 @@ BYTE Looter::GetLegendaryRank(const DWORD64 displayPtr)
 	if (!instancedArraySize || instancedArraySize > 0x7FFF)
 		return 0;
 
-	auto instancedArray = std::make_unique<DWORD64[]>(instancedArraySize);
+	const auto instancedArray = std::make_unique<DWORD64[]>(instancedArraySize);
 	if (!ErectusProcess::Rpm(itemInstancedArrayData.arrayPtr, instancedArray.get(), instancedArraySize * sizeof(DWORD64)))
 		return 0;
 
@@ -480,7 +481,7 @@ BYTE Looter::GetLegendaryRank(const DWORD64 displayPtr)
 	if (!modArraySize || modArraySize > 0x7FFF)
 		return 0;
 
-	auto modArray = std::make_unique<DWORD[]>(modArraySize * 2);
+	const auto modArray = std::make_unique<DWORD[]>(modArraySize * 2);
 	if (!ErectusProcess::Rpm(modInstanceData.modListPtr, modArray.get(), modArraySize * 2 * sizeof(DWORD)))
 		return 0;
 

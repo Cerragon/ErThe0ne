@@ -2,7 +2,6 @@
 
 #include <memory>
 
-
 #include "common.h"
 #include "ErectusMemory.h"
 #include "ErectusProcess.h"
@@ -93,7 +92,7 @@ void WeaponEditor::EditWeapons(bool enabled)
 
 void WeaponEditor::ResetWeapons()
 {
-	WeaponInfo::AimModel emptyAimModel = {};
+	const WeaponInfo::AimModel emptyAimModel = {};
 	for (const auto& [formid, originalValue] : originalWeaponValues)
 	{
 		ErectusProcess::Wpm(originalValue.ptr, &originalValue.weaponData, sizeof originalValue.weaponData);

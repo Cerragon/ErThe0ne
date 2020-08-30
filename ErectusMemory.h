@@ -8,36 +8,6 @@
 
 #include "TesObjectCell.h"
 
-enum class FormTypes : BYTE
-{
-	BgsTextureSet = 0x10,
-	TesSound = 0x19,
-	BgsAcousticSpace = 0x1B,
-	TesObjectArmo = 0x26,
-	TesObjectBook = 0x27,
-	TesObjectCont = 0x28,
-	TesObjectLigh = 0x2B,
-	TesObjectMisc = 0x2C,
-	CurrencyObject = 0x2F,
-	TesObjectStat = 0x30,
-	BgsStaticCollection = 0x31,
-	BgsMovableStatic = 0x32,
-	TesFlora = 0x35,
-	TesObjectWeap = 0x37,
-	TesAmmo = 0x38,
-	TesNpc = 0x39,
-	TesKey = 0x3C,
-	AlchemyItem = 0x3D,
-	TesUtilityItem = 0x3E,
-	BgsIdleMarker = 0x3F,
-	BgsNote = 0x40,
-	BgsBendableSpline = 0x43,
-	TesLevItem = 0x48,
-	TesObjectRefr = 0x50,  //used in REFR objects, ref to item
-	TesActor = 0x51, //used in REFR objects, ref to npc
-	PlayerCharacter = 0xB5 //also used in REFR objects, ref to player
-};
-
 class TesWorldSpace
 {
 public:
@@ -55,9 +25,9 @@ class Camera
 public:
 	DWORD64 vtable;//0x0
 	BYTE padding0008[0x68];
-	float forward[3];//0x70
+	Vector3 forward;//0x70
 	BYTE padding007C[0x24];
-	float origin[3];//0xA0
+	Vector3 origin;//0xA0
 	BYTE padding00Ac[0x84];
 	float view[16];//0x130
 };
@@ -97,33 +67,6 @@ public:
 	BYTE padding007C[0x24];
 	float velocityA[4];//0xA0
 	float velocityB[4];//0xB0
-};
-
-class ActorSnapshotComponent
-{
-public:
-	//ActorCoreSnapshotComponent
-	DWORD64 actorCorevtable;//0x0
-	BYTE actorCorePadding0008[0x98];
-	//ActorServerAuthSnapshotData    // 0x38 isInvulnerable, 0x3C isProtected, 0x3D IsPlayerProtected, 0x130 hostileState, 0x138 reconScopeTargetState
-	DWORD64 vtable;//0xA0
-	BYTE padding0008[0x30];
-	BYTE isInvulnerable;//0x38
-	BYTE unk0039;//0x39
-	BYTE unk003A;//0x3A
-	BYTE isEssential;//0x3B
-	BYTE isProtected;//0x3C
-	BYTE isPlayerProtected;//0x3D
-	BYTE padding003C[0x32];
-	float maxHealth;//0x70
-	float modifiedHealth;//0x74
-	BYTE padding0078[0x4];
-	float lostHealth;//0x7C
-	BYTE padding0080[0xA0];
-	BYTE epicRank;//0x120
-	BYTE padding0121[0xF];
-	DWORD64 hostileState;//0x130
-	DWORD64 reconScopeTargetState;//0x138
 };
 
 class TransferMessage
@@ -599,17 +542,6 @@ public:
 	DWORD64 targetLockingPtr{};
 };
 
-struct LocalPlayerInfo
-{
-	DWORD formId;
-	DWORD stashFormId;
-	DWORD cellFormId;
-	float position[3];
-	float yaw;
-	float pitch;
-	float currentHealth;
-};
-
 enum class ItemTypes
 {
 	Invalid,
@@ -643,7 +575,6 @@ struct ItemInfo
 {
 	ItemTypes type;
 
-	DWORD64 namePtr;
 	TesObjectRefr refr;
 	TesItem base;
 };
@@ -691,9 +622,6 @@ public:
 	inline static std::vector<CustomEntry> entityDataBuffer{};
 	inline static std::vector<CustomEntry> playerDataBuffer{};
 
-	static DWORD GetLocalPlayerFormId();
-	static DWORD GetStashFormId();
-
 	static bool ReferenceSwap(DWORD& sourceFormId, DWORD& destinationFormId);
 
 	static bool DamageRedirection(DWORD64 targetPtr, DWORD64* targetingPage, bool* targetingPageValid, bool isExiting, bool state);
@@ -703,28 +631,22 @@ public:
 	static bool MeleeAttack();
 	static bool ChargenEditing();
 
-	static bool InsideInteriorCell();
-	static LocalPlayerInfo GetLocalPlayerInfo();
 	static Camera GetCameraInfo();
 
 	static bool IsFloraHarvested(char harvestFlagA, char harvestFlagB);
-
-	static BYTE CheckHealthFlag(char healthFlag);
-	static bool GetActorSnapshotComponentData(const TesObjectRefr& entityData, ActorSnapshotComponent* actorSnapshotComponentData);
 
 	static bool IsTargetValid(DWORD64 targetPtr);
 	static bool IsTargetValid(const TesObjectRefr& targetData);
 
 	inline static DWORD64 targetLockedEntityPtr = 0;
 
-	static DWORD64 GetLocalPlayerPtr(bool checkMainMenu);
-
-	static void GetCustomEntityData(const TesItem& referenceData, DWORD64* entityFlag, DWORD64* entityNamePtr, int* enabledDistance);
-	static bool CheckFormIdArray(DWORD formId, const bool* enabledArray, const DWORD* formIdArray, int size);
+	static void    GetCustomEntityData(const TesItem& referenceData, DWORD64* entityFlag, int* enabledDistance);
+	static bool    CheckFormIdArray(DWORD formId, const bool* enabledArray, const DWORD* formIdArray, int size);
 	static DWORD64 RttiGetNamePtr(DWORD64 vtable);
-	static bool VtableSwap(DWORD64 dst, DWORD64 src);
+	static bool    VtableSwap(DWORD64 dst, DWORD64 src);
 
 	static ItemInfo GetItemInfo(const TesObjectRefr& entity);
+	static std::string GetEntityName(DWORD64 ptr);
 
 private:
 	static TesObjectCell GetSkyCell();
@@ -752,8 +674,6 @@ private:
 	static bool SendHitsToServer(Hits* hitsData, size_t hitsDataSize);
 	static DWORD64 GetNukeCodePtr(DWORD formId);
 	static std::string GetInstancedItemName(DWORD64 displayPtr);
-
-	static std::string GetEntityName(DWORD64 ptr);
 
 	virtual void Dummy() = 0;
 };

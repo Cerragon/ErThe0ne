@@ -72,8 +72,8 @@ struct LooterSettings
 
 			std::unordered_map<DWORD, bool>	components = []() {
 				std::unordered_map<DWORD, bool> result(JUNK_COMPONENT_NAMES.size());
-				for (const auto& component : JUNK_COMPONENT_NAMES)
-					result.emplace(component.first, false);
+				for (const auto& [formId, isEnabled] : JUNK_COMPONENT_NAMES)
+					result.emplace(formId, false);
 				return result;
 			}();
 
@@ -86,8 +86,8 @@ struct LooterSettings
 
 			std::unordered_map<DWORD, bool>	components = []() {
 				std::unordered_map<DWORD, bool> result(FLORA_COMPONENT_NAMES.size());
-				for (const auto& component : FLORA_COMPONENT_NAMES)
-					result.emplace(component.first, false);
+				for (const auto& [formId, isEnabled] : FLORA_COMPONENT_NAMES)
+					result.emplace(formId, false);
 				return result;
 			}();
 

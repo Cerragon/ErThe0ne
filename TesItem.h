@@ -1,9 +1,14 @@
 #pragma once
 #include <cstdint>
 
+#include "common.h"
+
 class TesItem
 {
 public:
+	[[nodiscard]] FormType    GetFormType() const { return static_cast<FormType>(formType); }
+	[[nodiscard]] std::string GetName() const;
+
 	std::uintptr_t vtable;//0x0
 	char padding0008[0x10];
 	char recordFlagA;//0x18

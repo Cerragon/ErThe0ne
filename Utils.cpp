@@ -47,12 +47,7 @@ bool Utils::Valid(const DWORD64 ptr)
 	return true;
 }
 
-float Utils::GetDistance(const float* a1, const float* a2)
-{
-	return sqrtf(powf(a1[0] - a2[0], 2.0f) + powf(a1[1] - a2[1], 2.0f) + powf(a1[2] - a2[2], 2.0f));
-}
-
-void Utils::ProjectView(float* dst, const float* forward, const float* origin, const float distance)
+void Utils::ProjectView(Vector3& dst, const Vector3& forward, const Vector3& origin, const float distance)
 {
 	dst[0] = origin[0] + forward[0] * distance;
 	dst[1] = origin[1] + forward[1] * distance;
@@ -64,14 +59,14 @@ float Utils::RadiansToDegrees(const float radians)
 	return radians * (180.0f / 3.14159265f);
 }
 
-float Utils::GetDegrees(float* src, float* forward, float* origin)
+float Utils::GetDegrees(Vector3& src, Vector3& forward, Vector3& origin)
 {
-	float buffer[3];
-	ProjectView(buffer, forward, origin, GetDistance(src, origin));
-	return RadiansToDegrees(sinf(GetDistance(src, buffer) / GetDistance(origin, buffer)));
+	Vector3 buffer;
+	ProjectView(buffer, forward, origin, src.DistanceTo(origin));
+	return RadiansToDegrees(sinf(src.DistanceTo(buffer) / origin.DistanceTo(buffer)));
 }
 
-bool Utils::WorldToScreen(const float* view, const float* position, ImVec2& screenPos)
+bool Utils::WorldToScreen(const float* view, const Vector3& position, ImVec2& screenPos)
 {
 	float buffer[4];
 	buffer[0] = view[0] * position[0] + -view[1] * -position[1] + view[2] * position[2] + view[3];

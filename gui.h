@@ -36,11 +36,11 @@ private:
 	static void RenderOverlay();
 	static void RenderInfoBox();
 
-	static void RenderEntities();
-	static void RenderPlayers();
+	static void RenderEntities(const Camera& cameraData);
+	static void RenderPlayers(const Camera& cameraData);
 
-	static void RenderActors(const CustomEntry& entry, const EspSettings::Actors& settings);
-	static void RenderItems(const CustomEntry& entry, const EspSettings::Items& settings);
+	static void RenderActors(const CustomEntry& entry, const Camera& cameraData, const EspSettings::Actors& settings);
+	static void RenderItems(const CustomEntry& entry, const Camera& cameraData, const EspSettings::Items& settings);
 
 	static void RenderText(const char* text, const ImVec2& position, ImU32 color);
 

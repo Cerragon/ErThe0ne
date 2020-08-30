@@ -18,3 +18,19 @@ LoadedAreaManager Game::GetLoadedAreaManager()
 
 	return result;
 }
+
+LocalPlayer Game::GetLocalPlayer()
+{
+	LocalPlayer result = {};
+
+	std::uintptr_t localPlayerPtr;
+	if (!ErectusProcess::Rpm(ErectusProcess::exe + OFFSET_LOCAL_PLAYER, &localPlayerPtr, sizeof localPlayerPtr))
+		return result;
+	if (!Utils::Valid(localPlayerPtr))
+		return result;
+
+	ErectusProcess::Rpm(localPlayerPtr, &result, sizeof result);
+	result.ptr = localPlayerPtr;
+
+	return result;
+}
