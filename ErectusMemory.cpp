@@ -135,7 +135,7 @@ DWORD64 ErectusMemory::GetPtr(const DWORD formId)
 
 bool ErectusMemory::IsRecipeKnown(const DWORD formId)
 {
-	//the list of known recipes is implemented as a set / rb-tree at [localplayer + 0xDB0]+0x8.
+	//the list of known recipes is implemented as a set / rb-tree at [localplayer + 0xD98]+0x8.
 	struct SetEntry
 	{
 		DWORD64 left; //0x0000
@@ -152,7 +152,7 @@ bool ErectusMemory::IsRecipeKnown(const DWORD formId)
 		return false;
 
 	DWORD64 setPtr;
-	if (!ErectusProcess::Rpm(player.ptr + 0xDB0, &setPtr, sizeof setPtr))
+	if (!ErectusProcess::Rpm(player.ptr + 0xD98, &setPtr, sizeof setPtr))
 		return false;
 
 	if (!ErectusProcess::Rpm(setPtr + 0x8, &setPtr, sizeof setPtr))
@@ -1492,6 +1492,8 @@ DWORD ErectusMemory::GetEntityId(const TesObjectRefr& entityData)
 	memcpy(&v1, entityData.idValue, sizeof v1);
 
 	const auto v2 = v1 >> 1;
+	return v2 | 0x100000;
+	/*
 	const auto v3 = v2 + v2;
 
 	DWORD v4;
@@ -1502,6 +1504,7 @@ DWORD ErectusMemory::GetEntityId(const TesObjectRefr& entityData)
 	const auto v6 = v5 | v2;
 
 	return v6;
+	*/
 }
 
 bool ErectusMemory::SendHitsToServer(Hits* hitsData, const size_t hitsDataSize)
