@@ -191,6 +191,7 @@
     <ClInclude Include="TesItem.h" />
     <ClInclude Include="TesObjectCell.h" />
     <ClInclude Include="TesObjectRefr.h" />
+    <ClInclude Include="TesWorldSpace.h" />
     <ClInclude Include="threads.h" />
     <ClInclude Include="utils.h" />
     <ClInclude Include="WeaponEditor.h" />

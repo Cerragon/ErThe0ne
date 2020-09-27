@@ -25,7 +25,7 @@ std::string TesItem::GetName() const
 		entityNamePtr = namePtr00B0;
 		break;
 	case FormType::TesNpc:
-		entityNamePtr = namePtr0160;
+		entityNamePtr = namePtr0178;
 		break;
 	default:
 		break;

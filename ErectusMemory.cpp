@@ -133,25 +133,6 @@ DWORD64 ErectusMemory::GetPtr(const DWORD formId)
 	return ptr;
 }
 
-TesObjectCell ErectusMemory::GetSkyCell()
-{
-	TesObjectCell result = {};
-
-	DWORD64 worldspacePtr = 0;
-	if (!ErectusProcess::Rpm(ErectusProcess::exe + OFFSET_MAIN_WORLDSPACE, &worldspacePtr, sizeof worldspacePtr))
-		return result;
-	if (!Utils::Valid(worldspacePtr))
-		return result;
-
-	TesWorldSpace worldspace = {};
-	if (!ErectusProcess::Rpm(worldspacePtr, &worldspace, sizeof worldspace))
-		return result;
-
-	ErectusProcess::Rpm(worldspace.skyCellPtr, &result, sizeof result);
-
-	return result;
-}
-
 bool ErectusMemory::IsRecipeKnown(const DWORD formId)
 {
 	//the list of known recipes is implemented as a set / rb-tree at [localplayer + 0xDB0]+0x8.
@@ -208,25 +189,9 @@ bool ErectusMemory::CheckFormIdArray(const DWORD formId, const bool* enabledArra
 	return false;
 }
 
-bool ErectusMemory::IsJunk(const TesItem& referenceData)
-{
-	if (referenceData.componentArraySize && !(referenceData.recordFlagA >> 7 & 1))
-		return true;
-
-	return false;
-}
-
 bool ErectusMemory::IsMod(const TesItem& referenceData)
 {
 	if (referenceData.recordFlagA >> 7 & 1)
-		return true;
-
-	return false;
-}
-
-bool ErectusMemory::IsPlan(const TesItem& referenceData)
-{
-	if (referenceData.planFlag >> 5 & 1)
 		return true;
 
 	return false;
@@ -312,11 +277,6 @@ bool ErectusMemory::CheckWhitelistedFlux(const TesItem& referenceData)
 	}
 }
 
-bool ErectusMemory::IsTreasureMap(const TesItem& referenceData)
-{
-	return TREASUREMAP_FORMIDS.contains(referenceData.formId);
-}
-
 bool ErectusMemory::IsItem(const TesItem& referenceData)
 {
 	switch (referenceData.GetFormType())
@@ -371,7 +331,7 @@ ItemInfo ErectusMemory::GetItemInfo(const TesObjectRefr& entity)
 		break;
 
 	case FormType::TesObjectMisc:
-		if (IsJunk(result.base))
+		if (result.base.IsJunkItem())
 			result.type = ItemTypes::Junk;
 		else if (IsMod(result.base))
 			result.type = ItemTypes::Mod;
@@ -382,7 +342,7 @@ ItemInfo ErectusMemory::GetItemInfo(const TesObjectRefr& entity)
 		break;
 
 	case FormType::TesObjectBook:
-		if (IsPlan(result.base))
+		if (result.base.IsPlan())
 		{
 			if (IsRecipeKnown(result.base.formId))
 				result.type = ItemTypes::NotesKnownPlan;
@@ -391,7 +351,7 @@ ItemInfo ErectusMemory::GetItemInfo(const TesObjectRefr& entity)
 		}
 		else if (IsMagazine(result.base))
 			result.type = ItemTypes::AidMagazine;
-		else if (IsTreasureMap(result.base))
+		else if (result.base.IsTreasureMap())
 			result.type = ItemTypes::NotesTreasureMap;
 		else
 			result.type = ItemTypes::Notes;
@@ -439,21 +399,21 @@ ItemInfo ErectusMemory::GetItemInfo(const TesObjectRefr& entity)
 	return result;
 }
 
-void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* entityFlag, int* enabledDistance)
+void ErectusMemory::GetCustomEntityData(const TesItem& baseObject, DWORD64* entityFlag, int* enabledDistance)
 {
-	if (const auto found = Settings::esp.blacklist.find(referenceData.formId); found != Settings::esp.blacklist.end()) {
+	if (const auto found = Settings::esp.blacklist.find(baseObject.formId); found != Settings::esp.blacklist.end()) {
 		if (found->second) {
 			*entityFlag |= CUSTOM_ENTRY_INVALID;
 			return;
 		}
 	}
 
-	if (const auto found = Settings::esp.whitelist.find(referenceData.formId); found != Settings::esp.whitelist.end()) {
+	if (const auto found = Settings::esp.whitelist.find(baseObject.formId); found != Settings::esp.whitelist.end()) {
 		if (found->second)
 			*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
 	}
 
-	switch (referenceData.GetFormType())
+	switch (baseObject.GetFormType())
 	{
 	case FormType::BgsIdleMarker:
 	case FormType::BgsStaticCollection:
@@ -478,14 +438,14 @@ void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* e
 		break;
 	case FormType::TesObjectMisc:
 		*entityFlag |= CUSTOM_ENTRY_VALID_ITEM;
-		if (IsJunk(referenceData))
+		if (baseObject.IsJunkItem())
 		{
 			*entityFlag |= CUSTOM_ENTRY_JUNK;
 			*enabledDistance = Settings::esp.junk.enabledDistance;
 			if (!Settings::esp.junk.enabled && !(*entityFlag & CUSTOM_ENTRY_WHITELISTED))
 				*entityFlag |= CUSTOM_ENTRY_INVALID;
 		}
-		else if (IsMod(referenceData))
+		else if (IsMod(baseObject))
 		{
 			*entityFlag |= CUSTOM_ENTRY_MOD;
 			*entityFlag |= CUSTOM_ENTRY_ITEM;
@@ -493,7 +453,7 @@ void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* e
 			if (!Settings::esp.items.enabled)
 				*entityFlag |= CUSTOM_ENTRY_INVALID;
 		}
-		else if (IsBobblehead(referenceData))
+		else if (IsBobblehead(baseObject))
 		{
 			*entityFlag |= CUSTOM_ENTRY_BOBBLEHEAD;
 			*enabledDistance = Settings::esp.bobbleheads.enabledDistance;
@@ -511,12 +471,12 @@ void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* e
 		break;
 	case FormType::TesObjectBook:
 		*entityFlag |= CUSTOM_ENTRY_VALID_ITEM;
-		if (IsPlan(referenceData))
+		if (baseObject.IsPlan())
 		{
 			*entityFlag |= CUSTOM_ENTRY_PLAN;
 			*enabledDistance = Settings::esp.plans.enabledDistance;
 
-			if (IsRecipeKnown(referenceData.formId))
+			if (IsRecipeKnown(baseObject.formId))
 				*entityFlag |= CUSTOM_ENTRY_KNOWN_RECIPE;
 			else
 				*entityFlag |= CUSTOM_ENTRY_UNKNOWN_RECIPE;
@@ -524,7 +484,7 @@ void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* e
 			if (!Settings::esp.plans.enabled && !(*entityFlag & CUSTOM_ENTRY_WHITELISTED))
 				*entityFlag |= CUSTOM_ENTRY_INVALID;
 		}
-		else if (IsMagazine(referenceData))
+		else if (IsMagazine(baseObject))
 		{
 			*entityFlag |= CUSTOM_ENTRY_MAGAZINE;
 			*enabledDistance = Settings::esp.magazines.enabledDistance;
@@ -535,7 +495,7 @@ void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* e
 		{
 			*entityFlag |= CUSTOM_ENTRY_ITEM;
 			*enabledDistance = Settings::esp.items.enabledDistance;
-			if (IsTreasureMap(referenceData))
+			if (baseObject.IsTreasureMap())
 				*entityFlag |= CUSTOM_ENTRY_TREASURE_MAP;
 			if (!Settings::esp.items.enabled && !(*entityFlag & CUSTOM_ENTRY_WHITELISTED))
 				*entityFlag |= CUSTOM_ENTRY_INVALID;
@@ -545,7 +505,7 @@ void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* e
 		*entityFlag |= CUSTOM_ENTRY_FLORA;
 		*enabledDistance = Settings::esp.flora.enabledDistance;
 
-		if (CheckWhitelistedFlux(referenceData))
+		if (CheckWhitelistedFlux(baseObject))
 			*entityFlag |= CUSTOM_ENTRY_WHITELISTED;
 		if (!Settings::esp.flora.enabled && !(*entityFlag & CUSTOM_ENTRY_WHITELISTED))
 			*entityFlag |= CUSTOM_ENTRY_INVALID;
@@ -584,7 +544,7 @@ void ErectusMemory::GetCustomEntityData(const TesItem& referenceData, DWORD64* e
 			*entityFlag |= CUSTOM_ENTRY_INVALID;
 		break;
 	default:
-		if (IsItem(referenceData))
+		if (IsItem(baseObject))
 		{
 			*entityFlag |= CUSTOM_ENTRY_ITEM;
 			*entityFlag |= CUSTOM_ENTRY_VALID_ITEM;
@@ -645,9 +605,7 @@ bool ErectusMemory::UpdateBufferEntityList()
 
 	const auto player = Game::GetLocalPlayer();
 
-	auto cells = Game::GetLoadedAreaManager().GetLoadedCells();
-	cells.push_back(GetSkyCell());
-
+	auto cells = Game::GetLoadedCells();
 	for (const auto& cell : cells)
 	{
 		auto objects = cell.GetObjectRefs();
@@ -1043,7 +1001,7 @@ bool ErectusMemory::MovePlayer()
 void ErectusMemory::Noclip(const bool state)
 {
 	BYTE noclipOnA[] = { 0x0F, 0x1F, 0x44, 0x00, 0x00 };
-	BYTE noclipOffA[] = { 0xE8, 0xC3, 0xC5, 0xFE, 0xFF };
+	BYTE noclipOffA[] = { 0xE8, 0xC3, 0xC1, 0xFE, 0xFF };
 	BYTE noclipCheckA[sizeof noclipOffA];
 
 	BYTE noclipOnB[] = { 0x0F, 0x1F, 0x40, 0x00 };
@@ -1051,11 +1009,11 @@ void ErectusMemory::Noclip(const bool state)
 	BYTE noclipCheckB[sizeof noclipOffB];
 
 	BYTE noclipOnC[] = { 0x0F, 0x1F, 0x44, 0x00, 0x00 };
-	BYTE noclipOffC[] = { 0xE8, 0x9A, 0xA1, 0x34, 0x01 };
+	BYTE noclipOffC[] = { 0xE8, 0xCA, 0xDB, 0x37, 0x01 };
 	BYTE noclipCheckC[sizeof noclipOffC];
 
 	BYTE noclipOnD[] = { 0x66, 0x0F, 0x1F, 0x44, 0x00, 0x00 };
-	BYTE noclipOffD[] = { 0xFF, 0x15, 0x59, 0xEC, 0xFF, 0x01 };
+	BYTE noclipOffD[] = { 0xFF, 0x15, 0x21, 0x5B, 0x05, 0x02 };
 	BYTE noclipCheckD[sizeof noclipOffD];
 
 	const auto noclipA = ErectusProcess::Rpm(ErectusProcess::exe + OFFSET_NOCLIP_A, &noclipCheckA, sizeof noclipCheckA);
@@ -1280,7 +1238,7 @@ bool ErectusMemory::TransferItems(const DWORD sourceFormId, const DWORD destinat
 
 	for (DWORD64 i = 0; i < itemArraySize; i++)
 	{
-		if (!Utils::Valid(itemData[i].referencePtr))
+		if (!Utils::Valid(itemData[i].baseObjectPtr))
 			continue;
 		if (!Utils::Valid(itemData[i].displayPtr) || itemData[i].iterations < itemData[i].displayPtr)
 			continue;
@@ -1288,7 +1246,7 @@ bool ErectusMemory::TransferItems(const DWORD sourceFormId, const DWORD destinat
 		if (Settings::customTransferSettings.useWhitelist || Settings::customTransferSettings.useBlacklist)
 		{
 			TesItem referenceData{};
-			if (!ErectusProcess::Rpm(itemData[i].referencePtr, &referenceData, sizeof referenceData))
+			if (!ErectusProcess::Rpm(itemData[i].baseObjectPtr, &referenceData, sizeof referenceData))
 				continue;
 
 			if (Settings::customTransferSettings.useWhitelist)
@@ -1343,18 +1301,11 @@ bool ErectusMemory::GetTeleportPosition(const int index)
 	if (!player.IsIngame())
 		return false;
 
-	if (!Utils::Valid(player.cellPtr))
-		return false;
-
-	DWORD cellFormId;
-	if (!ErectusProcess::Rpm(player.cellPtr + 0x20, &cellFormId, sizeof cellFormId))
-		return false;
-
 	Settings::teleporter.entries[index].destination[0] = player.position[0];
 	Settings::teleporter.entries[index].destination[1] = player.position[1];
 	Settings::teleporter.entries[index].destination[2] = player.position[2];
 	Settings::teleporter.entries[index].destination[3] = player.yaw;
-	Settings::teleporter.entries[index].cellFormId = cellFormId;
+	Settings::teleporter.entries[index].cellFormId = player.GetCurrentCell().formId;
 
 	return true;
 }
@@ -1793,13 +1744,13 @@ DWORD ErectusMemory::GetFavoritedWeaponId(const BYTE favouriteIndex)
 
 	for (DWORD64 i = 0; i < itemArraySize; i++)
 	{
-		if (!Utils::Valid(itemData[i].referencePtr))
+		if (!Utils::Valid(itemData[i].baseObjectPtr))
 			continue;
 		if (itemData[i].favoriteIndex != favouriteIndex)
 			continue;
 
 		TesItem referenceData{};
-		if (!ErectusProcess::Rpm(itemData[i].referencePtr, &referenceData, sizeof referenceData))
+		if (!ErectusProcess::Rpm(itemData[i].baseObjectPtr, &referenceData, sizeof referenceData))
 			break;
 		if (referenceData.GetFormType() != FormType::TesObjectWeap)
 			break;
@@ -1953,13 +1904,13 @@ std::unordered_map<int, std::string> ErectusMemory::GetFavoritedWeapons()
 
 	for (DWORD64 i = 0; i < itemArraySize; i++)
 	{
-		if (!Utils::Valid(itemData[i].referencePtr))
+		if (!Utils::Valid(itemData[i].baseObjectPtr))
 			continue;
 		if (itemData[i].favoriteIndex > 12)
 			continue;
 
 		TesItem referenceData{};
-		if (!ErectusProcess::Rpm(itemData[i].referencePtr, &referenceData, sizeof referenceData))
+		if (!ErectusProcess::Rpm(itemData[i].baseObjectPtr, &referenceData, sizeof referenceData))
 			continue;
 		if (referenceData.GetFormType() != FormType::TesObjectWeap)
 			continue;
@@ -2004,13 +1955,13 @@ std::string ErectusMemory::GetFavoritedWeaponText(const BYTE index)
 
 	for (DWORD64 i = 0; i < itemArraySize; i++)
 	{
-		if (!Utils::Valid(itemData[i].referencePtr))
+		if (!Utils::Valid(itemData[i].baseObjectPtr))
 			continue;
 		if (itemData[i].favoriteIndex != index)
 			continue;
 
 		TesItem referenceData{};
-		if (!ErectusProcess::Rpm(itemData[i].referencePtr, &referenceData, sizeof referenceData))
+		if (!ErectusProcess::Rpm(itemData[i].baseObjectPtr, &referenceData, sizeof referenceData))
 			break;
 		if (referenceData.GetFormType() != FormType::TesObjectWeap)
 			break;
@@ -2037,7 +1988,6 @@ bool ErectusMemory::MeleeAttack()
 	const auto player = Game::GetLocalPlayer();
 	if (!player.IsIngame())
 		return false;
-
 
 	const auto allocAddress = ErectusProcess::AllocEx(sizeof(ExternalFunction));
 	if (allocAddress == 0)

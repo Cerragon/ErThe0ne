@@ -8,18 +8,6 @@
 
 #include "TesObjectCell.h"
 
-class TesWorldSpace
-{
-public:
-	BYTE pad0000[32]; //0x0000
-	DWORD formId; //0x0020
-	BYTE pad0024[2]; //0x0024
-	BYTE formType; //0x0026
-	BYTE pad0027[353]; //0x0027
-	DWORD64 skyCellPtr; //0x0188
-	BYTE pad0190[120]; //0x0190
-};
-
 class Camera
 {
 public:
@@ -164,8 +152,8 @@ public:
 class InventoryEntry
 {
 public:
-	DWORD64 referencePtr;//0x0
-	BYTE padding0008[0x8];
+	DWORD64 baseObjectPtr;//0x0
+	DWORD64 instancePtr;
 	DWORD64 displayPtr;//0x10
 	BYTE padding0018[0x8];
 	DWORD64 iterations;//0x20
@@ -640,7 +628,7 @@ public:
 
 	inline static DWORD64 targetLockedEntityPtr = 0;
 
-	static void    GetCustomEntityData(const TesItem& referenceData, DWORD64* entityFlag, int* enabledDistance);
+	static void    GetCustomEntityData(const TesItem& baseObject, DWORD64* entityFlag, int* enabledDistance);
 	static bool    CheckFormIdArray(DWORD formId, const bool* enabledArray, const DWORD* formIdArray, int size);
 	static DWORD64 RttiGetNamePtr(DWORD64 vtable);
 	static bool    VtableSwap(DWORD64 dst, DWORD64 src);
@@ -649,7 +637,6 @@ public:
 	static std::string GetEntityName(DWORD64 ptr);
 
 private:
-	static TesObjectCell GetSkyCell();
 	static bool GetNukeCode(DWORD formId, std::array<int, 8>& nukeCode);
 	static std::string GetPlayerName(const ClientAccount& clientAccountData);
 
@@ -658,12 +645,10 @@ private:
 	static bool CheckWhitelistedFlux(const TesItem& referenceData);
 	
 	static bool IsItem(const TesItem& referenceData);
-	static bool IsJunk(const TesItem& referenceData);
 	static bool IsMod(const TesItem& referenceData);
-	static bool IsPlan(const TesItem& referenceData);
+
 	static bool IsBobblehead(const TesItem& tesItem);
 	static bool IsMagazine(const TesItem& tesItem);
-	static bool IsTreasureMap(const TesItem& referenceData);
 	static bool IsRecipeKnown(DWORD formId);
 
 	static bool MovePlayer();

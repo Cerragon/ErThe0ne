@@ -28,16 +28,16 @@ public:
 	BYTE isEssential; //0x3B
 	BYTE isProtected; //0x3C
 	BYTE isPlayerProtected; //0x3D
-	BYTE padding003C[0x32];
-	float maxHealth; //0x70
-	float modifiedHealth; //0x74
+	BYTE padding003C[0x3A];
+	float maxHealth; //0x78
+	float modifiedHealth; //0x7C
 	BYTE padding0078[0x4];
-	float lostHealth; //0x7C
+	float lostHealth; //0x84
 	BYTE padding0080[0xA0];
-	BYTE epicRank; //0x120
+	BYTE epicRank; //0x128
 	BYTE padding0121[0xF];
-	DWORD64 hostileState; //0x130
-	DWORD64 reconScopeTargetState; //0x138
+	DWORD64 hostileState; //0x138
+	DWORD64 reconScopeTargetState; //0x140
 };
 
 class TesObjectRefr
@@ -91,12 +91,12 @@ public:
 	std::uintptr_t baseObjectPtr; //0xB8
 	char padding00C0[0xE];
 	char spawnFlag; //0xCE
-	char padding00Cf[0xC9];
-	char movementFlag; //0x198
-	char sprintFlag; //0x199
-	char healthFlag; //0x19A
-	char padding019B[0xAD1];
-	std::uint32_t playerStashFormId; //0xC6C
+	char padding00Cf[0xD9];
+	char movementFlag; //0x1A8
+	char sprintFlag; //0x1A9
+	char healthFlag; //0x1AA
+	char padding019B[0xAA9];
+	std::uint32_t playerStashFormId; //0xC54
 
 	std::uintptr_t ptr; //not really there, fill it manually
 };

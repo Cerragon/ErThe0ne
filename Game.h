@@ -5,10 +5,13 @@
 class Game final
 {
 public:
-	static LoadedAreaManager GetLoadedAreaManager();
 	static LocalPlayer GetLocalPlayer();
+	static std::vector<TesObjectCell> GetLoadedCells();
 
 private:
+	static LoadedAreaManager GetLoadedAreaManager();
+	static TesObjectCell GetSkyCell();
+	
 	virtual void Dummy() = 0;
 };
 

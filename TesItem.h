@@ -9,6 +9,19 @@ public:
 	[[nodiscard]] FormType    GetFormType() const { return static_cast<FormType>(formType); }
 	[[nodiscard]] std::string GetName() const;
 
+	[[nodiscard]] bool IsPlan() const
+	{
+		return GetFormType() == FormType::TesObjectBook && planFlag >> 5 & 1;
+	}
+	[[nodiscard]] bool IsTreasureMap() const
+	{
+		return GetFormType() == FormType::TesObjectBook && TREASUREMAP_FORMIDS.contains(formId);
+	}
+	[[nodiscard]] bool IsJunkItem() const
+	{
+		return GetFormType() == FormType::TesObjectMisc && componentArraySize && !(recordFlagA >> 7 & 1);
+	}
+
 	std::uintptr_t vtable;//0x0
 	char padding0008[0x10];
 	char recordFlagA;//0x18
@@ -28,9 +41,9 @@ public:
 	std::uintptr_t factionArrayPtr;//0xF0
 	char padding00F8[0x8];
 	int factionArraySize;//0x100
-	char padding0104[0x5C];
-	std::uintptr_t namePtr0160;//0x160
-	char padding0168[0x48];
+	char padding0104[0x74];
+	std::uintptr_t namePtr0178;//0x178
+	char padding0168[0x30];
 	std::uintptr_t keywordArrayData01B0;//0x1B0
 	std::uintptr_t keywordArrayData01B8;//0x1B8
 	std::uintptr_t keywordArrayData01C0;//0x1C0

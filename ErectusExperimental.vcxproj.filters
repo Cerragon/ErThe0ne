@@ -234,5 +234,8 @@
     <ClInclude Include="LocalPlayer.h">
       <Filter>Header Files\gameObjects</Filter>
     </ClInclude>
+    <ClInclude Include="TesWorldSpace.h">
+      <Filter>Header Files\gameObjects</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

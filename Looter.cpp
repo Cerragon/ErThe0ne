@@ -220,12 +220,12 @@ bool Looter::LootContainer(const ItemInfo& item, const LocalPlayer& player)
 
 	for (DWORD64 i = 0; i < entryArraySize; i++)
 	{
-		if (!Utils::Valid(entries[i].referencePtr))
+		if (!Utils::Valid(entries[i].baseObjectPtr))
 			continue;
 		if (!Utils::Valid(entries[i].displayPtr) || entries[i].iterations < entries[i].displayPtr) //???
 			continue;
 
-		TesObjectRefr ref = { .baseObjectPtr = entries[i].referencePtr };
+		TesObjectRefr ref = { .baseObjectPtr = entries[i].baseObjectPtr };
 
 //		if (baseItem.recordFlagA >> 2 & 1) //???
 //			continue;
@@ -358,7 +358,7 @@ void Looter::Loot()
 		lastPlayerCellFormId = currentCellFormId;
 	}
 
-	auto cells = Game::GetLoadedAreaManager().GetLoadedCells();
+	auto cells = Game::GetLoadedCells();
 	for(const auto& cell : cells)
 	{
 		auto entities = cell.GetObjectRefs();

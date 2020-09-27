@@ -2,6 +2,7 @@
 
 #include "common.h"
 #include "ErectusProcess.h"
+#include "TesWorldSpace.h"
 #include "utils.h"
 
 LoadedAreaManager Game::GetLoadedAreaManager()
@@ -31,6 +32,33 @@ LocalPlayer Game::GetLocalPlayer()
 
 	ErectusProcess::Rpm(localPlayerPtr, &result, sizeof result);
 	result.ptr = localPlayerPtr;
+
+	return result;
+}
+
+std::vector<TesObjectCell> Game::GetLoadedCells()
+{
+	auto result = GetLoadedAreaManager().GetLoadedCells();
+	result.push_back(GetSkyCell());
+
+	return result;
+}
+
+TesObjectCell Game::GetSkyCell()
+{
+	TesObjectCell result = {};
+
+	DWORD64 worldspacePtr = 0;
+	if (!ErectusProcess::Rpm(ErectusProcess::exe + OFFSET_MAIN_WORLDSPACE, &worldspacePtr, sizeof worldspacePtr))
+		return result;
+	if (!Utils::Valid(worldspacePtr))
+		return result;
+
+	TesWorldSpace worldspace = {};
+	if (!ErectusProcess::Rpm(worldspacePtr, &worldspace, sizeof worldspace))
+		return result;
+
+	ErectusProcess::Rpm(worldspace.skyCellPtr, &result, sizeof result);
 
 	return result;
 }
