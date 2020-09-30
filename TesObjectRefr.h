@@ -17,25 +17,25 @@ class ActorSnapshotComponent
 {
 public:
 	//ActorCoreSnapshotComponent
-	DWORD64 actorCorevtable; //0x0
-	BYTE actorCorePadding0008[0x98];
+	std::uintptr_t actorCorevtable; //0x0
+	char actorCorePadding0008[0x98];
 	//ActorServerAuthSnapshotData    // 0x38 isInvulnerable, 0x3C isProtected, 0x3D IsPlayerProtected, 0x130 hostileState, 0x138 reconScopeTargetState
-	DWORD64 vtable; //0xA0
-	BYTE padding0008[0x30];
-	BYTE isInvulnerable; //0x38
-	BYTE unk0039; //0x39
-	BYTE unk003A; //0x3A
-	BYTE isEssential; //0x3B
-	BYTE isProtected; //0x3C
-	BYTE isPlayerProtected; //0x3D
-	BYTE padding003C[0x3A];
+	std::uintptr_t vtable; //0xA0
+	char padding0008[0x30];
+	char isInvulnerable; //0x38
+	char unk0039; //0x39
+	char unk003A; //0x3A
+	char isEssential; //0x3B
+	char isProtected; //0x3C
+	char isPlayerProtected; //0x3D
+	char padding003C[0x3A];
 	float maxHealth; //0x78
 	float modifiedHealth; //0x7C
-	BYTE padding0078[0x4];
+	char padding0078[0x4];
 	float lostHealth; //0x84
-	BYTE padding0080[0xA0];
-	BYTE epicRank; //0x128
-	BYTE padding0121[0xF];
+	char padding0080[0xA0];
+	std::uint8_t epicRank; //0x128
+	char padding0121[0xF];
 	DWORD64 hostileState; //0x138
 	DWORD64 reconScopeTargetState; //0x140
 };

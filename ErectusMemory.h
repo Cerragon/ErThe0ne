@@ -335,8 +335,8 @@ public:
 	DWORD64 address{};			//0x20 (0x0)
 	DWORD64 rcx{};				//0x28 (0x8)
 	DWORD64 rdx{};				//0x30 (0x10)
-	DWORD64 r8{};					//0x38 (0x18)
-	DWORD64 r9{};					//0x40 (0x20)
+	DWORD64 r8{};				//0x38 (0x18)
+	DWORD64 r9{};				//0x40 (0x20)
 };
 
 class ActorValueHook
@@ -594,7 +594,7 @@ public:
 
 	//noclip
 	static bool SetClientState(DWORD64 clientState);
-	static void Noclip(bool state);
+	static void Noclip(bool enabled);
 
 	//opk
 	static bool SetOpkData(DWORD64 opkPage, bool enabled);
@@ -614,7 +614,7 @@ public:
 
 	static bool DamageRedirection(DWORD64 targetPtr, DWORD64* targetingPage, bool* targetingPageValid, bool isExiting, bool state);
 
-	static bool PositionSpoofing(bool state);
+	static bool PositionSpoofing(bool enabled);
 
 	static bool MeleeAttack();
 	static bool ChargenEditing();

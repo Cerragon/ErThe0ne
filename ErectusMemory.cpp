@@ -834,7 +834,7 @@ bool ErectusMemory::DamageRedirection(const DWORD64 targetPtr, DWORD64* targetin
 	BYTE pageJmpOff[] = { 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC };
 	BYTE pageJmpCheck[sizeof pageJmpOff];
 
-	BYTE redirectionOn[] = { 0xE9, 0x8D, 0xFE, 0xFF, 0xFF }; //this should be calculated tbh, it's a relative jmp: "jmp (OFFSET_REDIRECTION_JMP - OFFSET_REDIRECTION)"
+	BYTE redirectionOn[] = { 0xE9, 0x8B, 0xFE, 0xFF, 0xFF }; //this should be calculated tbh, it's a relative jmp: "jmp (OFFSET_REDIRECTION_JMP - OFFSET_REDIRECTION)"
 	BYTE redirectionOff[] = { 0x48, 0x8B, 0x5C, 0x24, 0x50 };
 	BYTE redirectionCheck[sizeof redirectionOff];
 
@@ -998,7 +998,7 @@ bool ErectusMemory::MovePlayer()
 	return true;
 }
 
-void ErectusMemory::Noclip(const bool state)
+void ErectusMemory::Noclip(const bool enabled)
 {
 	BYTE noclipOnA[] = { 0x0F, 0x1F, 0x44, 0x00, 0x00 };
 	BYTE noclipOffA[] = { 0xE8, 0xC3, 0xC1, 0xFE, 0xFF };
@@ -1021,7 +1021,7 @@ void ErectusMemory::Noclip(const bool state)
 	const auto noclipC = ErectusProcess::Rpm(ErectusProcess::exe + OFFSET_NOCLIP_C, &noclipCheckC, sizeof noclipCheckC);
 	const auto noclipD = ErectusProcess::Rpm(ErectusProcess::exe + OFFSET_NOCLIP_D, &noclipCheckD, sizeof noclipCheckD);
 
-	if (state)
+	if (enabled)
 	{
 		if (noclipA && !memcmp(noclipCheckA, noclipOffA, sizeof noclipOffA))
 			ErectusProcess::Wpm(ErectusProcess::exe + OFFSET_NOCLIP_A, &noclipOnA, sizeof noclipOnA);
@@ -1436,7 +1436,7 @@ bool ErectusMemory::SetClientState(const DWORD64 clientState)
 	return MsgSender::Send(&clientStateMsgData, sizeof clientStateMsgData);
 }
 
-bool ErectusMemory::PositionSpoofing(const bool state)
+bool ErectusMemory::PositionSpoofing(const bool enabled)
 {
 	BYTE positionSpoofingOn[] = {
 		0xBA, 0x00, 0x00, 0x00, 0x00, 0xEB, 0x11, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC,
@@ -1451,7 +1451,7 @@ bool ErectusMemory::PositionSpoofing(const bool state)
 	if (!ErectusProcess::Rpm(ErectusProcess::exe + OFFSET_SERVER_POSITION, &positionSpoofingCheck, sizeof positionSpoofingCheck))
 		return false;
 
-	if (!state)
+	if (!enabled)
 	{
 		positionSpoofingCheck[1] = 0x00;
 		positionSpoofingCheck[2] = 0x00;
