@@ -1,8 +1,8 @@
 #pragma once
-#include <Windows.h>
 #include "ErectusMemory.h"
 #include "settings.h"
-#include "imgui/imgui.h"
+#include "dependencies/imgui/imgui.h"
+#include "game/Datatypes/Camera.h"
 
 class Gui final {
 public:
@@ -39,10 +39,10 @@ private:
 	static void RenderEntities(const Camera& cameraData);
 	static void RenderPlayers(const Camera& cameraData);
 
-	static void RenderActors(const CustomEntry& entry, const Camera& cameraData, const EspSettings::Actors& settings);
-	static void RenderItems(const CustomEntry& entry, const Camera& cameraData, const EspSettings::Items& settings);
+	static void RenderActors(const CustomEntry& entry, const Camera& camera, const EspSettings::Actors& settings);
+	static void RenderItems(const CustomEntry& entry, const Camera& camera, const EspSettings::Items& settings);
 
-	static void RenderText(const char* text, const ImVec2& position, ImU32 color);
+	static void RenderText(const char* text, const Vector2& position, ImU32 color);
 
 	static void ProcessMenu();
 	static void SettingsMenu();
@@ -52,8 +52,8 @@ private:
 	inline static bool transferSourceToggle = false;
 	inline static bool transferDestinationToggle = false;
 
-	inline static DWORD64 getPtrResult = 0;
-	inline static DWORD64 getAddressResult = 0;
+	inline static std::uintptr_t getPtrResult = 0;
+	inline static std::uintptr_t getAddressResult = 0;
 
 	virtual void Dummy() = 0;
 };

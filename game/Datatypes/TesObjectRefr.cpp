@@ -1,6 +1,7 @@
 #include "TesObjectRefr.h"
 
-#include "ErectusProcess.h"
+#include "../../ErectusProcess.h"
+#include "../../utils.h"
 
 TesItem TesObjectRefr::GetBaseObject() const
 {
@@ -32,6 +33,26 @@ ActorState TesObjectRefr::GetActorState() const
 	default:
 		return ActorState::Unknown;
 	}
+}
+
+std::vector<InventoryEntry> TesObjectRefr::GetInventory() const
+{
+	std::vector<InventoryEntry> result = {};
+
+	if (!Utils::Valid(inventoryPtr))
+		return result;
+
+	Inventory inventoryData{};
+	if (!ErectusProcess::Rpm(inventoryPtr, &inventoryData, sizeof inventoryData))
+		return result;
+	if (!Utils::Valid(inventoryData.entryArrayBegin) || inventoryData.entryArrayEnd <= inventoryData.entryArrayBegin)
+		return result;
+
+	const auto entryCount = (inventoryData.entryArrayEnd - inventoryData.entryArrayBegin) / sizeof(InventoryEntry);
+	result.resize(entryCount);
+	ErectusProcess::Rpm(inventoryData.entryArrayBegin, result.data(), entryCount * sizeof(InventoryEntry));
+
+	return result;
 }
 
 ActorSnapshotComponent TesObjectRefr::GetActorSnapshot() const

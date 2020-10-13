@@ -2,11 +2,9 @@
 
 #include <memory>
 
-#include "common.h"
-#include "ErectusMemory.h"
-#include "ErectusProcess.h"
-#include "settings.h"
-#include "utils.h"
+#include "../ErectusMemory.h"
+#include "../ErectusProcess.h"
+#include "../settings.h"
 
 void WeaponEditor::EditWeapons(bool enabled)
 {
@@ -32,7 +30,7 @@ void WeaponEditor::EditWeapons(bool enabled)
 	if (!ErectusProcess::Rpm(weaponList.arrayPtr, weaponPtrArray.get(), weaponList.arraySize * sizeof(DWORD64)))
 		return;
 
-	for (std::size_t i = 0; i < weaponList.arraySize; i++)
+	for (size_t i = 0; i < weaponList.arraySize; i++)
 	{
 		if (!Utils::Valid(weaponPtrArray[i]))
 			continue;

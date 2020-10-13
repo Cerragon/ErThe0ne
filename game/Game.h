@@ -1,12 +1,14 @@
 #pragma once
-#include "LoadedAreaManager.h"
-#include "LocalPlayer.h"
+#include "Datatypes/Camera.h"
+#include "Datatypes/LoadedAreaManager.h"
+#include "Datatypes/LocalPlayer.h"
 
 class Game final
 {
 public:
 	static LocalPlayer GetLocalPlayer();
 	static std::vector<TesObjectCell> GetLoadedCells();
+	static Camera GetPlayerCamera();
 
 private:
 	static LoadedAreaManager GetLoadedAreaManager();

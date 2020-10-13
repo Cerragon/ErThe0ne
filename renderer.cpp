@@ -1,9 +1,10 @@
 #include "renderer.h"
 
-#include "imgui/imgui_impl_dx9.h"
 #include "app.h"
-#include "imgui/imgui_impl_win32.h"
-#include "fmt/format.h"
+#include "dependencies/fmt/fmt/format.h"
+#include "dependencies/imgui/imgui.h"
+#include "dependencies/imgui/imgui_impl_dx9.h"
+#include "dependencies/imgui/imgui_impl_win32.h"
 
 bool Renderer::Init(const HWND hwnd)
 {
@@ -20,7 +21,7 @@ bool Renderer::Init(const HWND hwnd)
 
 	ImGui::GetStyle().FrameRounding = 0.f;
 	ImGui::GetStyle().WindowRounding = 0.f;
-	ImGui::GetStyle().ItemSpacing = ImVec2(4, 4);
+	ImGui::GetStyle().ItemSpacing = { 4.f, 4.f };
 
 	LoadFonts();
 

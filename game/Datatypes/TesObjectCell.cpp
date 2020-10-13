@@ -2,8 +2,9 @@
 
 #include <memory>
 
-#include "ErectusProcess.h"
-#include "utils.h"
+
+#include "../../ErectusProcess.h"
+#include "../../utils.h"
 
 std::vector<TesObjectRefr> TesObjectCell::GetObjectRefs() const
 {

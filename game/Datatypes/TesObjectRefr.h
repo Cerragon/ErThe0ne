@@ -1,9 +1,8 @@
 #pragma once
 #include <cstdint>
 
-#include "common.h"
 #include "TesItem.h"
-#include "utils.h"
+#include "../../utils.h"
 
 enum class ActorState
 {
@@ -36,8 +35,32 @@ public:
 	char padding0080[0xA0];
 	std::uint8_t epicRank; //0x128
 	char padding0121[0xF];
-	DWORD64 hostileState; //0x138
-	DWORD64 reconScopeTargetState; //0x140
+	std::uint64_t hostileState; //0x138
+	std::uint64_t reconScopeTargetState; //0x140
+};
+
+class Inventory
+{
+public:
+	std::uintptr_t vtable;//0x0
+	char padding0008[0x58];
+	std::uintptr_t entryArrayBegin;//0x60
+	std::uintptr_t entryArrayEnd;//0x68
+};
+
+class InventoryEntry
+{
+public:
+	std::uintptr_t baseObjectPtr;//0x0
+	std::uintptr_t instancePtr;
+	std::uintptr_t displayPtr;//0x10
+	char padding0018[0x8];
+	std::uintptr_t iterations;//0x20
+	char equipFlag;//0x28
+	char padding0025[0x3];
+	std::uint32_t itemId;//0x2C
+	char favoriteIndex;//0x30
+	char padding0031[0x7];
 };
 
 class TesObjectRefr
@@ -57,6 +80,8 @@ public:
 		const auto snapshot = GetActorSnapshot();
 		return snapshot.maxHealth + snapshot.modifiedHealth + snapshot.lostHealth;
 	}
+
+	[[nodiscard]] std::vector<InventoryEntry> GetInventory() const;
 
 private:
 	[[nodiscard]] ActorSnapshotComponent GetActorSnapshot() const;

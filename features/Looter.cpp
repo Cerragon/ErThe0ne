@@ -1,13 +1,12 @@
-﻿#include "Looter.h"
-
 #include <memory>
 
-#include "common.h"
-#include "ErectusProcess.h"
-#include "Game.h"
+#include "Looter.h"
 #include "MsgSender.h"
-#include "settings.h"
-#include "utils.h"
+#include "../ErectusMemory.h"
+#include "../ErectusProcess.h"
+#include "../settings.h"
+#include "../utils.h"
+#include "../game/Game.h"
 
 bool Looter::ShouldLootJunk(const ItemInfo& item)
 {
@@ -21,7 +20,7 @@ bool Looter::ShouldLootJunk(const ItemInfo& item)
 	if (!ErectusProcess::Rpm(item.base.componentArrayPtr, components.get(), item.base.componentArraySize * sizeof(Component)))
 		return false;
 
-	for (std::size_t i = 0; i < item.base.componentArraySize; i++)
+	for (size_t i = 0; i < item.base.componentArraySize; i++)
 	{
 		if (!Utils::Valid(components[i].componentReferencePtr))
 			continue;
@@ -91,9 +90,9 @@ bool Looter::ShouldLootFlora(const ItemInfo& item)
 	return Settings::looter.selection.flora.components.contains(harvestedData.formId) && Settings::looter.selection.flora.components.find(harvestedData.formId)->second;
 }
 
-bool Looter::ShouldLootItem(const ItemInfo& item, const DWORD64 displayPtr = 0)
+bool Looter::ShouldLootItem(const ItemInfo& item, const std::uintptr_t displayPtr = 0)
 {
-	BYTE rank;
+	int rank;
 
 	if (const auto found = Settings::looter.selection.blacklist.find(item.base.formId); found != Settings::looter.selection.blacklist.end()) {
 		if (found->second)
@@ -204,42 +203,27 @@ bool Looter::LootContainer(const ItemInfo& item, const LocalPlayer& player)
 		return false;
 	}
 
-	if (!Utils::Valid(item.refr.inventoryPtr))
-		return false;
-
-	Inventory inventory{};
-	if (!ErectusProcess::Rpm(item.refr.inventoryPtr, &inventory, sizeof inventory))
-		return false;
-	if (!Utils::Valid(inventory.entryArrayBegin) || inventory.entryArrayEnd <= inventory.entryArrayBegin)
-		return false;
-
-	auto entryArraySize = (inventory.entryArrayEnd - inventory.entryArrayBegin) / sizeof(InventoryEntry);
-	auto entries = std::make_unique<InventoryEntry[]>(entryArraySize);
-	if (!ErectusProcess::Rpm(inventory.entryArrayBegin, entries.get(), entryArraySize * sizeof(InventoryEntry)))
-		return false;
-
-	for (DWORD64 i = 0; i < entryArraySize; i++)
+	auto inventory = item.refr.GetInventory();
+	
+	for (const auto& inventoryEntry : inventory)
 	{
-		if (!Utils::Valid(entries[i].baseObjectPtr))
+		if (!Utils::Valid(inventoryEntry.baseObjectPtr))
 			continue;
-		if (!Utils::Valid(entries[i].displayPtr) || entries[i].iterations < entries[i].displayPtr) //???
+		if (!Utils::Valid(inventoryEntry.displayPtr) || inventoryEntry.iterations <= inventoryEntry.displayPtr)
 			continue;
 
-		TesObjectRefr ref = { .baseObjectPtr = entries[i].baseObjectPtr };
+		TesObjectRefr ref = { .baseObjectPtr = inventoryEntry.baseObjectPtr };
 
 //		if (baseItem.recordFlagA >> 2 & 1) //???
 //			continue;
 
 		auto inventoryItem = ErectusMemory::GetItemInfo(ref);
-		if (!ShouldLootItem(inventoryItem, entries[i].displayPtr))
+		if (!ShouldLootItem(inventoryItem, inventoryEntry.displayPtr))
 			continue;
 
-		auto iterations = (entries[i].iterations - entries[i].displayPtr) / sizeof(ItemCount);
-		if (!iterations || iterations > 0x7FFF)
-			continue;
-
+		auto iterations = (inventoryEntry.iterations - inventoryEntry.displayPtr) / sizeof(ItemCount);
 		auto itemCount = std::make_unique<ItemCount[]>(iterations);
-		if (!ErectusProcess::Rpm(entries[i].displayPtr, itemCount.get(), iterations * sizeof(ItemCount)))
+		if (!ErectusProcess::Rpm(inventoryEntry.displayPtr, itemCount.get(), iterations * sizeof(ItemCount)))
 			continue;
 
 		auto count = 0;
@@ -257,7 +241,7 @@ bool Looter::LootContainer(const ItemInfo& item, const LocalPlayer& player)
 			.playerEntityId = 0,
 			.bShouldSendResult = false,
 			.destEntityId = player.formId,
-			.itemServerHandleId = entries[i].itemId,
+			.itemServerHandleId = inventoryEntry.itemId,
 			.stashAccessEntityId = 0x00000000,
 			.bCreateIfMissing = false,
 			.bIsExpectingResult = false,
@@ -299,9 +283,6 @@ bool Looter::LootFlora(const ItemInfo& item, const LocalPlayer& player)
 
 bool Looter::ProcessEntity(const TesObjectRefr& entity, const LocalPlayer& localPlayer)
 {
-	if (!Utils::Valid(entity.baseObjectPtr))
-		return false;
-
 	if (entity.spawnFlag != 0x02)
 		return false;
 
@@ -414,12 +395,12 @@ bool Looter::ContainerValid(const TesItem& referenceData)
 	return true;
 }
 
-BYTE Looter::GetLegendaryRank(const DWORD64 displayPtr)
+int Looter::GetLegendaryRank(const std::uintptr_t displayPtr)
 {
 	if (!Utils::Valid(displayPtr))
 		return 0;
 
-	DWORD64 instancedArrayPtr;
+	std::uintptr_t instancedArrayPtr;
 	if (!ErectusProcess::Rpm(displayPtr, &instancedArrayPtr, sizeof instancedArrayPtr))
 		return 0;
 	if (!Utils::Valid(instancedArrayPtr))
@@ -428,19 +409,16 @@ BYTE Looter::GetLegendaryRank(const DWORD64 displayPtr)
 	ItemInstancedArray itemInstancedArrayData{};
 	if (!ErectusProcess::Rpm(instancedArrayPtr, &itemInstancedArrayData, sizeof itemInstancedArrayData))
 		return 0;
-	if (!Utils::Valid(itemInstancedArrayData.arrayPtr) || itemInstancedArrayData.arrayEnd < itemInstancedArrayData.arrayPtr)
+	if (!Utils::Valid(itemInstancedArrayData.arrayPtr) || itemInstancedArrayData.arrayEnd <= itemInstancedArrayData.arrayPtr)
 		return 0;
 
-	const auto instancedArraySize = (itemInstancedArrayData.arrayEnd - itemInstancedArrayData.arrayPtr) / sizeof(DWORD64);
-	if (!instancedArraySize || instancedArraySize > 0x7FFF)
+	const auto instancedArraySize = (itemInstancedArrayData.arrayEnd - itemInstancedArrayData.arrayPtr) / sizeof(std::uintptr_t);
+	const auto instancedArray = std::make_unique<std::uintptr_t[]>(instancedArraySize);
+	if (!ErectusProcess::Rpm(itemInstancedArrayData.arrayPtr, instancedArray.get(), instancedArraySize * sizeof(std::uintptr_t)))
 		return 0;
 
-	const auto instancedArray = std::make_unique<DWORD64[]>(instancedArraySize);
-	if (!ErectusProcess::Rpm(itemInstancedArrayData.arrayPtr, instancedArray.get(), instancedArraySize * sizeof(DWORD64)))
-		return 0;
-
-	DWORD64 objectInstanceExtraPtr = 0;
-	for (DWORD64 i = 0; i < instancedArraySize; i++)
+	std::uintptr_t objectInstanceExtraPtr = 0;
+	for (size_t i = 0; i < instancedArraySize; i++)
 	{
 		if (!Utils::Valid(instancedArray[i]))
 			continue;
@@ -477,16 +455,16 @@ BYTE Looter::GetLegendaryRank(const DWORD64 displayPtr)
 	if (!Utils::Valid(modInstanceData.modListPtr) || !modInstanceData.modListSize)
 		return 0;
 
-	const DWORD64 modArraySize = modInstanceData.modListSize / 0x8;
+	const size_t modArraySize = modInstanceData.modListSize / 0x8;
 	if (!modArraySize || modArraySize > 0x7FFF)
 		return 0;
 
-	const auto modArray = std::make_unique<DWORD[]>(modArraySize * 2);
-	if (!ErectusProcess::Rpm(modInstanceData.modListPtr, modArray.get(), modArraySize * 2 * sizeof(DWORD)))
+	const auto modArray = std::make_unique<std::uint32_t[]>(modArraySize * 2);
+	if (!ErectusProcess::Rpm(modInstanceData.modListPtr, modArray.get(), modArraySize * 2 * sizeof(std::uint32_t)))
 		return 0;
 
-	BYTE legendaryRank = 0;
-	for (DWORD64 i = 0; i < modArraySize; i++)
+	auto legendaryRank = 0;
+	for (size_t i = 0; i < modArraySize; i++)
 	{
 		if (LEGENDARYEFFECT_FORMIDS.count(modArray[i * 2]) > 0)
 			legendaryRank++;

@@ -2,10 +2,9 @@
 
 #include <memory>
 
-#include "common.h"
-#include "ErectusMemory.h"
-#include "settings.h"
-#include "ErectusProcess.h"
+#include "../ErectusMemory.h"
+#include "../ErectusProcess.h"
+#include "../settings.h"
 
 bool MsgSender::IsEnabled()
 {

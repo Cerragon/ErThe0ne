@@ -120,6 +120,8 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <AdditionalOptions>/Zc:char8_t- %(AdditionalOptions)</AdditionalOptions>
+      <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -127,21 +129,23 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="format.cc" />
-    <ClCompile Include="Game.cpp" />
-    <ClCompile Include="imgui\imgui.cpp" />
-    <ClCompile Include="imgui\imgui_draw.cpp" />
-    <ClCompile Include="imgui\imgui_impl_dx9.cpp" />
-    <ClCompile Include="imgui\imgui_impl_win32.cpp" />
-    <ClCompile Include="imgui\imgui_stdlib.cpp" />
-    <ClCompile Include="imgui\imgui_widgets.cpp" />
-    <ClCompile Include="LoadedAreaManager.cpp" />
-    <ClCompile Include="Looter.cpp" />
-    <ClCompile Include="MsgSender.cpp" />
-    <ClCompile Include="PlayerStatsEditor.cpp" />
-    <ClCompile Include="TesItem.cpp" />
-    <ClCompile Include="TesObjectCell.cpp" />
-    <ClCompile Include="TesObjectRefr.cpp" />
+    <ClCompile Include="dependencies\fmt\format.cc" />
+    <ClCompile Include="dependencies\imgui\imgui.cpp" />
+    <ClCompile Include="dependencies\imgui\imgui_draw.cpp" />
+    <ClCompile Include="dependencies\imgui\imgui_impl_dx9.cpp" />
+    <ClCompile Include="dependencies\imgui\imgui_impl_win32.cpp" />
+    <ClCompile Include="dependencies\imgui\imgui_stdlib.cpp" />
+    <ClCompile Include="dependencies\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="features\Looter.cpp" />
+    <ClCompile Include="features\MsgSender.cpp" />
+    <ClCompile Include="features\PlayerStatsEditor.cpp" />
+    <ClCompile Include="features\WeaponEditor.cpp" />
+    <ClCompile Include="game\Datatypes\Camera.cpp" />
+    <ClCompile Include="game\Datatypes\LoadedAreaManager.cpp" />
+    <ClCompile Include="game\Datatypes\TesItem.cpp" />
+    <ClCompile Include="game\Datatypes\TesObjectCell.cpp" />
+    <ClCompile Include="game\Datatypes\TesObjectRefr.cpp" />
+    <ClCompile Include="game\Game.cpp" />
     <ClCompile Include="utils.cpp" />
     <ClCompile Include="renderer.cpp" />
     <ClCompile Include="gui.cpp" />
@@ -150,7 +154,6 @@
     <ClCompile Include="ErectusMemory.cpp" />
     <ClCompile Include="ErectusProcess.cpp" />
     <ClCompile Include="threads.cpp" />
-    <ClCompile Include="WeaponEditor.cpp" />
     <ClCompile Include="Window.cpp" />
     <ClCompile Include="_main.cpp" />
   </ItemGroup>
@@ -163,38 +166,39 @@
   <ItemGroup>
     <ClInclude Include="app.h" />
     <ClInclude Include="common.h" />
+    <ClInclude Include="dependencies\fmt\fmt\core.h" />
+    <ClInclude Include="dependencies\fmt\fmt\format-inl.h" />
+    <ClInclude Include="dependencies\fmt\fmt\format.h" />
+    <ClInclude Include="dependencies\imgui\imconfig.h" />
+    <ClInclude Include="dependencies\imgui\imgui.h" />
+    <ClInclude Include="dependencies\imgui\imgui_impl_dx9.h" />
+    <ClInclude Include="dependencies\imgui\imgui_impl_win32.h" />
+    <ClInclude Include="dependencies\imgui\imgui_internal.h" />
+    <ClInclude Include="dependencies\imgui\imgui_stdlib.h" />
+    <ClInclude Include="dependencies\imgui\imstb_rectpack.h" />
+    <ClInclude Include="dependencies\imgui\imstb_textedit.h" />
+    <ClInclude Include="dependencies\imgui\imstb_truetype.h" />
+    <ClInclude Include="dependencies\mIni\ini.h" />
     <ClInclude Include="ErectusMemory.h" />
     <ClInclude Include="ErectusProcess.h" />
-    <ClInclude Include="fmt\core.h" />
-    <ClInclude Include="fmt\format-inl.h" />
-    <ClInclude Include="fmt\format.h" />
-    <ClInclude Include="Game.h" />
+    <ClInclude Include="features\Looter.h" />
+    <ClInclude Include="features\MsgSender.h" />
+    <ClInclude Include="features\PlayerStatsEditor.h" />
+    <ClInclude Include="features\WeaponEditor.h" />
+    <ClInclude Include="game\Datatypes\Camera.h" />
+    <ClInclude Include="game\Datatypes\LoadedAreaManager.h" />
+    <ClInclude Include="game\Datatypes\LocalPlayer.h" />
+    <ClInclude Include="game\Datatypes\TesItem.h" />
+    <ClInclude Include="game\Datatypes\TesObjectCell.h" />
+    <ClInclude Include="game\Datatypes\TesObjectRefr.h" />
+    <ClInclude Include="game\Datatypes\TesWorldSpace.h" />
+    <ClInclude Include="game\Game.h" />
     <ClInclude Include="gui.h" />
-    <ClInclude Include="imgui\imconfig.h" />
-    <ClInclude Include="imgui\imgui.h" />
-    <ClInclude Include="imgui\imgui_impl_dx9.h" />
-    <ClInclude Include="imgui\imgui_impl_win32.h" />
-    <ClInclude Include="imgui\imgui_internal.h" />
-    <ClInclude Include="imgui\imgui_stdlib.h" />
-    <ClInclude Include="imgui\imstb_rectpack.h" />
-    <ClInclude Include="imgui\imstb_textedit.h" />
-    <ClInclude Include="imgui\imstb_truetype.h" />
-    <ClInclude Include="ini.h" />
-    <ClInclude Include="LoadedAreaManager.h" />
-    <ClInclude Include="LocalPlayer.h" />
-    <ClInclude Include="Looter.h" />
-    <ClInclude Include="MsgSender.h" />
-    <ClInclude Include="PlayerStatsEditor.h" />
     <ClInclude Include="renderer.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="settings.h" />
-    <ClInclude Include="TesItem.h" />
-    <ClInclude Include="TesObjectCell.h" />
-    <ClInclude Include="TesObjectRefr.h" />
-    <ClInclude Include="TesWorldSpace.h" />
     <ClInclude Include="threads.h" />
     <ClInclude Include="utils.h" />
-    <ClInclude Include="WeaponEditor.h" />
     <ClInclude Include="Window.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

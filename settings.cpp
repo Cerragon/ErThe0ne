@@ -4,13 +4,13 @@
 #include "ErectusMemory.h"
 
 #define MINI_CASE_SENSITIVE
-#include "ini.h"
-#include "fmt/format.h"
+#include "dependencies/fmt/fmt/format.h"
+#include "dependencies/mIni/ini.h"
 
 mINI::INIFile file("Erectus.ini");
 mINI::INIStructure ini;
 
-void Settings::GetDword(const std::string& section, const std::string& key, DWORD& value, const DWORD deflt)
+void Settings::GetDword(const std::string& section, const std::string& key, std::uint32_t& value, const std::uint32_t deflt)
 {
 	if (!ini.has(section))
 		ini[section];
@@ -29,7 +29,7 @@ void Settings::GetDword(const std::string& section, const std::string& key, DWOR
 		value = deflt;
 	}
 }
-void Settings::SetDword(const std::string& section, const std::string& key, const DWORD value, const DWORD deflt)
+void Settings::SetDword(const std::string& section, const std::string& key, const std::uint32_t value, const std::uint32_t deflt)
 {
 	if (!ini.has(section))
 		ini[section];
@@ -72,12 +72,12 @@ void Settings::SetInt(const std::string& section, const std::string& key, const 
 void Settings::GetSliderInt(const std::string& section, const std::string& key, int& value, const int deflt, const int min, const int max)
 {
 	GetInt(section, key, value, deflt);
-	Utils::ValidateInt(value, min, max);
+	value = std::clamp(value, min, max);
 	SetInt(section, key, value, deflt);
 }
 void Settings::SetSliderInt(const std::string& section, const std::string& key, int& value, const int deflt, const int min, const int max)
 {
-	Utils::ValidateInt(value, min, max);
+	value = std::clamp(value, min, max);
 	SetInt(section, key, value, deflt);
 }
 
@@ -112,12 +112,12 @@ void Settings::SetFloat(const std::string& section, const std::string& key, cons
 void Settings::GetSliderFloat(const std::string& section, const std::string& key, float& value, const float deflt, const float min, const float max)
 {
 	GetFloat(section, key, value, deflt);
-	Utils::ValidateFloat(value, min, max);
+	value = std::clamp(value, min, max);
 	SetFloat(section, key, value, deflt);
 }
 void Settings::SetSliderFloat(const std::string& section, const std::string& key, float& value, const float deflt, const float min, const float max)
 {
-	Utils::ValidateFloat(value, min, max);
+	value = std::clamp(value, min, max);
 	SetFloat(section, key, value, deflt);
 }
 
@@ -143,31 +143,6 @@ void Settings::SetRgb(const std::string& section, const std::string& key, float*
 	SetFloat(section, keyR, value[0], deflt[0]);
 	SetFloat(section, keyG, value[1], deflt[1]);
 	SetFloat(section, keyB, value[2], deflt[2]);
-}
-
-void Settings::GetQuadFloat(const std::string& section, const std::string& key, float* value, const float* deflt)
-{
-	const auto keyX = format(FMT_STRING("{}X"), key);
-	const auto keyY = format(FMT_STRING("{}Y"), key);
-	const auto keyZ = format(FMT_STRING("{}Z"), key);
-	const auto keyW = format(FMT_STRING("{}W"), key);
-
-	GetFloat(section, keyX, value[0], deflt == nullptr ? 0 : deflt[0]);
-	GetFloat(section, keyY, value[1], deflt == nullptr ? 0 : deflt[1]);
-	GetFloat(section, keyZ, value[2], deflt == nullptr ? 0 : deflt[2]);
-	GetFloat(section, keyW, value[3], deflt == nullptr ? 0 : deflt[3]);
-}
-void Settings::SetQuadFloat(const std::string& section, const std::string& key, float* value, const float* deflt)
-{
-	const auto keyX = format(FMT_STRING("{}X"), key);
-	const auto keyY = format(FMT_STRING("{}Y"), key);
-	const auto keyZ = format(FMT_STRING("{}Z"), key);
-	const auto keyW = format(FMT_STRING("{}W"), key);
-
-	SetFloat(section, keyX, value[0], deflt == nullptr ? 0 : deflt[0]);
-	SetFloat(section, keyY, value[1], deflt == nullptr ? 0 : deflt[1]);
-	SetFloat(section, keyZ, value[2], deflt == nullptr ? 0 : deflt[2]);
-	SetFloat(section, keyW, value[3], deflt == nullptr ? 0 : deflt[3]);
 }
 
 void Settings::GetBool(const std::string& section, const std::string& key, bool& value, const bool deflt)
@@ -583,7 +558,10 @@ void Settings::GetTeleportSettings()
 {
 	for (auto i = 0; i < 16; i++)
 	{
-		GetQuadFloat("TeleportSettings", format(FMT_STRING("Destination{:d}"), i), teleporter.entries[i].destination, nullptr);
+		GetFloat("TeleportSettings", format(FMT_STRING("Destination{:d}X"), i), teleporter.entries[i].position.x, 0.f);
+		GetFloat("TeleportSettings", format(FMT_STRING("Destination{:d}Y"), i), teleporter.entries[i].position.y, 0.f);
+		GetFloat("TeleportSettings", format(FMT_STRING("Destination{:d}Z"), i), teleporter.entries[i].position.z, 0.f);
+		GetFloat("TeleportSettings", format(FMT_STRING("Destination{:d}W"), i), teleporter.entries[i].rotation.z, 0.f);
 		GetDword("TeleportSettings", format(FMT_STRING("CellFormId{:d}"), i), teleporter.entries[i].cellFormId, 0);
 		GetBool("TeleportSettings", format(FMT_STRING("DisableSaving{:d}"), i), teleporter.entries[i].disableSaving, false);
 	}
@@ -592,7 +570,10 @@ void Settings::SetTeleportSettings()
 {
 	for (auto i = 0; i < 16; i++)
 	{
-		SetQuadFloat("TeleportSettings", format(FMT_STRING("Destination{:d}"), i), teleporter.entries[i].destination, nullptr);
+		SetFloat("TeleportSettings", format(FMT_STRING("Destination{:d}X"), i), teleporter.entries[i].position.x, 0.f);
+		SetFloat("TeleportSettings", format(FMT_STRING("Destination{:d}Y"), i), teleporter.entries[i].position.y, 0.f);
+		SetFloat("TeleportSettings", format(FMT_STRING("Destination{:d}Z"), i), teleporter.entries[i].position.z, 0.f);
+		SetFloat("TeleportSettings", format(FMT_STRING("Destination{:d}W"), i), teleporter.entries[i].rotation.z, 0.f);
 		SetDword("TeleportSettings", format(FMT_STRING("CellFormId{:d}"), i), teleporter.entries[i].cellFormId, 0);
 		SetBool("TeleportSettings", format(FMT_STRING("DisableSaving{:d}"), i), teleporter.entries[i].disableSaving, false);
 	}

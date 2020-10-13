@@ -2,8 +2,8 @@
 #include <memory>
 #include <Windows.h>
 
-
 #include "common.h"
+#include "utils.h"
 #include "Window.hpp"
 
 class App final {
@@ -26,15 +26,18 @@ public:
 	void Detach();
 	void ToggleOverlay();
 
+	[[nodiscard]] Mode GetMode() const { return mode; }
 	std::unique_ptr<Window> appWindow;
-	Mode mode = Mode::Standalone;
-	void OnWindowChanged() const;
+	
+	void OnWindowChanged();
+
+	[[nodiscard]] Vector2 GetWindowSize() const { return currentWindowSize; }
 
 private:
 	void SetMode(Mode newMode);
 
-	void RegisterHotkeys();
-	void UnRegisterHotkeys();
+	void RegisterHotkeys() const;
+	void UnRegisterHotkeys() const;
 	void OnHotkey(HotKey hotkey);
 
 	void Init(LPCSTR windowTitle);
@@ -47,6 +50,10 @@ private:
 
 	bool continueRunning = true;
 	bool started = false;
+
+	Mode mode = Mode::Standalone;
+	
+	Vector2 currentWindowSize = {};
 };
 
 inline App* gApp = nullptr; //fixme

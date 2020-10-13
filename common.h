@@ -1,13 +1,13 @@
 #pragma once
-
-#include <Windows.h>
 #include <unordered_map>
 #include <unordered_set>
+
+#include <Windows.h>
 
 //overlay
 constexpr LPCSTR OVERLAY_WINDOW_NAME = "Er";
 
-//Offsets
+//offsets
 
 //just rpm
 constexpr auto OFFSET_LOCAL_PLAYER = 0x054E7608UL;//1.4.0.23
@@ -17,34 +17,24 @@ constexpr auto OFFSET_CAMERA = 0x0558CB40UL;//1.4.0.23
 constexpr auto OFFSET_GET_PTR_A1 = 0x052C2368UL;//1.4.0.23
 constexpr auto OFFSET_GET_PTR_A2 = 0x03D92B00UL;//1.4.0.23
 constexpr auto OFFSET_NUKE_CODE = 0x053FC928UL;//1.4.0.23
-constexpr auto OFFSET_MAIN_WORLDSPACE = 0x53FB3E0UL;//1.4.0.23?
+constexpr auto OFFSET_MAIN_WORLDSPACE = 0x53FB3E0UL;//1.4.0.23
 
 //wpm
 
 //chargen
 constexpr auto OFFSET_CHARGEN = 0x054C4CD0UL;//1.4.0.20?
 
-//remote threads and/or function patching
-
 //dmg redirection
 constexpr auto OFFSET_REDIRECTION = 0x018C8E3BUL;//1.4.0.23
 constexpr auto OFFSET_REDIRECTION_JMP = 0x018C8CCBUL;//1.4.0.23
 
-constexpr auto OFFSET_MESSAGE_SENDER = 0x0154D130UL;//1.4.0.23?
-constexpr auto OFFSET_FAKE_MESSAGE = 0x014C76C7UL;//1.4.0.23?
-//constexpr auto OFFSET_ENTITY_ID = 0x0528E280UL;//1.4.0.20
-
+//stats editor
 constexpr auto OFFSET_ACTOR_VALUE = 0x0174EC20UL;//1.4.0.23
-constexpr auto OFFSET_MELEE_ATTACK = 0x01758A70UL;//1.4.0.23?
+constexpr auto OFFSET_AV_REGEN = 0x0174EFDFUL;//1.4.0.23
+constexpr auto OFFSET_SERVER_POSITION = 0x01538705UL;//1.4.0.23
 
 //opk
-constexpr auto OFFSET_OPK = 0x02A7178DUL;//1.4.0.23?
-
-//infinite AP
-constexpr auto OFFSET_AV_REGEN = 0x0174EFDFUL;//1.4.0.23
-
-//position spoofing
-constexpr auto OFFSET_SERVER_POSITION = 0x01538705UL;//1.4.0.23?
+constexpr auto OFFSET_OPK = 0x02A7178DUL;//1.4.0.23
 
 //noclip
 constexpr auto OFFSET_CHAR_CONTROLLER = 0x057408D0UL;//1.4.0.23
@@ -53,11 +43,15 @@ constexpr auto OFFSET_NOCLIP_B = 0x02A6364DUL;//1.4.0.23
 constexpr auto OFFSET_NOCLIP_C = 0x016CBDA1UL;//1.4.0.23
 constexpr auto OFFSET_NOCLIP_D = 0x016CBDD1UL;//1.4.0.23
 
-//infinite ammo
-constexpr auto OFFSET_INFINITE_AMMO = 0x00D6D8C6UL;//1.4.0.23
-
 //weapon editor
 constexpr auto OFFSET_DATA_HANDLER = 0x052B71F8UL;//1.4.0.23
+constexpr auto OFFSET_INFINITE_AMMO = 0x00D6D8C6UL;//1.4.0.23
+
+//remote threads / message sending
+
+constexpr auto OFFSET_MELEE_ATTACK = 0x01758A70UL;//1.4.0.23
+constexpr auto OFFSET_MESSAGE_SENDER = 0x0154D130UL;//1.4.0.23
+constexpr auto OFFSET_FAKE_MESSAGE = 0x014C76C7UL;//1.4.0.23?
 
 //vtables
 constexpr auto VTABLE_REQUESTACTIVATEREFMSG = 0x03C3C6C0UL;//1.4.0.23
@@ -77,8 +71,8 @@ enum class HotKey : int
 
 struct HotkeyCombination
 {
-	UINT modifiers;
-	UINT vk;
+	unsigned modifiers;
+	unsigned vk;
 };
 
 const std::unordered_map<HotKey, HotkeyCombination> HOTKEYS{
@@ -89,7 +83,7 @@ const std::unordered_map<HotKey, HotkeyCombination> HOTKEYS{
 	{ HotKey::ToggleOverlay, HotkeyCombination{ MOD_CONTROL | MOD_NOREPEAT, VK_RETURN } }
 };
 
-const std::unordered_map<DWORD, std::string> JUNK_COMPONENT_NAMES = {
+const std::unordered_map<std::uint32_t, std::string> JUNK_COMPONENT_NAMES = {
 		{ 0x00017DE8, "Black Titanium" },
 		{ 0x00017DE9, "Ultracite" },
 		{ 0x0001FA8C, "Acid" },
@@ -131,7 +125,7 @@ const std::unordered_map<DWORD, std::string> JUNK_COMPONENT_NAMES = {
 		{ 0x0031C09A, "Coal" },
 		{ 0x0054E4FA, "Vault 94 Steel" },
 };
-const std::unordered_map<DWORD, std::string> FLORA_COMPONENT_NAMES = {
+const std::unordered_map<std::uint32_t, std::string> FLORA_COMPONENT_NAMES = {
 		{ 0x002DDD45, "Raw Crimson Flux" },
 		{ 0x002DDD46, "Raw Cobalt Flux" },
 		{ 0x002DDD49, "Raw Yellowcake Flux" },
@@ -202,7 +196,7 @@ const std::unordered_map<DWORD, std::string> FLORA_COMPONENT_NAMES = {
 		{ 0x000933EA, "Glowing Resin" },
 		{ 0x0008E922, "Mothman Egg" },
 };
-const std::unordered_set<DWORD> LEGENDARYEFFECT_FORMIDS = {
+const std::unordered_set<std::uint32_t> LEGENDARYEFFECT_FORMIDS = {
 	0x00425E28, 0x004392CD, 0x0037F7D9, 0x001A7B80, 0x001A7AF6, 0x001A7BE2, 0x001A7BD3, 0x001A7AB2, 0x001A7B88,
 	0x001A7BDA, 0x001A7C39, 0x0052BDC7, 0x0052BDC5, 0x0052BDC2, 0x0052BDC8, 0x0052BDB4, 0x0052BDB5, 0x0052BDB6,
 	0x0052BDB7, 0x0052BDBA, 0x0052BDBC, 0x0052BDBF, 0x005299F5, 0x005299ED, 0x00529A14, 0x005299FE, 0x00529A0F,
@@ -225,7 +219,7 @@ const std::unordered_set<DWORD> LEGENDARYEFFECT_FORMIDS = {
 	0x001F1E0C, 0x001F1E0B, 0x001E73BD,
 };
 
-const std::unordered_set<DWORD> TREASUREMAP_FORMIDS = {
+const std::unordered_set<std::uint32_t> TREASUREMAP_FORMIDS = {
 	0x0051B8A8, //Ash Heap Treasure Map #01
 	0x0051B8AC, //Ash Heap Treasure Map #02
 	
@@ -295,7 +289,7 @@ constexpr auto CUSTOM_ENTRY_TREASURE_MAP = 0x0000000000800000ULL;
 constexpr auto CUSTOM_ENTRY_WHITELISTED = 0x4000000000000000ULL;
 constexpr auto CUSTOM_ENTRY_INVALID = 0x8000000000000000ULL;
 
-enum class FormType : BYTE
+enum class FormType : unsigned char
 {
 	BgsTextureSet = 0x10,
 	TesSound = 0x19,

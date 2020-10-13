@@ -1,15 +1,17 @@
+#include <thread>
+
 #include "threads.h"
 #include "app.h"
 #include "settings.h"
 #include "utils.h"
 #include "common.h"
-#include <thread>
 
 #include "ErectusMemory.h"
 #include "ErectusProcess.h"
-#include "Looter.h"
-#include "PlayerStatsEditor.h"
-#include "WeaponEditor.h"
+#include "features/Looter.h"
+#include "features/PlayerStatsEditor.h"
+#include "features/WeaponEditor.h"
+#include "game/Game.h"
 
 DWORD WINAPI Threads::BufferEntityListThread([[maybe_unused]] LPVOID lpParameter)
 {
@@ -62,8 +64,6 @@ DWORD WINAPI Threads::WeaponEditorThread([[maybe_unused]] LPVOID lpParameter)
 
 DWORD WINAPI Threads::LockingThread([[maybe_unused]] LPVOID lpParameter)
 {
-	srand(static_cast<unsigned int>(time(nullptr)));
-
 	auto weaponIdRefreshCooldown = 0;
 
 	DWORD weaponId = 0;
@@ -76,7 +76,7 @@ DWORD WINAPI Threads::LockingThread([[maybe_unused]] LPVOID lpParameter)
 	auto sendDamageCounter = 0;
 	auto sendDamageThreshold = 0;
 
-	auto targetLockingKeyPressed = false;
+	bool targetLockingKeyPressed;
 	auto targetLockingCooldown = 0;
 
 	while (!threadDestructionState)
@@ -95,7 +95,7 @@ DWORD WINAPI Threads::LockingThread([[maybe_unused]] LPVOID lpParameter)
 			}
 			weaponIdRefreshCooldown--;
 
-			if (gApp->mode == App::Mode::Overlay && GetAsyncKeyState('T'))
+			if (gApp->GetMode() == App::Mode::Overlay && GetAsyncKeyState('T'))
 			{
 				targetLockingKeyPressed = true;
 				if (targetLockingCooldown > 0)
@@ -110,7 +110,7 @@ DWORD WINAPI Threads::LockingThread([[maybe_unused]] LPVOID lpParameter)
 
 			if (ErectusMemory::targetLockedEntityPtr || targetLockingKeyPressed)
 			{
-				auto cameraData = ErectusMemory::GetCameraInfo();
+				auto camera = Game::GetPlayerCamera();
 				auto entities = ErectusMemory::entityDataBuffer;
 				for (const auto& entity : entities)
 				{
@@ -130,7 +130,7 @@ DWORD WINAPI Threads::LockingThread([[maybe_unused]] LPVOID lpParameter)
 					}
 					else if (targetLockingKeyPressed && !targetLockingCooldown)
 					{
-						const auto degrees = Utils::GetDegrees(entityData.position, cameraData.forward, cameraData.origin);
+						const auto degrees = Utils::GetDegrees(entityData.position, camera.forward, camera.origin);
 						if (degrees < closestEntityDegrees)
 						{
 							closestEntityDegrees = degrees;
@@ -156,7 +156,7 @@ DWORD WINAPI Threads::LockingThread([[maybe_unused]] LPVOID lpParameter)
 
 			if (ErectusMemory::targetLockedEntityPtr)
 			{
-				ErectusMemory::DamageRedirection(ErectusMemory::targetLockedEntityPtr, &targetingPage, &targetingPageValid, false, true);
+				ErectusMemory::DamageRedirection(ErectusMemory::targetLockedEntityPtr, targetingPage, targetingPageValid, false, true);
 
 				sendDamageCounter++;
 				if (sendDamageCounter > sendDamageThreshold)
@@ -168,14 +168,14 @@ DWORD WINAPI Threads::LockingThread([[maybe_unused]] LPVOID lpParameter)
 			}
 			else
 			{
-				ErectusMemory::DamageRedirection(ErectusMemory::targetLockedEntityPtr, &targetingPage, &targetingPageValid, false, false);
+				ErectusMemory::DamageRedirection(ErectusMemory::targetLockedEntityPtr, targetingPage, targetingPageValid, false, false);
 				sendDamageThreshold = 0;
 			}
 		}
 		std::this_thread::sleep_for(std::chrono::milliseconds(16));
 	}
 
-	ErectusMemory::DamageRedirection(ErectusMemory::targetLockedEntityPtr, &targetingPage, &targetingPageValid, true, false);
+	ErectusMemory::DamageRedirection(ErectusMemory::targetLockedEntityPtr, targetingPage, targetingPageValid, true, false);
 
 	if (targetingPage)
 		ErectusProcess::FreeEx(targetingPage);
@@ -213,9 +213,9 @@ DWORD WINAPI Threads::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 
 		PlayerStatsEditor::Edit(true);
 
-		ErectusMemory::FreezeActionPoints(&freezeApPage, &freezeApPageValid, true);
+		ErectusMemory::FreezeActionPoints(freezeApPage, freezeApPageValid, true);
 
-		ErectusMemory::OnePositionKill(&opkPage, &opkPageValid, true);
+		ErectusMemory::OnePositionKill(opkPage, opkPageValid, true);
 
 		if (opkPageValid)
 		{
@@ -237,7 +237,7 @@ DWORD WINAPI Threads::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 
 		if (Settings::melee.enabled)
 		{
-			if (gApp->mode == App::Mode::Overlay && GetAsyncKeyState('U'))
+			if (gApp->GetMode() == App::Mode::Overlay && GetAsyncKeyState('U'))
 			{
 				meleeCounter++;
 				if (meleeCounter > meleeThreshold)
@@ -259,12 +259,12 @@ DWORD WINAPI Threads::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 
 	PlayerStatsEditor::Edit(false);
 
-	ErectusMemory::OnePositionKill(&opkPage, &opkPageValid, false);
+	ErectusMemory::OnePositionKill(opkPage, opkPageValid, false);
 
 	if (opkPage)
 		ErectusProcess::FreeEx(opkPage);
 
-	ErectusMemory::FreezeActionPoints(&freezeApPage, &freezeApPageValid, false);
+	ErectusMemory::FreezeActionPoints(freezeApPage, freezeApPageValid, false);
 
 	if (freezeApPage)
 		ErectusProcess::FreeEx(freezeApPage);

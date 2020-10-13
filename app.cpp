@@ -8,9 +8,8 @@
 #include <thread>
 
 #include "ErectusProcess.h"
-#include "Looter.h"
 #include "Window.hpp"
-
+#include "features/Looter.h"
 
 App::App(const HINSTANCE hInstance, const LPCSTR windowTitle) : appInstance(hInstance)
 {
@@ -73,14 +72,16 @@ void App::Run()
 	}
 }
 
-void App::OnWindowChanged() const
+void App::OnWindowChanged()
 {
 	if (!started)
 		return;
 
-	RECT rect;
-	GetClientRect(appWindow->GetHwnd(), &rect);
-	Renderer::Resize(rect.right - rect.left, rect.bottom - rect.top);
+	const auto [width, height] = appWindow->GetSize();
+	
+	Renderer::Resize(width, height);
+
+	currentWindowSize = { static_cast<float>(width), static_cast<float>(height) };
 }
 
 void App::SetMode(const Mode newMode)
@@ -137,7 +138,7 @@ void App::Detach()
 void App::OnHotkey(const HotKey hotkey)
 {
 	auto* const foregroundWnd = GetForegroundWindow();
-	if (foregroundWnd != gApp->appWindow->GetHwnd() && foregroundWnd != ErectusProcess::hWnd)
+	if (foregroundWnd != appWindow->GetHwnd() && foregroundWnd != ErectusProcess::hWnd)
 		return;
 	
 	switch (hotkey)
@@ -164,21 +165,21 @@ void App::OnHotkey(const HotKey hotkey)
 	}
 }
 
-void App::UnRegisterHotkeys()
+void App::UnRegisterHotkeys() const
 {
-	if (!gApp || !gApp->appWindow)
+	if (!appWindow)
 		return;
 
 	for (const auto& [hotkeyId, hotkey] : HOTKEYS)
 	{
-		UnregisterHotKey(gApp->appWindow->GetHwnd(), static_cast<int>(hotkeyId));
+		UnregisterHotKey(appWindow->GetHwnd(), static_cast<int>(hotkeyId));
 	}
 }
-void App::RegisterHotkeys()
+void App::RegisterHotkeys() const
 {
 	for (const auto& [hotkeyId, hotkey] : HOTKEYS)
 	{
-		RegisterHotKey(gApp->appWindow->GetHwnd(), static_cast<int>(hotkeyId), hotkey.modifiers, hotkey.vk);
+		RegisterHotKey(appWindow->GetHwnd(), static_cast<int>(hotkeyId), hotkey.modifiers, hotkey.vk);
 	}
 }
 
@@ -215,7 +216,7 @@ void App::Update()
 			if (Threads::threadDestructionCounter > 900)
 			{
 				Threads::threadDestructionCounter = 0;
-				gApp->Shutdown();
+				Shutdown();
 			}
 		}
 	}

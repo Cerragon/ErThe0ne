@@ -1,57 +1,44 @@
 #pragma once
 
 #include <Windows.h>
-
 #include <unordered_map>
-#include <unordered_set>
 #include <array>
 
-#include "TesObjectCell.h"
-
-class Camera
-{
-public:
-	DWORD64 vtable;//0x0
-	BYTE padding0008[0x68];
-	Vector3 forward;//0x70
-	BYTE padding007C[0x24];
-	Vector3 origin;//0xA0
-	BYTE padding00Ac[0x84];
-	float view[16];//0x130
-};
+#include "utils.h"
+#include "game/Datatypes/TesObjectRefr.h"
 
 class FalloutMain
 {
 public:
-	DWORD64 vtable;//0x0
-	BYTE padding0008[0x338];
-	DWORD64 platformSessionManagerPtr;//0x340
+	std::uintptr_t vtable;//0x0
+	char padding0008[0x338];
+	std::uintptr_t platformSessionManagerPtr;//0x340
 };
 
 class PlatformSessionManager
 {
 public:
-	DWORD64 vtable;//0x0
-	BYTE padding0008[0x78];
-	DWORD64 clientAccountManagerPtr;//0x80
+	std::uintptr_t vtable;//0x0
+	char padding0008[0x78];
+	std::uintptr_t clientAccountManagerPtr;//0x80
 };
 
 class BhkCharProxyController
 {
 public:
-	DWORD64 vtable;//0x0
+	std::uintptr_t vtable;//0x0
 	BYTE padding0008[0x4A8];
-	DWORD64 hknpBsCharacterProxyPtr;//0x4B0
+	std::uintptr_t hknpBsCharacterProxyPtr;//0x4B0
 };
 
 class HknpBsCharacterProxy
 {
 public:
-	DWORD64 vtable;//0x0
+	std::uintptr_t vtable;//0x0
 	BYTE padding0008[0x48];
 	float rotation[2];//0x50
 	BYTE padding0058[0x18];
-	float position[3];//0x70
+	Vector3 position;//0x70
 	BYTE padding007C[0x24];
 	float velocityA[4];//0xA0
 	float velocityB[4];//0xB0
@@ -60,14 +47,14 @@ public:
 class TransferMessage
 {
 public:
-	DWORD64 vtable;//0x0
-	DWORD sourceEntityId;//0x8
-	DWORD playerEntityId;//0xC
+	std::uintptr_t vtable;//0x0
+	std::uint32_t sourceEntityId;//0x8
+	std::uint32_t playerEntityId;//0xC
 	BYTE bShouldSendResult;//0x10
 	BYTE padding0X11[3];
-	DWORD destEntityId;//0x14
-	DWORD itemServerHandleId;//0x18
-	DWORD stashAccessEntityId;//0x1C
+	std::uint32_t destEntityId;//0x14
+	std::uint32_t itemServerHandleId;//0x18
+	std::uint32_t stashAccessEntityId;//0x1C
 	BYTE bCreateIfMissing;//0x20
 	BYTE bIsExpectingResult;//0x21
 	BYTE padding0X22[2];//0x22
@@ -77,9 +64,9 @@ public:
 class ClientAccountManager
 {
 public:
-	DWORD64 vtable;//0x0
+	std::uintptr_t vtable;//0x0
 	BYTE padding0008[0x38];
-	DWORD64 clientAccountArrayPtr;//0x40
+	std::uintptr_t clientAccountArrayPtr;//0x40
 	BYTE padding0048[0x8];
 	int clientAccountArraySizeA;//0x50
 	BYTE padding0054[0x4];
@@ -89,11 +76,11 @@ public:
 class LeveledList
 {
 public:
-	DWORD64 vtable;//0x0
+	std::uintptr_t vtable;//0x0
 	BYTE padding0008[0x18];
-	DWORD formId;//0x20
+	std::uint32_t formId;//0x20
 	BYTE padding0024[0x8C];
-	DWORD64 listEntryArrayPtr;//0xB0
+	std::uintptr_t listEntryArrayPtr;//0xB0
 	BYTE padding00B8[0x9];
 	BYTE listEntryArraySize;//0xC1
 };
@@ -101,8 +88,8 @@ public:
 class RequestActivateRefMessage
 {
 public:
-	DWORD64 vtable;//0x0
-	DWORD formId;//0x8
+	std::uintptr_t vtable;//0x0
+	std::uint32_t formId;//0x8
 	BYTE choice;//0xC
 	BYTE forceActivate;//0xB
 };
@@ -110,58 +97,34 @@ public:
 class ClientAccountBuffer
 {
 public:
-	DWORD64 namePtr;//0x0
-	DWORD64 clientAccountPtr;//0x8
+	std::uintptr_t namePtr;//0x0
+	std::uintptr_t clientAccountPtr;//0x8
 };
 
 class ClientAccount
 {
 public:
-	DWORD64 vtable;//0x0
+	std::uintptr_t vtable;//0x0
 	BYTE padding0008[0x8];
 	BYTE nameData[0x10];//0x10
 	int nameLength;//0x20
 	BYTE padding0024[0x58];
-	DWORD formId;//0x7C
+	std::uint32_t formId;//0x7C
 };
 
 class Component
 {
 public:
-	DWORD64 componentReferencePtr;//0x0
-	DWORD64 componentCountReferencePtr;//0x8
+	std::uintptr_t componentReferencePtr;//0x0
+	std::uintptr_t componentCountReferencePtr;//0x8
 };
 
 class ReferenceList
 {
 public:
-	DWORD64 arrayPtr;//0x0
+	std::uintptr_t arrayPtr;//0x0
 	BYTE padding0008[0x8];
 	int arraySize;//0x10
-};
-
-class Inventory
-{
-public:
-	DWORD64 vtable;//0x0
-	BYTE padding0008[0x58];
-	DWORD64 entryArrayBegin;//0x60
-	DWORD64 entryArrayEnd;//0x68
-};
-
-class InventoryEntry
-{
-public:
-	DWORD64 baseObjectPtr;//0x0
-	DWORD64 instancePtr;
-	DWORD64 displayPtr;//0x10
-	BYTE padding0018[0x8];
-	DWORD64 iterations;//0x20
-	BYTE equipFlag;//0x28
-	BYTE padding0025[0x3];
-	DWORD itemId;//0x2C
-	BYTE favoriteIndex;//0x30
-	BYTE padding0031[0x7];
 };
 
 class ItemCount
@@ -176,71 +139,61 @@ class ItemInstancedArray
 {
 public:
 	BYTE padding0000[0x10];
-	DWORD64 arrayPtr;//0x10
-	DWORD64 arrayEnd;//0x18
+	std::uintptr_t arrayPtr;//0x10
+	std::uintptr_t arrayEnd;//0x18
 };
 
 class ExtraTextDisplayData
 {
 public:
-	DWORD64 vtable;//0x0
+	std::uintptr_t vtable;//0x0
 	BYTE padding0008[0x8];
-	DWORD64 instancedNamePtr;//0x10
-};
-
-class ActorValueInformation
-{
-public:
-	DWORD64 vtable;//0x8
-	BYTE padding0008[0x18];
-	DWORD formId;//0x20
-	BYTE padding0024[0x1DC];
-	float maximumValue;//0x200
+	std::uintptr_t instancedNamePtr;//0x10
 };
 
 class RequestHitsOnActors
 {
 public:
-	DWORD64 vtable;//0x0
-	DWORD64 hitsArrayPtr;//0x8
-	DWORD64 hitsArrayEnd;//0x10
+	std::uintptr_t vtable;//0x0
+	std::uintptr_t hitsArrayPtr;//0x8
+	std::uintptr_t hitsArrayEnd;//0x10
 	BYTE padding0018[0x48];
 };
 
 class BgsQuestText
 {
 public:
-	DWORD64 vtable;//0x0
-	DWORD64 formIdPtr;//0x8
+	std::uintptr_t vtable;//0x0
+	std::uintptr_t formIdPtr;//0x8
 	BYTE padding0010[0x28];
-	DWORD64 codePtr;//0x38
+	std::uintptr_t codePtr;//0x38
 };
 
 class ListEntry
 {
 public:
-	DWORD64 referencePtr;//0x0
-	DWORD64 extraData;//0x8
-	DWORD64 conditions;//0x10
+	std::uintptr_t referencePtr;//0x0
+	std::uintptr_t extraData;//0x8
+	std::uintptr_t conditions;//0x10
 	float quantity;//0x18
-	DWORD quantityPadding;//0x1C
-	DWORD64 quantityGlobal;//0x20
-	DWORD64 quantityGlobalPadding;//0x28;
+	std::uint32_t quantityPadding;//0x1C
+	std::uintptr_t quantityGlobal;//0x20
+	std::uintptr_t quantityGlobalPadding;//0x28;
 	float chanceNoneValue;//0x30
-	DWORD chanceNoneValuePadding;//0x34
-	DWORD64 chanceNoneGlobal;//0x38
-	DWORD64 chanceNoneCurveTable;//0x40
+	std::uint32_t chanceNoneValuePadding;//0x34
+	std::uintptr_t chanceNoneGlobal;//0x38
+	std::uintptr_t chanceNoneCurveTable;//0x40
 	float minimumLevel;//0x48
-	DWORD minimumLevelPadding;//0x4C
-	DWORD64 minimumLevelGlobal;//0x50
-	DWORD64 minimumLevelCurveTable;//0x58
-	DWORD64 minimumLevelCurveTablePadding;//0x68
+	std::uint32_t minimumLevelPadding;//0x4C
+	std::uintptr_t minimumLevelGlobal;//0x50
+	std::uintptr_t minimumLevelCurveTable;//0x58
+	std::uintptr_t minimumLevelCurveTablePadding;//0x68
 };
 
 class ModInstance
 {
 public:
-	DWORD64 modListPtr;//0x0
+	std::uintptr_t modListPtr;//0x0
 	int modListSize;//0x8
 };
 
@@ -248,20 +201,20 @@ class ObjectInstanceExtra
 {
 public:
 	BYTE padding0000[0x10];
-	DWORD64 modDataPtr;//0x10
+	std::uintptr_t modDataPtr;//0x10
 };
 
 class Hits
 {
 public:
-	DWORD valueA;//0x0 (Local Player)
-	DWORD valueB;//0x4 (Entity)
-	DWORD valueC;//0x8 (Projectile == 0)
-	DWORD initializationType;//0xC (3 == Default/Gun, 4 == Explosive)
-	DWORD uiWeaponServerId;//0x10
-	DWORD limbEnum;//0x20 (0xFFFFFFFF == Default/Body)
-	DWORD hitEffectId;//0x18 (0 == Default/Gun)
-	DWORD uEquipIndex;//0x1C (0 == Default/Gun)
+	std::uint32_t valueA;//0x0 (Local Player)
+	std::uint32_t valueB;//0x4 (Entity)
+	std::uint32_t valueC;//0x8 (Projectile == 0)
+	std::uint32_t initializationType;//0xC (3 == Default/Gun, 4 == Explosive)
+	std::uint32_t uiWeaponServerId;//0x10
+	std::uint32_t limbEnum;//0x20 (0xFFFFFFFF == Default/Body)
+	std::uint32_t hitEffectId;//0x18 (0 == Default/Gun)
+	std::uint32_t uEquipIndex;//0x1C (0 == Default/Gun)
 	BYTE uAckIndex;//0x20 (Shots Hit, Always > 0)
 	BYTE uFireId;//0x21 (Shots Fired)
 	BYTE bPredictedKill;//0x22
@@ -280,21 +233,17 @@ public:
 class RequestTeleportMessage
 {
 public:
-	DWORD64 vtable;//0x0
-	float positionX;//0x8
-	float positionY;//0xC
-	float positionZ;//0x10
-	float rotationX;//0x14
-	float rotationY;//0x18
-	float rotationZ;//0x1C
-	DWORD64 cellPtr;//0x20
+	std::uintptr_t vtable;//0x0
+	Vector3 position;//0x8
+	Vector3 rotation;//0x14
+	std::uintptr_t cellPtr;//0x20
 };
 
 class ClientStateMsg
 {
 public:
-	DWORD64 vtable;//0x0
-	DWORD64 clientState;//0x8
+	std::uintptr_t vtable;//0x0
+	std::uintptr_t clientState;//0x8
 };
 
 class Chargen
@@ -309,11 +258,11 @@ public:
 class CustomEntry
 {
 public:
-	DWORD64 entityPtr;
-	DWORD64 baseObjectPtr;
-	DWORD entityFormId;
-	DWORD baseObjectFormId;
-	DWORD64 flag;
+	std::uintptr_t entityPtr;
+	std::uintptr_t baseObjectPtr;
+	std::uint32_t entityFormId;
+	std::uint32_t baseObjectFormId;
+	std::uintptr_t flag;
 	std::string name;
 };
 
@@ -332,103 +281,11 @@ public:
 		0xCC, 0xCC, 0xCC, 0xCC,	//Padding
 		0xCC, 0xCC, 0xCC, 0xCC,	//Padding
 	};
-	DWORD64 address{};			//0x20 (0x0)
-	DWORD64 rcx{};				//0x28 (0x8)
-	DWORD64 rdx{};				//0x30 (0x10)
-	DWORD64 r8{};				//0x38 (0x18)
-	DWORD64 r9{};				//0x40 (0x20)
-};
-
-class ActorValueHook
-{
-public:
-	BYTE actorValueAsm[0x118]
-	{
-		0x8B, 0x42, 0x20,								//mov eax, [rdx+20]
-		0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00,	//nop (multi)
-		0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00,	//nop (multi)
-		0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00,	//nop (multi)
-		0x0F, 0x1F, 0x00,								//nop (multi)
-		0x3D, 0xD5, 0x02, 0x00, 0x00,					//cmp eax, 000002D5
-		0x75, 0x14,										//jne StrengthCheck
-		0x31, 0xC0,										//xor eax, eax
-		0x3B, 0x05, 0xEB, 0x00, 0x00, 0x00,				//cmp eax, [ActionPointsEnabled]
-		0x74, 0x0A,										//je StrengthCheck
-		0xF3, 0x0F, 0x10, 0x15, 0xE5, 0x00, 0x00, 0x00,	//movss xmm2, [ActionPoints]
-		0xEB, 0x19,										//jmp OriginalFunction
-		0x3D, 0xC2, 0x02, 0x00, 0x00,					//cmp eax, 000002C2
-		0x75, 0x14,										//jne PerceptionCheck
-		0x31, 0xC0,										//xor eax, eax
-		0x3B, 0x05, 0xD8, 0x00, 0x00, 0x00,				//cmp eax, [StrengthEnabled]
-		0x74, 0x0A,										//je PerceptionCheck
-		0xF3, 0x0F, 0x10, 0x15, 0xD2, 0x00, 0x00, 0x00,	//movss xmm2, [Strength]
-		0xEB, 0x19,										//jmp OriginalFunction
-		0x3D, 0xC3, 0x02, 0x00, 0x00,					//cmp eax, 000002C3
-		0x75, 0x14,										//jne EnduranceCheck
-		0x31, 0xC0,										//xor eax, eax
-		0x3B, 0x05, 0xC5, 0x00, 0x00, 0x00,				//cmp eax, [PerceptionEnabled]
-		0x74, 0x0A,										//je EnduranceCheck
-		0xF3, 0x0F, 0x10, 0x15, 0xBF, 0x00, 0x00, 0x00,	//movss xmm2, [Perception]
-		0xEB, 0x19,										//jmp OriginalFunction
-		0x3D, 0xC4, 0x02, 0x00, 0x00,					//cmp eax, 000002C4
-		0x75, 0x14,										//jne CharismaCheck
-		0x31, 0xC0,										//xor eax, eax
-		0x3B, 0x05, 0xB2, 0x00, 0x00, 0x00,				//cmp eax, [EnduranceEnabled]
-		0x74, 0x0A,										//je CharismaCheck
-		0xF3, 0x0F, 0x10, 0x15, 0xAC, 0x00, 0x00, 0x00,	//movss xmm2, [Endurance]
-		0xEB, 0x19,										//jmp OriginalFunction
-		0x3D, 0xC5, 0x02, 0x00, 0x00,					//cmp eax, 000002C5
-		0x75, 0x14,										//jne IntelligenceCheck
-		0x31, 0xC0,										//xor eax, eax
-		0x3B, 0x05, 0x9F, 0x00, 0x00, 0x00,				//cmp eax, [CharismaEnabled]
-		0x74, 0x0A,										//je IntelligenceCheck
-		0xF3, 0x0F, 0x10, 0x15, 0x99, 0x00, 0x00, 0x00,	//movss xmm2, [Charisma]
-		0xEB, 0x19,										//jmp OriginalFunction
-		0x3D, 0xC6, 0x02, 0x00, 0x00,					//cmp eax, 000002C6
-		0x75, 0x14,										//jne AgilityCheck
-		0x31, 0xC0,										//xor eax, eax
-		0x3B, 0x05, 0x8C, 0x00, 0x00, 0x00,				//cmp eax, [IntelligenceEnabled]
-		0x74, 0x0A,										//je AgilityCheck
-		0xF3, 0x0F, 0x10, 0x15, 0x86, 0x00, 0x00, 0x00,	//movss xmm2, [Intelligence]
-		0xEB, 0x19,										//jmp OriginalFunction
-		0x3D, 0xC7, 0x02, 0x00, 0x00,					//cmp eax, 000002C7
-		0x75, 0x14,										//jne LuckCheck
-		0x31, 0xC0,										//xor eax, eax
-		0x3B, 0x05, 0x79, 0x00, 0x00, 0x00,				//cmp eax, [AgilityEnabled]
-		0x74, 0x0A,										//je LuckCheck
-		0xF3, 0x0F, 0x10, 0x15, 0x73, 0x00, 0x00, 0x00,	//movss xmm2, [Agility]
-		0xEB, 0x19,										//jmp OriginalFunction
-		0x3D, 0xC8, 0x02, 0x00, 0x00,					//cmp eax, 000002C8
-		0x75, 0x14,										//jne OriginalFunction
-		0x31, 0xC0,										//xor eax, eax
-		0x3B, 0x05, 0x66, 0x00, 0x00, 0x00,				//cmp eax, [LuckEnabled]
-		0x74, 0x0A,										//je OriginalFunction
-		0xF3, 0x0F, 0x10, 0x15, 0x60, 0x00, 0x00, 0x00,	//movss xmm2, [Luck]
-		0xEB, 0x00,										//jmp OriginalFunction
-		0x48, 0x8D, 0x05, 0x5B, 0x00, 0x00, 0x00,		//lea rax, [OriginalFunction]
-		0x48, 0x8B, 0x00,								//mov rax, [rax]
-		0xFF, 0xE0,										//jmp rax
-		0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC,	//Padding
-		0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC,	//Padding
-		0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC,				//Padding
-	};
-	int actionPointsEnabled{};
-	float actionPoints{};
-	int strengthEnabled{};
-	float strength{};
-	int perceptionEnabled{};
-	float perception{};
-	int enduranceEnabled{};
-	float endurance{};
-	int charismaEnabled{};
-	float charisma{};
-	int intelligenceEnabled{};
-	float intelligence{};
-	int agilityEnabled{};
-	float agility{};
-	int luckEnabled{};
-	float luck{};
-	DWORD64 originalFunction{};
+	std::uintptr_t address{};			//0x20 (0x0)
+	std::uintptr_t rcx{};				//0x28 (0x8)
+	std::uintptr_t rdx{};				//0x30 (0x10)
+	std::uintptr_t r8{};				//0x38 (0x18)
+	std::uintptr_t r9{};				//0x40 (0x20)
 };
 
 class Opk
@@ -465,7 +322,7 @@ public:
 	};
 	int opkPlayers = 0;
 	int opkNpcs = 0;
-	DWORD64 originalFunction = 0;
+	std::uintptr_t originalFunction = 0;
 	float opkPlayerPosition[4]{};
 	float opkNpcPosition[4]{};
 };
@@ -527,7 +384,7 @@ public:
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,                 //OriginalFunction
 		0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC,                 //Padding
 	};
-	DWORD64 targetLockingPtr{};
+	std::uintptr_t targetLockingPtr{};
 };
 
 enum class ItemTypes
@@ -569,15 +426,14 @@ struct ItemInfo
 
 class ErectusMemory final {
 public:
-	static DWORD64 GetAddress(DWORD formId);
-	static DWORD64 GetPtr(DWORD formId);
+	static std::uintptr_t GetAddress(std::uint32_t formId);
+	static std::uintptr_t GetPtr(std::uint32_t formId);
 
 	//send damage
 	static std::unordered_map<int, std::string> GetFavoritedWeapons();
-	static std::string GetFavoritedWeaponText(BYTE index);
-	static DWORD GetFavoritedWeaponId(BYTE favouriteIndex);
+	static std::uint32_t GetFavoritedWeaponId(BYTE favouriteIndex);
 	static char FavoriteIndex2Slot(BYTE favoriteIndex);
-	static bool SendDamage(DWORD64 targetPtr, DWORD weaponId, BYTE* shotsHit, BYTE* shotsFired, BYTE count);
+	static bool SendDamage(std::uintptr_t targetPtr, std::uint32_t weaponId, BYTE* shotsHit, BYTE* shotsFired, BYTE count);
 
 	//nuke codes
 	static void UpdateNukeCodes();
@@ -586,23 +442,23 @@ public:
 	inline static std::array<int, 8> charlieCode = { };
 
 	//teleporter
-	static bool GetTeleportPosition(int index);
+	static bool SaveTeleportPosition(int index);
 	static bool RequestTeleport(int index);
 
 	//freezeAP
-	static bool FreezeActionPoints(DWORD64* freezeApPage, bool* freezeApPageValid, bool state);
+	static bool FreezeActionPoints(std::uintptr_t& freezeApPage, bool& freezeApPageValid, bool enabled);
 
 	//noclip
-	static bool SetClientState(DWORD64 clientState);
+	static bool SetClientState(std::uintptr_t clientState);
 	static void Noclip(bool enabled);
 
 	//opk
-	static bool SetOpkData(DWORD64 opkPage, bool enabled);
-	static bool OnePositionKill(DWORD64* opkPage, bool* opkPageValid, bool state);
+	static bool SetOpkData(std::uintptr_t opkPage, bool enabled);
+	static bool OnePositionKill(std::uintptr_t& opkPage, bool& opkPageValid, bool enabled);
 
 	//item transfer
 	static bool CheckItemTransferList();
-	static bool TransferItems(DWORD sourceFormId, DWORD destinationFormId);
+	static bool TransferItems(std::uint32_t sourceFormId, std::uint32_t destinationFormId);
 
 	//esp
 	static bool UpdateBufferEntityList();
@@ -610,55 +466,50 @@ public:
 	inline static std::vector<CustomEntry> entityDataBuffer{};
 	inline static std::vector<CustomEntry> playerDataBuffer{};
 
-	static bool ReferenceSwap(DWORD& sourceFormId, DWORD& destinationFormId);
+	static bool ReferenceSwap(std::uint32_t& sourceFormId, std::uint32_t& destinationFormId);
 
-	static bool DamageRedirection(DWORD64 targetPtr, DWORD64* targetingPage, bool* targetingPageValid, bool isExiting, bool state);
+	static bool DamageRedirection(std::uintptr_t targetPtr, std::uintptr_t& targetingPage, bool& targetingPageValid, bool isExiting, bool enabled);
 
 	static bool PositionSpoofing(bool enabled);
 
 	static bool MeleeAttack();
 	static bool ChargenEditing();
 
-	static Camera GetCameraInfo();
-
 	static bool IsFloraHarvested(char harvestFlagA, char harvestFlagB);
 
-	static bool IsTargetValid(DWORD64 targetPtr);
+	static bool IsTargetValid(std::uintptr_t targetPtr);
 	static bool IsTargetValid(const TesObjectRefr& targetData);
 
-	inline static DWORD64 targetLockedEntityPtr = 0;
+	inline static std::uintptr_t targetLockedEntityPtr = 0;
 
-	static void    GetCustomEntityData(const TesItem& baseObject, DWORD64* entityFlag, int* enabledDistance);
-	static bool    CheckFormIdArray(DWORD formId, const bool* enabledArray, const DWORD* formIdArray, int size);
-	static DWORD64 RttiGetNamePtr(DWORD64 vtable);
-	static bool    VtableSwap(DWORD64 dst, DWORD64 src);
+	static void    GetCustomEntityData(const TesItem& baseObject, std::uintptr_t& entityFlag, int& enabledDistance);
+	static bool    CheckFormIdArray(std::uint32_t formId, const bool* enabledArray, const std::uint32_t* formIdArray, int size);
+	static std::uintptr_t RttiGetNamePtr(std::uintptr_t vtable);
+	static bool    VtableSwap(std::uintptr_t dst, std::uintptr_t src);
 
 	static ItemInfo GetItemInfo(const TesObjectRefr& entity);
-	static std::string GetEntityName(DWORD64 ptr);
+	static std::string GetEntityName(std::uintptr_t ptr);
+
+	static bool CheckReferenceKeywordMisc(const TesItem& referenceData, std::uint32_t formId);
+	static bool CheckReferenceKeywordBook(const TesItem& referenceData, std::uint32_t formId);
 
 private:
-	static bool GetNukeCode(DWORD formId, std::array<int, 8>& nukeCode);
+	static std::array<int, 8> GetNukeCode(std::uint32_t formId);
 	static std::string GetPlayerName(const ClientAccount& clientAccountData);
 
-	static bool CheckReferenceKeywordBook(const TesItem& referenceData, DWORD formId);
-	static bool CheckReferenceKeywordMisc(const TesItem& referenceData, DWORD formId);
 	static bool CheckWhitelistedFlux(const TesItem& referenceData);
 	
 	static bool IsItem(const TesItem& referenceData);
-	static bool IsMod(const TesItem& referenceData);
-
-	static bool IsBobblehead(const TesItem& tesItem);
-	static bool IsMagazine(const TesItem& tesItem);
-	static bool IsRecipeKnown(DWORD formId);
+	static bool IsRecipeKnown(std::uint32_t formId);
 
 	static bool MovePlayer();
 
-	static bool CheckOpkDistance(DWORD64 opkPage);
+	static bool CheckOpkDistance(std::uintptr_t opkPage);
 
-	static DWORD GetEntityId(const TesObjectRefr& entityData);
+	static std::uint32_t GetEntityId(const TesObjectRefr& entityData);
 	static bool SendHitsToServer(Hits* hitsData, size_t hitsDataSize);
-	static DWORD64 GetNukeCodePtr(DWORD formId);
-	static std::string GetInstancedItemName(DWORD64 displayPtr);
+	static std::uintptr_t GetNukeCodePtr(std::uint32_t formId);
+	static std::string GetInstancedItemName(std::uintptr_t displayPtr);
 
 	virtual void Dummy() = 0;
 };

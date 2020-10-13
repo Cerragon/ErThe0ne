@@ -1,6 +1,7 @@
 #pragma once
-#include "ErectusProcess.h"
-#include "TesObjectRefr.h"
+#include "TesObjectCell.h"
+#include "../../ErectusProcess.h"
+
 class LocalPlayer : public TesObjectRefr
 {
 public:

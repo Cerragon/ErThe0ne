@@ -6,29 +6,29 @@
 
 #include "ErectusProcess.h"
 #include "ErectusMemory.h"
-#include "Game.h"
 #include "threads.h"
 #include "utils.h"
+#include "dependencies/fmt/fmt/format.h"
+#include "dependencies/imgui/imgui_internal.h"
+#include "dependencies/imgui/imgui_stdlib.h"
 
-#include "fmt/format.h"
-#include "imgui/imgui_internal.h"
-#include "imgui/imgui_stdlib.h"
+#include "game/Game.h"
 
 void Gui::Render()
 {
-	if (!(gApp->mode == App::Mode::Overlay))
+	if (!(gApp->GetMode() == App::Mode::Overlay))
 		Menu();
 
-	if (gApp->mode != App::Mode::Standalone)
+	if (gApp->GetMode() != App::Mode::Standalone)
 		RenderOverlay();
 }
 
 void Gui::RenderOverlay()
 {
-	const auto cameraData = ErectusMemory::GetCameraInfo();
+	const auto camera = Game::GetPlayerCamera();
 
-	RenderEntities(cameraData);
-	RenderPlayers(cameraData);
+	RenderEntities(camera);
+	RenderPlayers(camera);
 
 	RenderInfoBox();
 }
@@ -68,7 +68,7 @@ void Gui::RenderPlayers(const Camera& cameraData)
 	}
 }
 
-void Gui::RenderActors(const CustomEntry& entry, const Camera& cameraData, const EspSettings::Actors& settings)
+void Gui::RenderActors(const CustomEntry& entry, const Camera& camera, const EspSettings::Actors& settings)
 {
 	if (!settings.drawEnabled && !settings.drawDisabled)
 		return;
@@ -248,15 +248,15 @@ void Gui::RenderActors(const CustomEntry& entry, const Camera& cameraData, const
 	if (color == nullptr)
 		return;
 
-	auto distance = static_cast<int>(entityData.position.DistanceTo(cameraData.origin) * 0.01f);
+	auto distance = static_cast<int>(entityData.position.DistanceTo(camera.origin) * 0.01f);
 	if (distance > settings.enabledDistance)
 		return;
 
 	if (entry.entityPtr == ErectusMemory::targetLockedEntityPtr)
 		color = Settings::targetting.lockedColor;
 
-	ImVec2 screenPosition = { 0.f, 0.f };
-	if (!Utils::WorldToScreen(cameraData.view, entityData.position, screenPosition))
+	auto screenPosition = camera.World2Screen(entityData.position);
+	if (screenPosition.x == 0.f && screenPosition.y == 0.f)
 		return;
 
 	auto health = entityData.GetCurrentHealth();
@@ -285,7 +285,7 @@ void Gui::RenderActors(const CustomEntry& entry, const Camera& cameraData, const
 	}
 }
 
-void Gui::RenderText(const char* text, const ImVec2& position, const ImU32 color)
+void Gui::RenderText(const char* text, const Vector2& position, const ImU32 color)
 {
 	if (text == nullptr)
 		return;
@@ -304,7 +304,7 @@ void Gui::RenderText(const char* text, const ImVec2& position, const ImU32 color
 	ImGui::GetBackgroundDrawList()->AddText(font, 13.f, pos, color, text);
 }
 
-void Gui::RenderItems(const CustomEntry& entry, const Camera& cameraData, const EspSettings::Items& settings)
+void Gui::RenderItems(const CustomEntry& entry, const Camera& camera, const EspSettings::Items& settings)
 {
 	if (!(entry.flag & CUSTOM_ENTRY_WHITELISTED) && !settings.enabled)
 		return;
@@ -367,12 +367,12 @@ void Gui::RenderItems(const CustomEntry& entry, const Camera& cameraData, const 
 	if (alpha == 0.f)
 		return;
 
-	const auto distance = static_cast<int>(entityData.position.DistanceTo(cameraData.origin) * 0.01f);
+	const auto distance = static_cast<int>(entityData.position.DistanceTo(camera.origin) * 0.01f);
 	if (distance > settings.enabledDistance)
 		return;
 
-	ImVec2 screenPosition = { 0.f, 0.f };
-	if (!Utils::WorldToScreen(cameraData.view, entityData.position, screenPosition))
+	const auto screenPosition = camera.World2Screen(entityData.position);
+	if (screenPosition.x == 0.f && screenPosition.y == 0.f)
 		return;
 
 	std::string itemText{};
@@ -495,7 +495,7 @@ void Gui::MenuBar()
 				mode = Menu::ProcessMenu;
 		}
 
-		if (gApp->mode == App::Mode::Standalone)
+		if (gApp->GetMode() == App::Mode::Standalone)
 		{
 			ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
 			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
@@ -518,7 +518,7 @@ void Gui::MenuBar()
 void Gui::Menu()
 {
 	auto windowFlags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoResize;
-	if (gApp->mode == App::Mode::Standalone)
+	if (gApp->GetMode() == App::Mode::Standalone)
 		windowFlags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove;
 
 	if (ImGui::Begin(OVERLAY_WINDOW_NAME, nullptr, windowFlags))
@@ -531,7 +531,7 @@ void Gui::Menu()
 			SettingsMenu();
 
 		//auto resize host window if in standalone mode
-		if (gApp->mode == App::Mode::Standalone)
+		if (gApp->GetMode() == App::Mode::Standalone)
 		{
 			ImGui::SetWindowPos(ImVec2(0.0f, 0.0f));
 
@@ -1273,20 +1273,13 @@ void Gui::OverlayMenuTabCombat()
 			}
 
 			{
-				std::string favoritedWeaponsPreview = "[?] No Weapon Selected";
-				if (Settings::targetting.favoriteIndex < 12)
-				{
-					favoritedWeaponsPreview = ErectusMemory::GetFavoritedWeaponText(static_cast<BYTE>(Settings::targetting.favoriteIndex));
-					if (favoritedWeaponsPreview.empty())
-					{
-						favoritedWeaponsPreview = format(FMT_STRING("[{}] Favorited Item Invalid"), ErectusMemory::FavoriteIndex2Slot(static_cast<BYTE>(Settings::targetting.favoriteIndex)));
-					}
-				}
+				auto favoritedWeapons = ErectusMemory::GetFavoritedWeapons();
+				const auto favoritedWeaponsPreview = favoritedWeapons.at(Settings::targetting.favoriteIndex + 1);
 
 				ImGui::SetNextItemWidth(-FLT_MIN);
 				if (ImGui::BeginCombo("###BeginTempCombo", favoritedWeaponsPreview.c_str()))
 				{
-					for (const auto& [itemIndex, itemName] : ErectusMemory::GetFavoritedWeapons())
+					for (const auto& [itemIndex, itemName] : favoritedWeapons)
 					{
 						if (ImGui::Selectable(itemName.c_str()))
 						{
@@ -1296,8 +1289,6 @@ void Gui::OverlayMenuTabCombat()
 								Settings::targetting.favoriteIndex = 12;
 						}
 					}
-					Utils::ValidateInt(Settings::targetting.favoriteIndex, 0, 12);
-
 					ImGui::EndCombo();
 				}
 			}
@@ -1724,13 +1715,13 @@ void Gui::OverlayMenuTabUtilities()
 				ImGui::PopStyleColor(3);
 			}
 
-			auto text = format("{} - Alpha", fmt::join(ErectusMemory::alphaCode, " "));
+			auto text = format(FMT_STRING("{} - Alpha"), fmt::join(ErectusMemory::alphaCode, " "));
 			ImGui::Text(text.c_str());
 
-			text = format("{} - Bravo", fmt::join(ErectusMemory::bravoCode, " "));
+			text = format(FMT_STRING("{} - Bravo"), fmt::join(ErectusMemory::bravoCode, " "));
 			ImGui::Text(text.c_str());
 
-			text = format("{} - Charlie", fmt::join(ErectusMemory::charlieCode, " "));
+			text = format(FMT_STRING("{} - Charlie"), fmt::join(ErectusMemory::charlieCode, " "));
 			ImGui::Text(text.c_str());
 		}
 		ImGui::EndTabItem();
@@ -1749,7 +1740,7 @@ void Gui::OverlayMenuTabTeleporter()
 				{
 					ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x / 4);
 					auto inputLabel = format(FMT_STRING("###TeleportDestinationX{:d}"), i);
-					ImGui::InputFloat(inputLabel.c_str(), &Settings::teleporter.entries[i].destination[0]);
+					ImGui::InputFloat(inputLabel.c_str(), &Settings::teleporter.entries[i].position.x);
 				}
 
 				ImGui::SameLine();
@@ -1757,7 +1748,7 @@ void Gui::OverlayMenuTabTeleporter()
 				{
 					ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x / 3);
 					auto inputLabel = format(FMT_STRING("###TeleportDestinationY{:d}"), i);
-					ImGui::InputFloat(inputLabel.c_str(), &Settings::teleporter.entries[i].destination[1]);
+					ImGui::InputFloat(inputLabel.c_str(), &Settings::teleporter.entries[i].position.y);
 				}
 
 				ImGui::SameLine();
@@ -1765,7 +1756,7 @@ void Gui::OverlayMenuTabTeleporter()
 				{
 					ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x / 2);
 					auto inputLabel = format(FMT_STRING("###TeleportDestinationZ{:d}"), i);
-					ImGui::InputFloat(inputLabel.c_str(), &Settings::teleporter.entries[i].destination[2]);
+					ImGui::InputFloat(inputLabel.c_str(), &Settings::teleporter.entries[i].position.z);
 				}
 
 				ImGui::SameLine();
@@ -1773,7 +1764,7 @@ void Gui::OverlayMenuTabTeleporter()
 				{
 					ImGui::SetNextItemWidth(-FLT_MIN);
 					auto inputLabel = format(FMT_STRING("###TeleportDestinationW{:d}"), i);
-					ImGui::InputFloat(inputLabel.c_str(), &Settings::teleporter.entries[i].destination[3]);
+					ImGui::InputFloat(inputLabel.c_str(), &Settings::teleporter.entries[i].rotation.z);
 				}
 
 				{
@@ -1794,7 +1785,7 @@ void Gui::OverlayMenuTabTeleporter()
 						ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 1.0f, 0.0f, 0.5f));
 
 						if (ImGui::Button(buttonLabel.c_str(), ImVec2(ImGui::GetContentRegionAvail().x / 3, 0.0f)))
-							ErectusMemory::GetTeleportPosition(i);
+							ErectusMemory::SaveTeleportPosition(i);
 
 						ImGui::PopStyleColor(3);
 					}

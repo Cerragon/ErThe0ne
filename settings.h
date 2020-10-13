@@ -1,10 +1,10 @@
 #pragma once
 #include <map>
-#include <Windows.h>
 #include <string>
 #include <unordered_map>
 
 #include "common.h"
+#include "utils.h"
 
 struct LooterSettings
 {
@@ -70,8 +70,8 @@ struct LooterSettings
 		{
 			bool all;
 
-			std::unordered_map<DWORD, bool>	components = []() {
-				std::unordered_map<DWORD, bool> result(JUNK_COMPONENT_NAMES.size());
+			std::unordered_map<std::uint32_t, bool>	components = []() {
+				std::unordered_map<std::uint32_t, bool> result(JUNK_COMPONENT_NAMES.size());
 				for (const auto& [formId, isEnabled] : JUNK_COMPONENT_NAMES)
 					result.emplace(formId, false);
 				return result;
@@ -84,8 +84,8 @@ struct LooterSettings
 		{
 			bool all;
 
-			std::unordered_map<DWORD, bool>	components = []() {
-				std::unordered_map<DWORD, bool> result(FLORA_COMPONENT_NAMES.size());
+			std::unordered_map<std::uint32_t, bool>	components = []() {
+				std::unordered_map<std::uint32_t, bool> result(FLORA_COMPONENT_NAMES.size());
 				for (const auto& [formId, isEnabled] : FLORA_COMPONENT_NAMES)
 					result.emplace(formId, false);
 				return result;
@@ -115,7 +115,7 @@ struct LooterSettings
 			[[nodiscard]] bool IsEnabled() const { return caps; }
 		} other{};
 
-		std::map<DWORD, bool> whitelist, blacklist;
+		std::map<std::uint32_t, bool> whitelist, blacklist;
 
 		[[nodiscard]] bool IsEnabled() const {
 			return weapons.IsEnabled()
@@ -294,31 +294,31 @@ class UtilitySettings
 {
 public:
 	bool debugEsp;
-	DWORD ptrFormId;
-	DWORD addressFormId;
+	std::uint32_t ptrFormId;
+	std::uint32_t addressFormId;
 };
 class SwapperSettings
 {
 public:
-	DWORD sourceFormId;
-	DWORD destinationFormId;
+	std::uint32_t sourceFormId;
+	std::uint32_t destinationFormId;
 };
 class TransferSettings
 {
 public:
-	DWORD sourceFormId = 0;
-	DWORD destinationFormId = 0;
+	std::uint32_t sourceFormId = 0;
+	std::uint32_t destinationFormId = 0;
 	bool useWhitelist = true;
 	bool useBlacklist = true;
 	bool whitelisted[32] = {};
-	DWORD whitelist[32] = {};
+	std::uint32_t whitelist[32] = {};
 	bool blacklisted[32] = {
 		true, false, false, false, false, false, false, false,
 		false, false, false, false, false, false, false, false,
 		false, false, false, false, false, false, false, false,
 		false, false, false, false, false, false, false, false,
 	};
-	DWORD blacklist[32] = {
+	std::uint32_t blacklist[32] = {
 		0x00021B3B, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
 		0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
 		0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
@@ -330,8 +330,9 @@ class TeleporterSettings
 {
 public:
 	struct Entry {
-		float destination[4];
-		DWORD cellFormId;
+		Vector3 position;
+		Vector3 rotation;
+		std::uint32_t cellFormId;
 		bool disableSaving;
 	} entries[16];
 };
@@ -426,8 +427,8 @@ private:
 	static void GetBitMsgWriterSettings();
 	static void SetBitMsgWriterSettings();
 
-	static void GetDword(const std::string& section, const std::string& key, DWORD& value, DWORD deflt);
-	static void SetDword(const std::string& section, const std::string& key, DWORD value, DWORD deflt);
+	static void GetDword(const std::string& section, const std::string& key, std::uint32_t& value, std::uint32_t deflt);
+	static void SetDword(const std::string& section, const std::string& key, std::uint32_t value, std::uint32_t deflt);
 	static void GetInt(const std::string& section, const std::string& key, int& value, int deflt);
 	static void SetInt(const std::string& section, const std::string& key, int value, int deflt);
 	static void GetSliderInt(const std::string& section, const std::string& key, int& value, int deflt, int min, int max);
@@ -438,8 +439,6 @@ private:
 	static void SetSliderFloat(const std::string& section, const std::string& key, float& value, float deflt, float min, float max);
 	static void GetRgb(const std::string& section, const std::string& key, float* value, const float* deflt);
 	static void SetRgb(const std::string& section, const std::string& key, float* value, const float* deflt);
-	static void GetQuadFloat(const std::string& section, const std::string& key, float* value, const float* deflt);
-	static void SetQuadFloat(const std::string& section, const std::string& key, float* value, const float* deflt);
 	static void GetBool(const std::string& section, const std::string& key, bool& value, bool deflt);
 	static void SetBool(const std::string& section, const std::string& key, const bool& value, bool deflt);
 	static void GetActorSettings(const std::string& section, EspSettings::Actors& value, const EspSettings::Actors& deflt);

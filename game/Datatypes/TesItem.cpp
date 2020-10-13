@@ -1,12 +1,12 @@
 #include "TesItem.h"
 
-#include "ErectusMemory.h"
+#include "../../ErectusMemory.h"
 
 std::string TesItem::GetName() const
 {
 	std::uintptr_t entityNamePtr = 0;
 
-	switch (this->GetFormType())
+	switch (GetFormType())
 	{
 	case FormType::AlchemyItem:
 	case FormType::TesObjectArmo:
@@ -32,4 +32,14 @@ std::string TesItem::GetName() const
 	}
 
 	return ErectusMemory::GetEntityName(entityNamePtr);
+}
+
+bool TesItem::IsMagazine() const
+{
+	return GetFormType() == FormType::TesObjectBook && ErectusMemory::CheckReferenceKeywordBook(*this, 0x001D4A70);
+}
+
+bool TesItem::IsBobblehead() const
+{
+	return GetFormType() == FormType::TesObjectMisc && ErectusMemory::CheckReferenceKeywordMisc(*this, 0x00135E6C);
 }

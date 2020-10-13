@@ -1,11 +1,9 @@
 #include "PlayerStatsEditor.h"
 
-#include "common.h"
-#include "ErectusMemory.h"
-#include "ErectusProcess.h"
-#include "Game.h"
-#include "settings.h"
-#include "utils.h"
+#include "../ErectusMemory.h"
+#include "../ErectusProcess.h"
+#include "../settings.h"
+#include "../game/Game.h"
 
 bool PlayerStatsEditor::Edit(const bool enabled)
 {
@@ -26,7 +24,7 @@ bool PlayerStatsEditor::Edit(const bool enabled)
 	if (!Utils::Valid(player.vtable0050))
 		return false;
 
-	DWORD64 actorValueFunction;
+	std::uintptr_t actorValueFunction;
 	if (!ErectusProcess::Rpm(player.vtable0050 + 0x48, &actorValueFunction, sizeof actorValueFunction))
 		return false;
 	if (!Utils::Valid(actorValueFunction))
@@ -117,7 +115,7 @@ bool PlayerStatsEditor::Edit(const bool enabled)
 	return true;
 }
 
-bool PlayerStatsEditor::SetActorValueMaximum(const DWORD formId, const float defaultValue, const float customValue, const bool enabled)
+bool PlayerStatsEditor::SetActorValueMaximum(const std::uint32_t formId, const float defaultValue, const float customValue, const bool enabled)
 {
 	if (!actorValuePage || !actorValuePageValid)
 		return false;

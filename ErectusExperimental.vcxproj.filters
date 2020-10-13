@@ -13,32 +13,26 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Source Files\gameObjects">
-      <UniqueIdentifier>{0f3e53a1-c5df-4a46-8a2e-290b185dc8a2}</UniqueIdentifier>
+    <Filter Include="game">
+      <UniqueIdentifier>{1ebfd53f-d4ef-4159-a2e2-1a4a2dca25c2}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\gameObjects">
-      <UniqueIdentifier>{97ec1ff7-4ae5-413b-9391-4c86ddd9169c}</UniqueIdentifier>
+    <Filter Include="game\datatypes">
+      <UniqueIdentifier>{ec984712-f019-4ef5-be33-d1aebebbb28b}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\external">
-      <UniqueIdentifier>{4441e284-28a0-4bd3-b5d8-0735ced7f917}</UniqueIdentifier>
+    <Filter Include="features">
+      <UniqueIdentifier>{2f9f8c9b-2bd2-4674-93be-2713e327d013}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\external\mINI">
-      <UniqueIdentifier>{92f3b9f7-703a-48f2-954c-0445fd68fde5}</UniqueIdentifier>
+    <Filter Include="dependencies">
+      <UniqueIdentifier>{00d97cd2-a041-45d0-a517-ff148964e921}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\external\imgui">
-      <UniqueIdentifier>{b0df7e73-4b9b-4ff8-999d-bb308600c86e}</UniqueIdentifier>
+    <Filter Include="dependencies\fmt">
+      <UniqueIdentifier>{e23d3caf-c838-4751-95dd-0395b9d89033}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\external\fmt">
-      <UniqueIdentifier>{fae19c0b-47d5-43e9-9e3d-6d032f069ca9}</UniqueIdentifier>
+    <Filter Include="dependencies\mIni">
+      <UniqueIdentifier>{aede312f-78e2-469a-a7fd-3ced9cc1f4bf}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\external">
-      <UniqueIdentifier>{748f46c0-b16a-47b8-8789-ffd0e5f24ac1}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\external\imgui">
-      <UniqueIdentifier>{81f63692-92bd-418a-a1eb-9f88366b673e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\external\fmt">
-      <UniqueIdentifier>{58337b08-2b09-4774-a0e5-9bc162881b1d}</UniqueIdentifier>
+    <Filter Include="dependencies\imgui">
+      <UniqueIdentifier>{723500bc-e021-430c-b0e2-890562d2767e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -50,27 +44,6 @@
     </ClCompile>
     <ClCompile Include="_main.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="format.cc">
-      <Filter>Source Files\external\fmt</Filter>
-    </ClCompile>
-    <ClCompile Include="imgui\imgui.cpp">
-      <Filter>Source Files\external\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="imgui\imgui_draw.cpp">
-      <Filter>Source Files\external\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="imgui\imgui_impl_dx9.cpp">
-      <Filter>Source Files\external\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="imgui\imgui_impl_win32.cpp">
-      <Filter>Source Files\external\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="imgui\imgui_stdlib.cpp">
-      <Filter>Source Files\external\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="imgui\imgui_widgets.cpp">
-      <Filter>Source Files\external\imgui</Filter>
     </ClCompile>
     <ClCompile Include="settings.cpp">
       <Filter>Source Files</Filter>
@@ -90,35 +63,59 @@
     <ClCompile Include="app.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="MsgSender.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Looter.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="WeaponEditor.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="game\Game.cpp">
+      <Filter>game</Filter>
     </ClCompile>
-    <ClCompile Include="PlayerStatsEditor.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="game\Datatypes\Camera.cpp">
+      <Filter>game\datatypes</Filter>
     </ClCompile>
-    <ClCompile Include="Game.cpp">
-      <Filter>Source Files\gameObjects</Filter>
+    <ClCompile Include="game\Datatypes\LoadedAreaManager.cpp">
+      <Filter>game\datatypes</Filter>
     </ClCompile>
-    <ClCompile Include="LoadedAreaManager.cpp">
-      <Filter>Source Files\gameObjects</Filter>
+    <ClCompile Include="game\Datatypes\TesItem.cpp">
+      <Filter>game\datatypes</Filter>
     </ClCompile>
-    <ClCompile Include="TesObjectCell.cpp">
-      <Filter>Source Files\gameObjects</Filter>
+    <ClCompile Include="game\Datatypes\TesObjectCell.cpp">
+      <Filter>game\datatypes</Filter>
     </ClCompile>
-    <ClCompile Include="TesObjectRefr.cpp">
-      <Filter>Source Files\gameObjects</Filter>
+    <ClCompile Include="game\Datatypes\TesObjectRefr.cpp">
+      <Filter>game\datatypes</Filter>
     </ClCompile>
-    <ClCompile Include="TesItem.cpp">
-      <Filter>Source Files\gameObjects</Filter>
+    <ClCompile Include="features\Looter.cpp">
+      <Filter>features</Filter>
+    </ClCompile>
+    <ClCompile Include="features\MsgSender.cpp">
+      <Filter>features</Filter>
+    </ClCompile>
+    <ClCompile Include="features\PlayerStatsEditor.cpp">
+      <Filter>features</Filter>
+    </ClCompile>
+    <ClCompile Include="features\WeaponEditor.cpp">
+      <Filter>features</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\imgui\imgui.cpp">
+      <Filter>dependencies\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\imgui\imgui_draw.cpp">
+      <Filter>dependencies\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\imgui\imgui_impl_dx9.cpp">
+      <Filter>dependencies\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\imgui\imgui_impl_win32.cpp">
+      <Filter>dependencies\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\imgui\imgui_stdlib.cpp">
+      <Filter>dependencies\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\imgui\imgui_widgets.cpp">
+      <Filter>dependencies\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\fmt\format.cc">
+      <Filter>dependencies\fmt</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -133,45 +130,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ini.h">
-      <Filter>Header Files\external\mINI</Filter>
-    </ClInclude>
-    <ClInclude Include="fmt\format.h">
-      <Filter>Header Files\external\fmt</Filter>
-    </ClInclude>
-    <ClInclude Include="fmt\format-inl.h">
-      <Filter>Header Files\external\fmt</Filter>
-    </ClInclude>
-    <ClInclude Include="fmt\core.h">
-      <Filter>Header Files\external\fmt</Filter>
-    </ClInclude>
-    <ClInclude Include="imgui\imgui.h">
-      <Filter>Header Files\external\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="imgui\imgui_impl_dx9.h">
-      <Filter>Header Files\external\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="imgui\imgui_impl_win32.h">
-      <Filter>Header Files\external\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="imgui\imgui_internal.h">
-      <Filter>Header Files\external\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="imgui\imgui_stdlib.h">
-      <Filter>Header Files\external\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="imgui\imstb_rectpack.h">
-      <Filter>Header Files\external\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="imgui\imstb_textedit.h">
-      <Filter>Header Files\external\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="imgui\imstb_truetype.h">
-      <Filter>Header Files\external\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="imgui\imconfig.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="settings.h">
@@ -201,41 +159,83 @@
     <ClInclude Include="common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="MsgSender.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Looter.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Window.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="WeaponEditor.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="game\Game.h">
+      <Filter>game</Filter>
     </ClInclude>
-    <ClInclude Include="PlayerStatsEditor.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="game\Datatypes\Camera.h">
+      <Filter>game\datatypes</Filter>
     </ClInclude>
-    <ClInclude Include="Game.h">
-      <Filter>Header Files\gameObjects</Filter>
+    <ClInclude Include="game\Datatypes\LoadedAreaManager.h">
+      <Filter>game\datatypes</Filter>
     </ClInclude>
-    <ClInclude Include="LoadedAreaManager.h">
-      <Filter>Header Files\gameObjects</Filter>
+    <ClInclude Include="game\Datatypes\LocalPlayer.h">
+      <Filter>game\datatypes</Filter>
     </ClInclude>
-    <ClInclude Include="TesObjectCell.h">
-      <Filter>Header Files\gameObjects</Filter>
+    <ClInclude Include="game\Datatypes\TesItem.h">
+      <Filter>game\datatypes</Filter>
     </ClInclude>
-    <ClInclude Include="TesObjectRefr.h">
-      <Filter>Header Files\gameObjects</Filter>
+    <ClInclude Include="game\Datatypes\TesObjectCell.h">
+      <Filter>game\datatypes</Filter>
     </ClInclude>
-    <ClInclude Include="TesItem.h">
-      <Filter>Header Files\gameObjects</Filter>
+    <ClInclude Include="game\Datatypes\TesObjectRefr.h">
+      <Filter>game\datatypes</Filter>
     </ClInclude>
-    <ClInclude Include="LocalPlayer.h">
-      <Filter>Header Files\gameObjects</Filter>
+    <ClInclude Include="game\Datatypes\TesWorldSpace.h">
+      <Filter>game\datatypes</Filter>
     </ClInclude>
-    <ClInclude Include="TesWorldSpace.h">
-      <Filter>Header Files\gameObjects</Filter>
+    <ClInclude Include="features\Looter.h">
+      <Filter>features</Filter>
+    </ClInclude>
+    <ClInclude Include="features\MsgSender.h">
+      <Filter>features</Filter>
+    </ClInclude>
+    <ClInclude Include="features\PlayerStatsEditor.h">
+      <Filter>features</Filter>
+    </ClInclude>
+    <ClInclude Include="features\WeaponEditor.h">
+      <Filter>features</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\fmt\fmt\core.h">
+      <Filter>dependencies\fmt</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\fmt\fmt\format.h">
+      <Filter>dependencies\fmt</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\fmt\fmt\format-inl.h">
+      <Filter>dependencies\fmt</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\mIni\ini.h">
+      <Filter>dependencies\mIni</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\imgui\imconfig.h">
+      <Filter>dependencies\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\imgui\imgui.h">
+      <Filter>dependencies\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\imgui\imgui_impl_dx9.h">
+      <Filter>dependencies\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\imgui\imgui_impl_win32.h">
+      <Filter>dependencies\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\imgui\imgui_internal.h">
+      <Filter>dependencies\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\imgui\imgui_stdlib.h">
+      <Filter>dependencies\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\imgui\imstb_rectpack.h">
+      <Filter>dependencies\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\imgui\imstb_textedit.h">
+      <Filter>dependencies\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\imgui\imstb_truetype.h">
+      <Filter>dependencies\imgui</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

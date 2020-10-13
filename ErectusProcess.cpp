@@ -1,13 +1,12 @@
-#include "app.h"
-#include "renderer.h"
-#include "threads.h"
+#include "ErectusProcess.h"
 
 #include <thread>
 #include <TlHelp32.h>
 
-#include "ErectusProcess.h"
-#include "MsgSender.h"
-
+#include "app.h"
+#include "renderer.h"
+#include "threads.h"
+#include "features/MsgSender.h"
 
 void ErectusProcess::SetProcessError(const int errorId, const char* error)
 {
@@ -74,17 +73,17 @@ std::vector<DWORD> ErectusProcess::GetProcesses()
 	return result;
 }
 
-bool ErectusProcess::Rpm(const DWORD64 src, void* dst, const size_t size)
+bool ErectusProcess::Rpm(const std::uintptr_t src, void* dst, const size_t size)
 {
 	return ReadProcessMemory(handle, reinterpret_cast<void*>(src), dst, size, nullptr);
 }
 
-bool ErectusProcess::Wpm(const DWORD64 dst, const void* src, const size_t size)
+bool ErectusProcess::Wpm(const std::uintptr_t dst, const void* src, const size_t size)
 {
 	return WriteProcessMemory(handle, reinterpret_cast<void*>(dst), src, size, nullptr);
 }
 
-DWORD64 ErectusProcess::AllocEx(const size_t size)
+std::uintptr_t ErectusProcess::AllocEx(const size_t size)
 {
 	//this needs to be split, the game scans for PAGE_EXECUTE_READWRITE regions
 	//1) alloc with PAGE_READWRITE
@@ -92,10 +91,10 @@ DWORD64 ErectusProcess::AllocEx(const size_t size)
 	//3) switch to PAGE_EXECUTE_READ
 	//4) create the remote thread
 	//see https://reverseengineering.stackexchange.com/questions/3482/does-code-injected-into-process-memory-always-belong-to-a-page-with-rwx-access
-	return reinterpret_cast<DWORD64>(VirtualAllocEx(handle, nullptr, size, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE));
+	return reinterpret_cast<std::uintptr_t>(VirtualAllocEx(handle, nullptr, size, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE));
 }
 
-bool ErectusProcess::FreeEx(const DWORD64 src)
+bool ErectusProcess::FreeEx(const std::uintptr_t src)
 {
 	return VirtualFreeEx(handle, reinterpret_cast<void*>(src), 0, MEM_RELEASE);
 }
@@ -155,7 +154,7 @@ bool ErectusProcess::HwndValid(const DWORD processId)
 	return true;
 }
 
-DWORD64 ErectusProcess::GetModuleBaseAddress(const DWORD procId, const char* module)
+std::uintptr_t ErectusProcess::GetModuleBaseAddress(const DWORD procId, const char* module)
 {
 	auto* const hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, procId);
 	if (hSnapshot == INVALID_HANDLE_VALUE)
@@ -169,7 +168,7 @@ DWORD64 ErectusProcess::GetModuleBaseAddress(const DWORD procId, const char* mod
 		if (!strcmp(lpme.szModule, module))
 		{
 			CloseHandle(hSnapshot);
-			return reinterpret_cast<DWORD64>(lpme.modBaseAddr);
+			return reinterpret_cast<std::uintptr_t>(lpme.modBaseAddr);
 		}
 	}
 

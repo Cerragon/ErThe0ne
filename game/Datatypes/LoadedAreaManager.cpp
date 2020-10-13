@@ -2,8 +2,8 @@
 
 #include <memory>
 
-#include "ErectusProcess.h"
-#include "utils.h"
+#include "../../ErectusProcess.h"
+#include "../../utils.h"
 
 std::vector<TesObjectCell> LoadedAreaManager::GetLoadedCells() const
 {
@@ -12,7 +12,7 @@ std::vector<TesObjectCell> LoadedAreaManager::GetLoadedCells() const
 	if (!Utils::Valid(interiorCellArrayBegin) || !Utils::Valid(interiorCellArrayEnd) || !Utils::Valid(exteriorCellArrayBegin) || !Utils::Valid(exteriorCellArrayEnd))
 		return result;
 
-	DWORD64 cellPtrArrayPtr;
+	std::uintptr_t cellPtrArrayPtr;
 	std::size_t cellPtrArraySize;
 
 	//1) Select  interior or exterior objectlist
@@ -29,8 +29,8 @@ std::vector<TesObjectCell> LoadedAreaManager::GetLoadedCells() const
 	else return result; // sthg went wrong
 
 	//2) Read the array of pointers to cells
-	const auto cellPtrArray = std::make_unique<DWORD64[]>(cellPtrArraySize);
-	if (!ErectusProcess::Rpm(cellPtrArrayPtr, cellPtrArray.get(), cellPtrArraySize * sizeof DWORD64))
+	const auto cellPtrArray = std::make_unique<std::uintptr_t[]>(cellPtrArraySize);
+	if (!ErectusProcess::Rpm(cellPtrArrayPtr, cellPtrArray.get(), cellPtrArraySize * sizeof std::uintptr_t))
 		return result;
 
 	//3) Read each cell

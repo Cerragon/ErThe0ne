@@ -1,6 +1,5 @@
 #pragma once
 #include <unordered_map>
-#include <Windows.h>
 
 class WeaponEditor
 {
@@ -11,20 +10,20 @@ public:
 private:
 	struct WeaponInfo
 	{
-		DWORD64 ptr;
+		std::uintptr_t ptr;
 		struct Weapon
 		{
-			DWORD64 vtable;//0x08
-			BYTE padding0008[0x18];
-			DWORD formId;//0x20
-			BYTE padding0024[0x19C];
-			DWORD64 keywordArrayPtr;//0x1C0
+			std::uintptr_t vtable;//0x08
+			char padding0008[0x18];
+			std::uint32_t formId;//0x20
+			char padding0024[0x19C];
+			std::uintptr_t keywordArrayPtr;//0x1C0
 			int keywordArraySize;//0x1C8
-			BYTE padding01D0[0xE0];
-			DWORD64 aimModelPtr;//0x2B0
-			BYTE padding02B8[0x44];
+			char padding01D0[0xE0];
+			std::uintptr_t aimModelPtr;//0x2B0
+			char padding02B8[0x44];
 			float reloadSpeed;//0x2FC
-			BYTE padding0300[0x4];
+			char padding0300[0x4];
 			float speed;//0x304
 			float reach;//0x308
 			float reachEngagementMult; //0x030C
@@ -39,12 +38,12 @@ private:
 			float weight; //0x0330
 			float padding0334; //0x0334
 			float actionPointCost;//0x338
-			BYTE padding033C[0x24];
-			BYTE flagA;//0x360
-			BYTE flagB;//0x361
-			BYTE flagC;//0x362
-			BYTE flagD;//0x363
-			BYTE padding0364[0x1C];
+			char padding033C[0x24];
+			unsigned char flagA;//0x360
+			unsigned char flagB;//0x361
+			unsigned char flagC;//0x362
+			unsigned char flagD;//0x363
+			char padding0364[0x1C];
 			short capacity;//0x380
 			short baseDamage;//0x382
 
@@ -53,12 +52,12 @@ private:
 
 		struct AimModel
 		{
-			DWORD64 vtable;//0x8
-			BYTE padding0008[0x18];
-			DWORD formId;//0x20
-			BYTE padding0024[0x4];
-			BYTE spreadData[0x18];//0x28
-			BYTE recoilData[0x24];//0x40
+			std::uintptr_t vtable;//0x8
+			char padding0008[0x18];
+			std::uint32_t formId;//0x20
+			char padding0024[0x4];
+			char spreadData[0x18];//0x28
+			char recoilData[0x24];//0x40
 			float sway;//0x64
 
 			bool operator==(const AimModel&) const = default;
@@ -66,5 +65,5 @@ private:
 	};
 	static void ResetWeapons();
 
-	inline static std::unordered_map<DWORD, WeaponInfo> originalWeaponValues = {};
+	inline static std::unordered_map<std::uint32_t, WeaponInfo> originalWeaponValues = {};
 };

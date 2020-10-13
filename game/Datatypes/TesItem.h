@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-#include "common.h"
+#include "../../common.h"
 
 class TesItem
 {
@@ -17,10 +17,16 @@ public:
 	{
 		return GetFormType() == FormType::TesObjectBook && TREASUREMAP_FORMIDS.contains(formId);
 	}
+	[[nodiscard]] bool IsMagazine() const;
 	[[nodiscard]] bool IsJunkItem() const
 	{
 		return GetFormType() == FormType::TesObjectMisc && componentArraySize && !(recordFlagA >> 7 & 1);
 	}
+	[[nodiscard]] bool IsMod() const
+	{
+		return GetFormType() == FormType::TesObjectMisc && recordFlagA >> 7 & 1;
+	}
+	[[nodiscard]] bool IsBobblehead() const;
 
 	std::uintptr_t vtable;//0x0
 	char padding0008[0x10];
