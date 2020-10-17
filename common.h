@@ -10,55 +10,55 @@ constexpr LPCSTR OVERLAY_WINDOW_NAME = "Er";
 //offsets
 
 //just rpm
-constexpr auto OFFSET_LOCAL_PLAYER = 0x054FE7D8UL;//1.4.1.3
-constexpr auto OFFSET_ENTITY_LIST = 0x52D4928UL;//1.4.1.3
-constexpr auto OFFSET_MAIN = 0x05560DE8UL;//1.4.1.3
-constexpr auto OFFSET_CAMERA = 0x055A3DF0UL;//1.4.1.3
-constexpr auto OFFSET_GET_PTR_A1 = 0x052DB318UL;//1.4.1.3
-constexpr auto OFFSET_GET_PTR_A2 = 0x03DF28B0UL;//1.4.1.3
-constexpr auto OFFSET_NUKE_CODE = 0x05414A08UL;//1.4.1.3
-constexpr auto OFFSET_MAIN_WORLDSPACE = 0x054134C0UL;//1.4.1.3
+constexpr auto OFFSET_LOCAL_PLAYER = 0x05485AD8UL;//1.4.1.6
+constexpr auto OFFSET_ENTITY_LIST = 0x052628A8UL;//1.4.1.6
+constexpr auto OFFSET_MAIN = 0x054E7628UL;//1.4.1.6
+constexpr auto OFFSET_CAMERA = 0x0552A630UL;//1.4.1.6
+constexpr auto OFFSET_GET_PTR_A1 = 0x05269AD8UL;//1.4.1.6
+constexpr auto OFFSET_GET_PTR_A2 = 0x03D88E20UL;//1.4.1.6
+constexpr auto OFFSET_NUKE_CODE = 0x0539F7E8UL;//1.4.1.6
+constexpr auto OFFSET_MAIN_WORLDSPACE = 0x0539E320UL;//1.4.1.6
 
 //wpm
 
 //chargen
-constexpr auto OFFSET_CHARGEN = 0x054C4CD0UL;//1.4.0.20---
+constexpr auto OFFSET_CHARGEN = 0x05488380UL;//1.4.1.6
 
 //dmg redirection
-constexpr auto OFFSET_REDIRECTION = 0x018B9ABBUL;//1.4.1.3
-constexpr auto OFFSET_REDIRECTION_JMP = 0x018B994BUL;//1.4.1.3
+constexpr auto OFFSET_REDIRECTION = 0x0187BE4BUL;//1.4.1.6
+constexpr auto OFFSET_REDIRECTION_JMP = 0x0187BCDBUL;//1.4.1.6
 
 //stats editor
-constexpr auto OFFSET_ACTOR_VALUE = 0x0173F2D0UL;//1.4.1.3
-constexpr auto OFFSET_AV_REGEN = 0x0173F68FUL;//1.4.1.3
-constexpr auto OFFSET_SERVER_POSITION = 0x015278A5UL;//1.4.1.3
+constexpr auto OFFSET_ACTOR_VALUE = 0x01701BB0UL;//1.4.1.6
+constexpr auto OFFSET_AV_REGEN = 0x01701F6FUL;//1.4.1.6
+constexpr auto OFFSET_SERVER_POSITION = 0x014EA9A5UL;//1.4.1.6
 
 //opk
-constexpr auto OFFSET_OPK = 0x02A6CEFDUL;//1.4.1.3
+constexpr auto OFFSET_OPK = 0x02A2ED6DUL;//1.4.1.6
 
 //noclip
-constexpr auto OFFSET_CHAR_CONTROLLER = 0x05762AD0UL;//1.4.1.3
-constexpr auto OFFSET_NOCLIP_A = 0x02A5EE68UL;//1.4.1.3
-constexpr auto OFFSET_NOCLIP_B = 0x02A5EE20UL;//1.4.1.3
-constexpr auto OFFSET_NOCLIP_C = 0x016BBDC1UL;//1.4.1.3
-constexpr auto OFFSET_NOCLIP_D = 0x016BBDF1UL;//1.4.1.3
+constexpr auto OFFSET_CHAR_CONTROLLER = 0x056E7160UL;//1.4.1.6
+constexpr auto OFFSET_NOCLIP_A = 0x02A20C78UL;//1.4.1.6
+constexpr auto OFFSET_NOCLIP_B = 0x02A20C30UL;//1.4.1.6
+constexpr auto OFFSET_NOCLIP_C = 0x0167EA61UL;//1.4.1.6
+constexpr auto OFFSET_NOCLIP_D = 0x0167EA91UL;//1.4.1.6
 
 //weapon editor
-constexpr auto OFFSET_DATA_HANDLER = 0x052D0DD8UL;//1.4.1.3
-constexpr auto OFFSET_INFINITE_AMMO = 0x00D59296UL;//1.4.1.3
+constexpr auto OFFSET_DATA_HANDLER = 0x0525EE70UL;//1.4.1.6
+constexpr auto OFFSET_INFINITE_AMMO = 0x00D1C726UL;//1.4.1.6
 
 //remote threads / message sending
 
-constexpr auto OFFSET_MELEE_ATTACK = 0x01749130UL;//1.4.1.3
-constexpr auto OFFSET_MESSAGE_SENDER = 0x0153C310UL;//1.4.1.3
+constexpr auto OFFSET_MELEE_ATTACK = 0x0170BA10UL;//1.4.1.6
+constexpr auto OFFSET_MESSAGE_SENDER = 0x014FF310UL;//1.4.1.6
 constexpr auto OFFSET_FAKE_MESSAGE = 0x014C76C7UL;//1.4.0.23---
 
 //vtables
-constexpr auto VTABLE_REQUESTACTIVATEREFMSG = 0x03C2D630UL;//1.4.1.3
-constexpr auto VTABLE_REQUESTTRANSFERITEMMSG = 0x03C420E8UL;//1.4.1.3
-constexpr auto VTABLE_REQUESTTELEPORTTOLOCATIONMSG = 0x03C35BA0UL;//1.4.1.3
-constexpr auto VTABLE_CLIENTSTATEMSG = 0x03C35780UL;//1.4.1.3
-constexpr auto VTABLE_REQUESTHITSONACTORS = 0x03C2D260UL;//1.4.1.3
+constexpr auto VTABLE_REQUESTACTIVATEREFMSG = 0x03BC6540UL;//1.4.1.6
+constexpr auto VTABLE_REQUESTTRANSFERITEMMSG = 0x03BDAEF8UL;//1.4.1.6
+constexpr auto VTABLE_REQUESTTELEPORTTOLOCATIONMSG = 0x03BCE9E0UL;//1.4.1.6
+constexpr auto VTABLE_CLIENTSTATEMSG = 0x03BCE5C0UL;//1.4.1.6
+constexpr auto VTABLE_REQUESTHITSONACTORS = 0x03BC6170UL;//1.4.1.6
 
 enum class HotKey : int
 {
@@ -289,7 +289,7 @@ constexpr auto CUSTOM_ENTRY_TREASURE_MAP = 0x0000000000800000ULL;
 constexpr auto CUSTOM_ENTRY_WHITELISTED = 0x4000000000000000ULL;
 constexpr auto CUSTOM_ENTRY_INVALID = 0x8000000000000000ULL;
 
-enum class FormType : unsigned char
+enum class FormType : std::uint8_t
 {
 	BgsTextureSet = 0x10,
 	TesSound = 0x19,

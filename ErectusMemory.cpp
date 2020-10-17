@@ -832,7 +832,7 @@ bool ErectusMemory::DamageRedirection(const std::uintptr_t targetPtr, std::uintp
 
 	if (!targetingPage)
 	{
-		const auto page = ErectusProcess::AllocEx(sizeof(Opk));
+		const auto page = ErectusProcess::AllocEx(sizeof(TargetLocking));
 		if (!page)
 			return false;
 		targetingPage = page;
@@ -1023,118 +1023,6 @@ void ErectusMemory::Noclip(const bool enabled)
 	}
 }
 
-
-bool ErectusMemory::OnePositionKill(std::uintptr_t& opkPage, bool& opkPageValid, const bool enabled)
-{
-	if (!opkPage && !Settings::opk.enabled)
-		return false;
-
-	if (!opkPage)
-	{
-		const auto page = ErectusProcess::AllocEx(sizeof(Opk));
-		if (!page)
-			return false;
-		opkPage = page;
-	}
-
-	BYTE opkOn[] = { 0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xE0, 0xCC, 0xCC, 0xCC };
-	BYTE opkOff[] = { 0x0F, 0x10, 0x87, 0x90, 0x04, 0x00, 0x00, 0x0F, 0x58, 0x45, 0xA7, 0x0F, 0x29, 0x45, 0xF7 };
-	BYTE opkCheck[sizeof opkOff];
-
-	if (!ErectusProcess::Rpm(ErectusProcess::exe + OFFSET_OPK, &opkCheck, sizeof opkCheck))
-		return false;
-
-	const auto originalFunction = ErectusProcess::exe + OFFSET_OPK + sizeof opkOff;
-	memcpy(&opkOn[2], &opkPage, sizeof(std::uintptr_t));
-
-	std::uintptr_t pageCheck;
-	memcpy(&pageCheck, &opkCheck[2], sizeof(std::uintptr_t));
-
-	if (Utils::Valid(pageCheck) && pageCheck != opkPage)
-	{
-		Opk buffer;
-		if (!ErectusProcess::Rpm(pageCheck, &buffer, sizeof buffer))
-			return false;
-		if (buffer.originalFunction != originalFunction)
-			return false;
-		if (!ErectusProcess::Wpm(ErectusProcess::exe + OFFSET_OPK, &opkOff, sizeof opkOff))
-			return false;
-		ErectusProcess::FreeEx(pageCheck);
-	}
-
-	if (enabled)
-	{
-		if (opkPageValid)
-			return true;
-
-		Opk opkData;
-		opkData.opkNpcs = 0;
-		opkData.originalFunction = originalFunction;
-		memset(opkData.opkNpcPosition, 0x00, sizeof opkData.opkNpcPosition);
-
-		if (!ErectusProcess::Wpm(opkPage, &opkData, sizeof opkData))
-			return false;
-		if (!ErectusProcess::Wpm(ErectusProcess::exe + OFFSET_OPK, &opkOn, sizeof opkOn))
-			return false;
-		opkPageValid = true;
-	}
-	else
-	{
-		if (pageCheck == opkPage)
-			ErectusProcess::Wpm(ErectusProcess::exe + OFFSET_OPK, &opkOff, sizeof opkOff);
-
-		if (opkPage && ErectusProcess::FreeEx(opkPage))
-		{
-			opkPage = 0;
-			opkPageValid = false;
-		}
-	}
-	return true;
-}
-
-bool ErectusMemory::CheckOpkDistance(const std::uintptr_t opkPage)
-{
-	Opk opkData;
-	if (!ErectusProcess::Rpm(opkPage, &opkData, sizeof opkData))
-		return false;
-
-	const auto camera = Game::GetPlayerCamera();
-	const Vector3 opkNpcPosition = { opkData.opkNpcPosition[0], opkData.opkNpcPosition[1], opkData.opkNpcPosition[2] };
-
-	if (opkNpcPosition.DistanceTo(camera.origin / 70.f) > 20.0f)
-		return false;
-
-	return true;
-}
-
-bool ErectusMemory::SetOpkData(const std::uintptr_t opkPage, const bool enabled)
-{
-	Opk opkData;
-	if (!ErectusProcess::Rpm(opkPage, &opkData, sizeof opkData))
-		return false;
-
-	if (!enabled)
-	{
-		opkData.opkNpcs = 0;
-		memset(opkData.opkNpcPosition, 0x00, sizeof opkData.opkNpcPosition);
-		ErectusProcess::Wpm(opkPage, &opkData, sizeof opkData);
-
-		return true;
-	}
-
-	if (CheckOpkDistance(opkPage))
-		return true;
-
-	const auto camera = Game::GetPlayerCamera();
-	const auto opkPosition = Utils::ProjectView(camera.forward, camera.origin / 70.f, 3.0f);
-
-	opkData.opkNpcPosition[0] = opkPosition.x;
-	opkData.opkNpcPosition[1] = opkPosition.y;
-	opkData.opkNpcPosition[2] = opkPosition.z;
-	opkData.opkNpcs = 1;
-
-	return ErectusProcess::Wpm(opkPage, &opkData, sizeof opkData);
-}
 
 bool ErectusMemory::ReferenceSwap(std::uint32_t& sourceFormId, std::uint32_t& destinationFormId)
 {

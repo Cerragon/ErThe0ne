@@ -9,6 +9,7 @@
 #include "ErectusMemory.h"
 #include "ErectusProcess.h"
 #include "features/Looter.h"
+#include "features/Opk.h"
 #include "features/PlayerStatsEditor.h"
 #include "features/WeaponEditor.h"
 #include "game/Game.h"
@@ -190,10 +191,7 @@ DWORD WINAPI Threads::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 	auto meleeCounter = 0;
 	auto meleeThreshold = 0;
 
-	DWORD64 opkPage = 0;
-	auto opkPageValid = false;
-
-	DWORD64 freezeApPage = 0;
+	std::uintptr_t freezeApPage = 0;
 	auto freezeApPageValid = false;
 
 	auto loopCount = -1;
@@ -215,15 +213,8 @@ DWORD WINAPI Threads::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 
 		ErectusMemory::FreezeActionPoints(freezeApPage, freezeApPageValid, true);
 
-		ErectusMemory::OnePositionKill(opkPage, opkPageValid, true);
-
-		if (opkPageValid)
-		{
-			if (opkNpcsToggle)
-				ErectusMemory::SetOpkData(opkPage, true);
-			else
-				ErectusMemory::SetOpkData(opkPage, false);
-		}
+		Opk::OnePositionKill(true);
+		Opk::SetOpkData(opkNpcsToggle);
 
 		if (Settings::customNukeCodeSettings.automaticNukeCodes)
 		{
@@ -259,10 +250,7 @@ DWORD WINAPI Threads::MultihackThread([[maybe_unused]] LPVOID lpParameter)
 
 	PlayerStatsEditor::Edit(false);
 
-	ErectusMemory::OnePositionKill(opkPage, opkPageValid, false);
-
-	if (opkPage)
-		ErectusProcess::FreeEx(opkPage);
+	Opk::OnePositionKill(false);
 
 	ErectusMemory::FreezeActionPoints(freezeApPage, freezeApPageValid, false);
 

@@ -229,7 +229,6 @@ public:
 	BYTE padding0037;//0x37 (0)
 };
 
-//unknown
 class RequestTeleportMessage
 {
 public:
@@ -286,45 +285,6 @@ public:
 	std::uintptr_t rdx{};				//0x30 (0x10)
 	std::uintptr_t r8{};				//0x38 (0x18)
 	std::uintptr_t r9{};				//0x40 (0x20)
-};
-
-class Opk
-{
-public:
-	BYTE opkAsm[0x70]
-	{
-		0x31, 0xC0,                                     //xor eax, eax
-		0x3B, 0x05, 0x68, 0x00, 0x00, 0x00,             //cmp eax, [OpkPlayers]
-		0x74, 0x14,                                     //je OpkNpcsCheck
-		0x8B, 0x87, 0xC0, 0x03, 0x00, 0x00,             //mov eax,[rdi+000003C0]
-		0x83, 0xF8, 0x02,                               //cmp eax, 02
-		0x75, 0x09,                                     //jne OpkNpcsCheck
-		0x0F, 0x28, 0x05, 0x64, 0x00, 0x00, 0x00,       //movaps xmm0, [OpkPlayerPosition]
-		0xEB, 0x2A,                                     //jmp OriginalFunction
-		0x31, 0xC0,                                     //xor eax, eax
-		0x3B, 0x05, 0x4E, 0x00, 0x00, 0x00,             //cmp eax, [OpkNpcs]
-		0x74, 0x14,                                     //je OriginalFunction
-		0x8B, 0x87, 0xC0, 0x03, 0x00, 0x00,             //mov eax,[rdi+000003C0]
-		0x83, 0xF8, 0x03,                               //cmp eax, 03
-		0x75, 0x09,                                     //jne OriginalFunction
-		0x0F, 0x28, 0x05, 0x56, 0x00, 0x00, 0x00,       //movaps xmm0, [OpkNpcPosition]
-		0xEB, 0x0C,                                     //jmp OriginalFunction
-		0x0F, 0x10, 0x87, 0x90, 0x04, 0x00, 0x00,       //movups xmm0,[rdi+00000490]
-		0x0F, 0x58, 0x45, 0xA7,                         //addps xmm0,[rbp-59]
-		0x90,                                           //nop 
-		0x0F, 0x29, 0x45, 0xF7,                         //movaps [rbp-09],xmm0
-		0x48, 0x8D, 0x05, 0x25, 0x00, 0x00, 0x00,       //lea rax,[FunctionReturn]
-		0x48, 0x8B, 0x00,                               //mov rax,[rax]
-		0xFF, 0xE0,                                     //jmp rax
-		0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, //Padding
-		0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, //Padding
-		0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, //Padding
-	};
-	int opkPlayers = 0;
-	int opkNpcs = 0;
-	std::uintptr_t originalFunction = 0;
-	float opkPlayerPosition[4]{};
-	float opkNpcPosition[4]{};
 };
 
 class FreezeAp
@@ -452,10 +412,6 @@ public:
 	static bool SetClientState(std::uintptr_t clientState);
 	static void Noclip(bool enabled);
 
-	//opk
-	static bool SetOpkData(std::uintptr_t opkPage, bool enabled);
-	static bool OnePositionKill(std::uintptr_t& opkPage, bool& opkPageValid, bool enabled);
-
 	//item transfer
 	static bool CheckItemTransferList();
 	static bool TransferItems(std::uint32_t sourceFormId, std::uint32_t destinationFormId);
@@ -503,8 +459,6 @@ private:
 	static bool IsRecipeKnown(std::uint32_t formId);
 
 	static bool MovePlayer();
-
-	static bool CheckOpkDistance(std::uintptr_t opkPage);
 
 	static std::uint32_t GetEntityId(const TesObjectRefr& entityData);
 	static bool SendHitsToServer(Hits* hitsData, size_t hitsDataSize);
