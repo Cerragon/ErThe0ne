@@ -122,6 +122,9 @@ public:
 	char healthFlag; //0x1AA
 	char padding019B[0xAA9];
 	std::uint32_t playerStashFormId; //0xC54
+	char padding0C58[0x140];
+	std::uintptr_t playerKnownRecipes;
 
 	std::uintptr_t ptr; //not really there, fill it manually
 };
+

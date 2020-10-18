@@ -2,7 +2,6 @@
 
 #include <memory>
 
-
 #include "../../ErectusProcess.h"
 #include "../../utils.h"
 
@@ -16,24 +15,24 @@ std::vector<TesObjectRefr> TesObjectCell::GetObjectRefs() const
 	if (!Utils::Valid(objectListBeginPtr) || !Utils::Valid(objectListEndPtr))
 		return result;
 
-	const auto itemArraySize = (objectListEndPtr - objectListBeginPtr) / sizeof(DWORD64);
-	const auto objectPtrArray = std::make_unique<DWORD64[]>(itemArraySize);
-	if (!ErectusProcess::Rpm(objectListBeginPtr, objectPtrArray.get(), itemArraySize * sizeof DWORD64))
+	const auto objectCount = (objectListEndPtr - objectListBeginPtr) / sizeof(std::uintptr_t);
+	auto objectPtrs = std::vector<std::uintptr_t>(objectCount);
+	if (!ErectusProcess::Rpm(objectListBeginPtr, objectPtrs.data(), objectPtrs.size() * sizeof std::uintptr_t))
 		return result;
 
-	result.reserve(itemArraySize);
-	for(size_t i = 0; i < itemArraySize; i++)
+	result.reserve(objectPtrs.size());
+	for(const auto objectPtr : objectPtrs)
 	{
-		if (!Utils::Valid(objectPtrArray[i]))
+		if (!Utils::Valid(objectPtr))
 			continue;
 
 		TesObjectRefr entityData = {};
-		if (!ErectusProcess::Rpm(objectPtrArray[i], &entityData, sizeof entityData))
+		if (!ErectusProcess::Rpm(objectPtr, &entityData, sizeof entityData))
 			continue;
 		if (!Utils::Valid(entityData.baseObjectPtr))
 			continue;
-
-		entityData.ptr = objectPtrArray[i];
+		entityData.ptr = objectPtr;
+		
 		result.push_back(entityData);
 	}
 	return result;

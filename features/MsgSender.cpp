@@ -65,18 +65,18 @@ bool MsgSender::Send(void* message, const size_t size)
 	return true;
 }
 
-bool MsgSender::Patcher(const bool state)
+bool MsgSender::Patcher(const bool enabled)
 {
-	BYTE fakeMessagesCheck[2];
+	BYTE fakeMessagesCheck[4];
 	if (!ErectusProcess::Rpm(ErectusProcess::exe + OFFSET_FAKE_MESSAGE, &fakeMessagesCheck, sizeof fakeMessagesCheck))
 		return false;
 
-	BYTE fakeMessagesEnabled[] = { 0xB2, 0x00 };
-	BYTE fakeMessagesDisabled[] = { 0xB2, 0xFF };
+	BYTE fakeMessagesEnabled[] = { 0x48, 0x31, 0xC0, 0xC3 };
+	BYTE fakeMessagesDisabled[] = { 0x40, 0x53, 0x56, 0x57 };
 
 	if (!memcmp(fakeMessagesCheck, fakeMessagesEnabled, sizeof fakeMessagesEnabled))
 	{
-		if (state)
+		if (enabled)
 			return true;
 
 		return ErectusProcess::Wpm(ErectusProcess::exe + OFFSET_FAKE_MESSAGE, &fakeMessagesDisabled, sizeof fakeMessagesDisabled);
@@ -84,7 +84,7 @@ bool MsgSender::Patcher(const bool state)
 
 	if (!memcmp(fakeMessagesCheck, fakeMessagesDisabled, sizeof fakeMessagesDisabled))
 	{
-		if (state)
+		if (enabled)
 			return ErectusProcess::Wpm(ErectusProcess::exe + OFFSET_FAKE_MESSAGE, &fakeMessagesEnabled, sizeof fakeMessagesEnabled);
 		return true;
 	}
