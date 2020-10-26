@@ -31,7 +31,7 @@ bool Looter::ShouldLootJunk(const ItemInfo& item)
 		if (!ErectusProcess::Rpm(components[i].componentReferencePtr, &componentData, sizeof componentData))
 			continue;
 
-		if (Settings::looter.selection.junk.components.contains(componentData.formId) && Settings::looter.selection.junk.components.find(componentData.formId)->second)
+		if (Settings::looter.selection.junk.components.contains(componentData.formId) && Settings::looter.selection.junk.components.at(componentData.formId))
 			return true;
 	}
 
@@ -221,13 +221,13 @@ bool Looter::LootContainer(const ItemInfo& item, const LocalPlayer& player)
 		if (!ShouldLootItem(inventoryItem, inventoryEntry.displayPtr))
 			continue;
 
-		auto iterations = (inventoryEntry.iterations - inventoryEntry.displayPtr) / sizeof(ItemCount);
-		auto itemCount = std::make_unique<ItemCount[]>(iterations);
-		if (!ErectusProcess::Rpm(inventoryEntry.displayPtr, itemCount.get(), iterations * sizeof(ItemCount)))
+		auto stackCount = (inventoryEntry.iterations - inventoryEntry.displayPtr) / sizeof(ItemCount);
+		auto itemCount = std::make_unique<ItemCount[]>(stackCount);
+		if (!ErectusProcess::Rpm(inventoryEntry.displayPtr, itemCount.get(), stackCount * sizeof(ItemCount)))
 			continue;
 
 		auto count = 0;
-		for (DWORD64 c = 0; c < iterations; c++)
+		for (size_t c = 0; c < stackCount; c++)
 		{
 			count += itemCount[c].count;
 		}
@@ -377,7 +377,7 @@ bool Looter::ContainerValid(const TesItem& referenceData)
 	if (!Utils::Valid(referenceData.namePtr00B0))
 		return false;
 
-	DWORD64 nameBuffer;
+	std::uintptr_t nameBuffer;
 	if (!ErectusProcess::Rpm(referenceData.namePtr00B0 + 0x10, &nameBuffer, sizeof nameBuffer))
 		return false;
 	if (!nameBuffer)
