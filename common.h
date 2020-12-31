@@ -5,59 +5,60 @@
 #include <Windows.h>
 
 //overlay
-constexpr LPCSTR OVERLAY_WINDOW_NAME = "Er";
+constexpr LPCSTR OVERLAY_WINDOW_NAME = "Er - The0ne Coding Team";
 
 //offsets
 
 //just rpm
-constexpr auto OFFSET_LOCAL_PLAYER = 0x05485AD8UL;//1.4.1.6
-constexpr auto OFFSET_ENTITY_LIST = 0x052628A8UL;//1.4.1.6
-constexpr auto OFFSET_MAIN = 0x054E7628UL;//1.4.1.6
-constexpr auto OFFSET_CAMERA = 0x0552A630UL;//1.4.1.6
-constexpr auto OFFSET_GET_PTR_A1 = 0x05269AD8UL;//1.4.1.6
-constexpr auto OFFSET_NUKE_CODE = 0x0539F7E8UL;//1.4.1.6
-constexpr auto OFFSET_MAIN_WORLDSPACE = 0x0539E320UL;//1.4.1.6
+constexpr auto OFFSET_LOCAL_PLAYER = 0x5475498;//1.5.1.3
+constexpr auto OFFSET_ENTITY_LIST = 0x5246EA8;//1.5.1.3
+constexpr auto OFFSET_MAIN = 0x54D5CD8;//1.5.1.3
+constexpr auto OFFSET_CAMERA = 0x647E7E0;//1.5.1.3
+constexpr auto OFFSET_GET_PTR_A1 = 0x524D848;//1.5.1.3
+constexpr auto OFFSET_GET_PTR_A2 = 0x3D98670;//1.5.1.3
+constexpr auto OFFSET_NUKE_CODE = 0x053889C8UL;//1.5.1.3
+constexpr auto OFFSET_MAIN_WORLDSPACE = 0x5387480;//1.5.1.3
 
 //wpm
 
 //chargen
-constexpr auto OFFSET_CHARGEN = 0x05488380UL;//1.4.1.6
+constexpr auto OFFSET_CHARGEN = 0x52425C8;//1.5.1.3 THIS IS A PLACEHOLDER VALUE!!
+
 
 //dmg redirection
-constexpr auto OFFSET_REDIRECTION = 0x0187BE4BUL;//1.4.1.6
-constexpr auto OFFSET_REDIRECTION_JMP = 0x0187BCDBUL;//1.4.1.6
+constexpr auto OFFSET_REDIRECTION = 0x190485B;//1.5.1.3
+constexpr auto OFFSET_REDIRECTION_JMP = 0x19046EB;//1.5.1.3
 
 //stats editor
-constexpr auto OFFSET_ACTOR_VALUE = 0x01701BB0UL;//1.4.1.6
-constexpr auto OFFSET_AV_REGEN = 0x01701F6FUL;//1.4.1.6
-constexpr auto OFFSET_SERVER_POSITION = 0x014EA9A5UL;//1.4.1.6
+constexpr auto OFFSET_ACTOR_VALUE = 0x178C900;//1.5.1.3
+constexpr auto OFFSET_AV_REGEN = 0x178CCBF;//1.5.1.3
+constexpr auto OFFSET_SERVER_POSITION = 0x15A4435;//1.5.1.3
 
 //opk
-constexpr auto OFFSET_OPK = 0x02A2ED6DUL;//1.4.1.6
+constexpr auto OFFSET_OPK = 0x2A7CAAD;//1.5.1.3
 
 //noclip
-constexpr auto OFFSET_CHAR_CONTROLLER = 0x056E7160UL;//1.4.1.6
-constexpr auto OFFSET_NOCLIP_A = 0x02A20C78UL;//1.4.1.6
-constexpr auto OFFSET_NOCLIP_B = 0x02A20C30UL;//1.4.1.6
-constexpr auto OFFSET_NOCLIP_C = 0x0167EA61UL;//1.4.1.6
-constexpr auto OFFSET_NOCLIP_D = 0x0167EA91UL;//1.4.1.6
+constexpr auto OFFSET_CHAR_CONTROLLER = 0x56CCB60;//1.5.1.3
+constexpr auto OFFSET_NOCLIP_A = 0x2A6F398;//1.5.1.3
+constexpr auto OFFSET_NOCLIP_B = 0x2A6F350;//1.5.1.3
+constexpr auto OFFSET_NOCLIP_C = 0x1709AB1;//1.5.1.3
+constexpr auto OFFSET_NOCLIP_D = 0x1709AE1;//1.5.1.3
 
 //weapon editor
-constexpr auto OFFSET_DATA_HANDLER = 0x0525EE70UL;//1.4.1.6
-constexpr auto OFFSET_INFINITE_AMMO = 0x00D1C726UL;//1.4.1.6
+constexpr auto OFFSET_DATA_HANDLER = 0x52425C8;//1.5.1.3
+constexpr auto OFFSET_INFINITE_AMMO = 0xDE3316;//1.5.1.3
 
 //remote threads / message sending
-
-constexpr auto OFFSET_MELEE_ATTACK = 0x0170BA10UL;//1.4.1.6
-constexpr auto OFFSET_MESSAGE_SENDER = 0x014FF310UL;//1.4.1.6
-constexpr auto OFFSET_FAKE_MESSAGE = 0x01479AF0UL;//1.4.1.6
+constexpr auto OFFSET_MELEE_ATTACK = 0x1796760;//1.5.1.3
+constexpr auto OFFSET_MESSAGE_SENDER = 0x15B6120;//1.5.1.3
+constexpr auto OFFSET_FAKE_MESSAGE = 0x153DC30;//1.5.1.3
 
 //vtables
-constexpr auto VTABLE_REQUESTACTIVATEREFMSG = 0x03BC6540UL;//1.4.1.6
-constexpr auto VTABLE_REQUESTTRANSFERITEMMSG = 0x03BDAEF8UL;//1.4.1.6
-constexpr auto VTABLE_REQUESTTELEPORTTOLOCATIONMSG = 0x03BCE9E0UL;//1.4.1.6
-constexpr auto VTABLE_CLIENTSTATEMSG = 0x03BCE5C0UL;//1.4.1.6
-constexpr auto VTABLE_REQUESTHITSONACTORS = 0x03BC6170UL;//1.4.1.6
+constexpr auto VTABLE_REQUESTACTIVATEREFMSG = 0x3BF22C0;//1.5.1.3
+constexpr auto VTABLE_REQUESTTRANSFERITEMMSG = 0x3C006B8;//1.5.1.3
+constexpr auto VTABLE_REQUESTTELEPORTTOLOCATIONMSG = 0x3BF6170;//1.5.1.3
+constexpr auto VTABLE_CLIENTSTATEMSG = 0x3BF5D50;//1.5.1.3
+constexpr auto VTABLE_REQUESTHITSONACTORS = 0x3BF2108;//1.5.1.3
 
 enum class HotKey : int
 {
