@@ -19,7 +19,7 @@
 {
 	std::span<const std::uint8_t, 4> aData { reinterpret_cast<const std::uint8_t*>(std::addressof(formId)), sizeof formId };
 	
-	constexpr std::array<std::uint32_t, 256> table{
+	constexpr std::array<std::uint32_t, 512> table{
 		0x00000000, 0x77073096, 0xEE0E612C, 0x990951BA, 0x076DC419, 0x706AF48F, 0xE963A535, 0x9E6495A3,
 		0x0EDB8832, 0x79DCB8A4, 0xE0D5E91E, 0x97D2D988, 0x09B64C2B, 0x7EB17CBD, 0xE7B82D07, 0x90BF1D91,
 		0x1DB71064, 0x6AB020F2, 0xF3B97148, 0x84BE41DE, 0x1ADAD47D, 0x6DDDE4EB, 0xF4D4B551, 0x83D385C7,
@@ -1543,23 +1543,23 @@ std::uintptr_t ErectusMemory::GetNukeCodePtr(const std::uint32_t formId)
 std::array<int, 8> ErectusMemory::GetNukeCode(const std::uint32_t formId)
 {
 	std::array<int, 8> result = {};
-	
+
 	const auto nukeCodePtr = GetNukeCodePtr(formId);
 	if (!nukeCodePtr)
 		return result;
 
-	float nukeCodeArray[16];
+	float nukeCodeArray[24];
 	if (!ErectusProcess::Rpm(nukeCodePtr, &nukeCodeArray, sizeof nukeCodeArray))
 		return result;
 
 	for (std::size_t i = 0; i < 8; i++)
 	{
-		if (nukeCodeArray[i * 2 + 1] < 0.0f || nukeCodeArray[i * 2 + 1] > 9.0f)
+		if (nukeCodeArray[i * 3 + 1] < 0.0f || nukeCodeArray[i * 3 + 1] > 9.0f)
 		{
 			result = {};
 			return result;
 		}
-		result[i] = static_cast<int>(nukeCodeArray[i * 2 + 1]);
+		result[i] = static_cast<int>(nukeCodeArray[i * 3 + 1]);
 	}
 	return result;
 }
@@ -1691,7 +1691,7 @@ std::string ErectusMemory::GetInstancedItemName(const std::uintptr_t displayPtr)
 std::unordered_map<int, std::string> ErectusMemory::GetFavoritedWeapons()
 {
 	std::unordered_map<int, std::string> result = {
-		{0, "[?] No Weapon Selected"},
+		{0, "[?] -•:*The0ne Coding Team*:•-"},
 		{1, "[1] Favorited Item Invalid"},
 		{2, "[2] Favorited Item Invalid"},
 		{3, "[3] Favorited Item Invalid"},
