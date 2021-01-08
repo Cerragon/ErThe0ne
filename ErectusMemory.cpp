@@ -1691,7 +1691,7 @@ std::string ErectusMemory::GetInstancedItemName(const std::uintptr_t displayPtr)
 std::unordered_map<int, std::string> ErectusMemory::GetFavoritedWeapons()
 {
 	std::unordered_map<int, std::string> result = {
-		{0, "[?] -•:*The0ne Coding Team*:•-"},
+		{0, "[?] Favorited Item Invalid"},
 		{1, "[1] Favorited Item Invalid"},
 		{2, "[2] Favorited Item Invalid"},
 		{3, "[3] Favorited Item Invalid"},

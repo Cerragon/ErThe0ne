@@ -5,7 +5,7 @@
 #include <Windows.h>
 
 //overlay
-constexpr LPCSTR OVERLAY_WINDOW_NAME = "Er - The0ne Coding Team";
+constexpr LPCSTR OVERLAY_WINDOW_NAME = "-•:*The0ne Coding Team*:•-";
 
 //offsets
 

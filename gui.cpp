@@ -984,10 +984,10 @@ void Gui::OverlayMenuTabLooter()
 
 		if (ImGui::CollapsingHeader("Looters"))
 		{
-			LargeButtonToggle("Loot NPCs (76m)", Settings::looter.looters.npcs);
-			LargeButtonToggle("Loot Ground Items (76m)", Settings::looter.looters.groundItems);
-			LargeButtonToggle("Loot Containers (6m)", Settings::looter.looters.containers);
-			LargeButtonToggle("Harvest Flora (6m)", Settings::looter.looters.flora);
+			LargeButtonToggle("Loot NPCs (100m)	The", Settings::looter.looters.npcs); //Updated from 76m to 100m --Cerragon
+			LargeButtonToggle("Loot Ground Items (100m)	0ne", Settings::looter.looters.groundItems); //Updated from 76m to 100m --Cerragon
+			LargeButtonToggle("Loot Containers (50m)	Coding", Settings::looter.looters.containers); //Updated from 6m to 50m --Cerragon
+			LargeButtonToggle("Harvest Flora (50m)	Team", Settings::looter.looters.flora); //Updated from 6m to 50m --Cerragon
 		}
 
 		if (ImGui::TreeNodeEx("Selection", ImGuiTreeNodeFlags_Framed)) {
